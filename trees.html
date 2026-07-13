@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>My Trees — TrailWatch HK</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div id="app-header"></div>
+
+  <main class="page">
+    <div class="container" style="max-width:720px">
+      <div class="profile-header">
+        <img class="profile-avatar" id="avatar" alt="" style="width:72px;height:72px" />
+        <div>
+          <h1 class="page-title" style="margin:0" data-i18n="trees_title"></h1>
+          <div class="rank">🌳 <span data-i18n="trees_guardian"></span> · <span data-i18n="trees_level"></span> <span id="treeLevel"></span></div>
+        </div>
+      </div>
+      <p class="page-sub" data-i18n="trees_sub"></p>
+
+      <div class="xp-bar-wrap">
+        <div style="display:flex;justify-content:space-between;font-weight:700;color:var(--green-900)">
+          <span><span data-i18n="trees_xp"></span>: <span id="xpNow"></span></span>
+          <span id="xpNext" style="color:var(--text-muted);font-weight:500"></span>
+        </div>
+        <div class="xp-bar"><span id="xpFill"></span></div>
+        <div style="display:flex;justify-content:space-between;font-size:0.8rem;color:var(--text-muted)">
+          <span>🔥 <span data-i18n="trees_streak"></span>: <span id="streak"></span> <span data-i18n="trees_days"></span></span>
+          <span data-i18n="trees_level"></span> <span id="treeLevel2"></span>
+        </div>
+      </div>
+
+      <div class="section-head">
+        <h2 data-i18n="trees_quest"></h2>
+      </div>
+      <div class="challenge-card" style="border-color:var(--amber);background:#fffbeb">
+        <div class="row">
+          <span data-i18n="trees_quest_desc"></span>
+          <span style="color:var(--amber);white-space:nowrap">+50 XP</span>
+        </div>
+        <button class="btn btn-primary" style="margin-top:0.5rem" id="claimQuest" data-i18n="trees_claim"></button>
+      </div>
+
+      <div class="section-head mt-2">
+        <h2 data-i18n="trees_challenges"></h2>
+      </div>
+      <div id="challenges"></div>
+
+      <div class="section-head mt-2">
+        <h2 data-i18n="trees_rewards"></h2>
+      </div>
+      <div class="badge-scroll" id="rewards"></div>
+
+      <div class="section-head mt-2">
+        <h2 data-i18n="trees_companion"></h2>
+        <a class="link-more" href="#" data-toast="History" data-i18n="trees_view_history"></a>
+      </div>
+
+      <article class="companion-card">
+        <img class="cover" src="https://images.unsplash.com/photo-1502082553048-f009c37129b9?w=900&q=80" alt="Ancient Banyan" />
+        <div class="body">
+          <div style="display:flex;align-items:center;gap:0.35rem;font-size:0.85rem;font-weight:600;color:var(--green-900);margin-bottom:0.5rem">
+            📍 Sai Kung Park / 西貢公園
+          </div>
+          <h3 style="font-size:1.15rem;margin-bottom:0.35rem">Ancient Banyan · 古細葉榕</h3>
+          <div style="display:flex;justify-content:space-between;font-size:0.85rem;color:var(--text-muted);margin-bottom:1rem">
+            <span><span data-i18n="trees_last_visit"></span>: Oct 12, 2024</span>
+            <a class="link-more" href="#" data-toast="Details" data-i18n="trees_details"></a>
+          </div>
+          <div style="background:var(--green-50);border-radius:10px;padding:0.85rem;font-size:0.85rem;color:var(--text-muted)">
+            🎮 Check in here on your next hike (+25 XP) · 下次行山打卡可得 +25 經驗值
+          </div>
+        </div>
+      </article>
+
+      <div class="cta-banner">
+        <h3 data-i18n="plan_banner_title"></h3>
+        <p data-i18n="app_tracking_note"></p>
+        <a class="btn" style="background:white;color:var(--green-900);display:inline-flex" href="app/index.html" data-i18n="nav_app"></a>
+      </div>
+    </div>
+  </main>
+
+  <div id="app-footer"></div>
+
+  <script src="js/i18n.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    document.documentElement.lang = TW.getLang() === "zh" ? "zh-Hant" : "en";
+    initShell("trees");
+    document.getElementById("avatar").src = TW.user.avatar;
+
+    const g = TW.treeGame;
+    document.getElementById("treeLevel").textContent = g.level;
+    document.getElementById("treeLevel2").textContent = g.level;
+    document.getElementById("xpNow").textContent = g.xp;
+    document.getElementById("xpNext").textContent = g.xp + " / " + g.xpNext;
+    document.getElementById("streak").textContent = g.streak;
+    document.getElementById("xpFill").style.width = Math.round((g.xp / g.xpNext) * 100) + "%";
+
+    document.getElementById("challenges").innerHTML = g.challenges
+      .map((c) => {
+        const pct = Math.round((c.progress / c.total) * 100);
+        return `
+        <div class="challenge-card">
+          <div class="row">
+            <span>${TW.tt(c, "title")}</span>
+            <span style="color:var(--green-700)">+${c.xp} XP</span>
+          </div>
+          <div class="progress-mini"><span style="width:${pct}%"></span></div>
+          <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.35rem">${c.progress} / ${c.total}</div>
+        </div>`;
+      })
+      .join("");
+
+    document.getElementById("rewards").innerHTML = g.rewards
+      .map(
+        (b) => `
+      <div class="badge-item">
+        <div class="badge-shield" style="background:var(--green-700)">${b.emoji}</div>
+        <div class="name">${TW.tt(b, "name")}</div>
+      </div>`
+      )
+      .join("");
+
+    document.getElementById("claimQuest").addEventListener("click", function () {
+      showToast(TW.t("toast_xp"));
+      this.disabled = true;
+      this.textContent = "✓";
+    });
+  </script>
+</body>
+</html>

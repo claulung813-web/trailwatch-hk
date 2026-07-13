@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Explore Trails — TrailWatch HK</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div id="app-header"></div>
+
+  <main class="page">
+    <div class="container">
+      <h1 class="page-title" data-i18n="explore_title"></h1>
+      <p class="page-sub" data-i18n="explore_sub"></p>
+
+      <div class="search-bar">
+        <input type="search" id="trailSearch" data-i18n-placeholder="search_placeholder" />
+      </div>
+
+      <div class="filter-bar">
+        <div>
+          <label data-i18n="filter_district"></label>
+          <select class="form-select" id="districtFilter"></select>
+        </div>
+        <div>
+          <label data-i18n="filter_difficulty"></label>
+          <div class="diff-chips" id="diffFilter">
+            <button type="button" class="chip active" data-diff="all" data-i18n="all_levels"></button>
+            <button type="button" class="chip" data-diff="1">1</button>
+            <button type="button" class="chip" data-diff="2">2</button>
+            <button type="button" class="chip" data-diff="3">3</button>
+            <button type="button" class="chip" data-diff="4">4</button>
+            <button type="button" class="chip" data-diff="5">5</button>
+          </div>
+          <p id="diffHint" style="font-size:0.75rem;color:var(--text-muted);margin-top:0.4rem"></p>
+        </div>
+      </div>
+
+      <div class="tabs" id="exploreTabs">
+        <button class="tab" data-tab="records" data-i18n="tab_records"></button>
+        <button class="tab active" data-tab="routes" data-i18n="tab_routes"></button>
+        <button class="tab" data-tab="incidents" data-i18n="tab_incidents"></button>
+      </div>
+
+      <div id="view-routes">
+        <div class="section-head">
+          <h2 data-i18n="monthly_rec"></h2>
+          <span class="meta" id="monthLabel"></span>
+        </div>
+        <div class="month-tabs" id="monthTabs"></div>
+        <div class="trail-grid" id="monthlyGrid"></div>
+
+        <div class="section-head mt-2">
+          <h2 data-i18n="all_trails"></h2>
+          <span class="meta" id="listCount"></span>
+        </div>
+        <div class="trail-grid" id="trailGrid"></div>
+      </div>
+
+      <div id="view-records" class="hidden">
+        <div class="section-head">
+          <h2 data-i18n="community_records"></h2>
+          <span class="meta" data-i18n="latest_hikes"></span>
+        </div>
+        <div class="record-list" id="exploreRecords"></div>
+      </div>
+
+      <div id="view-incidents" class="hidden">
+        <div class="section-head">
+          <h2 data-i18n="trail_incidents"></h2>
+          <a class="link-more" href="reports.html" data-i18n="my_reports"></a>
+        </div>
+        <p style="margin-bottom:1rem;color:var(--text-muted);font-size:0.9rem" data-i18n="incidents_help"></p>
+        <div class="report-list" id="exploreIncidents"></div>
+        <a class="btn btn-primary mt-2" href="reports.html" style="margin-top:1rem;display:inline-flex" data-i18n="report_cta"></a>
+      </div>
+    </div>
+  </main>
+
+  <div id="app-footer"></div>
+
+  <script src="js/i18n.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    document.documentElement.lang = TW.getLang() === "zh" ? "zh-Hant" : "en";
+    initShell("explore");
+
+    let district = "all";
+    let difficulty = "all";
+    let query = "";
+    let month = TW.monthlyMeta.find((m) => m.current).id;
+
+    const distSel = document.getElementById("districtFilter");
+    distSel.innerHTML =
+      `<option value="all">${TW.t("all_districts")}</option>` +
+      TW.districts
+        .map(
+          (d) =>
+            `<option value="${d.id}">${TW.getLang() === "zh" ? d.nameZh : d.name}</option>`
+        )
+        .join("");
+
+    function updateDiffHint() {
+      const el = document.getElementById("diffHint");
+      if (difficulty === "all") {
+        el.textContent = "1 " + TW.t("easy") + " → 5 " + TW.t("expert");
+      } else {
+        el.textContent = TW.t("level") + " " + difficulty + " · " + difficultyLabel(+difficulty);
+      }
+    }
+    updateDiffHint();
+
+    function filtered(list) {
+      return list.filter((t) => {
+        const matchD = district === "all" || t.district === district;
+        const matchDiff = difficulty === "all" || String(t.difficulty) === String(difficulty);
+        const q = query.toLowerCase();
+        const hay = (TW.tt(t, "title") + " " + TW.tt(t, "desc") + " " + TW.districtName(t.district)).toLowerCase();
+        return matchD && matchDiff && (!q || hay.includes(q));
+      });
+    }
+
+    function renderMonthTabs() {
+      document.getElementById("monthTabs").innerHTML = TW.monthlyMeta
+        .map((m) => {
+          const label = TW.getLang() === "zh" ? m.labelZh : m.label;
+          return `<button type="button" class="${m.id === month ? "active" : ""} ${m.current ? "current" : ""}" data-month="${m.id}">${label}${m.current ? " ★" : ""}</button>`;
+        })
+        .join("");
+      document.querySelectorAll("#monthTabs button").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          month = btn.dataset.month;
+          renderAll();
+        });
+      });
+    }
+
+    function renderAll() {
+      renderMonthTabs();
+      const meta = TW.monthlyMeta.find((m) => m.id === month);
+      document.getElementById("monthLabel").textContent =
+        meta && meta.current
+          ? TW.t("monthly_rec")
+          : TW.t("past_rec") + " · " + (TW.getLang() === "zh" ? meta.labelZh : meta.label);
+
+      const monthTrails = filtered(TW.trails.filter((t) => t.monthly === month));
+      document.getElementById("monthlyGrid").innerHTML =
+        monthTrails.map((t) => renderTrailCard(t)).join("") ||
+        `<p style="color:var(--text-muted)">${TW.t("no_trails")}</p>`;
+
+      const all = filtered(TW.trails);
+      document.getElementById("listCount").textContent = all.length + " " + TW.t("available");
+      document.getElementById("trailGrid").innerHTML =
+        all.map((t) => renderTrailCard(t)).join("") ||
+        `<p style="color:var(--text-muted)">${TW.t("no_trails")}</p>`;
+    }
+
+    distSel.addEventListener("change", () => {
+      district = distSel.value;
+      renderAll();
+    });
+
+    document.querySelectorAll("#diffFilter .chip").forEach((chip) => {
+      chip.addEventListener("click", () => {
+        document.querySelectorAll("#diffFilter .chip").forEach((c) => c.classList.remove("active"));
+        chip.classList.add("active");
+        difficulty = chip.dataset.diff;
+        updateDiffHint();
+        renderAll();
+      });
+    });
+
+    document.getElementById("trailSearch").addEventListener("input", (e) => {
+      query = e.target.value;
+      renderAll();
+    });
+
+    document.getElementById("exploreRecords").innerHTML = TW.records.map(renderRecordItem).join("");
+    document.getElementById("exploreIncidents").innerHTML = TW.reports.map(renderReportItem).join("");
+
+    function showExploreTab(tab) {
+      ["routes", "records", "incidents"].forEach((id) => {
+        document.getElementById("view-" + id).classList.toggle("hidden", id !== tab);
+      });
+      document.querySelectorAll("#exploreTabs .tab").forEach((t) => {
+        t.classList.toggle("active", t.dataset.tab === tab);
+      });
+    }
+    bindTabs("#exploreTabs", showExploreTab);
+
+    const params = new URLSearchParams(location.search);
+    if (params.get("tab") === "incidents") showExploreTab("incidents");
+    if (params.get("tab") === "records") showExploreTab("records");
+
+    renderAll();
+  </script>
+</body>
+</html>

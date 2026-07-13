@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>My Reports — TrailWatch HK</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div id="app-header"></div>
+
+  <main class="page">
+    <div class="container">
+      <div class="section-head">
+        <div>
+          <h1 class="page-title" style="margin:0" data-i18n="reports_title"></h1>
+          <p class="page-sub" style="margin-bottom:0" data-i18n="reports_sub"></p>
+        </div>
+        <button class="btn btn-primary" id="openReport" data-i18n="report_incident_btn"></button>
+      </div>
+
+      <div class="report-layout">
+        <div>
+          <div class="report-map" id="reportMap"></div>
+        </div>
+        <div class="report-list" id="reportList"></div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Form sheet: map stays fully visible above / behind — separate picker UI -->
+  <div id="reportFormOverlay" style="display:none;position:fixed;inset:0;z-index:150;background:rgba(11,66,26,0.35);align-items:flex-end;justify-content:center">
+    <div class="card" style="width:min(520px,100%);max-height:85vh;overflow:auto;padding:1.5rem;margin:0;border-radius:20px 20px 0 0" onclick="event.stopPropagation()">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+        <h2 style="font-size:1.15rem;color:var(--green-900)" data-i18n="report_modal_title"></h2>
+        <button type="button" id="closeReport" style="font-size:1.25rem;color:var(--text-muted)">✕</button>
+      </div>
+      <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:1rem">
+        <strong style="color:var(--green-900)" data-i18n="report_unsure"></strong><br />
+        <span data-i18n="report_unsure_body"></span>
+      </p>
+      <div class="form-group">
+        <label data-i18n="report_photos"></label>
+        <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:0.5rem" data-i18n="report_photos_hint"></p>
+        <button type="button" class="btn btn-amber btn-block" data-toast="📷" data-i18n="add_photos"></button>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem">
+        <div class="form-group">
+          <label data-i18n="date"></label>
+          <input class="form-input" type="text" value="29/05/2026" />
+        </div>
+        <div class="form-group">
+          <label data-i18n="time"></label>
+          <input class="form-input" type="text" value="15:36:48" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label data-i18n="category"></label>
+        <select class="form-select" id="reportCat">
+          <option value="waste"></option>
+          <option value="tree"></option>
+          <option value="vandalism"></option>
+          <option value="obstruction"></option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label data-i18n="location"></label>
+        <div class="loc-preview">
+          <div id="locAddress">Wing Wo Street 21, Central and Western, Hong Kong</div>
+          <div style="font-weight:700;color:var(--green-900);margin-top:0.25rem" id="locCoords">📍 22.285394, 114.153783</div>
+          <button type="button" id="openPicker" data-i18n="pick_on_map"></button>
+        </div>
+        <p style="font-size:0.75rem;color:var(--text-muted)" data-i18n="map_hint"></p>
+      </div>
+      <div class="form-group">
+        <label data-i18n="title_label"></label>
+        <input class="form-input" id="reportTitle" data-i18n-placeholder="add_title" />
+      </div>
+      <div class="form-group">
+        <label data-i18n="description"></label>
+        <textarea class="form-textarea" data-i18n-placeholder="tell_more"></textarea>
+      </div>
+      <button class="btn btn-primary btn-block btn-lg" id="confirmReport" data-i18n="confirm"></button>
+    </div>
+  </div>
+
+  <!-- Full-screen map picker — map is the hero, form sheet only at bottom -->
+  <div class="report-picker" id="reportPicker">
+    <div class="report-picker-map">
+      <div class="picker-map-hint" data-i18n="map_hint"></div>
+      <div id="pickerMap"></div>
+    </div>
+    <div class="report-picker-sheet">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem">
+        <strong style="color:var(--green-900)" data-i18n="pick_on_map"></strong>
+        <button type="button" id="closePicker" style="font-size:1.1rem">✕</button>
+      </div>
+      <div class="loc-preview" style="margin-bottom:1rem">
+        <div id="pickerCoords">📍 22.285394, 114.153783</div>
+      </div>
+      <button class="btn btn-primary btn-block" id="useLocation" data-i18n="confirm"></button>
+    </div>
+  </div>
+
+  <div id="app-footer"></div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="js/i18n.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/env-badge.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    document.documentElement.lang = TW.getLang() === "zh" ? "zh-Hant" : "en";
+    initShell("reports");
+
+    document.getElementById("reportList").innerHTML = TW.reports.map(renderReportItem).join("");
+
+    const cat = document.getElementById("reportCat");
+    cat.options[0].text = "🗑 " + TW.t("cat_waste");
+    cat.options[1].text = "🌳 " + TW.t("cat_tree");
+    cat.options[2].text = "👎 " + TW.t("cat_vandalism");
+    cat.options[3].text = "🚧 " + TW.t("cat_obstruction");
+
+    const map = L.map("reportMap").setView([22.32, 114.17], 11);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "© OpenStreetMap",
+    }).addTo(map);
+
+    TW.reports.forEach((r) => {
+      const icon = L.divIcon({
+        className: "",
+        html: `<div style="background:#d64545;color:white;padding:4px 8px;border-radius:8px;font-weight:700;font-size:12px;box-shadow:0 2px 8px rgba(0,0,0,.25)">⚠</div>`,
+        iconSize: [28, 28],
+        iconAnchor: [14, 14],
+      });
+      L.marker([r.lat, r.lng], { icon }).addTo(map).bindPopup(TW.tt(r, "title"));
+    });
+
+    let pinLat = 22.285394;
+    let pinLng = 114.153783;
+    let pickerMap, pickerMarker;
+
+    const formOverlay = document.getElementById("reportFormOverlay");
+    const picker = document.getElementById("reportPicker");
+
+    function openForm() {
+      formOverlay.style.display = "flex";
+    }
+    function closeForm() {
+      formOverlay.style.display = "none";
+    }
+
+    function openPicker() {
+      picker.classList.add("open");
+      setTimeout(() => {
+        if (!pickerMap) {
+          pickerMap = L.map("pickerMap").setView([pinLat, pinLng], 15);
+          L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            attribution: "© OpenStreetMap",
+          }).addTo(pickerMap);
+          pickerMarker = L.marker([pinLat, pinLng], { draggable: true }).addTo(pickerMap);
+          pickerMarker.on("dragend", () => {
+            const p = pickerMarker.getLatLng();
+            pinLat = p.lat;
+            pinLng = p.lng;
+            updateCoords();
+          });
+          pickerMap.on("click", (e) => {
+            pinLat = e.latlng.lat;
+            pinLng = e.latlng.lng;
+            pickerMarker.setLatLng(e.latlng);
+            updateCoords();
+          });
+        } else {
+          pickerMap.setView([pinLat, pinLng], 15);
+          pickerMarker.setLatLng([pinLat, pinLng]);
+          pickerMap.invalidateSize();
+        }
+        pickerMap.invalidateSize();
+        updateCoords();
+      }, 80);
+    }
+
+    function updateCoords() {
+      const text = "📍 " + pinLat.toFixed(6) + ", " + pinLng.toFixed(6);
+      document.getElementById("locCoords").textContent = text;
+      document.getElementById("pickerCoords").textContent = text;
+    }
+
+    document.getElementById("openReport").addEventListener("click", openForm);
+    document.getElementById("closeReport").addEventListener("click", closeForm);
+    formOverlay.addEventListener("click", (e) => {
+      if (e.target === formOverlay) closeForm();
+    });
+    document.getElementById("openPicker").addEventListener("click", () => {
+      formOverlay.style.display = "none";
+      openPicker();
+    });
+    document.getElementById("closePicker").addEventListener("click", () => {
+      picker.classList.remove("open");
+      openForm();
+    });
+    document.getElementById("useLocation").addEventListener("click", () => {
+      picker.classList.remove("open");
+      updateCoords();
+      openForm();
+      showToast(TW.getLang() === "zh" ? "位置已更新" : "Location updated");
+    });
+    document.getElementById("confirmReport").addEventListener("click", () => {
+      closeForm();
+      const result = TW.recordEnvAct("C", { note: "web_incident" });
+      if (result.ok) {
+        showToast(TW.t("env_toast_c") + " · " + TW.t("toast_report"));
+        if (result.leveledUp) {
+          setTimeout(() => showToast(TW.t("env_toast_level").replace("{n}", String(result.leveledUp))), 900);
+        }
+      } else {
+        showToast(TW.t("toast_report"));
+      }
+    });
+  </script>
+</body>
+</html>

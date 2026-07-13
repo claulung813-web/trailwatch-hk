@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>My Plans — TrailWatch HK</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div id="app-header"></div>
+
+  <main class="page">
+    <div class="container">
+      <h1 class="page-title" data-i18n="plan_title"></h1>
+      <p class="page-sub" data-i18n="plan_sub"></p>
+
+      <div class="app-cta-banner">
+        <div>
+          <h3 data-i18n="plan_banner_title"></h3>
+          <p data-i18n="plan_banner_body"></p>
+        </div>
+        <div class="actions">
+          <a class="btn btn-ghost" href="app/index.html" data-i18n="plan_open_app"></a>
+          <a class="btn" style="background:white;color:var(--green-900)" href="explore.html" data-i18n="plan_go_explore"></a>
+        </div>
+      </div>
+
+      <div id="planEmpty" class="card" style="padding:2rem;text-align:center;display:none">
+        <p style="color:var(--text-muted);margin-bottom:1rem" data-i18n="plan_empty"></p>
+        <a class="btn btn-primary" href="explore.html" data-i18n="plan_go_explore"></a>
+      </div>
+
+      <div class="trail-grid" id="planGrid"></div>
+    </div>
+  </main>
+
+  <div id="app-footer"></div>
+
+  <script src="js/i18n.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    document.documentElement.lang = TW.getLang() === "zh" ? "zh-Hant" : "en";
+    initShell("plan");
+
+    function render() {
+      const ids = TW.getPlans();
+      const trails = ids.map((id) => TW.trails.find((t) => t.id === id)).filter(Boolean);
+      const empty = document.getElementById("planEmpty");
+      const grid = document.getElementById("planGrid");
+      if (!trails.length) {
+        empty.style.display = "block";
+        grid.innerHTML = "";
+        return;
+      }
+      empty.style.display = "none";
+      grid.innerHTML = trails
+        .map(
+          (t) => `
+        ${renderTrailCard(t, { hidePlan: true })}
+        <div style="margin-top:-0.5rem;margin-bottom:0.5rem;display:flex;gap:0.5rem;grid-column:span 1">
+          <button class="btn btn-secondary" style="flex:1;font-size:0.8rem" data-remove="${t.id}">${TW.t("plan_remove")}</button>
+          <a class="btn btn-primary" style="flex:1;font-size:0.8rem" href="app/index.html?trail=${t.id}">${TW.t("plan_open_app")}</a>
+        </div>`
+        )
+        .join("");
+
+      // Fix layout: wrap each trail+actions
+      grid.innerHTML = trails
+        .map(
+          (t) => `
+        <div>
+          ${renderTrailCard(t, { hidePlan: true })}
+          <div style="display:flex;gap:0.5rem;margin-top:0.5rem">
+            <button class="btn btn-secondary" style="flex:1;font-size:0.8rem" data-remove="${t.id}">${TW.t("plan_remove")}</button>
+            <a class="btn btn-primary" style="flex:1;font-size:0.8rem" href="app/index.html?trail=${t.id}">${TW.t("plan_open_app")}</a>
+          </div>
+        </div>`
+        )
+        .join("");
+
+      grid.querySelectorAll("[data-remove]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          TW.togglePlan(btn.dataset.remove);
+          showToast(TW.t("toast_unplanned"));
+          render();
+        });
+      });
+    }
+
+    render();
+  </script>
+</body>
+</html>

@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Insights — TrailWatch HK</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div id="app-header"></div>
+
+  <main class="page topo-bg">
+    <div class="container" style="position:relative;z-index:1">
+      <div class="profile-header">
+        <img class="profile-avatar" id="avatar" alt="" style="width:64px;height:64px" />
+        <div>
+          <h1 class="page-title" style="margin:0">Insights</h1>
+          <div class="rank" id="rank"></div>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <h3>Pace Performance</h3>
+        <svg class="pace-chart" viewBox="0 0 480 160" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="paceFill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#3da855" stop-opacity="0.4"/>
+              <stop offset="100%" stop-color="#3da855" stop-opacity="0.05"/>
+            </linearGradient>
+          </defs>
+          <!-- grid -->
+          <g stroke="#e5e7eb" stroke-width="1">
+            <line x1="40" y1="20" x2="460" y2="20"/>
+            <line x1="40" y1="50" x2="460" y2="50"/>
+            <line x1="40" y1="80" x2="460" y2="80"/>
+            <line x1="40" y1="110" x2="460" y2="110"/>
+            <line x1="40" y1="140" x2="460" y2="140"/>
+          </g>
+          <text x="8" y="24" font-size="10" fill="#9ca3af">5</text>
+          <text x="4" y="84" font-size="10" fill="#9ca3af">15</text>
+          <text x="4" y="144" font-size="10" fill="#9ca3af">30</text>
+          <!-- avg area -->
+          <path fill="url(#paceFill)" d="M40,90 L110,85 L180,95 L250,80 L320,88 L390,75 L460,78 L460,140 L40,140 Z"/>
+          <path fill="none" stroke="#3da855" stroke-width="2.5" d="M40,90 L110,85 L180,95 L250,80 L320,88 L390,75 L460,78"/>
+          <!-- best pace -->
+          <path fill="none" stroke="#4a90c8" stroke-width="2.5" d="M40,110 L110,100 L180,105 L250,70 L320,85 L390,55 L460,60"/>
+          <circle cx="250" cy="70" r="4" fill="#4a90c8"/>
+          <circle cx="390" cy="55" r="4" fill="#4a90c8"/>
+          <circle cx="460" cy="60" r="4" fill="#4a90c8"/>
+          <text x="40" y="156" font-size="9" fill="#9ca3af">2020</text>
+          <text x="250" y="156" font-size="9" fill="#9ca3af">2023</text>
+          <text x="430" y="156" font-size="9" fill="#9ca3af">2026</text>
+        </svg>
+        <div style="display:flex;gap:1rem;font-size:0.75rem;margin-top:0.5rem;color:var(--text-muted)">
+          <span><span style="color:#3da855">●</span> Avg Pace</span>
+          <span><span style="color:#4a90c8">●</span> Best Pace</span>
+          <span style="margin-left:auto">min/km</span>
+        </div>
+        <div class="chart-summary">
+          <div class="box">
+            <div class="k">Overall Avg</div>
+            <div class="v" id="avgPace">15.3 min/km</div>
+          </div>
+          <div class="box">
+            <div class="k">All-Time Best</div>
+            <div class="v" id="bestPace">10.1 min/km</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <h3>Activity Trend</h3>
+        <div class="chart-bars" id="activityBars"></div>
+        <div class="insight-callout">
+          <span>↑ +18% Improved Consistency</span>
+          <small>Compared to last year's average.</small>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem">
+          <h3 style="margin:0">Distance Trend</h3>
+          <div class="toggle-pills" id="distToggle" style="margin:0">
+            <button class="active" data-mode="monthly">Monthly</button>
+            <button data-mode="yearly">Yearly</button>
+          </div>
+        </div>
+        <div class="chart-bars" id="distBars" style="margin-top:1rem"></div>
+      </div>
+
+      <div class="chart-card">
+        <h3>Performance Trend</h3>
+        <svg viewBox="0 0 480 120" style="width:100%;height:120px" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="perfFill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#0b421a" stop-opacity="0.3"/>
+              <stop offset="100%" stop-color="#0b421a" stop-opacity="0.02"/>
+            </linearGradient>
+          </defs>
+          <path fill="url(#perfFill)" d="M20,100 L100,85 L180,70 L260,55 L340,40 L420,25 L460,20 L460,120 L20,120 Z"/>
+          <path fill="none" stroke="#0b421a" stroke-width="2.5" d="M20,100 L100,85 L180,70 L260,55 L340,40 L420,25 L460,20"/>
+          <text x="20" y="14" font-size="9" fill="#9ca3af">2400</text>
+          <text x="20" y="118" font-size="9" fill="#9ca3af">0</text>
+        </svg>
+      </div>
+
+      <div class="chart-card">
+        <h3>Region Distribution</h3>
+        <div class="region-row">
+          <div>
+            <img src="https://images.unsplash.com/photo-1536599018102-9f803c140fc1?w=200&h=120&fit=crop" alt="HK"
+              style="width:100px;height:60px;object-fit:cover;border-radius:8px;margin-bottom:0.35rem" />
+            <div style="font-size:0.7rem;font-weight:700;color:var(--text-muted)">HK REGIONS</div>
+          </div>
+          <div class="donut"></div>
+          <div class="legend">
+            <div class="legend-item"><span class="legend-dot" style="background:var(--green-600)"></span> Sai Kung East — 45%</div>
+            <div class="legend-item"><span class="legend-dot" style="background:var(--sky)"></span> Sai Kung — 28%</div>
+            <div class="legend-item"><span class="legend-dot" style="background:var(--gold)"></span> Lantau — 18%</div>
+            <div class="legend-item"><span class="legend-dot" style="background:var(--coral)"></span> HK Island — 13%</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <div id="app-footer"></div>
+
+  <script src="js/i18n.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    document.documentElement.lang = TW.getLang() === "zh" ? "zh-Hant" : "en";
+    initShell("dashboard");
+    document.getElementById("avatar").src = TW.user.avatar;
+    document.getElementById("rank").textContent =
+      TW.user.name + " · " + (TW.getLang() === "zh" ? TW.user.rankZh : TW.user.rank);
+    document.getElementById("avgPace").textContent = TW.stats.avgPace + " min/km";
+    document.getElementById("bestPace").textContent = TW.stats.bestPace + " min/km";
+
+    const activity = [
+      { y: "2020", h: 35 },
+      { y: "2021", h: 48 },
+      { y: "2022", h: 55 },
+      { y: "2023", h: 72 },
+      { y: "2024", h: 90 },
+    ];
+    document.getElementById("activityBars").innerHTML = activity
+      .map(
+        (b) => `
+      <div class="bar-wrap">
+        <div class="bar" style="height:${b.h}%"></div>
+        <div class="bar-label">${b.y}</div>
+      </div>`
+      )
+      .join("");
+
+    const monthly = [
+      { l: "Jan", h: 40 }, { l: "Feb", h: 55 }, { l: "Mar", h: 70 },
+      { l: "Apr", h: 62 }, { l: "May", h: 85 }, { l: "Jun", h: 50 },
+      { l: "Jul", h: 45 }, { l: "Aug", h: 38 }, { l: "Sep", h: 68 },
+      { l: "Oct", h: 92 }, { l: "Nov", h: 78 }, { l: "Dec", h: 60 },
+    ];
+    const yearly = [
+      { l: "2020", h: 40 }, { l: "2021", h: 55 }, { l: "2022", h: 65 },
+      { l: "2023", h: 80 }, { l: "2024", h: 88 }, { l: "2025", h: 70 },
+    ];
+
+    function renderDist(data) {
+      document.getElementById("distBars").innerHTML = data
+        .map(
+          (b) => `
+        <div class="bar-wrap">
+          <div class="bar" style="height:${b.h}%;background:linear-gradient(to top,var(--green-900),var(--green-600))"></div>
+          <div class="bar-label">${b.l}</div>
+        </div>`
+        )
+        .join("");
+    }
+    renderDist(monthly);
+
+    document.querySelectorAll("#distToggle button").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll("#distToggle button").forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        renderDist(btn.dataset.mode === "yearly" ? yearly : monthly);
+      });
+    });
+  </script>
+</body>
+</html>

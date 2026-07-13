@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TrailWatch HK — Community Home</title>
+  <meta name="description" content="Plan Hong Kong trails on the web, track them in the TrailWatch app." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div id="app-header"></div>
+
+  <main class="page">
+    <div class="container">
+      <section class="hero">
+        <div class="hero-bg"></div>
+        <div class="hero-content">
+          <div class="hero-badge" data-i18n="hero_badge"></div>
+          <h1 data-i18n="hero_title"></h1>
+          <p data-i18n="hero_desc"></p>
+          <div class="hero-actions">
+            <a class="btn btn-ghost" href="explore.html" data-i18n="hero_cta_explore"></a>
+            <a class="btn btn-ghost" href="plan.html" data-i18n="hero_cta_plan"></a>
+          </div>
+        </div>
+      </section>
+
+      <div class="app-cta-banner">
+        <div>
+          <h3 data-i18n="plan_banner_title"></h3>
+          <p data-i18n="plan_banner_body"></p>
+        </div>
+        <div class="actions">
+          <a class="btn btn-ghost" href="app/index.html" data-i18n="nav_app"></a>
+          <a class="btn" style="background:white;color:var(--green-900)" href="explore.html" data-i18n="hero_cta_explore"></a>
+        </div>
+      </div>
+
+      <div class="tabs" id="homeTabs">
+        <button class="tab active" data-tab="feed" data-i18n="tab_feed"></button>
+        <button class="tab" data-tab="meetups" data-i18n="tab_meetups"></button>
+        <button class="tab" data-tab="memories" data-i18n="tab_memories"></button>
+      </div>
+
+      <div class="layout-split">
+        <div>
+          <div id="panel-feed"></div>
+          <div id="panel-meetups" class="hidden">
+            <div class="section-head">
+              <h2 data-i18n="upcoming_meetups"></h2>
+            </div>
+            <div class="trail-grid" id="meetupGrid"></div>
+          </div>
+          <div id="panel-memories" class="hidden">
+            <div class="section-head">
+              <h2 data-i18n="your_memories"></h2>
+              <span class="meta" data-i18n="from_records"></span>
+            </div>
+            <div class="record-list" id="memoriesList"></div>
+          </div>
+        </div>
+
+        <aside class="sticky-side">
+          <div class="card" style="padding:1.25rem;margin-bottom:1rem">
+            <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1rem">
+              <img class="avatar-sm" id="sideAvatar" alt="" style="width:48px;height:48px" />
+              <div>
+                <strong id="sideName"></strong>
+                <div class="rank" id="sideRank" style="margin:0;font-size:0.8rem"></div>
+              </div>
+            </div>
+            <div class="stats-grid" style="margin-bottom:1rem">
+              <div class="stat-box">
+                <div class="value" id="sideRecords">—</div>
+                <div class="label" data-i18n="records"></div>
+              </div>
+              <div class="stat-box">
+                <div class="value" id="sideKm">—</div>
+                <div class="label" data-i18n="km_hiked"></div>
+              </div>
+            </div>
+            <a class="btn btn-primary btn-block" href="dashboard.html" data-i18n="open_dashboard"></a>
+          </div>
+
+          <div class="card" style="padding:1.25rem">
+            <h3 style="font-size:0.95rem;margin-bottom:0.75rem;color:var(--green-900)" data-i18n="quick_links"></h3>
+            <a href="explore.html" style="display:block;padding:0.5rem 0;font-size:0.875rem;font-weight:500" data-i18n="browse_routes"></a>
+            <a href="plan.html" style="display:block;padding:0.5rem 0;font-size:0.875rem;font-weight:500" data-i18n="footer_plan"></a>
+            <a href="reports.html" style="display:block;padding:0.5rem 0;font-size:0.875rem;font-weight:500" data-i18n="report_incident"></a>
+            <a href="trees.html" style="display:block;padding:0.5rem 0;font-size:0.875rem;font-weight:500" data-i18n="my_trees"></a>
+            <a href="app/index.html" style="display:block;padding:0.5rem 0;font-size:0.875rem;font-weight:600;color:var(--amber)" data-i18n="get_app"></a>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </main>
+
+  <div id="app-footer"></div>
+
+  <script src="js/i18n.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    document.documentElement.lang = TW.getLang() === "zh" ? "zh-Hant" : "en";
+    initShell("home");
+
+    document.getElementById("sideAvatar").src = TW.user.avatar;
+    document.getElementById("sideName").textContent = TW.user.name;
+    document.getElementById("sideRank").textContent =
+      "🦶 " + (TW.getLang() === "zh" ? TW.user.rankZh : TW.user.rank);
+    document.getElementById("sideRecords").textContent = TW.stats.records;
+    document.getElementById("sideKm").textContent = TW.stats.distanceKm.toLocaleString();
+
+    document.getElementById("panel-feed").innerHTML = TW.feed.map(renderFeedCard).join("");
+    bindLikes();
+
+    document.getElementById("meetupGrid").innerHTML = TW.meetups
+      .map(
+        (m) => `
+      <article class="trail-card">
+        <div class="trail-card-img"><img src="${m.image}" alt="" loading="lazy" /></div>
+        <div class="trail-card-body">
+          <h3>${TW.tt(m, "title")}</h3>
+          <p class="desc">${TW.tt(m, "date")} · ${TW.tt(m, "place")}</p>
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:0.8rem;color:var(--text-muted)">${m.spots} ${TW.t("spots_left")}</span>
+            <button class="btn btn-primary" style="padding:0.4rem 0.9rem;font-size:0.8rem" onclick="showToast(TW.t('toast_joined'))">${TW.t("join")}</button>
+          </div>
+        </div>
+      </article>`
+      )
+      .join("");
+
+    document.getElementById("memoriesList").innerHTML = TW.records.slice(0, 4).map(renderRecordItem).join("");
+
+    bindTabs("#homeTabs", (tab) => {
+      ["feed", "meetups", "memories"].forEach((id) => {
+        document.getElementById("panel-" + id).classList.toggle("hidden", id !== tab);
+      });
+    });
+  </script>
+</body>
+</html>

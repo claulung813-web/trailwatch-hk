@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>TrailWatch App — Track</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="../css/styles.css" />
+  <style>
+    body { margin: 0; }
+    .site-header, .site-footer { display: none !important; }
+    #appMap { width: 100%; height: 100%; }
+    .phone-topbar {
+      position: absolute; top: 0; left: 0; right: 0; z-index: 20;
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 2.4rem 0.75rem 0.5rem; pointer-events: none;
+    }
+    .phone-topbar > * { pointer-events: auto; }
+    .round-btn {
+      width: 40px; height: 40px; border-radius: 50%; background: white;
+      box-shadow: 0 2px 10px rgba(0,0,0,.15); display: grid; place-items: center;
+      font-weight: 700; color: #111;
+    }
+    .gps-pill {
+      background: white; border-radius: 999px; padding: 0.4rem 0.75rem;
+      font-size: 0.72rem; font-weight: 700; color: var(--green-900);
+      box-shadow: 0 2px 10px rgba(0,0,0,.12); display: flex; align-items: center; gap: 0.35rem;
+    }
+    .gps-pill .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green-500); }
+    .env-modal {
+      position: absolute; inset: 0; z-index: 45; display: none;
+      background: rgba(0,0,0,0.35); align-items: flex-end;
+    }
+    .env-modal.open { display: flex; }
+    .env-modal-sheet {
+      background: white; border-radius: 20px 20px 0 0; padding: 1.15rem 1.2rem 1.35rem;
+      width: 100%; max-height: 70%; overflow-y: auto;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-page">
+    <div class="app-page-top">
+      <a href="../plan.html" id="backWeb"></a>
+      <p style="font-size:0.8rem;opacity:0.8;margin-top:0.5rem" id="appNote"></p>
+      <div id="envPillWrap" style="margin-top:0.5rem"></div>
+      <div class="lang-switch" style="margin:0.75rem auto 0;width:fit-content;background:rgba(255,255,255,0.15);border-color:rgba(255,255,255,0.25)">
+        <button type="button" data-lang="en" style="color:#fff">EN</button>
+        <button type="button" data-lang="zh" style="color:#fff">繁</button>
+      </div>
+    </div>
+
+    <div class="phone-frame">
+      <div class="phone-notch"></div>
+      <div class="phone-screen">
+        <div class="map-shell">
+          <div id="appMap"></div>
+          <div class="phone-topbar">
+            <a class="round-btn" href="../profile.html" title="Profile">‹</a>
+            <div class="gps-pill"><span class="dot"></span><span id="gpsText"></span></div>
+          </div>
+          <div class="map-controls" style="top:4.5rem">
+            <button class="ctrl" id="btnLocate" type="button">◎</button>
+            <button class="ctrl" type="button" id="btnLayers">🗺</button>
+            <button class="ctrl" type="button">⬆</button>
+          </div>
+        </div>
+
+        <div class="start-bar" id="idleBar" style="padding:0.85rem 1rem">
+          <button class="action-circle" type="button" id="idleReport">
+            <span class="circle red">⚠</span>
+            <span id="lblReport1"></span>
+          </button>
+          <button class="btn-start" id="btnStart"><span id="lblStart"></span></button>
+          <div style="width:56px"></div>
+        </div>
+
+        <div class="track-sheet hidden" id="activeSheet" style="padding:1rem 1.1rem 1.15rem">
+          <div class="track-actions" style="gap:0.85rem;flex-wrap:wrap">
+            <button class="action-circle" type="button" id="activeReport">
+              <span class="circle red">⚠</span>
+              <span id="lblReport2"></span>
+            </button>
+            <button class="action-circle" type="button" id="btnPause">
+              <span class="circle amber">⏸</span>
+              <span id="lblPause"></span>
+            </button>
+            <button class="action-circle" type="button" id="btnPhoto">
+              <span class="circle blue">📷</span>
+              <span id="lblPhoto"></span>
+            </button>
+            <button class="action-circle" type="button" id="btnCleanup">
+              <span class="circle green">🧹</span>
+              <span id="lblCleanup">D</span>
+            </button>
+          </div>
+          <div class="track-metrics cols-6">
+            <div class="metric"><div class="val" id="mTime">00:00:00</div><div class="lbl" id="lTime"></div></div>
+            <div class="metric"><div class="val" id="mDist">0.00 km</div><div class="lbl" id="lDist"></div></div>
+            <div class="metric"><div class="val" id="mGain">0 m</div><div class="lbl" id="lGain"></div></div>
+            <div class="metric"><div class="val" id="mPace">— /km</div><div class="lbl" id="lPace"></div></div>
+            <div class="metric"><div class="val" id="mCal">0 kcal</div><div class="lbl" id="lCal"></div></div>
+            <div class="metric"><div class="val" id="mLoss">0 m</div><div class="lbl" id="lLoss"></div></div>
+          </div>
+        </div>
+
+        <div class="track-sheet hidden" id="pauseSheet" style="padding:1rem 1.1rem 1.15rem;max-height:55%;overflow:auto">
+          <div class="track-actions" style="gap:1.5rem">
+            <button class="action-circle" type="button" id="btnDiscard">
+              <span class="circle red">🗑</span>
+              <span id="lblDiscard"></span>
+            </button>
+            <button class="action-circle" type="button" id="btnResume">
+              <span class="circle amber">▶</span>
+              <span id="lblResume"></span>
+            </button>
+            <button class="action-circle" type="button" id="btnSave">
+              <span class="circle green">💾</span>
+              <span id="lblSave"></span>
+            </button>
+          </div>
+          <div class="track-metrics" style="margin-bottom:0.85rem">
+            <div class="metric"><div class="val" id="pTime">00:00:00</div><div class="lbl" id="plDur"></div></div>
+            <div class="metric"><div class="val" id="pDist">0.00 km</div><div class="lbl" id="plDist"></div></div>
+            <div class="metric"><div class="val" id="pGain">0 m</div><div class="lbl" id="plGain"></div></div>
+          </div>
+          <div class="form-group" style="margin-bottom:0.65rem">
+            <div style="display:flex;justify-content:space-between">
+              <label id="lblTitle"></label>
+              <label style="font-weight:500;color:var(--text-muted);font-size:0.8rem;display:flex;gap:0.35rem;align-items:center;margin:0">
+                <span id="lblPrivate"></span> <input type="checkbox" />
+              </label>
+            </div>
+            <input class="form-input" id="hikeTitle" />
+          </div>
+          <div class="form-group" style="margin:0">
+            <label id="lblDetails"></label>
+            <textarea class="form-textarea" id="hikeDetails" style="min-height:64px"></textarea>
+          </div>
+        </div>
+
+        <!-- Act A: start checklist -->
+        <div class="env-modal" id="modalA">
+          <div class="env-modal-sheet">
+            <strong style="color:var(--green-900)" id="aTitle"></strong>
+            <p style="font-size:0.8rem;color:var(--text-muted);margin:0.35rem 0 0" id="aHint"></p>
+            <label class="env-sheet-check">
+              <input type="checkbox" id="checkA" />
+              <span id="aLabel"></span>
+            </label>
+            <div style="display:flex;gap:0.5rem">
+              <button type="button" class="btn btn-secondary" style="flex:1" id="skipA"></button>
+              <button type="button" class="btn btn-primary" style="flex:1" id="confirmA"></button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Act E: stop checklist -->
+        <div class="env-modal" id="modalE">
+          <div class="env-modal-sheet">
+            <strong style="color:var(--green-900)" id="eTitle"></strong>
+            <p style="font-size:0.8rem;color:var(--text-muted);margin:0.35rem 0 0" id="eHint"></p>
+            <label class="env-sheet-check">
+              <input type="checkbox" id="checkE" />
+              <span id="eLabel"></span>
+            </label>
+            <div style="display:flex;gap:0.5rem">
+              <button type="button" class="btn btn-secondary" style="flex:1" id="skipE"></button>
+              <button type="button" class="btn btn-primary" style="flex:1" id="confirmE"></button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Act B: nature photo -->
+        <div class="env-modal" id="modalB">
+          <div class="env-modal-sheet">
+            <div style="display:flex;justify-content:space-between">
+              <strong style="color:var(--green-900)" id="bTitle"></strong>
+              <button type="button" id="closeB">✕</button>
+            </div>
+            <p style="font-size:0.8rem;color:var(--text-muted);margin:0.35rem 0" id="bHint"></p>
+            <div class="photo-type-grid">
+              <button type="button" class="active" data-ptype="landscape" id="ptL"></button>
+              <button type="button" data-ptype="animal" id="ptA"></button>
+              <button type="button" data-ptype="plant" id="ptP"></button>
+            </div>
+            <button type="button" class="btn btn-primary btn-block" id="submitB"></button>
+          </div>
+        </div>
+
+        <!-- Act D: cleanup (no same-spot required) -->
+        <div class="env-modal" id="modalD">
+          <div class="env-modal-sheet">
+            <div style="display:flex;justify-content:space-between">
+              <strong style="color:var(--green-900)" id="dTitle"></strong>
+              <button type="button" id="closeD">✕</button>
+            </div>
+            <p style="font-size:0.8rem;color:var(--text-muted);margin:0.35rem 0" id="dHint"></p>
+            <div class="cleanup-slots">
+              <button type="button" class="cleanup-slot" id="slotBefore"><span>📷</span><span id="dBefore"></span></button>
+              <button type="button" class="cleanup-slot" id="slotAfter"><span>📷</span><span id="dAfter"></span></button>
+            </div>
+            <button type="button" class="btn btn-primary btn-block" id="submitD" disabled></button>
+          </div>
+        </div>
+
+        <!-- Report — Act C -->
+        <div class="app-report-sheet" id="reportSheet">
+          <div class="map-part">
+            <div id="reportMiniMap" style="width:100%;height:100%"></div>
+            <div class="picker-map-hint" id="reportMapHint"></div>
+          </div>
+          <div class="form-part">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem">
+              <strong style="color:var(--green-900)" id="reportTitle"></strong>
+              <button type="button" id="closeAppReport">✕</button>
+            </div>
+            <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:0.75rem" id="reportLive"></p>
+            <div class="loc-preview" style="margin-bottom:0.75rem">
+              <div id="liveCoords">📍 —</div>
+            </div>
+            <div class="form-group" style="margin-bottom:0.65rem">
+              <label id="lblCat"></label>
+              <select class="form-select" id="appCat">
+                <option value="waste"></option>
+                <option value="tree"></option>
+                <option value="vandalism"></option>
+                <option value="obstruction"></option>
+              </select>
+            </div>
+            <button type="button" class="btn btn-amber btn-block" style="margin-bottom:0.65rem" id="appAddPhotos"></button>
+            <button class="btn btn-primary btn-block" id="submitAppReport"></button>
+          </div>
+        </div>
+
+        <nav class="app-bottom-nav">
+          <a href="../index.html"><span class="ico">🏠</span><span id="nHome"></span></a>
+          <a href="../explore.html"><span class="ico">🧭</span><span id="nExplore"></span></a>
+          <a href="index.html" class="active"><span class="ico">✈</span><span id="nTrack"></span></a>
+          <a href="../profile.html"><span class="ico">👤</span><span id="nDash"></span></a>
+        </nav>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="../js/i18n.js"></script>
+  <script src="../js/data.js"></script>
+  <script src="../js/env-badge.js"></script>
+  <script src="../js/app.js"></script>
+  <script>
+    document.documentElement.lang = TW.getLang() === "zh" ? "zh-Hant" : "en";
+    const lang = TW.getLang();
+    document.querySelectorAll(".lang-switch button").forEach((b) => {
+      b.classList.toggle("active", b.dataset.lang === lang);
+      b.addEventListener("click", () => { TW.setLang(b.dataset.lang); location.reload(); });
+    });
+
+    const hikeId = "hike_" + Date.now();
+    let hikeStarted = false;
+    let photoType = "landscape";
+    let cleanupBefore = false;
+    let cleanupAfter = false;
+    let pendingStart = false;
+    let pendingSave = false;
+
+    function refreshEnvPill() {
+      const st = TW.getEnvState();
+      const L = TW.getEnvLevel(st);
+      document.getElementById("envPillWrap").innerHTML =
+        `<span class="env-mini-pill" style="background:rgba(255,255,255,0.2);border-color:rgba(255,255,255,0.35);color:#fff">🌿 L${L} · A${st.A} B${st.B} C${st.C} D${st.D} E${st.E}</span>`;
+    }
+
+    function notifyAct(result, toastKey) {
+      if (!result.ok) {
+        if (result.reason === "per_hike_cap") showToast(TW.t("env_toast_cap"));
+        else if (result.reason === "quota_full") showToast(TW.t("env_toast_quota"));
+        return false;
+      }
+      showToast(TW.t(toastKey));
+      if (result.leveledUp) {
+        setTimeout(() => showToast(TW.t("env_toast_level").replace("{n}", String(result.leveledUp))), 900);
+      }
+      refreshEnvPill();
+      return true;
+    }
+
+    function i18nUI() {
+      const t = TW.t;
+      document.getElementById("backWeb").textContent = t("app_back_web");
+      document.getElementById("appNote").textContent = t("app_tracking_note");
+      document.getElementById("gpsText").textContent = t("app_gps_ready");
+      document.getElementById("lblStart").textContent = "▶ " + t("app_start");
+      document.getElementById("lblReport1").textContent = t("app_report");
+      document.getElementById("lblReport2").textContent = t("app_report");
+      document.getElementById("lblPause").textContent = t("app_pause");
+      document.getElementById("lblPhoto").textContent = t("app_photo");
+      document.getElementById("lblCleanup").textContent = t("env_act_d_short");
+      document.getElementById("lblDiscard").textContent = t("app_discard");
+      document.getElementById("lblResume").textContent = t("app_resume");
+      document.getElementById("lblSave").textContent = t("app_save");
+      ["lTime","plDur"].forEach((id) => (document.getElementById(id).textContent = t("app_duration")));
+      ["lDist","plDist"].forEach((id) => (document.getElementById(id).textContent = t("app_distance")));
+      ["lGain","plGain"].forEach((id) => (document.getElementById(id).textContent = t("app_elev_gain")));
+      document.getElementById("lPace").textContent = t("app_pace");
+      document.getElementById("lCal").textContent = t("app_calories");
+      document.getElementById("lLoss").textContent = t("app_elev_loss");
+      document.getElementById("lblTitle").textContent = t("app_hike_title");
+      document.getElementById("lblPrivate").textContent = t("app_private");
+      document.getElementById("lblDetails").textContent = t("app_hike_details");
+      document.getElementById("hikeTitle").placeholder = t("app_title_ph");
+      document.getElementById("hikeDetails").placeholder = t("app_details_ph");
+      document.getElementById("reportTitle").textContent = t("app_report_while");
+      document.getElementById("reportLive").textContent = t("app_report_live") + " · " + t("env_act_c_short");
+      document.getElementById("reportMapHint").textContent = t("map_hint");
+      document.getElementById("lblCat").textContent = t("category");
+      document.getElementById("appAddPhotos").textContent = t("add_photos");
+      document.getElementById("submitAppReport").textContent = t("confirm");
+      const cat = document.getElementById("appCat");
+      cat.options[0].text = t("cat_waste");
+      cat.options[1].text = t("cat_tree");
+      cat.options[2].text = t("cat_vandalism");
+      cat.options[3].text = t("cat_obstruction");
+      document.getElementById("nHome").textContent = t("app_home");
+      document.getElementById("nExplore").textContent = t("app_explore");
+      document.getElementById("nTrack").textContent = t("app_track");
+      document.getElementById("nDash").textContent = t("app_dashboard");
+
+      document.getElementById("aTitle").textContent = t("env_start_title");
+      document.getElementById("aHint").textContent = t("env_start_hint");
+      document.getElementById("aLabel").textContent = t("env_act_a_label");
+      document.getElementById("skipA").textContent = t("env_skip");
+      document.getElementById("confirmA").textContent = t("env_continue");
+      document.getElementById("eTitle").textContent = t("env_stop_title");
+      document.getElementById("eHint").textContent = t("env_stop_hint");
+      document.getElementById("eLabel").textContent = t("env_act_e_label");
+      document.getElementById("skipE").textContent = t("env_skip");
+      document.getElementById("confirmE").textContent = t("app_save");
+      document.getElementById("bTitle").textContent = t("env_photo_title");
+      document.getElementById("bHint").textContent = t("env_photo_hint");
+      document.getElementById("ptL").textContent = "🏔 " + t("env_photo_landscape");
+      document.getElementById("ptA").textContent = "🦊 " + t("env_photo_animal");
+      document.getElementById("ptP").textContent = "🌿 " + t("env_photo_plant");
+      document.getElementById("submitB").textContent = t("confirm") + " (+B)";
+      document.getElementById("dTitle").textContent = t("env_cleanup_title");
+      document.getElementById("dHint").textContent = t("env_cleanup_hint");
+      document.getElementById("dBefore").textContent = t("env_cleanup_before");
+      document.getElementById("dAfter").textContent = t("env_cleanup_after");
+      document.getElementById("submitD").textContent = t("env_cleanup_submit");
+    }
+    i18nUI();
+    refreshEnvPill();
+
+    const route = [
+      [22.348, 114.242], [22.350, 114.248], [22.353, 114.252],
+      [22.357, 114.255], [22.360, 114.258], [22.363, 114.262], [22.365, 114.268],
+    ];
+    const map = L.map("appMap", { zoomControl: false }).setView(route[0], 14);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "© OSM", maxZoom: 18 }).addTo(map);
+    L.polyline([[22.345, 114.24], [22.355, 114.25], [22.368, 114.27]], { color: "#f5a623", weight: 2, dashArray: "6 6", opacity: 0.7 }).addTo(map);
+    let pathLine = null;
+    let marker = L.circleMarker(route[0], { radius: 8, color: "#fff", weight: 3, fillColor: "#0b421a", fillOpacity: 1 }).addTo(map);
+
+    let state = "idle";
+    let seconds = 0, dist = 0, gain = 0, loss = 0, calories = 0, routeIdx = 0, timer = null;
+    const idleBar = document.getElementById("idleBar");
+    const activeSheet = document.getElementById("activeSheet");
+    const pauseSheet = document.getElementById("pauseSheet");
+
+    function showState(s) {
+      state = s;
+      idleBar.classList.toggle("hidden", s !== "idle");
+      activeSheet.classList.toggle("hidden", s !== "active");
+      pauseSheet.classList.toggle("hidden", s !== "paused");
+      document.getElementById("gpsText").textContent =
+        s === "idle" ? TW.t("app_gps_ready") : s === "active" ? TW.t("app_gps_good") : TW.t("app_gps_paused");
+    }
+
+    function fmtTime(sec) {
+      const h = String(Math.floor(sec / 3600)).padStart(2, "0");
+      const m = String(Math.floor((sec % 3600) / 60)).padStart(2, "0");
+      const s = String(sec % 60).padStart(2, "0");
+      return h + ":" + m + ":" + s;
+    }
+    function paceStr() {
+      if (dist < 0.1) return "— /km";
+      const minPerKm = seconds / 60 / dist;
+      const m = Math.floor(minPerKm);
+      const s = Math.round((minPerKm - m) * 60);
+      return m + ":" + String(s).padStart(2, "0") + " /km";
+    }
+    function tick() {
+      seconds += 1;
+      dist += 0.012 + Math.random() * 0.008;
+      const elevDelta = (Math.random() - 0.45) * 8;
+      if (elevDelta > 0) gain += elevDelta; else loss += -elevDelta;
+      calories = Math.round(dist * 95);
+      if (routeIdx < route.length - 1 && seconds % 8 === 0) {
+        routeIdx++;
+        const sliced = route.slice(0, routeIdx + 1);
+        if (pathLine) map.removeLayer(pathLine);
+        pathLine = L.polyline(sliced, { color: "#2563eb", weight: 5 }).addTo(map);
+        marker.setLatLng(route[routeIdx]);
+        map.panTo(route[routeIdx]);
+      }
+      document.getElementById("mTime").textContent = fmtTime(seconds);
+      document.getElementById("mDist").textContent = dist.toFixed(2) + " km";
+      document.getElementById("mGain").textContent = Math.round(gain) + " m";
+      document.getElementById("mLoss").textContent = Math.round(loss) + " m";
+      document.getElementById("mPace").textContent = paceStr();
+      document.getElementById("mCal").textContent = calories + " kcal";
+    }
+
+    function beginTracking() {
+      hikeStarted = true;
+      showState("active");
+      if (!timer) timer = setInterval(tick, 1000);
+      if (!pathLine) pathLine = L.polyline([route[0]], { color: "#2563eb", weight: 5 }).addTo(map);
+      showToast(TW.getLang() === "zh" ? "已開始追蹤" : "Tracking started");
+    }
+
+    function finishSave() {
+      clearInterval(timer); timer = null;
+      showToast(TW.t("toast_saved"));
+      setTimeout(() => (location.href = "../profile.html"), 900);
+    }
+
+    document.getElementById("btnStart").addEventListener("click", () => {
+      pendingStart = true;
+      document.getElementById("checkA").checked = false;
+      document.getElementById("modalA").classList.add("open");
+    });
+
+    document.getElementById("confirmA").addEventListener("click", () => {
+      document.getElementById("modalA").classList.remove("open");
+      if (document.getElementById("checkA").checked) {
+        notifyAct(TW.recordEnvAct("A", { hikeId }), "env_toast_a");
+      }
+      beginTracking();
+    });
+    document.getElementById("skipA").addEventListener("click", () => {
+      document.getElementById("modalA").classList.remove("open");
+      beginTracking();
+    });
+
+    document.getElementById("btnPause").addEventListener("click", () => {
+      clearInterval(timer); timer = null;
+      document.getElementById("pTime").textContent = fmtTime(seconds);
+      document.getElementById("pDist").textContent = dist.toFixed(2) + " km";
+      document.getElementById("pGain").textContent = Math.round(gain) + " m";
+      showState("paused");
+    });
+    document.getElementById("btnResume").addEventListener("click", () => {
+      showState("active");
+      if (!timer) timer = setInterval(tick, 1000);
+    });
+    document.getElementById("btnDiscard").addEventListener("click", () => {
+      clearInterval(timer); timer = null;
+      seconds = dist = gain = loss = calories = routeIdx = 0;
+      hikeStarted = false;
+      if (pathLine) { map.removeLayer(pathLine); pathLine = null; }
+      marker.setLatLng(route[0]);
+      showState("idle");
+      showToast(TW.getLang() === "zh" ? "已捨棄行程" : "Hike discarded");
+    });
+    document.getElementById("btnSave").addEventListener("click", () => {
+      pendingSave = true;
+      document.getElementById("checkE").checked = false;
+      document.getElementById("modalE").classList.add("open");
+    });
+    document.getElementById("confirmE").addEventListener("click", () => {
+      document.getElementById("modalE").classList.remove("open");
+      if (document.getElementById("checkE").checked) {
+        notifyAct(TW.recordEnvAct("E", { hikeId }), "env_toast_e");
+      }
+      finishSave();
+    });
+    document.getElementById("skipE").addEventListener("click", () => {
+      document.getElementById("modalE").classList.remove("open");
+      finishSave();
+    });
+
+    // Act B
+    document.getElementById("btnPhoto").addEventListener("click", () => {
+      if (state !== "active") {
+        showToast(TW.getLang() === "zh" ? "請在追蹤中拍攝" : "Take photos during active tracking");
+        return;
+      }
+      document.getElementById("modalB").classList.add("open");
+    });
+    document.querySelectorAll(".photo-type-grid button").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".photo-type-grid button").forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        photoType = btn.dataset.ptype;
+      });
+    });
+    document.getElementById("closeB").addEventListener("click", () => document.getElementById("modalB").classList.remove("open"));
+    document.getElementById("submitB").addEventListener("click", () => {
+      const result = TW.recordEnvAct("B", {
+        hikeId,
+        duringTrack: state === "active",
+        photoType: "nature_" + photoType,
+        note: photoType,
+      });
+      document.getElementById("modalB").classList.remove("open");
+      notifyAct(result, "env_toast_b");
+    });
+
+    // Act D — before/after optional pairing, no same-spot; +1 D when at least one photo logged
+    function updateCleanupSubmit() {
+      document.getElementById("submitD").disabled = !(cleanupBefore || cleanupAfter);
+    }
+    document.getElementById("btnCleanup").addEventListener("click", () => {
+      cleanupBefore = cleanupAfter = false;
+      document.getElementById("slotBefore").classList.remove("filled");
+      document.getElementById("slotAfter").classList.remove("filled");
+      updateCleanupSubmit();
+      document.getElementById("modalD").classList.add("open");
+    });
+    document.getElementById("slotBefore").addEventListener("click", () => {
+      cleanupBefore = true;
+      document.getElementById("slotBefore").classList.add("filled");
+      updateCleanupSubmit();
+    });
+    document.getElementById("slotAfter").addEventListener("click", () => {
+      cleanupAfter = true;
+      document.getElementById("slotAfter").classList.add("filled");
+      updateCleanupSubmit();
+    });
+    document.getElementById("closeD").addEventListener("click", () => document.getElementById("modalD").classList.remove("open"));
+    document.getElementById("submitD").addEventListener("click", () => {
+      const n = (cleanupBefore ? 1 : 0) + (cleanupAfter ? 1 : 0);
+      const result = TW.recordEnvAct("D", {
+        hikeId,
+        photoCount: n,
+        photoType: "cleanup",
+        note: (cleanupBefore ? "before" : "") + (cleanupAfter ? "+after" : ""),
+      });
+      document.getElementById("modalD").classList.remove("open");
+      notifyAct(result, "env_toast_d");
+    });
+
+    document.getElementById("btnLocate").addEventListener("click", () => {
+      map.setView(route[Math.min(routeIdx, route.length - 1)], 14);
+    });
+
+    // Act C — report
+    let reportMap, reportMarker;
+    const reportSheet = document.getElementById("reportSheet");
+    function openReport() {
+      const pos = marker.getLatLng();
+      document.getElementById("liveCoords").textContent = "📍 " + pos.lat.toFixed(6) + ", " + pos.lng.toFixed(6);
+      reportSheet.classList.add("open");
+      setTimeout(() => {
+        if (!reportMap) {
+          reportMap = L.map("reportMiniMap", { zoomControl: false }).setView(pos, 15);
+          L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 18 }).addTo(reportMap);
+          reportMarker = L.marker(pos, { draggable: true }).addTo(reportMap);
+          reportMarker.on("dragend", () => {
+            const p = reportMarker.getLatLng();
+            document.getElementById("liveCoords").textContent = "📍 " + p.lat.toFixed(6) + ", " + p.lng.toFixed(6);
+          });
+          reportMap.on("click", (e) => {
+            reportMarker.setLatLng(e.latlng);
+            document.getElementById("liveCoords").textContent =
+              "📍 " + e.latlng.lat.toFixed(6) + ", " + e.latlng.lng.toFixed(6);
+          });
+        } else {
+          reportMap.setView(pos, 15);
+          reportMarker.setLatLng(pos);
+          reportMap.invalidateSize();
+        }
+        reportMap.invalidateSize();
+      }, 60);
+    }
+    document.getElementById("idleReport").addEventListener("click", openReport);
+    document.getElementById("activeReport").addEventListener("click", openReport);
+    document.getElementById("closeAppReport").addEventListener("click", () => reportSheet.classList.remove("open"));
+    document.getElementById("submitAppReport").addEventListener("click", () => {
+      reportSheet.classList.remove("open");
+      const result = TW.recordEnvAct("C", { hikeId, note: "incident" });
+      if (result.ok) {
+        showToast(TW.t("env_toast_c") + " · " + TW.t("toast_report"));
+        if (result.leveledUp) {
+          setTimeout(() => showToast(TW.t("env_toast_level").replace("{n}", String(result.leveledUp))), 900);
+        }
+        refreshEnvPill();
+      } else {
+        showToast(TW.t("toast_report"));
+      }
+    });
+    document.getElementById("appAddPhotos").addEventListener("click", () => showToast("📷"));
+
+    const params = new URLSearchParams(location.search);
+    const trailId = params.get("trail");
+    if (trailId) {
+      const trail = TW.trails.find((x) => x.id === trailId);
+      if (trail) document.getElementById("hikeTitle").value = TW.tt(trail, "title");
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dashboard — TrailWatch HK</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div id="app-header"></div>
+
+  <main class="page topo-bg">
+    <div class="container" style="position:relative;z-index:1">
+      <div class="profile-header">
+        <img class="profile-avatar" id="avatar" alt="" />
+        <div>
+          <h1 id="name"></h1>
+          <div class="rank" id="rank"></div>
+        </div>
+        <div style="margin-left:auto;display:flex;gap:0.5rem;flex-wrap:wrap">
+          <a class="btn btn-secondary" href="insights.html">Insights</a>
+          <a class="btn btn-primary" href="milestones.html">Milestones</a>
+        </div>
+      </div>
+
+      <h2 class="page-title" style="font-size:1.2rem;margin-bottom:1rem">Portfolio</h2>
+      <div class="portfolio-grid" id="portfolio"></div>
+
+      <div class="section-head mt-2">
+        <h2>Recent Records</h2>
+        <a class="link-more" href="explore.html?tab=records">View all →</a>
+      </div>
+      <div class="record-list" id="recent"></div>
+    </div>
+  </main>
+
+  <div id="app-footer"></div>
+
+  <script src="js/i18n.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/env-badge.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    document.documentElement.lang = TW.getLang() === "zh" ? "zh-Hant" : "en";
+    initShell("dashboard");
+    document.getElementById("avatar").src = TW.user.avatar;
+    document.getElementById("name").textContent = TW.user.name;
+    document.getElementById("rank").textContent =
+      "🦶 " + (TW.getLang() === "zh" ? TW.user.rankZh : TW.user.rank);
+
+    const tiles = [
+      { key: "records", label: "Records", icon: "🥾", href: "explore.html?tab=records" },
+      { key: "routes", label: "Routes", icon: "🗺", href: "explore.html" },
+      { key: "bookmarks", label: "Bookmarks", icon: "🔖", href: "#", toast: "Bookmarks" },
+      { key: "friends", label: "Friends", icon: "👥", href: "#", toast: "Friends list" },
+      { key: "reports", label: "Reports", icon: "📊", href: "reports.html" },
+      { key: "badges", label: "Badges", icon: "🏅", href: "profile.html" },
+      { key: "events", label: "Events", icon: "📅", href: "index.html" },
+      { key: "trees", label: "My Trees", icon: "🌳", href: "trees.html" },
+      { key: "stories", label: "Env Badges", icon: "🌿", href: "profile.html" },
+      { key: "photos", label: "Photos", icon: "🖼", href: "#", toast: "Photo gallery" },
+      { key: "groupHikes", label: "Group Hikes", icon: "🏔️", href: "index.html" },
+    ];
+
+    document.getElementById("portfolio").innerHTML = tiles
+      .map((t) => {
+        let val = TW.stats[t.key];
+        if (t.key === "stories") val = "L" + TW.getEnvLevel();
+        const attrs = t.toast ? `href="#" data-toast="${t.toast}"` : `href="${t.href}"`;
+        return `
+        <a class="portfolio-tile" ${attrs}>
+          <div class="portfolio-tile-body">
+            <div class="icon">${t.icon}</div>
+            <div class="value">${val}</div>
+          </div>
+          <div class="portfolio-tile-foot">${t.label}</div>
+        </a>`;
+      })
+      .join("");
+
+    document.getElementById("recent").innerHTML = TW.records.map(renderRecordItem).join("");
+  </script>
+</body>
+</html>

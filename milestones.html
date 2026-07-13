@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Milestones — TrailWatch HK</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div id="app-header"></div>
+
+  <main class="page topo-bg">
+    <div class="container" style="position:relative;z-index:1">
+      <div class="profile-header">
+        <img class="profile-avatar" id="avatar" alt="" style="width:64px;height:64px" />
+        <div>
+          <h1 class="page-title" style="margin:0">Milestones</h1>
+          <div class="rank" id="rank"></div>
+        </div>
+      </div>
+
+      <div class="section-head">
+        <h2>Top Mileages</h2>
+      </div>
+      <div class="hex-grid mb-2" id="hexStats"></div>
+
+      <div class="section-head">
+        <h2>Top Records</h2>
+      </div>
+      <div class="top-records">
+        <div class="top-record-card">
+          <div class="inner">
+            <div class="trophy">🏆</div>
+            <div class="name">TransLantau '21</div>
+            <div class="val">74.1 km</div>
+          </div>
+          <div class="foot">Longest Hike</div>
+        </div>
+        <div class="top-record-card">
+          <div class="inner">
+            <div class="trophy">🏆</div>
+            <div class="name">玉山主峰</div>
+            <div class="val">3972 m</div>
+          </div>
+          <div class="foot">Highest Climb</div>
+        </div>
+        <div class="top-record-card">
+          <div class="inner">
+            <div class="trophy">🏆</div>
+            <div class="name">大雪山縱走</div>
+            <div class="val">1800 m</div>
+          </div>
+          <div class="foot">Max. Elevation</div>
+        </div>
+      </div>
+
+      <div class="section-head">
+        <h2>Highlights</h2>
+      </div>
+      <ul class="highlight-list">
+        <li>
+          <span class="hl-icon">🔗</span>
+          <span class="hl-label">Longest Week Streak</span>
+          <span class="hl-val">52 weeks</span>
+        </li>
+        <li>
+          <span class="hl-icon">📍</span>
+          <span class="hl-label">Most Visited Region</span>
+          <span class="hl-val">Sai Kung</span>
+        </li>
+        <li>
+          <span class="hl-icon">📅</span>
+          <span class="hl-label">Best Month (Oct 2019)</span>
+          <span class="hl-val">432 km</span>
+        </li>
+        <li>
+          <span class="hl-icon">🎖</span>
+          <span class="hl-label">Best Year (2017)</span>
+          <span class="hl-val">180 records</span>
+        </li>
+      </ul>
+
+      <div class="section-head">
+        <h2>Badges</h2>
+        <a class="link-more" href="#" data-toast="All badges">View All →</a>
+      </div>
+      <div class="badge-scroll" id="badges"></div>
+    </div>
+  </main>
+
+  <div id="app-footer"></div>
+
+  <script src="js/i18n.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    document.documentElement.lang = TW.getLang() === "zh" ? "zh-Hant" : "en";
+    initShell("dashboard");
+    document.getElementById("avatar").src = TW.user.avatar;
+    document.getElementById("rank").textContent =
+      TW.user.name + " · 🥾 " + (TW.getLang() === "zh" ? TW.user.rankZh : TW.user.rank);
+
+    const hex = [
+      { icon: "🥾", label: "Hikes", value: TW.stats.hikes.toLocaleString() },
+      { icon: "📏", label: "Distance", value: TW.stats.distanceKm.toLocaleString() + " km" },
+      { icon: "⬆", label: "Elev. Gain", value: TW.stats.elevGain.toLocaleString() + " m" },
+      { icon: "⏱", label: "Moving Time", value: TW.stats.movingHrs + " hrs" },
+      { icon: "🔥", label: "Calories", value: TW.stats.caloriesMcal + " mcal" },
+      { icon: "⬇", label: "Descent", value: TW.stats.descent.toLocaleString() + " m" },
+    ];
+    document.getElementById("hexStats").innerHTML = hex
+      .map(
+        (h) => `
+      <div class="hex-card">
+        <div class="icon">${h.icon}</div>
+        <div class="value">${h.value}</div>
+        <div class="label">${h.label}</div>
+      </div>`
+      )
+      .join("");
+
+    document.getElementById("badges").innerHTML = TW.badges
+      .map(
+        (b) => `
+      <div class="badge-item">
+        <div class="badge-shield ${b.locked ? "locked" : ""}" style="background:${b.color}">${b.emoji}</div>
+        <div class="name">${b.name}</div>
+      </div>`
+      )
+      .join("");
+  </script>
+</body>
+</html>

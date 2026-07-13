@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Profile — TrailWatch HK</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div id="app-header"></div>
+
+  <main class="page">
+    <div class="container" style="max-width:560px">
+      <h1 class="page-title" style="text-align:center" data-i18n="footer_profile">Profile</h1>
+
+      <div style="text-align:center;margin-bottom:1.5rem">
+        <img class="profile-avatar" id="avatar" alt="" style="margin:0 auto 0.75rem;width:112px;height:112px" />
+        <button class="link-more" data-toast="Change profile photo" style="border:none;background:none;cursor:pointer">
+          ✎ Edit Profile Icon
+        </button>
+        <div id="highestBadge" style="margin-top:0.75rem"></div>
+      </div>
+
+      <a class="premium-card" href="#" data-toast="Premium benefits">
+        <div class="premium-badge">PREMIUM</div>
+        <div class="info">
+          <strong>TrailWatch Premium Member</strong>
+          <span id="premiumEnds">Ends on 30/06/2026</span>
+        </div>
+        <span class="chevron">›</span>
+      </a>
+
+      <!-- Environmental badges (cumulative) -->
+      <div id="envBadgeSection" class="mb-2"></div>
+
+      <div style="text-align:center;margin-bottom:1.5rem">
+        <a class="btn btn-primary" href="app/index.html" data-i18n="nav_app"></a>
+      </div>
+
+      <form id="profileForm" onsubmit="event.preventDefault();showToast(TW.t('toast_saved'))">
+        <div class="form-group">
+          <label for="name">Name</label>
+          <input class="form-input" id="name" type="text" />
+        </div>
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input class="form-input" id="email" type="email" />
+        </div>
+        <div class="form-group">
+          <label for="nickname">Nickname</label>
+          <input class="form-input" id="nickname" type="text" />
+        </div>
+
+        <label class="checkbox-row">
+          <input type="checkbox" checked />
+          <span>Newsletter — culture, history and ecology of Hong Kong’s trails and Country Parks!</span>
+        </label>
+
+        <button type="submit" class="btn btn-primary btn-block btn-lg">Save</button>
+      </form>
+
+      <p style="text-align:center;margin-top:1.5rem">
+        <button style="color:var(--text-muted);font-size:0.9rem" data-toast="Account deletion requires confirmation">
+          Delete Account
+        </button>
+      </p>
+
+      <div class="mt-2" style="text-align:center">
+        <a class="btn btn-secondary" href="dashboard.html">Back to Dashboard</a>
+      </div>
+    </div>
+  </main>
+
+  <div id="app-footer"></div>
+
+  <script src="js/i18n.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/env-badge.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    document.documentElement.lang = TW.getLang() === "zh" ? "zh-Hant" : "en";
+    initShell("dashboard");
+    document.getElementById("avatar").src = TW.user.avatar;
+    document.getElementById("name").value = TW.user.name;
+    document.getElementById("email").value = TW.user.email;
+    document.getElementById("nickname").value = TW.user.nickname;
+    document.getElementById("premiumEnds").textContent =
+      (TW.getLang() === "zh" ? "到期日 " : "Ends on ") + TW.user.premiumEnds;
+
+    TW.renderEnvBadgeSection(document.getElementById("envBadgeSection"));
+
+    const level = TW.getEnvLevel();
+    const wrap = document.getElementById("highestBadge");
+    if (level >= 1) {
+      const meta = TW.ENV_BADGE_META[level];
+      const name = TW.getLang() === "zh" ? meta.nameZh : meta.name;
+      wrap.innerHTML = `<span class="env-mini-pill" style="font-size:0.85rem;padding:0.4rem 0.85rem">${meta.emoji} ${name} · L${level}</span>`;
+    } else {
+      wrap.innerHTML = `<span class="env-mini-pill">${TW.t("env_title")} · L0</span>`;
+    }
+  </script>
+</body>
+</html>

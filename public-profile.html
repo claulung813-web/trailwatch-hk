@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Elena Green — TrailWatch HK</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div id="app-header"></div>
+
+  <main class="page">
+    <div class="container" style="max-width:720px">
+      <div class="profile-header" style="align-items:flex-start">
+        <img class="profile-avatar" src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200&h=200&fit=crop" alt="Elena Green" />
+        <div style="flex:1">
+          <h1 class="page-title" style="margin:0">Elena Green</h1>
+          <p class="subtitle">白千層之女</p>
+          <p style="font-size:0.85rem;color:var(--text-muted);margin-top:0.25rem">👤 Member Since 2017</p>
+        </div>
+        <div class="premium-badge" style="width:64px;height:64px;font-size:0.5rem">TREK<br/>FRIENDS</div>
+      </div>
+
+      <div class="section-head">
+        <h2>Outdoor Summary</h2>
+        <button class="icon-btn" style="background:var(--green-50)" data-toast="Friend request sent">➕</button>
+      </div>
+      <div class="stats-grid cols-4 mb-2">
+        <div class="stat-box"><div class="icon">👣</div><div class="value">384</div><div class="label">Records</div></div>
+        <div class="stat-box"><div class="icon">🛤</div><div class="value">1,234</div><div class="label">km Hiked</div></div>
+        <div class="stat-box"><div class="icon">📈</div><div class="value">10,456</div><div class="label">m Climbed</div></div>
+        <div class="stat-box"><div class="icon">🔥</div><div class="value">142k</div><div class="label">KCal</div></div>
+      </div>
+
+      <div class="section-head">
+        <h2>Recent Records</h2>
+        <span class="meta">Showing latest entries</span>
+      </div>
+      <div class="record-list" id="list"></div>
+    </div>
+  </main>
+
+  <div id="app-footer"></div>
+
+  <script src="js/i18n.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    document.documentElement.lang = TW.getLang() === "zh" ? "zh-Hant" : "en";
+    initShell("home");
+    document.getElementById("list").innerHTML = TW.records.map(renderRecordItem).join("");
+  </script>
+</body>
+</html>
