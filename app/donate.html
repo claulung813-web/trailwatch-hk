@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>TrailWatch App — Donate</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/styles.css" />
+  <style>
+    body { margin: 0; }
+    .phone-body { flex: 1; overflow-y: auto; padding: 1rem 0.9rem 1rem; background: var(--mint); }
+  </style>
+</head>
+<body>
+  <div class="app-page">
+    <div class="app-page-top">
+      <a href="../donate.html" id="backWeb"></a>
+      <div class="lang-switch" style="margin:0.75rem auto 0;width:fit-content;background:rgba(255,255,255,0.15);border-color:rgba(255,255,255,0.25)">
+        <button type="button" data-lang="en" style="color:#fff">EN</button>
+        <button type="button" data-lang="zh" style="color:#fff">繁</button>
+      </div>
+    </div>
+
+    <div class="phone-frame">
+      <div class="phone-notch"></div>
+      <div class="phone-screen">
+        <div style="padding:2.5rem 1rem 0.75rem;background:white;border-bottom:1px solid var(--border)">
+          <h1 style="font-size:1.2rem;color:var(--green-900);margin:0" id="pageTitle"></h1>
+          <p style="font-size:0.8rem;color:var(--text-muted);margin:0.35rem 0 0" id="pageSub"></p>
+        </div>
+        <div class="phone-body">
+          <h2 style="font-size:1rem;color:var(--green-900);margin-bottom:0.5rem" id="hero"></h2>
+          <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:1rem" id="body"></p>
+
+          <label style="font-weight:700;font-size:0.8rem;color:var(--green-900)" id="amtLabel"></label>
+          <div class="diff-chips" id="amtChips" style="margin:0.5rem 0 0.85rem">
+            <button type="button" class="chip active" data-amt="50">$50</button>
+            <button type="button" class="chip" data-amt="100">$100</button>
+            <button type="button" class="chip" data-amt="200">$200</button>
+            <button type="button" class="chip" data-amt="500">$500</button>
+          </div>
+          <input class="form-input" type="number" id="customAmt" min="1" style="margin-bottom:0.75rem" />
+          <div class="toggle-pills" id="freqToggle" style="margin-bottom:0.85rem">
+            <button type="button" class="active" data-freq="once" id="fOnce"></button>
+            <button type="button" data-freq="monthly" id="fMonthly"></button>
+          </div>
+          <button class="btn btn-primary btn-block" id="donateBtn"></button>
+          <p style="font-size:0.7rem;color:var(--text-muted);margin-top:0.75rem;text-align:center" id="note"></p>
+
+          <h3 style="font-size:0.9rem;color:var(--green-900);margin:1.25rem 0 0.5rem" id="impactTitle"></h3>
+          <ul style="font-size:0.8rem;color:var(--text-muted);padding-left:1.1rem;line-height:1.7" id="impactList"></ul>
+        </div>
+        <nav class="app-bottom-nav">
+          <a href="../index.html"><span class="ico">🏠</span><span id="nHome"></span></a>
+          <a href="hikes.html"><span class="ico">🗺</span><span id="nHikes"></span></a>
+          <a href="index.html"><span class="ico">✈</span><span id="nTrack"></span></a>
+          <a href="donate.html" class="active"><span class="ico">💚</span><span id="nDonate"></span></a>
+          <a href="../profile.html"><span class="ico">👤</span><span id="nDash"></span></a>
+        </nav>
+      </div>
+    </div>
+  </div>
+  <div class="toast" id="toast"></div>
+
+  <script src="../js/i18n.js"></script>
+  <script src="../js/data.js"></script>
+  <script src="../js/cms-store.js"></script>
+  <script src="../js/app.js"></script>
+  <script>
+    document.documentElement.lang = TW.getLang() === "zh" ? "zh-Hant" : "en";
+    const lang = TW.getLang();
+    document.querySelectorAll(".lang-switch button").forEach((b) => {
+      b.classList.toggle("active", b.dataset.lang === lang);
+      b.addEventListener("click", () => { TW.setLang(b.dataset.lang); location.reload(); });
+    });
+    const t = TW.t;
+    document.getElementById("backWeb").textContent = t("app_back_web");
+    document.getElementById("pageTitle").textContent = t("donate_title");
+    document.getElementById("pageSub").textContent = t("donate_sub");
+    document.getElementById("hero").textContent = t("donate_hero");
+    document.getElementById("body").textContent = t("donate_body");
+    document.getElementById("amtLabel").textContent = t("donate_amount");
+    document.getElementById("customAmt").placeholder = t("donate_custom");
+    document.getElementById("fOnce").textContent = t("donate_once");
+    document.getElementById("fMonthly").textContent = t("donate_monthly");
+    document.getElementById("donateBtn").textContent = t("donate_cta");
+    document.getElementById("note").textContent = t("donate_note");
+    document.getElementById("impactTitle").textContent = t("donate_impact_title");
+    document.getElementById("impactList").innerHTML =
+      [1, 2, 3, 4].map((i) => `<li>${t("donate_impact_" + i)}</li>`).join("");
+    document.getElementById("nHome").textContent = t("app_home");
+    document.getElementById("nHikes").textContent = t("nav_hikes");
+    document.getElementById("nTrack").textContent = t("app_track");
+    document.getElementById("nDonate").textContent = t("nav_donate");
+    document.getElementById("nDash").textContent = t("app_dashboard");
+
+    let amount = 50;
+    let freq = "once";
+    document.querySelectorAll("#amtChips .chip").forEach((chip) => {
+      chip.addEventListener("click", () => {
+        document.querySelectorAll("#amtChips .chip").forEach((c) => c.classList.remove("active"));
+        chip.classList.add("active");
+        amount = +chip.dataset.amt;
+        document.getElementById("customAmt").value = "";
+      });
+    });
+    document.getElementById("customAmt").addEventListener("input", (e) => {
+      const v = parseInt(e.target.value, 10);
+      if (v > 0) {
+        amount = v;
+        document.querySelectorAll("#amtChips .chip").forEach((c) => c.classList.remove("active"));
+      }
+    });
+    document.querySelectorAll("#freqToggle button").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll("#freqToggle button").forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        freq = btn.dataset.freq;
+      });
+    });
+    document.getElementById("donateBtn").addEventListener("click", () => {
+      CMS.submitDonation({
+        name: (TW.user && TW.user.name) || "Anonymous",
+        email: (TW.user && TW.user.email) || "",
+        amount: amount,
+        frequency: freq,
+        source: "app",
+      });
+      showToast(t("donate_thanks") + " · HK$" + amount + (freq === "monthly" ? " / mo" : ""));
+    });
+  </script>
+</body>
+</html>

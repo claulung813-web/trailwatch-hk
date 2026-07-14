@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CMS — Incident Reports</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="css/cms.css" />
+</head>
+<body class="cms-body">
+  <div id="cmsShell">
+    <h1>Incident Reports</h1>
+    <p class="sub">Review validity, update handling status (govt reported, handled…), and publish to the public Explore / Reports feed.</p>
+
+    <div class="cms-toolbar">
+      <select id="filterStatus">
+        <option value="all">All statuses</option>
+      </select>
+      <label style="font-size:0.85rem"><input type="checkbox" id="onlyPending" /> Pending only</label>
+    </div>
+
+    <div class="cms-row">
+      <div class="cms-card" style="flex:1.2">
+        <table class="cms-table">
+          <thead>
+            <tr><th>Report</th><th>Status</th><th>Public</th><th></th></tr>
+          </thead>
+          <tbody id="list"></tbody>
+        </table>
+      </div>
+      <div class="cms-card" id="detailPanel" style="display:none;flex:1">
+        <h3 style="margin-top:0" id="dTitle">—</h3>
+        <img id="dImg" alt="" style="width:100%;max-height:160px;object-fit:cover;border-radius:10px;margin-bottom:0.75rem" />
+        <p id="dDesc" style="font-size:0.9rem;color:#4b5563"></p>
+        <p style="font-size:0.8rem;color:#6b7280" id="dMeta"></p>
+        <div id="detailMap" class="cms-map" style="height:200px"></div>
+        <form class="cms-form" id="incForm">
+          <input type="hidden" id="incId" />
+          <label>Staff decision / status</label>
+          <select id="status"></select>
+          <label><input type="checkbox" id="published" /> Publish on frontend (visible to hikers)</label>
+          <label>Staff update note (EN) — shown when published</label>
+          <textarea id="staffNote" placeholder="e.g. Reported to AFCD on 12/07/2026. Team cleared debris…"></textarea>
+          <label>Staff update note (繁)</label>
+          <textarea id="staffNoteZh"></textarea>
+          <div class="cms-toolbar" style="margin-top:0.75rem">
+            <button type="submit" class="cms-btn cms-btn-primary">Save update</button>
+            <button type="button" class="cms-btn cms-btn-warn" id="btnPublish">Mark published</button>
+            <button type="button" class="cms-btn cms-btn-danger" id="btnReject">Reject</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="../js/data.js"></script>
+  <script src="../js/cms-store.js"></script>
+  <script src="js/cms-ui.js"></script>
+  <script>
+    cmsInitShell("incidents");
+
+    document.getElementById("filterStatus").innerHTML += CMS.INCIDENT_STATUSES.map(
+      (s) => `<option value="${s.id}">${s.label}</option>`
+    ).join("");
+    document.getElementById("status").innerHTML = CMS.INCIDENT_STATUSES.map(
+      (s) => `<option value="${s.id}">${s.label}</option>`
+    ).join("");
+
+    let detailMap, detailMarker;
+
+    function statusBadge(st) {
+      if (st === "published" || st === "handled") return "pub";
+      if (st === "rejected") return "rej";
+      if (st === "reported_govt") return "gov";
+      return "draft";
+    }
+
+    function renderList() {
+      const filter = document.getElementById("filterStatus").value;
+      const pendingOnly = document.getElementById("onlyPending").checked;
+      let list = CMS.getStore().incidents.slice();
+      if (filter !== "all") list = list.filter((i) => i.status === filter);
+      if (pendingOnly) list = list.filter((i) => i.status === "received" || i.status === "under_review");
+
+      document.getElementById("list").innerHTML = list
+        .map((i) => `
+        <tr>
+          <td>
+            <strong>${i.title}</strong><br/>
+            <span style="font-size:0.75rem;color:#6b7280">${i.date || ""}</span>
+          </td>
+          <td><span class="cms-badge ${statusBadge(i.status)}">${CMS.statusLabel(i.status)}</span></td>
+          <td>${i.published ? "Yes" : "No"}</td>
+          <td><button class="cms-btn cms-btn-secondary cms-btn-sm" data-open="${i.id}">Open</button></td>
+        </tr>`)
+        .join("") || '<tr><td colspan="4">No incidents.</td></tr>';
+
+      document.querySelectorAll("[data-open]").forEach((b) =>
+        b.addEventListener("click", () => openDetail(b.dataset.open))
+      );
+    }
+
+    function openDetail(id) {
+      const i = CMS.getStore().incidents.find((x) => x.id === id);
+      if (!i) return;
+      const panel = document.getElementById("detailPanel");
+      panel.style.display = "block";
+      document.getElementById("incId").value = i.id;
+      document.getElementById("dTitle").textContent = i.title;
+      document.getElementById("dDesc").textContent = (i.desc || "") + (i.descZh ? "\n" + i.descZh : "");
+      document.getElementById("dMeta").textContent = (i.coords || "") + " · " + (i.category || "");
+      document.getElementById("dImg").src = i.image || "";
+      document.getElementById("status").value = i.status;
+      document.getElementById("published").checked = !!i.published;
+      document.getElementById("staffNote").value = i.staffNote || "";
+      document.getElementById("staffNoteZh").value = i.staffNoteZh || "";
+
+      const lat = i.lat || 22.32;
+      const lng = i.lng || 114.17;
+      setTimeout(() => {
+        if (!detailMap) {
+          detailMap = L.map("detailMap").setView([lat, lng], 14);
+          L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(detailMap);
+          detailMarker = L.marker([lat, lng]).addTo(detailMap);
+        } else {
+          detailMap.setView([lat, lng], 14);
+          detailMarker.setLatLng([lat, lng]);
+          detailMap.invalidateSize();
+        }
+      }, 50);
+    }
+
+    function saveIncident(patch) {
+      const id = document.getElementById("incId").value;
+      const store = CMS.getStore();
+      const idx = store.incidents.findIndex((x) => x.id === id);
+      if (idx < 0) return;
+      store.incidents[idx] = Object.assign({}, store.incidents[idx], {
+        status: document.getElementById("status").value,
+        published: document.getElementById("published").checked,
+        staffNote: document.getElementById("staffNote").value.trim(),
+        staffNoteZh: document.getElementById("staffNoteZh").value.trim(),
+        updatedAt: new Date().toISOString(),
+      }, patch || {});
+      CMS.setStore(store);
+      renderList();
+      cmsToast("Incident updated");
+    }
+
+    document.getElementById("incForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      saveIncident();
+    });
+    document.getElementById("btnPublish").addEventListener("click", () => {
+      document.getElementById("status").value = "published";
+      document.getElementById("published").checked = true;
+      saveIncident({ status: "published", published: true });
+    });
+    document.getElementById("btnReject").addEventListener("click", () => {
+      document.getElementById("status").value = "rejected";
+      document.getElementById("published").checked = false;
+      saveIncident({ status: "rejected", published: false });
+    });
+    document.getElementById("filterStatus").addEventListener("change", renderList);
+    document.getElementById("onlyPending").addEventListener("change", renderList);
+    renderList();
+  </script>
+</body>
+</html>

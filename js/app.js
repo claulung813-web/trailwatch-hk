@@ -1,17 +1,36 @@
 /* TrailWatch HK — Shared UI helpers */
 
 function twIcon(name) {
+  const stroke = 'fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"';
   const icons = {
-    home: '<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5V21a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1v-10.5z"/></svg>',
-    explore: '<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m16 8-2.5 6.5L7 17l2.5-6.5L16 8z"/></svg>',
-    plan: '<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4"/></svg>',
-    dashboard: '<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
-    bell: '<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>',
-    menu: '<svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>',
-    tree: '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 7 9h3v3H6l4 5h2v5h2v-5h2l4-5h-4V9h3L12 2z"/></svg>',
+    home: `<svg width="20" height="20" viewBox="0 0 24 24" ${stroke}><path d="M3 10.5 12 3l9 7.5V21a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1v-10.5z"/></svg>`,
+    explore: `<svg width="20" height="20" viewBox="0 0 24 24" ${stroke}><circle cx="12" cy="12" r="9"/><path d="m16 8-2.5 6.5L7 17l2.5-6.5L16 8z"/></svg>`,
+    plan: `<svg width="20" height="20" viewBox="0 0 24 24" ${stroke}><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4"/></svg>`,
+    dashboard: `<svg width="20" height="20" viewBox="0 0 24 24" ${stroke}><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,
+    bell: `<svg width="20" height="20" viewBox="0 0 24 24" ${stroke}><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>`,
+    menu: `<svg width="22" height="22" viewBox="0 0 24 24" ${stroke}><path d="M4 6h16M4 12h16M4 18h16"/></svg>`,
+    tree: `<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 7 9h3v3H6l4 5h2v5h2v-5h2l4-5h-4V9h3L12 2z"/></svg>`,
     star: "★",
+    /* Portfolio / dashboard (Figma-style outline icons) */
+    records: `<svg viewBox="0 0 24 24" ${stroke}><path d="M4 19V5a2 2 0 0 1 2-2h9l5 5v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M14 3v5h5M8 13h8M8 17h5"/></svg>`,
+    hikes: `<svg viewBox="0 0 24 24" ${stroke}><path d="M12 21s7-4.5 7-11a7 7 0 1 0-14 0c0 6.5 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>`,
+    routes: `<svg viewBox="0 0 24 24" ${stroke}><path d="M9 20H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7"/><path d="M15 4h5a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2h-7"/><circle cx="9" cy="9" r="2"/><circle cx="15" cy="15" r="2"/><path d="M10.5 10.5 13.5 13.5"/></svg>`,
+    bookmarks: `<svg viewBox="0 0 24 24" ${stroke}><path d="M6 4h9a2 2 0 0 1 2 2v14l-5.5-3.5L6 20V4z"/></svg>`,
+    friends: `<svg viewBox="0 0 24 24" ${stroke}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
+    reports: `<svg viewBox="0 0 24 24" ${stroke}><path d="M4 19V5a2 2 0 0 1 2-2h8l6 6v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M14 3v5h5M9 13h6M9 17h4"/><path d="M12 8v3"/></svg>`,
+    badges: `<svg viewBox="0 0 24 24" ${stroke}><path d="M12 2 9 8l-6.5.5 5 4.2L5.5 19 12 15.5 18.5 19 16.5 12.7l5-4.2L15 8 12 2z"/></svg>`,
+    events: `<svg viewBox="0 0 24 24" ${stroke}><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>`,
+    trees: `<svg viewBox="0 0 24 24" ${stroke}><path d="M12 22v-6"/><path d="M12 16 7 10h3L8 5h8l-2 5h3L12 16z"/><path d="M8 22h8"/></svg>`,
+    env: `<svg viewBox="0 0 24 24" ${stroke}><path d="M12 22c4-3 7-6.5 7-11a7 7 0 1 0-14 0c0 4.5 3 8 7 11z"/><path d="M9 12c1 2 3 3 3 5 4-3 2-4 3-5"/><path d="M14 10c-1 1-2 2-1 4"/></svg>`,
+    photos: `<svg viewBox="0 0 24 24" ${stroke}><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2"/><path d="m21 16-4.5-4.5L9 19"/></svg>`,
+    groupHikes: `<svg viewBox="0 0 24 24" ${stroke}><path d="m3 20 6-10 4 5 2-3 6 8"/><path d="M14 8a2 2 0 1 0 0-4 2 2 0 0 0 0 4"/><path d="M7 12a2 2 0 1 0 0-4 2 2 0 0 0 0 4"/></svg>`,
   };
   return icons[name] || "";
+}
+
+/** Circular mint button with outline icon — portfolio / dashboard tiles */
+function twPortfolioIcon(name) {
+  return `<span class="icon-btn-fig" aria-hidden="true">${twIcon(name)}</span>`;
 }
 
 function difficultyPips(level) {
@@ -32,21 +51,36 @@ function renderHeader(active) {
   const u = TW.user;
   const lang = TW.getLang();
   const t = TW.t;
+  const accountActive = ["hikes", "dashboard", "reports", "trees", "register", "profile"].indexOf(active) >= 0;
   return `
   <header class="site-header">
     <div class="container">
       <a href="index.html" class="logo">
-        <span class="logo-mark">${twIcon("tree")}</span>
-        <span>${t("brand")}</span>
+        <img class="logo-img" src="assets/brand/header-logo.webp" alt="TrailWatch" />
       </a>
       <nav class="nav-links" id="navLinks">
         <a href="index.html" class="${active === "home" ? "active" : ""}">${t("nav_home")}</a>
         <a href="explore.html" class="${active === "explore" ? "active" : ""}">${t("nav_explore")}</a>
         <a href="plan.html" class="${active === "plan" ? "active" : ""}">${t("nav_plan")}</a>
-        <a href="dashboard.html" class="${active === "dashboard" ? "active" : ""}">${t("nav_dashboard")}</a>
-        <a href="reports.html" class="${active === "reports" ? "active" : ""}">${t("nav_reports")}</a>
-        <a href="trees.html" class="${active === "trees" ? "active" : ""}">${t("nav_trees")}</a>
-        <a href="app/index.html" class="nav-app ${active === "app" ? "active" : ""}">${t("nav_app")}</a>
+        <a href="donate.html" class="${active === "donate" ? "active" : ""}">${t("nav_donate")}</a>
+        <a href="about.html" class="${active === "about" ? "active" : ""}">${t("nav_about")}</a>
+        <a href="get-app.html" class="nav-app ${active === "app" ? "active" : ""}">${t("nav_app")}</a>
+
+        <div class="nav-account ${accountActive ? "has-active" : ""}" id="navAccount">
+          <button type="button" class="nav-account-trigger" id="accountToggle" aria-expanded="false" aria-haspopup="true">
+            <img class="avatar-sm" src="${u.avatar}" alt="" />
+            <span>${t("nav_me")}</span>
+          </button>
+          <div class="nav-account-menu" id="accountMenu" hidden>
+            <p class="nav-account-heading">${t("nav_me")}</p>
+            <a href="my-hikes.html" class="${active === "hikes" ? "active" : ""}">${t("nav_hikes")}</a>
+            <a href="dashboard.html" class="${active === "dashboard" ? "active" : ""}">${t("nav_dashboard")}</a>
+            <a href="reports.html" class="${active === "reports" ? "active" : ""}">${t("nav_reports")}</a>
+            <a href="trees.html" class="${active === "trees" ? "active" : ""}">${t("nav_trees")}</a>
+            <a href="register.html" class="${active === "register" ? "active" : ""}">${t("nav_register")}</a>
+            <a href="profile.html" class="${active === "profile" ? "active" : ""}">${t("nav_profile")}</a>
+          </div>
+        </div>
       </nav>
       <div class="header-actions">
         <div class="lang-switch" role="group" aria-label="Language">
@@ -54,9 +88,6 @@ function renderHeader(active) {
           <button type="button" class="${lang === "zh" ? "active" : ""}" data-lang="zh">繁</button>
         </div>
         <button class="icon-btn hide-sm" aria-label="${t("notifications")}">${twIcon("bell")}</button>
-        <a href="profile.html" class="hide-sm" title="Profile">
-          <img class="avatar-sm" src="${u.avatar}" alt="${u.name}" />
-        </a>
         <button class="menu-toggle" id="menuToggle" aria-label="${t("menu")}">${twIcon("menu")}</button>
       </div>
     </div>
@@ -69,11 +100,11 @@ function renderFooter() {
   <footer class="site-footer">
     <div class="container">
       <div>
-        <a href="index.html" class="logo" style="color:white;margin-bottom:0.75rem">
-          <span class="logo-mark">${twIcon("tree")}</span>
-          <span>${t("brand")}</span>
+        <a href="index.html" class="logo" style="margin-bottom:0.5rem;flex-direction:column;align-items:flex-start;gap:0.65rem">
+          <img src="assets/brand/icon.svg" alt="TrailWatch" style="height:40px;width:auto" />
+          <img class="logo-img footer" src="assets/brand/footer-logo.webp" alt="TrailWatch Footer Logo" />
         </a>
-        <p style="font-size:0.85rem;opacity:0.8;max-width:280px">${t("footer_tagline")}</p>
+        <p class="footer-org">${t("footer_org")}</p>
       </div>
       <div>
         <h4>${t("footer_discover")}</h4>
@@ -81,13 +112,20 @@ function renderFooter() {
         <a href="explore.html?tab=incidents">${t("footer_incidents")}</a>
         <a href="index.html">${t("footer_feed")}</a>
         <a href="plan.html">${t("footer_plan")}</a>
+        <a href="donate.html">${t("nav_donate")}</a>
+        <a href="about.html">${t("nav_about")}</a>
       </div>
       <div>
         <h4>${t("footer_you")}</h4>
+        <a href="my-hikes.html">${t("nav_hikes")}</a>
         <a href="dashboard.html">${t("footer_portfolio")}</a>
         <a href="insights.html">${t("footer_insights")}</a>
         <a href="milestones.html">${t("footer_milestones")}</a>
-        <a href="app/index.html">${t("nav_app")}</a>
+        <a href="reports.html">${t("nav_reports")}</a>
+        <a href="trees.html">${t("nav_trees")}</a>
+        <a href="register.html">${t("nav_register")}</a>
+        <a href="profile.html">${t("nav_profile")}</a>
+        <a href="get-app.html">${t("nav_app")}</a>
       </div>
     </div>
     <div class="footer-bottom">${t("footer_copy")}</div>
@@ -113,7 +151,37 @@ function initShell(active) {
   const toggle = document.getElementById("menuToggle");
   const links = document.getElementById("navLinks");
   if (toggle && links) {
-    toggle.addEventListener("click", () => links.classList.toggle("open"));
+    toggle.addEventListener("click", () => {
+      links.classList.toggle("open");
+      const account = document.getElementById("navAccount");
+      if (account && !links.classList.contains("open")) {
+        account.classList.remove("open");
+        const btn = document.getElementById("accountToggle");
+        const menu = document.getElementById("accountMenu");
+        if (btn) btn.setAttribute("aria-expanded", "false");
+        if (menu) menu.hidden = true;
+      }
+    });
+  }
+
+  const accountToggle = document.getElementById("accountToggle");
+  const accountMenu = document.getElementById("accountMenu");
+  const navAccount = document.getElementById("navAccount");
+  if (accountToggle && accountMenu && navAccount) {
+    accountToggle.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const open = !navAccount.classList.contains("open");
+      navAccount.classList.toggle("open", open);
+      accountToggle.setAttribute("aria-expanded", open ? "true" : "false");
+      accountMenu.hidden = !open;
+    });
+    document.addEventListener("click", (e) => {
+      if (!navAccount.contains(e.target)) {
+        navAccount.classList.remove("open");
+        accountToggle.setAttribute("aria-expanded", "false");
+        accountMenu.hidden = true;
+      }
+    });
   }
 
   document.querySelectorAll(".lang-switch button").forEach((btn) => {
@@ -131,6 +199,8 @@ function initShell(active) {
     const key = el.getAttribute("data-i18n-placeholder");
     if (key) el.setAttribute("placeholder", TW.t(key));
   });
+
+  if (typeof TW.applyCmsCopy === "function") TW.applyCmsCopy();
 }
 
 function tagClass(tag) {
@@ -302,14 +372,22 @@ function bindTabs(selector, onChange) {
 }
 
 function statusLabel(s) {
+  if (window.CMS && CMS.statusLabel) {
+    const known = CMS.INCIDENT_STATUSES.some((x) => x.id === s);
+    if (known) return CMS.statusLabel(s);
+  }
   return TW.t("status_" + s) || s;
 }
 
 function statusClass(s) {
+  if (s === "published" || s === "handled" || s === "closed") return "status-closed";
+  if (s === "reported_govt" || s === "updated" || s === "under_review") return "status-updated";
+  if (s === "rejected") return "status-received";
   return { closed: "status-closed", updated: "status-updated", received: "status-received" }[s] || "status-received";
 }
 
 function renderReportItem(r) {
+  const note = TW.getLang() === "zh" ? r.staffNoteZh || r.staffNote : r.staffNote;
   return `
   <article class="report-item">
     <div class="report-thumb-wrap">
@@ -319,7 +397,12 @@ function renderReportItem(r) {
     <div>
       <h4>${TW.tt(r, "title")}</h4>
       <p class="desc">${TW.tt(r, "desc")}</p>
-      <div class="meta"><span>📅 ${r.date}</span><span>📍 ${r.coords}</span></div>
+      ${
+        note
+          ? `<p class="desc" style="color:var(--green-800);font-weight:500">${TW.t("staff_update")}: ${note}</p>`
+          : ""
+      }
+      <div class="meta"><span>📅 ${r.date || ""}</span><span>📍 ${r.coords || ""}</span></div>
     </div>
   </article>`;
 }

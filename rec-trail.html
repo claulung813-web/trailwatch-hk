@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Recommended Trail — TrailWatch HK</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="css/styles.css" />
+  <style>
+    #recMap { height: 380px; border-radius: var(--radius); border: 1px solid var(--border); }
+    .rec-hero { width: 100%; max-height: 240px; object-fit: cover; border-radius: var(--radius); margin-bottom: 1.25rem; }
+  </style>
+</head>
+<body>
+  <div id="app-header"></div>
+  <main class="page">
+    <div class="container" style="max-width:800px">
+      <a href="explore.html" class="link-more" style="display:inline-block;margin-bottom:1rem" data-i18n="recommended_staff"></a>
+      <img class="rec-hero" id="recImg" alt="" />
+      <h1 class="page-title" id="recTitle"></h1>
+      <p class="page-sub" id="recDesc"></p>
+      <div class="trail-meta" id="recMeta" style="margin-bottom:1.25rem"></div>
+      <div class="section-head"><h2 data-i18n="hikes_route">Route</h2></div>
+      <div id="recMap"></div>
+      <div style="margin-top:1.25rem">
+        <a class="btn btn-primary" id="recPlan" href="plan.html" data-i18n="mark_plan"></a>
+        <a class="btn btn-secondary" href="get-app.html" data-i18n="nav_app" style="margin-left:0.5rem"></a>
+      </div>
+    </div>
+  </main>
+  <div id="app-footer"></div>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="js/i18n.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/cms-store.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    document.documentElement.lang = TW.getLang() === "zh" ? "zh-Hant" : "en";
+    initShell("explore");
+
+    const id = new URLSearchParams(location.search).get("id");
+    const r = TW.getRecommendedTrail(id);
+    if (!r) {
+      location.href = "explore.html";
+    } else {
+      document.getElementById("recTitle").textContent = TW.tt(r, "title");
+      document.getElementById("recDesc").textContent = TW.tt(r, "desc");
+      document.getElementById("recImg").src = r.image;
+      document.getElementById("recMeta").innerHTML =
+        `<span>📍 ${TW.districtName(r.district)}</span>` +
+        `<span>📏 ${r.distance || "—"}</span>` +
+        `<span>⏱ ${r.duration || "—"}</span>` +
+        `<span>L${r.difficulty || 2}</span>`;
+
+      if (r.trailId) {
+        document.getElementById("recPlan").href = "plan.html";
+        document.getElementById("recPlan").addEventListener("click", (e) => {
+          e.preventDefault();
+          if (!TW.isPlanned(r.trailId)) TW.togglePlan(r.trailId);
+          showToast(TW.t("toast_planned"));
+        });
+      }
+
+      const path = (r.path && r.path.length ? r.path : [[22.32, 114.17]]).map((p) => [p[0], p[1]]);
+      const map = L.map("recMap").setView(path[0], 13);
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: "© OpenStreetMap",
+      }).addTo(map);
+      if (path.length > 1) {
+        const line = L.polyline(path, { color: "#2563eb", weight: 5 }).addTo(map);
+        map.fitBounds(line.getBounds().pad(0.15));
+        L.circleMarker(path[0], { radius: 7, color: "#fff", weight: 2, fillColor: "#2d8a45", fillOpacity: 1 }).addTo(map);
+        L.circleMarker(path[path.length - 1], { radius: 7, color: "#fff", weight: 2, fillColor: "#d64545", fillOpacity: 1 }).addTo(map);
+      }
+    }
+  </script>
+</body>
+</html>

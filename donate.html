@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Donate — TrailWatch HK</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div id="app-header"></div>
+
+  <main class="page">
+    <div class="container" style="max-width:640px">
+      <h1 class="page-title" data-i18n="donate_title"></h1>
+      <p class="page-sub" data-i18n="donate_sub"></p>
+
+      <div class="hero" style="min-height:200px;margin-bottom:1.5rem">
+        <div class="hero-bg" style="background:linear-gradient(to top, rgba(11,66,26,0.9), rgba(11,66,26,0.45)), url('https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=1200&q=80') center/cover"></div>
+        <div class="hero-content">
+          <h1 style="font-size:1.75rem" data-i18n="donate_hero"></h1>
+          <p data-i18n="donate_body"></p>
+        </div>
+      </div>
+
+      <div class="card" style="padding:1.35rem;margin-bottom:1.25rem">
+        <label style="font-weight:700;color:var(--green-900);display:block;margin-bottom:0.75rem" data-i18n="donate_amount"></label>
+        <div class="diff-chips" id="amtChips" style="margin-bottom:1rem">
+          <button type="button" class="chip active" data-amt="50">$50</button>
+          <button type="button" class="chip" data-amt="100">$100</button>
+          <button type="button" class="chip" data-amt="200">$200</button>
+          <button type="button" class="chip" data-amt="500">$500</button>
+        </div>
+        <div class="form-group">
+          <label data-i18n="donate_custom"></label>
+          <input class="form-input" type="number" id="customAmt" min="1" placeholder="HKD" />
+        </div>
+        <div class="toggle-pills" id="freqToggle" style="margin-bottom:1rem">
+          <button type="button" class="active" data-freq="once" data-i18n="donate_once"></button>
+          <button type="button" data-freq="monthly" data-i18n="donate_monthly"></button>
+        </div>
+        <button class="btn btn-primary btn-block btn-lg" id="donateBtn" data-i18n="donate_cta"></button>
+        <p style="font-size:0.75rem;color:var(--text-muted);margin-top:0.75rem;text-align:center" data-i18n="donate_note"></p>
+      </div>
+
+      <div class="section-head">
+        <h2 data-i18n="donate_impact_title"></h2>
+      </div>
+      <ul class="highlight-list">
+        <li><span class="hl-icon">⚠</span><span class="hl-label" data-i18n="donate_impact_1"></span></li>
+        <li><span class="hl-icon">🌳</span><span class="hl-label" data-i18n="donate_impact_2"></span></li>
+        <li><span class="hl-icon">🌿</span><span class="hl-label" data-i18n="donate_impact_3"></span></li>
+        <li><span class="hl-icon">🧹</span><span class="hl-label" data-i18n="donate_impact_4"></span></li>
+      </ul>
+    </div>
+  </main>
+
+  <div id="app-footer"></div>
+
+  <script src="js/i18n.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/cms-store.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    document.documentElement.lang = TW.getLang() === "zh" ? "zh-Hant" : "en";
+    initShell("donate");
+
+    let amount = 50;
+    let freq = "once";
+
+    document.querySelectorAll("#amtChips .chip").forEach((chip) => {
+      chip.addEventListener("click", () => {
+        document.querySelectorAll("#amtChips .chip").forEach((c) => c.classList.remove("active"));
+        chip.classList.add("active");
+        amount = +chip.dataset.amt;
+        document.getElementById("customAmt").value = "";
+      });
+    });
+    document.getElementById("customAmt").addEventListener("input", (e) => {
+      const v = parseInt(e.target.value, 10);
+      if (v > 0) {
+        amount = v;
+        document.querySelectorAll("#amtChips .chip").forEach((c) => c.classList.remove("active"));
+      }
+    });
+    document.querySelectorAll("#freqToggle button").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll("#freqToggle button").forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        freq = btn.dataset.freq;
+      });
+    });
+    document.getElementById("donateBtn").addEventListener("click", () => {
+      CMS.submitDonation({
+        name: (TW.user && TW.user.name) || "Anonymous",
+        email: (TW.user && TW.user.email) || "",
+        amount: amount,
+        frequency: freq,
+        source: "web",
+      });
+      showToast(TW.t("donate_thanks") + " · HK$" + amount + (freq === "monthly" ? " / mo" : ""));
+    });
+  </script>
+</body>
+</html>

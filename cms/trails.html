@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CMS — Recommended Trails</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="css/cms.css" />
+</head>
+<body class="cms-body">
+  <div id="cmsShell">
+    <h1>Recommended Trails</h1>
+    <p class="sub">Pick a route on the map, assign categories, and publish to Explore (monthly &amp; filter chips).</p>
+
+    <div class="cms-row">
+      <div class="cms-card">
+        <h3 style="margin-top:0" id="formTitle">Add recommendation</h3>
+        <form class="cms-form" id="trailForm">
+          <input type="hidden" id="editId" />
+          <label>Title (EN)</label>
+          <input id="title" required />
+          <label>Title (繁)</label>
+          <input id="titleZh" />
+          <label>Description (EN)</label>
+          <textarea id="desc"></textarea>
+          <label>Description (繁)</label>
+          <textarea id="descZh"></textarea>
+          <label>Or link existing trail library</label>
+          <select id="trailLib">
+            <option value="">— Custom / map only —</option>
+          </select>
+          <label>Categories</label>
+          <div class="cms-checks" id="catChecks"></div>
+          <label>District</label>
+          <select id="district"></select>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.5rem">
+            <div><label>Distance</label><input id="distance" placeholder="7.2 km" /></div>
+            <div><label>Duration</label><input id="duration" placeholder="2h 30m" /></div>
+            <div><label>Difficulty 1–5</label><input id="difficulty" type="number" min="1" max="5" value="2" /></div>
+          </div>
+          <label>Image URL</label>
+          <input id="image" placeholder="https://…" />
+          <label>Month tag (YYYY-MM)</label>
+          <input id="month" placeholder="2026-07" />
+          <div class="cms-checks" style="margin-top:0.75rem">
+            <label><input type="checkbox" id="published" checked /> Published on frontend</label>
+            <label><input type="checkbox" id="featured" /> Featured recommendation</label>
+          </div>
+          <p style="font-size:0.8rem;color:#6b7280;margin:0.75rem 0 0.35rem">
+            <strong>Map:</strong> click to add points along the trail. Clear to reset.
+          </p>
+          <div class="cms-toolbar">
+            <button type="button" class="cms-btn cms-btn-secondary cms-btn-sm" id="clearPath">Clear path</button>
+            <button type="button" class="cms-btn cms-btn-secondary cms-btn-sm" id="undoPoint">Undo point</button>
+            <span id="pathCount" style="font-size:0.8rem;color:#6b7280">0 points</span>
+          </div>
+          <div id="trailMap" class="cms-map"></div>
+          <div class="cms-toolbar" style="margin-top:0.75rem">
+            <button type="submit" class="cms-btn cms-btn-primary">Save recommendation</button>
+            <button type="button" class="cms-btn cms-btn-secondary" id="resetForm">New</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="cms-card">
+        <h3 style="margin-top:0">Published &amp; drafts</h3>
+        <table class="cms-table">
+          <thead>
+            <tr><th>Trail</th><th>Categories</th><th>Status</th><th></th></tr>
+          </thead>
+          <tbody id="list"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="../js/data.js"></script>
+  <script src="../js/cms-store.js"></script>
+  <script src="js/cms-ui.js"></script>
+  <script>
+    cmsInitShell("trails");
+
+    const cats = [
+      { id: "accessible", en: "Accessible Trail", zh: "無障礙徑" },
+      { id: "long", en: "Long Trail", zh: "長途徑" },
+      { id: "backyard", en: "Backyard", zh: "後花園" },
+      { id: "coastal", en: "Coastal Trail Challenge", zh: "海岸徑挑戰" },
+      { id: "heritage", en: "Heritage", zh: "文物徑" },
+    ];
+    document.getElementById("catChecks").innerHTML = cats
+      .map((c) => `<label><input type="checkbox" name="cat" value="${c.id}" /> ${c.en}</label>`)
+      .join("");
+
+    document.getElementById("district").innerHTML = TW.districts
+      .map((d) => `<option value="${d.id}">${d.name}</option>`)
+      .join("");
+
+    document.getElementById("trailLib").innerHTML += TW.trails
+      .map((t) => `<option value="${t.id}">${t.title}</option>`)
+      .join("");
+
+    let path = [];
+    let line, markers = [];
+    const map = L.map("trailMap").setView([22.32, 114.17], 11);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "© OSM" }).addTo(map);
+
+    function redrawPath() {
+      if (line) map.removeLayer(line);
+      markers.forEach((m) => map.removeLayer(m));
+      markers = [];
+      if (path.length) {
+        line = L.polyline(path, { color: "#2563eb", weight: 5 }).addTo(map);
+        path.forEach((p, i) => {
+          markers.push(
+            L.circleMarker(p, {
+              radius: 6,
+              color: "#fff",
+              weight: 2,
+              fillColor: i === 0 ? "#2d8a45" : i === path.length - 1 ? "#d64545" : "#4a90c8",
+              fillOpacity: 1,
+            }).addTo(map)
+          );
+        });
+        if (path.length > 1) map.fitBounds(line.getBounds().pad(0.2));
+      }
+      document.getElementById("pathCount").textContent = path.length + " points";
+    }
+
+    map.on("click", (e) => {
+      path.push([e.latlng.lat, e.latlng.lng]);
+      redrawPath();
+    });
+    document.getElementById("clearPath").addEventListener("click", () => {
+      path = [];
+      redrawPath();
+    });
+    document.getElementById("undoPoint").addEventListener("click", () => {
+      path.pop();
+      redrawPath();
+    });
+
+    document.getElementById("trailLib").addEventListener("change", () => {
+      const id = document.getElementById("trailLib").value;
+      const t = TW.trails.find((x) => x.id === id);
+      if (!t) return;
+      document.getElementById("title").value = t.title;
+      document.getElementById("titleZh").value = t.titleZh || "";
+      document.getElementById("desc").value = t.desc || "";
+      document.getElementById("descZh").value = t.descZh || "";
+      document.getElementById("district").value = t.district;
+      document.getElementById("distance").value = t.distance || "";
+      document.getElementById("duration").value = t.duration || "";
+      document.getElementById("difficulty").value = t.difficulty || 2;
+      document.getElementById("image").value = t.image || "";
+      document.getElementById("month").value = t.monthly || "";
+      document.querySelectorAll('input[name="cat"]').forEach((cb) => {
+        cb.checked = (t.tags || []).indexOf(cb.value) >= 0;
+      });
+      // seed a sample path near district if empty
+      if (!path.length) {
+        const seed = CMS.trailToRecommended(t, 0);
+        path = seed.path.slice();
+        redrawPath();
+      }
+    });
+
+    function selectedCats() {
+      return Array.from(document.querySelectorAll('input[name="cat"]:checked')).map((c) => c.value);
+    }
+
+    function resetForm() {
+      document.getElementById("trailForm").reset();
+      document.getElementById("editId").value = "";
+      document.getElementById("published").checked = true;
+      document.getElementById("formTitle").textContent = "Add recommendation";
+      path = [];
+      redrawPath();
+    }
+    document.getElementById("resetForm").addEventListener("click", resetForm);
+
+    document.getElementById("trailForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      if (path.length < 2) {
+        cmsToast("Add at least 2 map points for the trail");
+        return;
+      }
+      const store = CMS.getStore();
+      const id = document.getElementById("editId").value || uid("rec");
+      const entry = {
+        id,
+        trailId: document.getElementById("trailLib").value || null,
+        title: document.getElementById("title").value.trim(),
+        titleZh: document.getElementById("titleZh").value.trim(),
+        desc: document.getElementById("desc").value.trim(),
+        descZh: document.getElementById("descZh").value.trim(),
+        categories: selectedCats(),
+        district: document.getElementById("district").value,
+        difficulty: +document.getElementById("difficulty").value || 2,
+        distance: document.getElementById("distance").value.trim(),
+        duration: document.getElementById("duration").value.trim(),
+        elevation: "",
+        image: document.getElementById("image").value.trim() || "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=800&q=80",
+        published: document.getElementById("published").checked,
+        featured: document.getElementById("featured").checked,
+        month: document.getElementById("month").value.trim(),
+        path: path.slice(),
+        createdAt: new Date().toISOString(),
+      };
+      const idx = store.recommended.findIndex((r) => r.id === id);
+      if (idx >= 0) store.recommended[idx] = Object.assign({}, store.recommended[idx], entry);
+      else store.recommended.unshift(entry);
+      CMS.setStore(store);
+      cmsToast("Saved — visible on Explore when published");
+      renderList();
+      resetForm();
+    });
+
+    function loadEdit(id) {
+      const r = CMS.getStore().recommended.find((x) => x.id === id);
+      if (!r) return;
+      document.getElementById("formTitle").textContent = "Edit recommendation";
+      document.getElementById("editId").value = r.id;
+      document.getElementById("title").value = r.title || "";
+      document.getElementById("titleZh").value = r.titleZh || "";
+      document.getElementById("desc").value = r.desc || "";
+      document.getElementById("descZh").value = r.descZh || "";
+      document.getElementById("trailLib").value = r.trailId || "";
+      document.getElementById("district").value = r.district || "sai-kung";
+      document.getElementById("distance").value = r.distance || "";
+      document.getElementById("duration").value = r.duration || "";
+      document.getElementById("difficulty").value = r.difficulty || 2;
+      document.getElementById("image").value = r.image || "";
+      document.getElementById("month").value = r.month || "";
+      document.getElementById("published").checked = !!r.published;
+      document.getElementById("featured").checked = !!r.featured;
+      document.querySelectorAll('input[name="cat"]').forEach((cb) => {
+        cb.checked = (r.categories || []).indexOf(cb.value) >= 0;
+      });
+      path = (r.path || []).map((p) => [p[0], p[1]]);
+      redrawPath();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function renderList() {
+      const list = CMS.getStore().recommended;
+      document.getElementById("list").innerHTML = list
+        .map((r) => {
+          const cats = (r.categories || []).join(", ") || "—";
+          const badge = r.published
+            ? '<span class="cms-badge pub">Published</span>'
+            : '<span class="cms-badge draft">Draft</span>';
+          return `<tr>
+            <td><strong>${r.title}</strong><br/><span style="color:#6b7280;font-size:0.75rem">${r.titleZh || ""}</span></td>
+            <td>${cats}${r.featured ? " · ★" : ""}</td>
+            <td>${badge}</td>
+            <td>
+              <button class="cms-btn cms-btn-secondary cms-btn-sm" data-edit="${r.id}">Edit</button>
+              <button class="cms-btn cms-btn-danger cms-btn-sm" data-del="${r.id}">Delete</button>
+            </td>
+          </tr>`;
+        })
+        .join("") || '<tr><td colspan="4">No recommendations yet.</td></tr>';
+
+      document.querySelectorAll("[data-edit]").forEach((b) =>
+        b.addEventListener("click", () => loadEdit(b.dataset.edit))
+      );
+      document.querySelectorAll("[data-del]").forEach((b) =>
+        b.addEventListener("click", () => {
+          if (!confirm("Delete this recommendation?")) return;
+          const store = CMS.getStore();
+          store.recommended = store.recommended.filter((r) => r.id !== b.dataset.del);
+          CMS.setStore(store);
+          renderList();
+          cmsToast("Deleted");
+        })
+      );
+    }
+    renderList();
+    setTimeout(() => map.invalidateSize(), 100);
+  </script>
+</body>
+</html>

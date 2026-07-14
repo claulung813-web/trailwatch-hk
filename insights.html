@@ -17,13 +17,13 @@
       <div class="profile-header">
         <img class="profile-avatar" id="avatar" alt="" style="width:64px;height:64px" />
         <div>
-          <h1 class="page-title" style="margin:0">Insights</h1>
+          <h1 class="page-title" style="margin:0" data-i18n="insights_title">Insights</h1>
           <div class="rank" id="rank"></div>
         </div>
       </div>
 
       <div class="chart-card">
-        <h3>Pace Performance</h3>
+        <h3 data-i18n="insights_pace"></h3>
         <svg class="pace-chart" viewBox="0 0 480 160" preserveAspectRatio="none">
           <defs>
             <linearGradient id="paceFill" x1="0" y1="0" x2="0" y2="1">
@@ -55,44 +55,44 @@
           <text x="430" y="156" font-size="9" fill="#9ca3af">2026</text>
         </svg>
         <div style="display:flex;gap:1rem;font-size:0.75rem;margin-top:0.5rem;color:var(--text-muted)">
-          <span><span style="color:#3da855">●</span> Avg Pace</span>
-          <span><span style="color:#4a90c8">●</span> Best Pace</span>
+          <span><span style="color:#3da855">●</span> <span data-i18n="insights_avg"></span></span>
+          <span><span style="color:#4a90c8">●</span> <span data-i18n="insights_best"></span></span>
           <span style="margin-left:auto">min/km</span>
         </div>
         <div class="chart-summary">
           <div class="box">
-            <div class="k">Overall Avg</div>
+            <div class="k" data-i18n="insights_overall"></div>
             <div class="v" id="avgPace">15.3 min/km</div>
           </div>
           <div class="box">
-            <div class="k">All-Time Best</div>
+            <div class="k" data-i18n="insights_alltime"></div>
             <div class="v" id="bestPace">10.1 min/km</div>
           </div>
         </div>
       </div>
 
       <div class="chart-card">
-        <h3>Activity Trend</h3>
+        <h3 data-i18n="insights_activity"></h3>
         <div class="chart-bars" id="activityBars"></div>
         <div class="insight-callout">
-          <span>↑ +18% Improved Consistency</span>
-          <small>Compared to last year's average.</small>
+          <span data-i18n="insights_consistency"></span>
+          <small data-i18n="insights_vs_year"></small>
         </div>
       </div>
 
       <div class="chart-card">
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem">
-          <h3 style="margin:0">Distance Trend</h3>
+          <h3 style="margin:0" data-i18n="insights_distance"></h3>
           <div class="toggle-pills" id="distToggle" style="margin:0">
-            <button class="active" data-mode="monthly">Monthly</button>
-            <button data-mode="yearly">Yearly</button>
+            <button class="active" data-mode="monthly" data-i18n="insights_monthly"></button>
+            <button data-mode="yearly" data-i18n="insights_yearly"></button>
           </div>
         </div>
         <div class="chart-bars" id="distBars" style="margin-top:1rem"></div>
       </div>
 
       <div class="chart-card">
-        <h3>Performance Trend</h3>
+        <h3 data-i18n="insights_perf"></h3>
         <svg viewBox="0 0 480 120" style="width:100%;height:120px" preserveAspectRatio="none">
           <defs>
             <linearGradient id="perfFill" x1="0" y1="0" x2="0" y2="1">
@@ -108,7 +108,7 @@
       </div>
 
       <div class="chart-card">
-        <h3>Region Distribution</h3>
+        <h3 data-i18n="insights_region"></h3>
         <div class="region-row">
           <div>
             <img src="https://images.unsplash.com/photo-1536599018102-9f803c140fc1?w=200&h=120&fit=crop" alt="HK"

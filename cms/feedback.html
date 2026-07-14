@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CMS — Feedback</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/cms.css" />
+</head>
+<body class="cms-body">
+  <div id="cmsShell">
+    <h1>Feedback inbox</h1>
+    <p class="sub">Messages from the About / contact feedback form. Mark read, add a reply note, or close.</p>
+
+    <div class="cms-toolbar">
+      <select id="filterStatus">
+        <option value="all">All statuses</option>
+      </select>
+      <label style="font-size:0.85rem"><input type="checkbox" id="onlyNew" /> New only</label>
+    </div>
+
+    <div class="cms-row">
+      <div class="cms-card" style="flex:1.2">
+        <table class="cms-table">
+          <thead>
+            <tr><th>Message</th><th>Status</th><th></th></tr>
+          </thead>
+          <tbody id="list"></tbody>
+        </table>
+      </div>
+      <div class="cms-card" id="detailPanel" style="display:none;flex:1">
+        <h3 style="margin-top:0" id="dSubject">—</h3>
+        <p style="font-size:0.8rem;color:#6b7280" id="dMeta"></p>
+        <p style="font-size:0.95rem;color:#374151;white-space:pre-wrap" id="dMessage"></p>
+        <form class="cms-form" id="fbForm">
+          <input type="hidden" id="fbId" />
+          <label>Status</label>
+          <select id="status"></select>
+          <label>Staff reply / internal note</label>
+          <textarea id="staffReply" placeholder="Summary of reply sent to user…"></textarea>
+          <div class="cms-toolbar" style="margin-top:0.75rem">
+            <button type="submit" class="cms-btn cms-btn-primary">Save</button>
+            <button type="button" class="cms-btn cms-btn-secondary" id="btnRead">Mark read</button>
+            <button type="button" class="cms-btn cms-btn-primary" id="btnReplied">Mark replied</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="../js/data.js"></script>
+  <script src="../js/cms-store.js"></script>
+  <script src="js/cms-ui.js"></script>
+  <script>
+    cmsInitShell("feedback");
+
+    document.getElementById("filterStatus").innerHTML += CMS.FEEDBACK_STATUSES.map(
+      (s) => `<option value="${s.id}">${s.label}</option>`
+    ).join("");
+    document.getElementById("status").innerHTML = CMS.FEEDBACK_STATUSES.map(
+      (s) => `<option value="${s.id}">${s.label}</option>`
+    ).join("");
+
+    function badge(st) {
+      if (st === "replied" || st === "closed") return "pub";
+      if (st === "new") return "gov";
+      return "draft";
+    }
+
+    function renderList() {
+      const filter = document.getElementById("filterStatus").value;
+      const onlyNew = document.getElementById("onlyNew").checked;
+      let list = (CMS.getStore().feedback || []).slice();
+      if (filter !== "all") list = list.filter((f) => f.status === filter);
+      if (onlyNew) list = list.filter((f) => f.status === "new");
+
+      document.getElementById("list").innerHTML =
+        list
+          .map(
+            (f) => `
+        <tr>
+          <td>
+            <strong>${f.subject || "(No subject)"}</strong><br/>
+            <span style="font-size:0.75rem;color:#6b7280">${f.name || "—"} · ${f.email || ""}</span>
+          </td>
+          <td><span class="cms-badge ${badge(f.status)}">${CMS.statusLabel(f.status, "feedback")}</span></td>
+          <td><button class="cms-btn cms-btn-secondary cms-btn-sm" data-open="${f.id}">Open</button></td>
+        </tr>`
+          )
+          .join("") || '<tr><td colspan="3">No feedback yet.</td></tr>';
+
+      document.querySelectorAll("[data-open]").forEach((b) =>
+        b.addEventListener("click", () => openDetail(b.dataset.open))
+      );
+    }
+
+    function openDetail(id) {
+      const f = (CMS.getStore().feedback || []).find((x) => x.id === id);
+      if (!f) return;
+      document.getElementById("detailPanel").style.display = "block";
+      document.getElementById("fbId").value = f.id;
+      document.getElementById("dSubject").textContent = f.subject || "(No subject)";
+      document.getElementById("dMeta").textContent =
+        (f.name || "—") +
+        " · " +
+        (f.email || "—") +
+        " · " +
+        (f.createdAt ? new Date(f.createdAt).toLocaleString() : "—");
+      document.getElementById("dMessage").textContent = f.message || "";
+      document.getElementById("status").value = f.status;
+      document.getElementById("staffReply").value = f.staffReply || "";
+
+      if (f.status === "new") {
+        const store = CMS.getStore();
+        const idx = store.feedback.findIndex((x) => x.id === id);
+        if (idx >= 0) {
+          store.feedback[idx].status = "read";
+          CMS.setStore(store);
+          document.getElementById("status").value = "read";
+          renderList();
+        }
+      }
+    }
+
+    function save(patch) {
+      const id = document.getElementById("fbId").value;
+      const store = CMS.getStore();
+      const idx = store.feedback.findIndex((x) => x.id === id);
+      if (idx < 0) return;
+      store.feedback[idx] = Object.assign({}, store.feedback[idx], {
+        status: document.getElementById("status").value,
+        staffReply: document.getElementById("staffReply").value.trim(),
+      }, patch || {});
+      CMS.setStore(store);
+      renderList();
+      cmsToast("Feedback updated");
+    }
+
+    document.getElementById("fbForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      save();
+    });
+    document.getElementById("btnRead").addEventListener("click", () => {
+      document.getElementById("status").value = "read";
+      save({ status: "read" });
+    });
+    document.getElementById("btnReplied").addEventListener("click", () => {
+      document.getElementById("status").value = "replied";
+      save({ status: "replied" });
+    });
+    document.getElementById("filterStatus").addEventListener("change", renderList);
+    document.getElementById("onlyNew").addEventListener("change", renderList);
+    renderList();
+  </script>
+</body>
+</html>

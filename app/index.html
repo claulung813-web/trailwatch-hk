@@ -194,9 +194,10 @@
         <!-- Act D: cleanup (no same-spot required) -->
         <div class="env-modal" id="modalD">
           <div class="env-modal-sheet">
-            <div style="display:flex;justify-content:space-between">
-              <strong style="color:var(--green-900)" id="dTitle"></strong>
-              <button type="button" id="closeD">✕</button>
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:0.5rem">
+              <button type="button" class="btn btn-secondary" id="backD" style="padding:0.4rem 0.75rem;font-size:0.8rem">‹ <span id="dBackLbl"></span></button>
+              <strong style="color:var(--green-900);flex:1;text-align:center" id="dTitle"></strong>
+              <button type="button" id="closeD" aria-label="Close">✕</button>
             </div>
             <p style="font-size:0.8rem;color:var(--text-muted);margin:0.35rem 0" id="dHint"></p>
             <div class="cleanup-slots">
@@ -238,8 +239,9 @@
 
         <nav class="app-bottom-nav">
           <a href="../index.html"><span class="ico">🏠</span><span id="nHome"></span></a>
-          <a href="../explore.html"><span class="ico">🧭</span><span id="nExplore"></span></a>
+          <a href="hikes.html"><span class="ico">🗺</span><span id="nHikes"></span></a>
           <a href="index.html" class="active"><span class="ico">✈</span><span id="nTrack"></span></a>
+          <a href="donate.html"><span class="ico">💚</span><span id="nDonate"></span></a>
           <a href="../profile.html"><span class="ico">👤</span><span id="nDash"></span></a>
         </nav>
       </div>
@@ -252,6 +254,7 @@
   <script src="../js/i18n.js"></script>
   <script src="../js/data.js"></script>
   <script src="../js/env-badge.js"></script>
+  <script src="../js/hikes.js"></script>
   <script src="../js/app.js"></script>
   <script>
     document.documentElement.lang = TW.getLang() === "zh" ? "zh-Hant" : "en";
@@ -327,8 +330,9 @@
       cat.options[2].text = t("cat_vandalism");
       cat.options[3].text = t("cat_obstruction");
       document.getElementById("nHome").textContent = t("app_home");
-      document.getElementById("nExplore").textContent = t("app_explore");
+      document.getElementById("nHikes").textContent = t("nav_hikes");
       document.getElementById("nTrack").textContent = t("app_track");
+      document.getElementById("nDonate").textContent = t("nav_donate");
       document.getElementById("nDash").textContent = t("app_dashboard");
 
       document.getElementById("aTitle").textContent = t("env_start_title");
@@ -352,6 +356,7 @@
       document.getElementById("dBefore").textContent = t("env_cleanup_before");
       document.getElementById("dAfter").textContent = t("env_cleanup_after");
       document.getElementById("submitD").textContent = t("env_cleanup_submit");
+      document.getElementById("dBackLbl").textContent = t("env_back");
     }
     i18nUI();
     refreshEnvPill();
@@ -364,6 +369,8 @@
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "© OSM", maxZoom: 18 }).addTo(map);
     L.polyline([[22.345, 114.24], [22.355, 114.25], [22.368, 114.27]], { color: "#f5a623", weight: 2, dashArray: "6 6", opacity: 0.7 }).addTo(map);
     let pathLine = null;
+    let recordedPath = [route[0]];
+    let hikeStartedAt = null;
     let marker = L.circleMarker(route[0], { radius: 8, color: "#fff", weight: 3, fillColor: "#0b421a", fillOpacity: 1 }).addTo(map);
 
     let state = "idle";
@@ -402,9 +409,9 @@
       calories = Math.round(dist * 95);
       if (routeIdx < route.length - 1 && seconds % 8 === 0) {
         routeIdx++;
-        const sliced = route.slice(0, routeIdx + 1);
+        recordedPath = route.slice(0, routeIdx + 1);
         if (pathLine) map.removeLayer(pathLine);
-        pathLine = L.polyline(sliced, { color: "#2563eb", weight: 5 }).addTo(map);
+        pathLine = L.polyline(recordedPath, { color: "#2563eb", weight: 5 }).addTo(map);
         marker.setLatLng(route[routeIdx]);
         map.panTo(route[routeIdx]);
       }
@@ -418,6 +425,8 @@
 
     function beginTracking() {
       hikeStarted = true;
+      hikeStartedAt = new Date().toISOString();
+      recordedPath = [route[0]];
       showState("active");
       if (!timer) timer = setInterval(tick, 1000);
       if (!pathLine) pathLine = L.polyline([route[0]], { color: "#2563eb", weight: 5 }).addTo(map);
@@ -426,8 +435,22 @@
 
     function finishSave() {
       clearInterval(timer); timer = null;
+      const titleInput = document.getElementById("hikeTitle").value.trim();
+      const defaultTitle = TW.getLang() === "zh" ? TW.t("hikes_untitled") : TW.t("hikes_untitled");
+      const saved = TW.saveHike({
+        id: hikeId,
+        title: titleInput || defaultTitle,
+        titleZh: titleInput || TW.t("hikes_untitled"),
+        seconds,
+        distanceKm: dist,
+        elevGain: gain,
+        elevLoss: loss,
+        path: recordedPath.length > 1 ? recordedPath : route.slice(0, Math.max(2, routeIdx + 1)),
+        startedAt: hikeStartedAt || new Date().toISOString(),
+        endedAt: new Date().toISOString(),
+      });
       showToast(TW.t("toast_saved"));
-      setTimeout(() => (location.href = "../profile.html"), 900);
+      setTimeout(() => (location.href = "hike-detail.html?id=" + encodeURIComponent(saved.id)), 800);
     }
 
     document.getElementById("btnStart").addEventListener("click", () => {
@@ -534,6 +557,7 @@
       updateCleanupSubmit();
     });
     document.getElementById("closeD").addEventListener("click", () => document.getElementById("modalD").classList.remove("open"));
+    document.getElementById("backD").addEventListener("click", () => document.getElementById("modalD").classList.remove("open"));
     document.getElementById("submitD").addEventListener("click", () => {
       const n = (cleanupBefore ? 1 : 0) + (cleanupAfter ? 1 : 0);
       const result = TW.recordEnvAct("D", {

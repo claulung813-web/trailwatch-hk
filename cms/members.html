@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CMS — Members</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/cms.css" />
+</head>
+<body class="cms-body">
+  <div id="cmsShell">
+    <h1>Members</h1>
+    <p class="sub">Review new registrations, approve or suspend accounts, and note newsletter preferences.</p>
+
+    <div class="cms-toolbar">
+      <select id="filterStatus">
+        <option value="all">All statuses</option>
+      </select>
+    </div>
+
+    <div class="cms-row">
+      <div class="cms-card" style="flex:1.2">
+        <table class="cms-table">
+          <thead>
+            <tr><th>Member</th><th>Status</th><th>Newsletter</th><th></th></tr>
+          </thead>
+          <tbody id="list"></tbody>
+        </table>
+      </div>
+      <div class="cms-card" id="detailPanel" style="display:none;flex:1">
+        <h3 style="margin-top:0" id="dName">—</h3>
+        <p style="font-size:0.9rem;color:#4b5563" id="dMeta"></p>
+        <form class="cms-form" id="memForm">
+          <input type="hidden" id="memId" />
+          <label>Status</label>
+          <select id="status"></select>
+          <label>Staff note (internal)</label>
+          <textarea id="note" placeholder="e.g. Verified email, welcome pack sent…"></textarea>
+          <div class="cms-toolbar" style="margin-top:0.75rem">
+            <button type="submit" class="cms-btn cms-btn-primary">Save</button>
+            <button type="button" class="cms-btn cms-btn-primary" id="btnApprove">Approve</button>
+            <button type="button" class="cms-btn cms-btn-danger" id="btnReject">Reject</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="../js/data.js"></script>
+  <script src="../js/cms-store.js"></script>
+  <script src="js/cms-ui.js"></script>
+  <script>
+    cmsInitShell("members");
+
+    document.getElementById("filterStatus").innerHTML += CMS.MEMBER_STATUSES.map(
+      (s) => `<option value="${s.id}">${s.label}</option>`
+    ).join("");
+    document.getElementById("status").innerHTML = CMS.MEMBER_STATUSES.map(
+      (s) => `<option value="${s.id}">${s.label}</option>`
+    ).join("");
+
+    function badge(st) {
+      if (st === "approved") return "pub";
+      if (st === "rejected" || st === "suspended") return "rej";
+      return "draft";
+    }
+
+    function renderList() {
+      const filter = document.getElementById("filterStatus").value;
+      let list = (CMS.getStore().members || []).slice();
+      if (filter !== "all") list = list.filter((m) => m.status === filter);
+
+      document.getElementById("list").innerHTML =
+        list
+          .map(
+            (m) => `
+        <tr>
+          <td>
+            <strong>${m.name || "—"}</strong><br/>
+            <span style="font-size:0.75rem;color:#6b7280">${m.email || ""}</span>
+          </td>
+          <td><span class="cms-badge ${badge(m.status)}">${CMS.statusLabel(m.status, "member")}</span></td>
+          <td>${m.newsletter ? "Yes" : "No"}</td>
+          <td><button class="cms-btn cms-btn-secondary cms-btn-sm" data-open="${m.id}">Open</button></td>
+        </tr>`
+          )
+          .join("") || '<tr><td colspan="4">No members yet.</td></tr>';
+
+      document.querySelectorAll("[data-open]").forEach((b) =>
+        b.addEventListener("click", () => openDetail(b.dataset.open))
+      );
+    }
+
+    function openDetail(id) {
+      const m = (CMS.getStore().members || []).find((x) => x.id === id);
+      if (!m) return;
+      document.getElementById("detailPanel").style.display = "block";
+      document.getElementById("memId").value = m.id;
+      document.getElementById("dName").textContent = m.name;
+      document.getElementById("dMeta").textContent =
+        (m.email || "") +
+        (m.phone ? " · " + m.phone : "") +
+        " · Joined " +
+        (m.createdAt ? new Date(m.createdAt).toLocaleString() : "—");
+      document.getElementById("status").value = m.status;
+      document.getElementById("note").value = m.note || "";
+    }
+
+    function save(patch) {
+      const id = document.getElementById("memId").value;
+      const store = CMS.getStore();
+      const idx = store.members.findIndex((x) => x.id === id);
+      if (idx < 0) return;
+      store.members[idx] = Object.assign({}, store.members[idx], {
+        status: document.getElementById("status").value,
+        note: document.getElementById("note").value.trim(),
+      }, patch || {});
+      CMS.setStore(store);
+      renderList();
+      cmsToast("Member updated");
+    }
+
+    document.getElementById("memForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      save();
+    });
+    document.getElementById("btnApprove").addEventListener("click", () => {
+      document.getElementById("status").value = "approved";
+      save({ status: "approved" });
+    });
+    document.getElementById("btnReject").addEventListener("click", () => {
+      document.getElementById("status").value = "rejected";
+      save({ status: "rejected" });
+    });
+    document.getElementById("filterStatus").addEventListener("change", renderList);
+    renderList();
+  </script>
+</body>
+</html>

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Register — TrailWatch HK</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div id="app-header"></div>
+  <main class="page">
+    <div class="container" style="max-width:520px">
+      <h1 class="page-title" data-i18n="register_title"></h1>
+      <p class="page-sub" data-i18n="register_sub"></p>
+
+      <form class="card" id="regForm" style="padding:1.35rem">
+        <div class="form-group">
+          <label data-i18n="profile_name"></label>
+          <input class="form-input" id="regName" required autocomplete="name" />
+        </div>
+        <div class="form-group">
+          <label data-i18n="profile_email"></label>
+          <input class="form-input" id="regEmail" type="email" required autocomplete="email" />
+        </div>
+        <div class="form-group">
+          <label data-i18n="register_phone"></label>
+          <input class="form-input" id="regPhone" type="tel" autocomplete="tel" />
+        </div>
+        <div class="form-group">
+          <label style="display:flex;gap:0.5rem;align-items:flex-start;font-weight:500">
+            <input type="checkbox" id="regNews" style="margin-top:0.2rem" />
+            <span data-i18n="profile_newsletter"></span>
+          </label>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block btn-lg" data-i18n="register_cta"></button>
+        <p style="font-size:0.75rem;color:var(--text-muted);margin-top:0.75rem;text-align:center" data-i18n="register_note"></p>
+      </form>
+    </div>
+  </main>
+  <div id="app-footer"></div>
+  <script src="js/i18n.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/cms-store.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    document.documentElement.lang = TW.getLang() === "zh" ? "zh-Hant" : "en";
+    initShell("register");
+
+    document.getElementById("regForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      CMS.submitMember({
+        name: document.getElementById("regName").value,
+        email: document.getElementById("regEmail").value,
+        phone: document.getElementById("regPhone").value,
+        newsletter: document.getElementById("regNews").checked,
+      });
+      showToast(TW.t("register_thanks"));
+      e.target.reset();
+    });
+  </script>
+</body>
+</html>

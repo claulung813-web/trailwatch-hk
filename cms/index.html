@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TrailWatch CMS — Staff Login</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/cms.css" />
+</head>
+<body class="cms-body">
+  <div class="cms-login-wrap">
+    <div class="cms-login-card">
+      <h1>Staff CMS</h1>
+      <p>Manage trails, incidents, members, donations, feedback &amp; site content.</p>
+      <form id="loginForm">
+        <label for="user">Username</label>
+        <input id="user" autocomplete="username" value="staff" required />
+        <label for="pass">Password</label>
+        <input id="pass" type="password" autocomplete="current-password" value="trailwatch" required />
+        <button type="submit" class="cms-btn cms-btn-primary" style="width:100%;padding:0.75rem">Sign in</button>
+      </form>
+      <div class="cms-hint">Demo login: <strong>staff</strong> / <strong>trailwatch</strong></div>
+      <p style="margin-top:1rem;font-size:0.85rem"><a href="../index.html">← Back to website</a></p>
+    </div>
+  </div>
+  <script src="../js/data.js"></script>
+  <script src="../js/cms-store.js"></script>
+  <script>
+    if (CMS.isLoggedIn()) location.href = "dashboard.html";
+    document.getElementById("loginForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const ok = CMS.login(
+        document.getElementById("user").value.trim(),
+        document.getElementById("pass").value
+      );
+      if (ok) location.href = "dashboard.html";
+      else alert("Invalid credentials. Use staff / trailwatch");
+    });
+  </script>
+</body>
+</html>

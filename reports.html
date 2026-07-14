@@ -111,34 +111,48 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="js/i18n.js"></script>
   <script src="js/data.js"></script>
+  <script src="js/cms-store.js"></script>
   <script src="js/env-badge.js"></script>
   <script src="js/app.js"></script>
   <script>
     document.documentElement.lang = TW.getLang() === "zh" ? "zh-Hant" : "en";
     initShell("reports");
 
-    document.getElementById("reportList").innerHTML = TW.reports.map(renderReportItem).join("");
+    function refreshList() {
+      const list = TW.getReportsForUser();
+      document.getElementById("reportList").innerHTML =
+        list.map(renderReportItem).join("") ||
+        `<p style="color:var(--text-muted)">${TW.t("no_trails")}</p>`;
+      return list;
+    }
+    let mapMarkers = [];
+    const map = L.map("reportMap").setView([22.32, 114.17], 11);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "© OpenStreetMap",
+    }).addTo(map);
+
+    function refreshMapPins(list) {
+      mapMarkers.forEach((m) => map.removeLayer(m));
+      mapMarkers = [];
+      list.forEach((r) => {
+        if (!r.lat || !r.lng) return;
+        const icon = L.divIcon({
+          className: "",
+          html: `<div style="background:#d64545;color:white;padding:4px 8px;border-radius:8px;font-weight:700;font-size:12px;box-shadow:0 2px 8px rgba(0,0,0,.25)">⚠</div>`,
+          iconSize: [28, 28],
+          iconAnchor: [14, 14],
+        });
+        mapMarkers.push(L.marker([r.lat, r.lng], { icon }).addTo(map).bindPopup(TW.tt(r, "title")));
+      });
+    }
+
+    refreshMapPins(refreshList());
 
     const cat = document.getElementById("reportCat");
     cat.options[0].text = "🗑 " + TW.t("cat_waste");
     cat.options[1].text = "🌳 " + TW.t("cat_tree");
     cat.options[2].text = "👎 " + TW.t("cat_vandalism");
     cat.options[3].text = "🚧 " + TW.t("cat_obstruction");
-
-    const map = L.map("reportMap").setView([22.32, 114.17], 11);
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      attribution: "© OpenStreetMap",
-    }).addTo(map);
-
-    TW.reports.forEach((r) => {
-      const icon = L.divIcon({
-        className: "",
-        html: `<div style="background:#d64545;color:white;padding:4px 8px;border-radius:8px;font-weight:700;font-size:12px;box-shadow:0 2px 8px rgba(0,0,0,.25)">⚠</div>`,
-        iconSize: [28, 28],
-        iconAnchor: [14, 14],
-      });
-      L.marker([r.lat, r.lng], { icon }).addTo(map).bindPopup(TW.tt(r, "title"));
-    });
 
     let pinLat = 22.285394;
     let pinLng = 114.153783;
@@ -211,7 +225,22 @@
       showToast(TW.getLang() === "zh" ? "位置已更新" : "Location updated");
     });
     document.getElementById("confirmReport").addEventListener("click", () => {
+      const title =
+        document.getElementById("reportTitle").value.trim() ||
+        (TW.getLang() === "zh" ? "新事故舉報" : "New incident report");
+      const descEl = document.querySelector("#reportFormOverlay textarea");
+      CMS.submitIncident({
+        title: title,
+        titleZh: title,
+        desc: (descEl && descEl.value.trim()) || "",
+        category: document.getElementById("reportCat").value,
+        lat: pinLat,
+        lng: pinLng,
+        coords: pinLat.toFixed(5) + ", " + pinLng.toFixed(5),
+        date: new Date().toLocaleDateString("en-GB"),
+      });
       closeForm();
+      refreshMapPins(refreshList());
       const result = TW.recordEnvAct("C", { note: "web_incident" });
       if (result.ok) {
         showToast(TW.t("env_toast_c") + " · " + TW.t("toast_report"));

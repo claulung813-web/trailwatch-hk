@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>TrailWatch App — Hike Detail</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="../css/styles.css" />
+  <style>
+    body { margin: 0; }
+    .phone-body { flex: 1; overflow-y: auto; display: flex; flex-direction: column; min-height: 0; }
+    #detailMap { flex: 1; min-height: 220px; }
+    .detail-stats { background: white; padding: 0.85rem 1rem 1rem; border-top: 1px solid var(--border); }
+  </style>
+</head>
+<body>
+  <div class="app-page">
+    <div class="app-page-top">
+      <a href="hikes.html" id="backList"></a>
+      <div class="lang-switch" style="margin:0.75rem auto 0;width:fit-content;background:rgba(255,255,255,0.15);border-color:rgba(255,255,255,0.25)">
+        <button type="button" data-lang="en" style="color:#fff">EN</button>
+        <button type="button" data-lang="zh" style="color:#fff">繁</button>
+      </div>
+    </div>
+
+    <div class="phone-frame">
+      <div class="phone-notch"></div>
+      <div class="phone-screen">
+        <div style="padding:2.4rem 0.85rem 0.65rem;background:white;border-bottom:1px solid var(--border)">
+          <a href="hikes.html" style="font-size:0.85rem;font-weight:600;color:var(--green-800)" id="backInline"></a>
+          <h1 style="font-size:1.1rem;color:var(--green-900);margin:0.4rem 0 0.15rem" id="hikeTitle"></h1>
+          <p style="font-size:0.75rem;color:var(--text-muted);margin:0" id="hikeDate"></p>
+        </div>
+        <div class="phone-body">
+          <div id="detailMap"></div>
+          <div class="detail-stats">
+            <div class="track-metrics">
+              <div class="metric"><div class="val" id="vDur">—</div><div class="lbl" id="lDur"></div></div>
+              <div class="metric"><div class="val" id="vDist">—</div><div class="lbl" id="lDist"></div></div>
+              <div class="metric"><div class="val" id="vGain">—</div><div class="lbl" id="lGain"></div></div>
+            </div>
+          </div>
+        </div>
+        <nav class="app-bottom-nav">
+          <a href="../index.html"><span class="ico">🏠</span><span id="nHome"></span></a>
+          <a href="hikes.html" class="active"><span class="ico">🗺</span><span id="nHikes"></span></a>
+          <a href="index.html"><span class="ico">✈</span><span id="nTrack"></span></a>
+          <a href="donate.html"><span class="ico">💚</span><span id="nDonate"></span></a>
+          <a href="../profile.html"><span class="ico">👤</span><span id="nDash"></span></a>
+        </nav>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="../js/i18n.js"></script>
+  <script src="../js/data.js"></script>
+  <script src="../js/hikes.js"></script>
+  <script src="../js/app.js"></script>
+  <script>
+    document.documentElement.lang = TW.getLang() === "zh" ? "zh-Hant" : "en";
+    const lang = TW.getLang();
+    document.querySelectorAll(".lang-switch button").forEach((b) => {
+      b.classList.toggle("active", b.dataset.lang === lang);
+      b.addEventListener("click", () => { TW.setLang(b.dataset.lang); location.reload(); });
+    });
+    document.getElementById("backList").textContent = TW.t("hikes_back_list");
+    document.getElementById("backInline").textContent = "‹ " + TW.t("env_back");
+    document.getElementById("lDur").textContent = TW.t("hikes_duration");
+    document.getElementById("lDist").textContent = TW.t("hikes_distance");
+    document.getElementById("lGain").textContent = TW.t("hikes_gain");
+    document.getElementById("nHome").textContent = TW.t("app_home");
+    document.getElementById("nHikes").textContent = TW.t("nav_hikes");
+    document.getElementById("nTrack").textContent = TW.t("app_track");
+    document.getElementById("nDonate").textContent = TW.t("nav_donate");
+    document.getElementById("nDash").textContent = TW.t("app_dashboard");
+
+    TW.ensureDemoHike();
+    const id = new URLSearchParams(location.search).get("id");
+    const hike = TW.getHike(id) || TW.getHikes()[0];
+    if (!hike) {
+      location.href = "hikes.html";
+    } else {
+      const title = TW.getLang() === "zh" ? hike.titleZh || hike.title : hike.title;
+      document.getElementById("hikeTitle").textContent = title;
+      document.getElementById("hikeDate").textContent = TW.formatHikeDate(hike.endedAt || hike.startedAt);
+      document.getElementById("vDur").textContent = TW.formatDuration(hike.seconds);
+      document.getElementById("vDist").textContent = hike.distanceKm + " km";
+      document.getElementById("vGain").textContent = hike.elevGain + " m";
+
+      const path = hike.path && hike.path.length ? hike.path : [[22.35, 114.25]];
+      const map = L.map("detailMap", { zoomControl: false }).setView(path[0], 13);
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 18 }).addTo(map);
+      const line = L.polyline(path, { color: "#2563eb", weight: 5 }).addTo(map);
+      L.circleMarker(path[0], { radius: 7, color: "#fff", weight: 2, fillColor: "#2d8a45", fillOpacity: 1 }).addTo(map);
+      L.circleMarker(path[path.length - 1], { radius: 7, color: "#fff", weight: 2, fillColor: "#d64545", fillOpacity: 1 }).addTo(map);
+      setTimeout(() => { map.invalidateSize(); map.fitBounds(line.getBounds().pad(0.25)); }, 100);
+    }
+  </script>
+</body>
+</html>

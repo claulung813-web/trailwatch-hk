@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CMS — Donations</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/cms.css" />
+</head>
+<body class="cms-body">
+  <div id="cmsShell">
+    <h1>Donations</h1>
+    <p class="sub">View demo donations from the website / app. Mark confirmed, thanked, or refunded.</p>
+
+    <div class="cms-stats" id="stats" style="margin-bottom:1rem"></div>
+
+    <div class="cms-toolbar">
+      <select id="filterStatus">
+        <option value="all">All statuses</option>
+      </select>
+    </div>
+
+    <div class="cms-row">
+      <div class="cms-card" style="flex:1.2">
+        <table class="cms-table">
+          <thead>
+            <tr><th>Donor</th><th>Amount</th><th>Status</th><th></th></tr>
+          </thead>
+          <tbody id="list"></tbody>
+        </table>
+      </div>
+      <div class="cms-card" id="detailPanel" style="display:none;flex:1">
+        <h3 style="margin-top:0" id="dTitle">—</h3>
+        <p style="font-size:0.9rem;color:#4b5563" id="dMeta"></p>
+        <form class="cms-form" id="donForm">
+          <input type="hidden" id="donId" />
+          <label>Status</label>
+          <select id="status"></select>
+          <label>Staff note</label>
+          <textarea id="note" placeholder="e.g. Receipt #TW-2041 sent…"></textarea>
+          <div class="cms-toolbar" style="margin-top:0.75rem">
+            <button type="submit" class="cms-btn cms-btn-primary">Save</button>
+            <button type="button" class="cms-btn cms-btn-primary" id="btnThank">Mark thanked</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="../js/data.js"></script>
+  <script src="../js/cms-store.js"></script>
+  <script src="js/cms-ui.js"></script>
+  <script>
+    cmsInitShell("donations");
+
+    document.getElementById("filterStatus").innerHTML += CMS.DONATION_STATUSES.map(
+      (s) => `<option value="${s.id}">${s.label}</option>`
+    ).join("");
+    document.getElementById("status").innerHTML = CMS.DONATION_STATUSES.map(
+      (s) => `<option value="${s.id}">${s.label}</option>`
+    ).join("");
+
+    function badge(st) {
+      if (st === "thanked" || st === "confirmed") return "pub";
+      if (st === "refunded") return "rej";
+      return "draft";
+    }
+
+    function renderStats() {
+      const list = CMS.getStore().donations || [];
+      const total = list.reduce((s, d) => s + (+d.amount || 0), 0);
+      const monthly = list.filter((d) => d.frequency === "monthly").length;
+      document.getElementById("stats").innerHTML = `
+        <div class="cms-stat"><div class="v">HK$${total.toLocaleString()}</div><div class="l">Total pledged (demo)</div></div>
+        <div class="cms-stat"><div class="v">${list.length}</div><div class="l">Donation records</div></div>
+        <div class="cms-stat"><div class="v">${monthly}</div><div class="l">Monthly gifts</div></div>
+      `;
+    }
+
+    function renderList() {
+      const filter = document.getElementById("filterStatus").value;
+      let list = (CMS.getStore().donations || []).slice();
+      if (filter !== "all") list = list.filter((d) => d.status === filter);
+
+      document.getElementById("list").innerHTML =
+        list
+          .map(
+            (d) => `
+        <tr>
+          <td>
+            <strong>${d.name || "Anonymous"}</strong><br/>
+            <span style="font-size:0.75rem;color:#6b7280">${d.email || "—"} · ${d.source || "web"}</span>
+          </td>
+          <td>HK$${d.amount}${d.frequency === "monthly" ? "/mo" : ""}</td>
+          <td><span class="cms-badge ${badge(d.status)}">${CMS.statusLabel(d.status, "donation")}</span></td>
+          <td><button class="cms-btn cms-btn-secondary cms-btn-sm" data-open="${d.id}">Open</button></td>
+        </tr>`
+          )
+          .join("") || '<tr><td colspan="4">No donations yet.</td></tr>';
+
+      document.querySelectorAll("[data-open]").forEach((b) =>
+        b.addEventListener("click", () => openDetail(b.dataset.open))
+      );
+    }
+
+    function openDetail(id) {
+      const d = (CMS.getStore().donations || []).find((x) => x.id === id);
+      if (!d) return;
+      document.getElementById("detailPanel").style.display = "block";
+      document.getElementById("donId").value = d.id;
+      document.getElementById("dTitle").textContent =
+        "HK$" + d.amount + (d.frequency === "monthly" ? " / month" : " once");
+      document.getElementById("dMeta").textContent =
+        (d.name || "Anonymous") +
+        " · " +
+        (d.email || "—") +
+        " · " +
+        (d.createdAt ? new Date(d.createdAt).toLocaleString() : "—");
+      document.getElementById("status").value = d.status;
+      document.getElementById("note").value = d.note || "";
+    }
+
+    function save(patch) {
+      const id = document.getElementById("donId").value;
+      const store = CMS.getStore();
+      const idx = store.donations.findIndex((x) => x.id === id);
+      if (idx < 0) return;
+      store.donations[idx] = Object.assign({}, store.donations[idx], {
+        status: document.getElementById("status").value,
+        note: document.getElementById("note").value.trim(),
+      }, patch || {});
+      CMS.setStore(store);
+      renderStats();
+      renderList();
+      cmsToast("Donation updated");
+    }
+
+    document.getElementById("donForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      save();
+    });
+    document.getElementById("btnThank").addEventListener("click", () => {
+      document.getElementById("status").value = "thanked";
+      save({ status: "thanked" });
+    });
+    document.getElementById("filterStatus").addEventListener("change", renderList);
+    renderStats();
+    renderList();
+  </script>
+</body>
+</html>

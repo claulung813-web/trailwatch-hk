@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CMS — Site Content</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/cms.css" />
+</head>
+<body class="cms-body">
+  <div id="cmsShell">
+    <h1>Site Content</h1>
+    <p class="sub">About Us, contact details, and key bilingual strings used on the public site.</p>
+
+    <form class="cms-form" id="contentForm">
+      <div class="cms-card">
+        <h3 style="margin-top:0">About Us</h3>
+        <label>About (EN)</label>
+        <textarea id="aboutEn" rows="4"></textarea>
+        <label>About (繁)</label>
+        <textarea id="aboutZh" rows="4"></textarea>
+      </div>
+
+      <div class="cms-card">
+        <h3 style="margin-top:0">Contact</h3>
+        <label>Email</label>
+        <input id="contactEmail" type="email" />
+        <label>Phone</label>
+        <input id="contactPhone" />
+        <label>Address (EN)</label>
+        <input id="contactAddress" />
+        <label>Address (繁)</label>
+        <input id="contactAddressZh" />
+      </div>
+
+      <div class="cms-card">
+        <h3 style="margin-top:0">Translation snippets</h3>
+        <p style="font-size:0.85rem;color:#6b7280">Override high-visibility copy without editing code. Leave blank to keep defaults.</p>
+        <label>Hero tagline (EN)</label>
+        <input id="hero_en" />
+        <label>Hero tagline (繁)</label>
+        <input id="hero_zh" />
+        <label>Footer extra line (EN)</label>
+        <input id="footer_en" />
+        <label>Footer extra line (繁)</label>
+        <input id="footer_zh" />
+      </div>
+
+      <button type="submit" class="cms-btn cms-btn-primary">Save content</button>
+      <a class="cms-btn cms-btn-secondary" href="../about.html" target="_blank" style="margin-left:0.5rem">Preview About ↗</a>
+    </form>
+  </div>
+
+  <script src="../js/data.js"></script>
+  <script src="../js/cms-store.js"></script>
+  <script src="js/cms-ui.js"></script>
+  <script>
+    cmsInitShell("content");
+    const c = CMS.getStore().content;
+    document.getElementById("aboutEn").value = c.aboutEn || "";
+    document.getElementById("aboutZh").value = c.aboutZh || "";
+    document.getElementById("contactEmail").value = c.contactEmail || "";
+    document.getElementById("contactPhone").value = c.contactPhone || "";
+    document.getElementById("contactAddress").value = c.contactAddress || "";
+    document.getElementById("contactAddressZh").value = c.contactAddressZh || "";
+    const tr = c.translations || {};
+    document.getElementById("hero_en").value = tr.hero_tagline_en || "";
+    document.getElementById("hero_zh").value = tr.hero_tagline_zh || "";
+    document.getElementById("footer_en").value = tr.footer_extra_en || "";
+    document.getElementById("footer_zh").value = tr.footer_extra_zh || "";
+
+    document.getElementById("contentForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const store = CMS.getStore();
+      store.content = {
+        aboutEn: document.getElementById("aboutEn").value,
+        aboutZh: document.getElementById("aboutZh").value,
+        contactEmail: document.getElementById("contactEmail").value.trim(),
+        contactPhone: document.getElementById("contactPhone").value.trim(),
+        contactAddress: document.getElementById("contactAddress").value.trim(),
+        contactAddressZh: document.getElementById("contactAddressZh").value.trim(),
+        translations: {
+          hero_tagline_en: document.getElementById("hero_en").value,
+          hero_tagline_zh: document.getElementById("hero_zh").value,
+          footer_extra_en: document.getElementById("footer_en").value,
+          footer_extra_zh: document.getElementById("footer_zh").value,
+        },
+      };
+      CMS.setStore(store);
+      cmsToast("Site content saved");
+    });
+  </script>
+</body>
+</html>

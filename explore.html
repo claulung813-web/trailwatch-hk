@@ -21,6 +21,11 @@
         <input type="search" id="trailSearch" data-i18n-placeholder="search_placeholder" />
       </div>
 
+      <div class="section-head" style="margin-bottom:0.5rem">
+        <h2 style="font-size:0.85rem;text-transform:uppercase;letter-spacing:0.04em" data-i18n="filter_category"></h2>
+      </div>
+      <div class="chip-row" id="categoryFilter" style="margin-bottom:1.25rem"></div>
+
       <div class="filter-bar">
         <div>
           <label data-i18n="filter_district"></label>
@@ -48,6 +53,12 @@
 
       <div id="view-routes">
         <div class="section-head">
+          <h2 data-i18n="recommended_staff"></h2>
+          <span class="meta" id="staffRecMeta"></span>
+        </div>
+        <div class="trail-grid" id="staffRecGrid"></div>
+
+        <div class="section-head mt-2">
           <h2 data-i18n="monthly_rec"></h2>
           <span class="meta" id="monthLabel"></span>
         </div>
@@ -85,6 +96,7 @@
 
   <script src="js/i18n.js"></script>
   <script src="js/data.js"></script>
+  <script src="js/cms-store.js"></script>
   <script src="js/app.js"></script>
   <script>
     document.documentElement.lang = TW.getLang() === "zh" ? "zh-Hant" : "en";
@@ -92,8 +104,36 @@
 
     let district = "all";
     let difficulty = "all";
+    let category = "all";
     let query = "";
     let month = TW.monthlyMeta.find((m) => m.current).id;
+
+    function recAsTrail(r) {
+      return {
+        id: r.id,
+        title: r.title,
+        titleZh: r.titleZh,
+        desc: r.desc,
+        descZh: r.descZh,
+        district: r.district,
+        difficulty: r.difficulty || 2,
+        distance: r.distance || "—",
+        duration: r.duration || "—",
+        elevation: r.elevation || "—",
+        rating: 4.5,
+        image: r.image,
+        tags: r.categories || [],
+        author: "TrailWatch",
+        date: r.month || "",
+      };
+    }
+
+    document.getElementById("categoryFilter").innerHTML = TW.trailFilters
+      .map(
+        (f) =>
+          `<button type="button" class="chip ${f.id === "all" ? "active" : ""}" data-cat="${f.id}">${TW.t(f.labelKey)}</button>`
+      )
+      .join("");
 
     const distSel = document.getElementById("districtFilter");
     distSel.innerHTML =
@@ -119,9 +159,11 @@
       return list.filter((t) => {
         const matchD = district === "all" || t.district === district;
         const matchDiff = difficulty === "all" || String(t.difficulty) === String(difficulty);
+        const tags = t.tags || t.categories || [];
+        const matchCat = category === "all" || tags.indexOf(category) >= 0;
         const q = query.toLowerCase();
         const hay = (TW.tt(t, "title") + " " + TW.tt(t, "desc") + " " + TW.districtName(t.district)).toLowerCase();
-        return matchD && matchDiff && (!q || hay.includes(q));
+        return matchD && matchDiff && matchCat && (!q || hay.includes(q));
       });
     }
 
@@ -148,6 +190,20 @@
           ? TW.t("monthly_rec")
           : TW.t("past_rec") + " · " + (TW.getLang() === "zh" ? meta.labelZh : meta.label);
 
+      const staffRecs = filtered(TW.getRecommendedTrails({ category }).map(recAsTrail));
+      document.getElementById("staffRecMeta").textContent = staffRecs.length + " " + TW.t("available");
+      document.getElementById("staffRecGrid").innerHTML =
+        staffRecs
+          .map((t) => {
+            const card = renderTrailCard(t, { hidePlan: true });
+            return card.replace(
+              '<article class="trail-card"',
+              `<a href="rec-trail.html?id=${encodeURIComponent(t.id)}" class="trail-card-link" style="text-decoration:none;color:inherit"><article class="trail-card"`
+            ).replace("</article>", "</article></a>");
+          })
+          .join("") ||
+        `<p style="color:var(--text-muted)">${TW.t("no_trails")}</p>`;
+
       const monthTrails = filtered(TW.trails.filter((t) => t.monthly === month));
       document.getElementById("monthlyGrid").innerHTML =
         monthTrails.map((t) => renderTrailCard(t)).join("") ||
@@ -159,6 +215,15 @@
         all.map((t) => renderTrailCard(t)).join("") ||
         `<p style="color:var(--text-muted)">${TW.t("no_trails")}</p>`;
     }
+
+    document.querySelectorAll("#categoryFilter .chip").forEach((chip) => {
+      chip.addEventListener("click", () => {
+        document.querySelectorAll("#categoryFilter .chip").forEach((c) => c.classList.remove("active"));
+        chip.classList.add("active");
+        category = chip.dataset.cat;
+        renderAll();
+      });
+    });
 
     distSel.addEventListener("change", () => {
       district = distSel.value;
@@ -181,7 +246,9 @@
     });
 
     document.getElementById("exploreRecords").innerHTML = TW.records.map(renderRecordItem).join("");
-    document.getElementById("exploreIncidents").innerHTML = TW.reports.map(renderReportItem).join("");
+    document.getElementById("exploreIncidents").innerHTML =
+      TW.getPublicIncidents().map(renderReportItem).join("") ||
+      `<p style="color:var(--text-muted)">${TW.t("no_trails")}</p>`;
 
     function showExploreTab(tab) {
       ["routes", "records", "incidents"].forEach((id) => {

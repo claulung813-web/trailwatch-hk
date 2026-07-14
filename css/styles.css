@@ -8,6 +8,8 @@
   --green-100: #e8f5ea;
   --green-50: #f1f8f1;
   --mint: #f4faf4;
+  --tw-teal: #33897a;
+  --tw-mint: #ecf7f5;
   --sky: #4a90c8;
   --gold: #c9a227;
   --coral: #e87a6b;
@@ -124,6 +126,18 @@ ul {
   color: var(--green-900);
 }
 
+.logo-img {
+  height: 36px;
+  width: auto;
+  display: block;
+}
+
+.logo-img.footer {
+  height: 72px;
+  width: auto;
+  margin-bottom: 0.85rem;
+}
+
 .logo-mark {
   width: 36px;
   height: 36px;
@@ -147,12 +161,13 @@ ul {
 }
 
 .nav-links a {
-  padding: 0.5rem 0.9rem;
+  padding: 0.5rem 0.75rem;
   border-radius: 999px;
   font-size: 0.9rem;
   font-weight: 500;
   color: var(--text-muted);
   transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
 }
 
 .nav-links a:hover,
@@ -163,6 +178,86 @@ ul {
 
 .nav-links a.active {
   font-weight: 600;
+}
+
+.nav-account {
+  position: relative;
+  margin-left: 0.15rem;
+}
+
+.nav-account-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.25rem 0.65rem 0.25rem 0.25rem;
+  border-radius: 999px;
+  border: none;
+  background: transparent;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.nav-account-trigger:hover,
+.nav-account.open .nav-account-trigger,
+.nav-account.has-active .nav-account-trigger {
+  background: var(--green-50);
+  color: var(--green-900);
+}
+
+.nav-account-trigger .avatar-sm {
+  width: 28px;
+  height: 28px;
+}
+
+.nav-account-menu {
+  position: absolute;
+  top: calc(100% + 0.4rem);
+  right: 0;
+  min-width: 11rem;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow-lg);
+  padding: 0.4rem;
+  z-index: 120;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.nav-account-menu[hidden] {
+  display: none !important;
+}
+
+.nav-account-heading {
+  display: none;
+  margin: 0;
+  padding: 0.5rem 1rem 0.25rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+.nav-account-menu a {
+  display: block;
+  padding: 0.55rem 0.85rem;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.nav-account-menu a:hover,
+.nav-account-menu a.active {
+  background: var(--green-50);
+  color: var(--green-900);
 }
 
 .header-actions {
@@ -743,15 +838,32 @@ ul {
   margin-bottom: 0.35rem;
 }
 
+.portfolio-tile-body .icon-btn-fig {
+  width: 44px;
+  height: 44px;
+  margin: 0 auto 0.5rem;
+  border-radius: 999px;
+  background: var(--tw-mint);
+  color: var(--tw-teal);
+  display: grid;
+  place-items: center;
+  border: none;
+}
+
+.portfolio-tile-body .icon-btn-fig svg {
+  width: 22px;
+  height: 22px;
+}
+
 .portfolio-tile-body .value {
   font-size: 1.6rem;
   font-weight: 800;
-  color: var(--green-900);
+  color: var(--tw-teal);
   line-height: 1.1;
 }
 
 .portfolio-tile-foot {
-  background: var(--green-900);
+  background: var(--tw-teal);
   color: white;
   padding: 0.55rem;
   font-size: 0.75rem;
@@ -1597,7 +1709,7 @@ ul {
 
 /* —— Footer —— */
 .site-footer {
-  background: var(--green-900);
+  background: #1f3d36;
   color: rgba(255, 255, 255, 0.85);
   padding: 2.5rem 0 1.5rem;
   margin-top: 2rem;
@@ -1612,6 +1724,19 @@ ul {
   .site-footer .container {
     grid-template-columns: 2fr 1fr 1fr;
   }
+}
+
+.site-footer .footer-org {
+  font-size: 0.82rem;
+  line-height: 1.55;
+  opacity: 0.88;
+  max-width: 340px;
+  margin: 0;
+}
+
+.site-footer .footer-org strong {
+  font-weight: 700;
+  letter-spacing: 0.02em;
 }
 
 .site-footer h4 {
@@ -1683,6 +1808,41 @@ ul {
   .nav-links a {
     width: 100%;
     padding: 0.75rem 1rem;
+  }
+
+  .nav-account {
+    width: 100%;
+    margin: 0.35rem 0 0;
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .nav-account-trigger {
+    display: none;
+  }
+
+  .nav-account-menu {
+    position: static;
+    display: flex !important;
+    box-shadow: none;
+    border: none;
+    padding: 0;
+    min-width: 0;
+    background: transparent;
+  }
+
+  .nav-account-menu[hidden] {
+    display: flex !important;
+  }
+
+  .nav-account-heading {
+    display: block;
+  }
+
+  .nav-account-menu a {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border-radius: 999px;
   }
 
   .menu-toggle {
@@ -2176,7 +2336,7 @@ ul {
 }
 .app-bottom-nav {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   border-top: 1px solid var(--border);
   background: white;
   padding: 0.45rem 0 0.65rem;
