@@ -52,13 +52,7 @@
           <h3 style="font-size:0.9rem;color:var(--green-900);margin:1.25rem 0 0.5rem" id="impactTitle"></h3>
           <ul style="font-size:0.8rem;color:var(--text-muted);padding-left:1.1rem;line-height:1.7" id="impactList"></ul>
         </div>
-        <nav class="app-bottom-nav">
-          <a href="../index.html"><span class="ico">🏠</span><span id="nHome"></span></a>
-          <a href="hikes.html"><span class="ico">🗺</span><span id="nHikes"></span></a>
-          <a href="index.html"><span class="ico">✈</span><span id="nTrack"></span></a>
-          <a href="donate.html" class="active"><span class="ico">💚</span><span id="nDonate"></span></a>
-          <a href="../profile.html"><span class="ico">👤</span><span id="nDash"></span></a>
-        </nav>
+        <div data-app-nav></div>
       </div>
     </div>
   </div>
@@ -90,11 +84,7 @@
     document.getElementById("impactTitle").textContent = t("donate_impact_title");
     document.getElementById("impactList").innerHTML =
       [1, 2, 3, 4].map((i) => `<li>${t("donate_impact_" + i)}</li>`).join("");
-    document.getElementById("nHome").textContent = t("app_home");
-    document.getElementById("nHikes").textContent = t("nav_hikes");
-    document.getElementById("nTrack").textContent = t("app_track");
-    document.getElementById("nDonate").textContent = t("nav_donate");
-    document.getElementById("nDash").textContent = t("app_dashboard");
+    twMountAppNav("profile");
 
     let amount = 50;
     let freq = "once";

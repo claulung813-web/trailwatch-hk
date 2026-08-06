@@ -3,20 +3,49 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-  <title>TrailWatch App — My Hikes</title>
+  <title>TrailWatch App — Group Hikes</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../css/styles.css" />
   <style>
     body { margin: 0; }
-    .phone-body { flex: 1; overflow-y: auto; padding: 1rem 0.9rem 0.5rem; background: var(--mint); }
+    .phone-body { flex: 1; overflow-y: auto; padding: 0.75rem 0.9rem 1rem; background: #f7faf7; }
+    .app-head {
+      padding: 2.4rem 0.9rem 0.55rem; background: #fff; border-bottom: 1px solid var(--border);
+    }
+    .app-head h1 { font-size: 1.05rem; color: var(--green-900); margin: 0; text-align: center; }
+    .app-head p { font-size: 0.72rem; color: var(--text-muted); margin: 0.3rem 0 0; text-align: center; }
+    .search-mini {
+      width: 100%; border: 1px solid var(--border); border-radius: 10px;
+      padding: 0.45rem 0.7rem; font-size: 0.8rem; margin-bottom: 0.5rem; background: #fff;
+    }
+    .hike-card {
+      background: #fff; border: 1px solid var(--border); border-radius: 12px;
+      overflow: hidden; margin-bottom: 0.7rem; text-decoration: none; color: inherit; display: block;
+    }
+    .hike-card img { width: 100%; height: 110px; object-fit: cover; background: var(--green-100); }
+    .hike-card .body { padding: 0.7rem 0.8rem 0.85rem; }
+    .hike-card strong { display: block; color: var(--green-900); font-size: 0.9rem; }
+    .hike-card .meta { font-size: 0.72rem; color: var(--text-muted); margin-top: 0.25rem; }
+    .org-badge {
+      display: inline-block; font-size: 0.62rem; font-weight: 700; padding: 0.12rem 0.4rem;
+      border-radius: 4px; margin-top: 0.4rem;
+    }
+    .org-tw { background: #ecfdf5; color: #047857; }
+    .org-user { background: #eff6ff; color: #1d4ed8; }
+    .fab-add {
+      position: absolute; right: 1rem; bottom: 4.5rem; z-index: 20;
+      border: none; border-radius: 999px; padding: 0.55rem 0.9rem;
+      background: var(--green-900); color: #fff; font-weight: 700; font-size: 0.75rem;
+      box-shadow: 0 4px 14px rgba(11,66,26,0.35); cursor: pointer;
+    }
   </style>
 </head>
 <body>
   <div class="app-page">
     <div class="app-page-top">
-      <a href="../my-hikes.html" id="backWeb"></a>
+      <a href="home.html" id="backWeb"></a>
       <div class="lang-switch" style="margin:0.75rem auto 0;width:fit-content;background:rgba(255,255,255,0.15);border-color:rgba(255,255,255,0.25)">
         <button type="button" data-lang="en" style="color:#fff">EN</button>
         <button type="button" data-lang="zh" style="color:#fff">繁</button>
@@ -25,52 +54,154 @@
 
     <div class="phone-frame">
       <div class="phone-notch"></div>
-      <div class="phone-screen">
-        <div style="padding:2.5rem 1rem 0.75rem;background:white;border-bottom:1px solid var(--border)">
-          <h1 style="font-size:1.2rem;color:var(--green-900);margin:0" id="pageTitle"></h1>
-          <p style="font-size:0.8rem;color:var(--text-muted);margin:0.35rem 0 0" id="pageSub"></p>
+      <div class="phone-screen" style="position:relative">
+        <div class="app-head">
+          <h1 id="pageTitle"></h1>
+          <p id="pageSub"></p>
         </div>
         <div class="phone-body">
-          <div class="record-list" id="hikeList"></div>
+          <input class="search-mini" id="groupSearch" type="search" />
+          <div class="app-chip-row" id="groupFilters" style="margin-bottom:0.55rem;flex-wrap:wrap"></div>
+          <p style="font-size:0.68rem;margin:0 0 0.55rem;color:var(--text-muted)">
+            <span class="app-tbd" id="mvpNote"></span>
+            · <span class="app-tbd" id="publicSoon"></span>
+          </p>
+          <div id="groupList"></div>
         </div>
-        <nav class="app-bottom-nav">
-          <a href="../index.html"><span class="ico">🏠</span><span id="nHome"></span></a>
-          <a href="hikes.html" class="active"><span class="ico">🗺</span><span id="nHikes"></span></a>
-          <a href="index.html"><span class="ico">✈</span><span id="nTrack"></span></a>
-          <a href="donate.html"><span class="ico">💚</span><span id="nDonate"></span></a>
-          <a href="../profile.html"><span class="ico">👤</span><span id="nDash"></span></a>
-        </nav>
+        <button type="button" class="fab-add" id="btnAdd"></button>
+        <div data-app-nav></div>
       </div>
     </div>
   </div>
+
   <div class="toast" id="toast"></div>
+
+  <!-- Organizer demo form -->
+  <div id="orgModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:80;align-items:flex-end;justify-content:center">
+    <div style="background:#fff;width:100%;max-width:390px;border-radius:16px 16px 0 0;padding:1.1rem 1.15rem 1.4rem;max-height:85%;overflow:auto">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.65rem">
+        <strong id="orgTitle" style="color:var(--green-900)"></strong>
+        <button type="button" id="closeOrg">✕</button>
+      </div>
+      <label style="font-size:0.75rem;font-weight:700;color:var(--green-900)" id="lblOrgName"></label>
+      <input class="form-input" id="orgName" style="margin:0.25rem 0 0.65rem;width:100%" />
+      <button type="button" class="btn btn-secondary btn-block" style="margin-bottom:0.45rem;padding:0.45rem" id="btnPickRoute"></button>
+      <button type="button" class="btn btn-secondary btn-block" style="margin-bottom:0.45rem;padding:0.45rem" id="btnInvite"></button>
+      <p style="font-size:0.72rem;margin:0 0 0.55rem"><span class="app-premium-pill" id="orgPremium"></span></p>
+      <p style="font-size:0.68rem;color:var(--text-muted);margin:0 0 0.65rem" id="approveNote"></p>
+      <button type="button" class="btn btn-primary btn-block" id="submitOrg"></button>
+    </div>
+  </div>
 
   <script src="../js/i18n.js"></script>
   <script src="../js/data.js"></script>
-  <script src="../js/hikes.js"></script>
   <script src="../js/app.js"></script>
   <script>
     document.documentElement.lang = TW.getLang() === "zh" ? "zh-Hant" : "en";
     const lang = TW.getLang();
+    const t = TW.t;
     document.querySelectorAll(".lang-switch button").forEach((b) => {
       b.classList.toggle("active", b.dataset.lang === lang);
       b.addEventListener("click", () => { TW.setLang(b.dataset.lang); location.reload(); });
     });
-    document.getElementById("backWeb").textContent = TW.t("app_back_web");
-    document.getElementById("pageTitle").textContent = TW.t("hikes_title");
-    document.getElementById("pageSub").textContent = TW.t("hikes_sub");
-    document.getElementById("nHome").textContent = TW.t("app_home");
-    document.getElementById("nHikes").textContent = TW.t("nav_hikes");
-    document.getElementById("nTrack").textContent = TW.t("app_track");
-    document.getElementById("nDonate").textContent = TW.t("nav_donate");
-    document.getElementById("nDash").textContent = TW.t("app_dashboard");
+    document.getElementById("backWeb").textContent = "‹ " + t("feed_title");
+    document.getElementById("pageTitle").textContent = t("groups_title");
+    document.getElementById("pageSub").textContent = t("app_group_private_mvp");
+    document.getElementById("mvpNote").textContent = t("app_group_private_mvp");
+    document.getElementById("publicSoon").textContent = t("app_group_public_soon");
+    document.getElementById("groupSearch").placeholder = t("app_filter_keyword") + "…";
+    document.getElementById("btnAdd").textContent = "+ " + t("app_group_add");
+    document.getElementById("orgTitle").textContent = t("app_group_add");
+    document.getElementById("lblOrgName").textContent = t("app_hike_title");
+    document.getElementById("btnPickRoute").textContent = t("app_pick_route");
+    document.getElementById("btnInvite").textContent = t("app_invite_friends");
+    document.getElementById("orgPremium").textContent = t("app_group_organize_premium");
+    document.getElementById("approveNote").textContent = t("app_group_approve_tbd");
+    document.getElementById("submitOrg").textContent = t("confirm");
+    twMountAppNav("home");
 
-    TW.ensureDemoHike();
-    const list = TW.getHikes();
-    document.getElementById("hikeList").innerHTML = list.length
-      ? list.map((h) => TW.renderHikeListItem(h, "hike-detail.html?id=" + encodeURIComponent(h.id))).join("")
-      : `<p style="text-align:center;color:var(--text-muted);padding:2rem 1rem">${TW.t("hikes_empty")}</p>
-         <a class="btn btn-primary btn-block" href="index.html">${TW.t("hikes_open_app")}</a>`;
+    const demo = (TW.meetups || []).map((m, i) => ({
+      ...m,
+      id: i,
+      visibility: "private",
+      org: i === 0 ? "tw" : "user",
+      status: i === 2 ? "past" : (i === 1 ? "joined" : "upcoming"),
+      invited: i === 0,
+      stage: i === 1 ? "joined" : (i === 2 ? "completed" : "recruiting"),
+    }));
+
+    let filter = "upcoming";
+    let q = "";
+    const chips = [
+      { id: "upcoming", key: "groups_upcoming" },
+      { id: "past", key: "groups_past" },
+      { id: "joined", key: "groups_joined" },
+      { id: "invited", key: "app_group_invited" },
+      { id: "date", key: "app_filter_date" },
+    ];
+    document.getElementById("groupFilters").innerHTML = chips.map((c, i) =>
+      `<button type="button" class="${i === 0 ? "active" : ""}" data-f="${c.id}">${t(c.key)}</button>`
+    ).join("");
+
+    function render() {
+      const list = demo.filter((m) => {
+        const title = (TW.tt(m, "title") || "").toLowerCase();
+        const okQ = !q || title.includes(q);
+        if (filter === "past") return okQ && m.status === "past";
+        if (filter === "joined") return okQ && (m.status === "joined" || m.stage === "joined");
+        if (filter === "invited") return okQ && m.invited;
+        if (filter === "date") return okQ;
+        return okQ && m.status === "upcoming";
+      });
+      document.getElementById("groupList").innerHTML = list.length
+        ? list.map((m) => {
+            const title = TW.tt(m, "title");
+            const place = TW.tt(m, "place");
+            const date = TW.tt(m, "date");
+            const orgLabel = m.org === "tw" ? t("app_org_tw") : t("app_org_user");
+            const orgCls = m.org === "tw" ? "org-tw" : "org-user";
+            return `<a class="hike-card" href="group-detail.html?id=${m.id}&stage=${m.stage}">
+              <img src="${m.image}" alt="" />
+              <div class="body">
+                <strong>${title}</strong>
+                <div class="meta">${date} · ${place}</div>
+                <span class="org-badge ${orgCls}">${orgLabel}</span>
+                <span class="app-tbd" style="margin-left:0.35rem">${t("app_group_private_mvp")}</span>
+              </div>
+            </a>`;
+          }).join("")
+        : `<p style="text-align:center;color:var(--text-muted);padding:2rem 0">${t("hikes_empty")}</p>`;
+    }
+
+    document.getElementById("groupFilters").addEventListener("click", (e) => {
+      const btn = e.target.closest("button[data-f]");
+      if (!btn) return;
+      filter = btn.dataset.f;
+      document.querySelectorAll("#groupFilters button").forEach((c) => c.classList.toggle("active", c === btn));
+      render();
+    });
+    document.getElementById("groupSearch").addEventListener("input", (e) => {
+      q = e.target.value.trim().toLowerCase();
+      render();
+    });
+
+    const modal = document.getElementById("orgModal");
+    document.getElementById("btnAdd").addEventListener("click", () => {
+      modal.style.display = "flex";
+    });
+    document.getElementById("closeOrg").addEventListener("click", () => { modal.style.display = "none"; });
+    document.getElementById("btnPickRoute").addEventListener("click", () => {
+      showToast(t("app_pick_route") + " → Map");
+      setTimeout(() => (location.href = "index.html?mode=plan"), 600);
+    });
+    document.getElementById("btnInvite").addEventListener("click", () => showToast(t("app_invite_friends")));
+    document.getElementById("submitOrg").addEventListener("click", () => {
+      modal.style.display = "none";
+      showToast(t("toast_saved") + " · " + t("app_group_private_mvp"));
+    });
+    document.getElementById("orgPremium").addEventListener("click", () => showToast(t("app_upgrade")));
+
+    render();
   </script>
 </body>
 </html>

@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Group Hike — TrailWatch HK</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div id="app-header"></div>
+  <main class="page">
+    <div class="container">
+      <h1 class="page-title" data-i18n="groups_title"></h1>
+      <p class="page-sub" data-i18n="groups_sub"></p>
+      <div class="search-bar">
+        <input type="search" id="groupSearch" data-i18n-placeholder="search_placeholder" />
+      </div>
+      <div class="chip-row filters" id="groupFilters">
+        <button type="button" class="chip active" data-f="upcoming" data-i18n="groups_upcoming"></button>
+        <button type="button" class="chip" data-f="past" data-i18n="groups_past"></button>
+        <button type="button" class="chip" data-f="joined" data-i18n="groups_joined"></button>
+      </div>
+      <div class="trail-grid" id="groupGrid"></div>
+    </div>
+  </main>
+  <div id="app-footer"></div>
+  <script src="js/i18n.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    document.documentElement.lang = TW.getLang() === "zh" ? "zh-Hant" : "en";
+    if (new URLSearchParams(location.search).get("mine") === "1") {
+      location.replace("profile.html#activity&type=groups");
+    } else {
+    initShell("group-hikes");
+    const mine = false;
+    let filter = mine ? "joined" : "upcoming";
+    if (mine) {
+      document.querySelectorAll("#groupFilters .chip").forEach((c) => c.classList.toggle("active", c.dataset.f === "joined"));
+    }
+    let q = "";
+    function render() {
+      const list = (TW.meetups || []).filter((m, i) => {
+        const title = (TW.tt(m, "title") || m.title || "").toLowerCase();
+        const okQ = !q || title.includes(q);
+        if (filter === "past") return okQ && i >= Math.ceil((TW.meetups || []).length / 2);
+        if (filter === "joined") return okQ && (mine || i % 2 === 0);
+        return okQ && i < Math.ceil((TW.meetups || []).length / 2);
+      });
+      document.getElementById("groupGrid").innerHTML = list.length
+        ? list.map((m) => {
+            const title = TW.tt(m, "title") || m.title;
+            const place = TW.tt(m, "place") || m.place || "";
+            const date = TW.tt(m, "date") || m.date || "";
+            const img = m.image || "https://images.unsplash.com/photo-1551632811-561732d1e5ec?w=600&q=60";
+            return `<article class="trail-card">
+              <img src="${img}" alt="" loading="lazy" />
+              <div class="trail-card-body">
+                <strong>${title}</strong>
+                <p class="meta">${date} · ${place}</p>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-top:0.5rem">
+                  <span style="font-size:0.8rem;color:var(--text-muted)">${m.spots != null ? m.spots + " " + TW.t("spots_left") : ""}</span>
+                  <button class="btn btn-primary" style="padding:0.35rem 0.85rem;font-size:0.8rem" onclick="showToast(TW.t('toast_joined'))">${TW.t("join")}</button>
+                </div>
+              </div>
+            </article>`;
+          }).join("")
+        : `<p style="color:var(--text-muted);padding:2rem 0">${TW.t("hikes_empty")}</p>`;
+    }
+    document.getElementById("groupFilters").addEventListener("click", (e) => {
+      const btn = e.target.closest("button[data-f]");
+      if (!btn) return;
+      filter = btn.dataset.f;
+      document.querySelectorAll("#groupFilters .chip").forEach((c) => c.classList.toggle("active", c === btn));
+      render();
+    });
+    document.getElementById("groupSearch").addEventListener("input", (e) => {
+      q = e.target.value.trim().toLowerCase();
+      render();
+    });
+    render();
+    } </script>
+</body>
+</html>

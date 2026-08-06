@@ -4,9 +4,11 @@ function twIcon(name) {
   const stroke = 'fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"';
   const icons = {
     home: `<svg width="20" height="20" viewBox="0 0 24 24" ${stroke}><path d="M3 10.5 12 3l9 7.5V21a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1v-10.5z"/></svg>`,
-    explore: `<svg width="20" height="20" viewBox="0 0 24 24" ${stroke}><circle cx="12" cy="12" r="9"/><path d="m16 8-2.5 6.5L7 17l2.5-6.5L16 8z"/></svg>`,
+    explore: `<svg width="20" height="20" viewBox="0 0 24 24" ${stroke}><circle cx="12" cy="12" r="9"/><path d="m16.5 7.5-2.8 7.2L6.5 17.5l2.8-7.2L16.5 7.5z"/></svg>`,
+    track: `<svg width="20" height="20" viewBox="0 0 24 24" ${stroke}><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7z"/></svg>`,
     plan: `<svg width="20" height="20" viewBox="0 0 24 24" ${stroke}><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4"/></svg>`,
     dashboard: `<svg width="20" height="20" viewBox="0 0 24 24" ${stroke}><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,
+    back: `<svg width="20" height="20" viewBox="0 0 24 24" ${stroke}><path d="M15 18l-6-6 6-6"/></svg>`,
     bell: `<svg width="20" height="20" viewBox="0 0 24 24" ${stroke}><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>`,
     menu: `<svg width="22" height="22" viewBox="0 0 24 24" ${stroke}><path d="M4 6h16M4 12h16M4 18h16"/></svg>`,
     tree: `<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 7 9h3v3H6l4 5h2v5h2v-5h2l4-5h-4V9h3L12 2z"/></svg>`,
@@ -28,9 +30,71 @@ function twIcon(name) {
   return icons[name] || "";
 }
 
+/** True when a profile image URL is usable */
+function twHasAvatar(url) {
+  if (url == null) return false;
+  const s = String(url).trim();
+  return s !== "" && s !== "null" && s !== "undefined";
+}
+
+/** img HTML for an avatar — empty string when missing (no broken-image icon) */
+function twAvatarHtml(url, className, attrs) {
+  if (!twHasAvatar(url)) return "";
+  const cls = className || "avatar-sm";
+  const extra = attrs ? " " + attrs : "";
+  return `<img class="${cls}" src="${url}" alt="" loading="lazy" onerror="this.remove()"${extra} />`;
+}
+
+/** Set or hide an existing <img> avatar element */
+function twSetAvatar(el, url) {
+  if (!el) return;
+  if (!twHasAvatar(url)) {
+    el.removeAttribute("src");
+    el.hidden = true;
+    el.style.display = "none";
+    return;
+  }
+  el.hidden = false;
+  el.style.removeProperty("display");
+  el.onerror = function () {
+    this.removeAttribute("src");
+    this.hidden = true;
+    this.style.display = "none";
+  };
+  el.src = url;
+}
+
+window.TW = window.TW || {};
+TW.hasAvatar = twHasAvatar;
+TW.avatarHtml = twAvatarHtml;
+TW.setAvatar = twSetAvatar;
+
 /** Circular mint button with outline icon — portfolio / dashboard tiles */
 function twPortfolioIcon(name) {
   return `<span class="icon-btn-fig" aria-hidden="true">${twIcon(name)}</span>`;
+}
+
+/** App bottom nav: Explore · Community · Map · Profile */
+function twAppBottomNav(active) {
+  const t = (typeof TW !== "undefined" && TW.t) ? TW.t : (k) => k;
+  const items = [
+    { id: "explore", href: "explore.html", label: t("nav_explore"), icon: "explore", cls: "nav-explore" },
+    { id: "home", href: "home.html", label: t("app_community"), icon: "home" },
+    { id: "track", href: "index.html", label: t("app_map"), icon: "track" },
+    { id: "profile", href: "profile.html", label: t("app_profile"), icon: "dashboard", cls: "nav-profile" },
+  ];
+  return `<nav class="app-bottom-nav" aria-label="App">${items.map((it) => {
+    const classes = [it.cls, it.id === active ? "active" : ""].filter(Boolean).join(" ");
+    const dot = it.id === "profile"
+      ? `<span class="nav-notif-dot" aria-hidden="true"></span>`
+      : "";
+    return `<a href="${it.href}"${classes ? ` class="${classes}"` : ""}><span class="nav-ico" aria-hidden="true">${twIcon(it.icon)}${dot}</span><span>${it.label}</span></a>`;
+  }).join("")}</nav>`;
+}
+
+function twMountAppNav(active, selector) {
+  const el = document.querySelector(selector || "[data-app-nav]");
+  if (el) el.outerHTML = twAppBottomNav(active);
 }
 
 function difficultyPips(level) {
@@ -47,11 +111,109 @@ function difficultyLabel(level) {
   return (TW.difficultyLabels[lang] || TW.difficultyLabels.en)[level] || "";
 }
 
+/** Demo member auth (website). Separate from CMS staff auth (`tw_cms_auth`). */
+TW.MEMBER_AUTH_KEY = "tw_member_auth";
+
+TW.getMemberAuth = function () {
+  try {
+    const a = JSON.parse(localStorage.getItem(TW.MEMBER_AUTH_KEY) || "null");
+    return a && a.at ? a : null;
+  } catch (e) {
+    return null;
+  }
+};
+
+TW.isLoggedIn = function () {
+  return !!TW.getMemberAuth();
+};
+
+TW.memberDisplayName = function () {
+  const a = TW.getMemberAuth();
+  if (!a) return "";
+  const name = (a.name || a.displayName || "").trim();
+  if (name) return name;
+  return TW.t("nav_member");
+};
+
+TW.loginMember = function (data) {
+  const name = ((data && (data.name || data.displayName)) || "").trim();
+  localStorage.setItem(
+    TW.MEMBER_AUTH_KEY,
+    JSON.stringify({
+      name: name,
+      displayName: name,
+      email: ((data && data.email) || "").trim().toLowerCase(),
+      at: Date.now(),
+    })
+  );
+};
+
+TW.logoutMember = function () {
+  localStorage.removeItem(TW.MEMBER_AUTH_KEY);
+};
+
+function twEsc(s) {
+  return String(s == null ? "" : s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function twMeHubHash() {
+  try {
+    const page = (location.pathname.split("/").pop() || "").toLowerCase();
+    if (page !== "profile.html") return "";
+    const h = (location.hash || "#overview").replace(/^#/, "") || "overview";
+    const activityTypes = ["records", "plans", "groups", "reports", "gallery"];
+    if (h === "dashboard") return "overview";
+    if (h === "profile") return "settings";
+    if (h === "hikes") return "records";
+    if (h === "bookmarks") return "overview";
+    if (h === "activity" || h.startsWith("activity&") || h.startsWith("activity?") || h.startsWith("activity/")) {
+      const m = h.match(/[?&]type=([a-z]+)/) || h.match(/^activity\/([a-z]+)/);
+      if (m && activityTypes.includes(m[1])) return m[1];
+      return "activity";
+    }
+    return h;
+  } catch (e) {
+    return "";
+  }
+}
+
 function renderHeader(active) {
   const u = TW.user;
   const lang = TW.getLang();
   const t = TW.t;
-  const accountActive = ["hikes", "dashboard", "reports", "trees", "register", "profile"].indexOf(active) >= 0;
+  const loggedIn = TW.isLoggedIn();
+  const memberName = loggedIn ? TW.memberDisplayName() : "";
+  const meHash = twMeHubHash();
+  const onMeHub = active === "profile" || !!meHash;
+  const activityTypes = ["records", "plans", "groups", "reports", "gallery"];
+  const meActive = (section) => {
+    if (!onMeHub) return false;
+    const cur = meHash || "overview";
+    if (section === "activity") return cur === "activity" || activityTypes.includes(cur);
+    return cur === section;
+  };
+  const accountActive = loggedIn && onMeHub;
+  const accountNav = loggedIn
+    ? `<div class="nav-account ${accountActive ? "has-active" : ""}" id="navAccount">
+          <button type="button" class="nav-account-trigger" id="accountToggle" aria-expanded="false" aria-haspopup="true">
+            ${twAvatarHtml(u && u.avatar, "avatar-sm")}
+            <span class="nav-account-trigger-name">${twEsc(memberName)}</span>
+          </button>
+          <div class="nav-account-menu" id="accountMenu" hidden>
+            <p class="nav-account-heading">${twEsc(memberName)}</p>
+            <a href="profile.html#overview" class="${meActive("overview") ? "active" : ""}">${t("nav_dashboard")}</a>
+            <a href="profile.html#activity" class="${meActive("activity") ? "active" : ""}">${t("nav_my_activity")}</a>
+            <a href="profile.html#badges" class="${meActive("badges") ? "active" : ""}">${t("nav_badges")}</a>
+            <a href="profile.html#friends" class="${meActive("friends") ? "active" : ""}">${t("nav_friends")}</a>
+            <a href="profile.html#settings" class="${meActive("settings") ? "active" : ""}">${t("nav_settings")}</a>
+            <button type="button" class="nav-account-logout" id="accountLogout">${t("nav_logout")}</button>
+          </div>
+        </div>`
+    : `<a href="register.html" class="${active === "register" ? "active" : ""}" id="navRegister">${t("nav_register")}</a>`;
   return `
   <header class="site-header">
     <div class="container">
@@ -62,25 +224,13 @@ function renderHeader(active) {
         <a href="index.html" class="${active === "home" ? "active" : ""}">${t("nav_home")}</a>
         <a href="explore.html" class="${active === "explore" ? "active" : ""}">${t("nav_explore")}</a>
         <a href="plan.html" class="${active === "plan" ? "active" : ""}">${t("nav_plan")}</a>
-        <a href="donate.html" class="${active === "donate" ? "active" : ""}">${t("nav_donate")}</a>
-        <a href="about.html" class="${active === "about" ? "active" : ""}">${t("nav_about")}</a>
+        <a href="reports.html" class="${active === "reports" ? "active" : ""}">${t("nav_incidents")}</a>
+        <a href="feed.html" class="${active === "feed" ? "active" : ""}">${t("nav_feed")}</a>
+        <a href="group-hikes.html" class="${active === "group-hikes" ? "active" : ""}">${t("nav_groups")}</a>
+        <a href="articles.html" class="${active === "articles" ? "active" : ""}">${t("nav_articles")}</a>
         <a href="get-app.html" class="nav-app ${active === "app" ? "active" : ""}">${t("nav_app")}</a>
 
-        <div class="nav-account ${accountActive ? "has-active" : ""}" id="navAccount">
-          <button type="button" class="nav-account-trigger" id="accountToggle" aria-expanded="false" aria-haspopup="true">
-            <img class="avatar-sm" src="${u.avatar}" alt="" />
-            <span>${t("nav_me")}</span>
-          </button>
-          <div class="nav-account-menu" id="accountMenu" hidden>
-            <p class="nav-account-heading">${t("nav_me")}</p>
-            <a href="my-hikes.html" class="${active === "hikes" ? "active" : ""}">${t("nav_hikes")}</a>
-            <a href="dashboard.html" class="${active === "dashboard" ? "active" : ""}">${t("nav_dashboard")}</a>
-            <a href="reports.html" class="${active === "reports" ? "active" : ""}">${t("nav_reports")}</a>
-            <a href="trees.html" class="${active === "trees" ? "active" : ""}">${t("nav_trees")}</a>
-            <a href="register.html" class="${active === "register" ? "active" : ""}">${t("nav_register")}</a>
-            <a href="profile.html" class="${active === "profile" ? "active" : ""}">${t("nav_profile")}</a>
-          </div>
-        </div>
+        ${accountNav}
       </nav>
       <div class="header-actions">
         <div class="lang-switch" role="group" aria-label="Language">
@@ -99,39 +249,81 @@ function renderFooter() {
   return `
   <footer class="site-footer">
     <div class="container">
-      <div>
-        <a href="index.html" class="logo" style="margin-bottom:0.5rem;flex-direction:column;align-items:flex-start;gap:0.65rem">
-          <img src="assets/brand/icon.svg" alt="TrailWatch" style="height:40px;width:auto" />
-          <img class="logo-img footer" src="assets/brand/footer-logo.webp" alt="TrailWatch Footer Logo" />
-        </a>
-        <p class="footer-org">${t("footer_org")}</p>
+      <div class="footer-newsletter">
+        <p class="footer-newsletter-label">${t("footer_newsletter")}</p>
+        <form class="footer-newsletter-form" id="footerNewsletterForm">
+          <input
+            class="footer-newsletter-input"
+            type="email"
+            name="email"
+            required
+            autocomplete="email"
+            placeholder="you@email.com"
+            aria-label="${t("footer_newsletter")}"
+          />
+          <button type="submit" class="footer-newsletter-cta">${t("footer_newsletter_cta")}</button>
+        </form>
       </div>
-      <div>
-        <h4>${t("footer_discover")}</h4>
-        <a href="explore.html">${t("footer_routes")}</a>
-        <a href="explore.html?tab=incidents">${t("footer_incidents")}</a>
-        <a href="index.html">${t("footer_feed")}</a>
-        <a href="plan.html">${t("footer_plan")}</a>
-        <a href="donate.html">${t("nav_donate")}</a>
-        <a href="about.html">${t("nav_about")}</a>
-      </div>
-      <div>
-        <h4>${t("footer_you")}</h4>
-        <a href="my-hikes.html">${t("nav_hikes")}</a>
-        <a href="dashboard.html">${t("footer_portfolio")}</a>
-        <a href="insights.html">${t("footer_insights")}</a>
-        <a href="milestones.html">${t("footer_milestones")}</a>
-        <a href="reports.html">${t("nav_reports")}</a>
-        <a href="trees.html">${t("nav_trees")}</a>
-        <a href="register.html">${t("nav_register")}</a>
-        <a href="profile.html">${t("nav_profile")}</a>
-        <a href="get-app.html">${t("nav_app")}</a>
+      <div class="footer-cols">
+        <div>
+          <a href="index.html" class="logo" style="margin-bottom:0.5rem;flex-direction:column;align-items:flex-start;gap:0.65rem">
+            <img src="assets/brand/icon.svg" alt="TrailWatch" style="height:40px;width:auto" />
+            <img class="logo-img footer" src="assets/brand/footer-logo.webp" alt="TrailWatch Footer Logo" />
+          </a>
+          <p class="footer-org">${t("footer_org")}</p>
+          <p class="footer-about-bits"><a href="about.html">${t("footer_about_bits")}</a></p>
+        </div>
+        <div>
+          <h4>${t("footer_discover")}</h4>
+          <a href="explore.html">${t("footer_routes")}</a>
+          <a href="explore.html?tab=records">${t("tab_records")}</a>
+          <a href="reports.html">${t("footer_incidents")}</a>
+          <a href="feed.html">${t("footer_feed")}</a>
+          <a href="plan.html">${t("footer_plan")}</a>
+          <a href="group-hikes.html">${t("nav_groups")}</a>
+          <a href="articles.html">${t("nav_articles")}</a>
+          <a href="gallery.html">${t("nav_gallery")}</a>
+        </div>
+        <div>
+          <h4>${t("footer_you")}</h4>
+          <a href="profile.html#overview">${t("nav_dashboard")}</a>
+          <a href="profile.html#activity">${t("nav_my_activity")}</a>
+          <a href="profile.html#friends">${t("nav_friends")}</a>
+          <a href="profile.html#badges">${t("nav_badges")}</a>
+          <a href="profile.html#insights">${t("footer_insights")}</a>
+          <a href="profile.html#milestones">${t("footer_milestones")}</a>
+          <a href="profile.html#settings">${t("nav_settings")}</a>
+          <a href="get-app.html">${t("nav_app")}</a>
+        </div>
+        <div>
+          <h4>${t("footer_help")}</h4>
+          <a href="about.html">${t("nav_about")}</a>
+          <a href="about.html#contact">${t("footer_contact")}</a>
+          <a href="about.html#faq">${t("footer_faq")}</a>
+          <div class="footer-social" aria-label="Social">
+            <a href="https://www.facebook.com/" target="_blank" rel="noopener">Facebook</a>
+            <a href="https://www.instagram.com/" target="_blank" rel="noopener">Instagram</a>
+            <a href="https://www.youtube.com/" target="_blank" rel="noopener">YouTube</a>
+          </div>
+        </div>
       </div>
     </div>
     <div class="footer-bottom">${t("footer_copy")}</div>
   </footer>
+  <a class="donate-fab" href="donate.html" title="${t("nav_donate")}">${t("nav_donate")}</a>
   <div class="toast" id="toast"></div>`;
 }
+
+TW.bindFooterNewsletter = function () {
+  const form = document.getElementById("footerNewsletterForm");
+  if (!form || form.dataset.bound) return;
+  form.dataset.bound = "1";
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    showToast(TW.t("feedback_thanks"));
+    form.reset();
+  });
+};
 
 function showToast(msg) {
   const t = document.getElementById("toast");
@@ -143,10 +335,20 @@ function showToast(msg) {
 }
 
 function initShell(active) {
+  if (!document.querySelector('link[rel="icon"]')) {
+    const icon = document.createElement("link");
+    icon.rel = "icon";
+    icon.type = "image/svg+xml";
+    icon.href = "assets/brand/icon.svg";
+    document.head.appendChild(icon);
+  }
   const mount = document.getElementById("app-header");
   const foot = document.getElementById("app-footer");
   if (mount) mount.innerHTML = renderHeader(active);
-  if (foot) foot.innerHTML = renderFooter();
+  if (foot) {
+    foot.innerHTML = renderFooter();
+    TW.bindFooterNewsletter();
+  }
 
   const toggle = document.getElementById("menuToggle");
   const links = document.getElementById("navLinks");
@@ -181,6 +383,14 @@ function initShell(active) {
         accountToggle.setAttribute("aria-expanded", "false");
         accountMenu.hidden = true;
       }
+    });
+  }
+
+  const accountLogout = document.getElementById("accountLogout");
+  if (accountLogout) {
+    accountLogout.addEventListener("click", () => {
+      TW.logoutMember();
+      location.href = "index.html";
     });
   }
 
@@ -220,16 +430,9 @@ function tagClass(tag) {
 }
 
 function renderFeedCard(post) {
-  const avatar =
-    post.avatar ||
-    "data:image/svg+xml," +
-      encodeURIComponent(
-        `<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"><rect fill="#0b421a" width="40" height="40" rx="20"/><text x="20" y="26" text-anchor="middle" fill="white" font-size="16">TW</text></svg>`
-      );
-
   let media = "";
   if (post.image) {
-    media = `<div class="feed-media"><img src="${post.image}" alt="" loading="lazy" /></div>`;
+    media = `<div class="feed-media"><img src="${post.image}" alt="" loading="lazy" onerror="this.closest('.feed-media')?.remove()" /></div>`;
   } else if (post.mapStyle) {
     media = `<div class="feed-media" style="background:linear-gradient(135deg,#c8e6c9,#81c784);display:grid;place-items:center;color:#0b421a;font-weight:700;font-size:0.9rem">📍 GPS</div>`;
   }
@@ -251,7 +454,7 @@ function renderFeedCard(post) {
   return `
   <article class="card feed-card">
     <div class="feed-card-header">
-      <img class="avatar-sm" src="${avatar}" alt="" />
+      ${twAvatarHtml(post.avatar, "avatar-sm")}
       <div class="user-info">
         <div class="name">${post.user}</div>
         <div class="time">${time}</div>

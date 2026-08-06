@@ -23,6 +23,7 @@
           <p data-i18n="hero_desc"></p>
           <div class="hero-actions">
             <a class="btn btn-ghost" href="explore.html" data-i18n="hero_cta_explore"></a>
+            <a class="btn btn-ghost" href="get-app.html" data-i18n="nav_app"></a>
             <a class="btn btn-ghost" href="plan.html" data-i18n="hero_cta_plan"></a>
           </div>
         </div>
@@ -39,62 +40,67 @@
         </div>
       </div>
 
-      <div class="tabs" id="homeTabs">
-        <button class="tab active" data-tab="feed" data-i18n="tab_feed"></button>
-        <button class="tab" data-tab="meetups" data-i18n="tab_meetups"></button>
-        <button class="tab" data-tab="memories" data-i18n="tab_memories"></button>
-      </div>
-
-      <div class="layout-split">
-        <div>
-          <div id="panel-feed"></div>
-          <div id="panel-meetups" class="hidden">
-            <div class="section-head">
-              <h2 data-i18n="upcoming_meetups"></h2>
-            </div>
-            <div class="trail-grid" id="meetupGrid"></div>
+      <section>
+        <div class="section-head">
+          <h2 data-i18n="home_figures"></h2>
+        </div>
+        <div class="home-figures">
+          <div class="stat-box">
+            <div class="value" id="figRoutes">—</div>
+            <div class="label" data-i18n="home_fig_routes"></div>
           </div>
-          <div id="panel-memories" class="hidden">
-            <div class="section-head">
-              <h2 data-i18n="your_memories"></h2>
-              <span class="meta" data-i18n="from_records"></span>
-            </div>
-            <div class="record-list" id="memoriesList"></div>
+          <div class="stat-box">
+            <div class="value" id="figKm">—</div>
+            <div class="label" data-i18n="home_fig_distance"></div>
+          </div>
+          <div class="stat-box">
+            <div class="value" id="figIncidents">—</div>
+            <div class="label" data-i18n="home_fig_incidents"></div>
           </div>
         </div>
+      </section>
 
-        <aside class="sticky-side">
-          <div class="card" style="padding:1.25rem;margin-bottom:1rem">
-            <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1rem">
-              <img class="avatar-sm" id="sideAvatar" alt="" style="width:48px;height:48px" />
-              <div>
-                <strong id="sideName"></strong>
-                <div class="rank" id="sideRank" style="margin:0;font-size:0.8rem"></div>
-              </div>
-            </div>
-            <div class="stats-grid" style="margin-bottom:1rem">
-              <div class="stat-box">
-                <div class="value" id="sideRecords">—</div>
-                <div class="label" data-i18n="records"></div>
-              </div>
-              <div class="stat-box">
-                <div class="value" id="sideKm">—</div>
-                <div class="label" data-i18n="km_hiked"></div>
-              </div>
-            </div>
-            <a class="btn btn-primary btn-block" href="dashboard.html" data-i18n="open_dashboard"></a>
-          </div>
+      <section>
+        <div class="section-head">
+          <h2 data-i18n="home_features_title"></h2>
+          <a class="link-more" href="get-app.html" data-i18n="nav_app"></a>
+        </div>
+        <ul class="home-feature-list">
+          <li data-i18n="home_feat_track"></li>
+          <li data-i18n="home_feat_plan"></li>
+          <li data-i18n="home_feat_report"></li>
+          <li data-i18n="home_feat_explore"></li>
+          <li data-i18n="home_feat_offline"></li>
+          <li data-i18n="home_feat_groups"></li>
+          <li data-i18n="home_feat_live"></li>
+          <li data-i18n="home_feat_insights"></li>
+          <li data-i18n="home_feat_gallery"></li>
+        </ul>
+      </section>
 
-          <div class="card" style="padding:1.25rem">
-            <h3 style="font-size:0.95rem;margin-bottom:0.75rem;color:var(--green-900)" data-i18n="quick_links"></h3>
-            <a href="explore.html" style="display:block;padding:0.5rem 0;font-size:0.875rem;font-weight:500" data-i18n="browse_routes"></a>
-            <a href="plan.html" style="display:block;padding:0.5rem 0;font-size:0.875rem;font-weight:500" data-i18n="footer_plan"></a>
-            <a href="reports.html" style="display:block;padding:0.5rem 0;font-size:0.875rem;font-weight:500" data-i18n="report_incident"></a>
-            <a href="trees.html" style="display:block;padding:0.5rem 0;font-size:0.875rem;font-weight:500" data-i18n="my_trees"></a>
-            <a href="get-app.html" style="display:block;padding:0.5rem 0;font-size:0.875rem;font-weight:600;color:var(--amber)" data-i18n="get_app"></a>
-          </div>
-        </aside>
-      </div>
+      <section>
+        <div class="section-head">
+          <h2 data-i18n="home_rec_routes"></h2>
+          <a class="link-more" href="explore.html" data-i18n="view_all"></a>
+        </div>
+        <div class="trail-grid" id="homeRecRoutes"></div>
+      </section>
+
+      <section class="mt-2">
+        <div class="section-head">
+          <h2 data-i18n="home_featured_articles"></h2>
+          <a class="link-more" href="articles.html" data-i18n="view_all"></a>
+        </div>
+        <div id="homeArticles"></div>
+      </section>
+
+      <section class="mt-2">
+        <div class="section-head">
+          <h2 data-i18n="tab_feed"></h2>
+          <a class="link-more" href="feed.html" data-i18n="view_all"></a>
+        </div>
+        <div id="homeFeed"></div>
+      </section>
     </div>
   </main>
 
@@ -108,40 +114,54 @@
     document.documentElement.lang = TW.getLang() === "zh" ? "zh-Hant" : "en";
     initShell("home");
 
-    document.getElementById("sideAvatar").src = TW.user.avatar;
-    document.getElementById("sideName").textContent = TW.user.name;
-    document.getElementById("sideRank").textContent =
-      "🦶 " + (TW.getLang() === "zh" ? TW.user.rankZh : TW.user.rank);
-    document.getElementById("sideRecords").textContent = TW.stats.records;
-    document.getElementById("sideKm").textContent = TW.stats.distanceKm.toLocaleString();
+    const trails = TW.trails || [];
+    document.getElementById("figRoutes").textContent = trails.length || TW.stats.routes || "102";
+    document.getElementById("figKm").textContent = (TW.stats.distanceKm || 12234).toLocaleString() + " km";
+    document.getElementById("figIncidents").textContent = (TW.reports && TW.reports.length) || "23";
 
-    document.getElementById("panel-feed").innerHTML = TW.feed.map(renderFeedCard).join("");
-    bindLikes();
-
-    document.getElementById("meetupGrid").innerHTML = TW.meetups
-      .map(
-        (m) => `
-      <article class="trail-card">
-        <div class="trail-card-img"><img src="${m.image}" alt="" loading="lazy" /></div>
-        <div class="trail-card-body">
-          <h3>${TW.tt(m, "title")}</h3>
-          <p class="desc">${TW.tt(m, "date")} · ${TW.tt(m, "place")}</p>
-          <div style="display:flex;justify-content:space-between;align-items:center">
-            <span style="font-size:0.8rem;color:var(--text-muted)">${m.spots} ${TW.t("spots_left")}</span>
-            <button class="btn btn-primary" style="padding:0.4rem 0.9rem;font-size:0.8rem" onclick="showToast(TW.t('toast_joined'))">${TW.t("join")}</button>
-          </div>
-        </div>
-      </article>`
-      )
-      .join("");
-
-    document.getElementById("memoriesList").innerHTML = TW.records.slice(0, 4).map(renderRecordItem).join("");
-
-    bindTabs("#homeTabs", (tab) => {
-      ["feed", "meetups", "memories"].forEach((id) => {
-        document.getElementById("panel-" + id).classList.toggle("hidden", id !== tab);
+    const rec = trails.slice(0, 3).map((tr) => ({
+      id: tr.id,
+      title: tr.name || tr.title,
+      titleZh: tr.nameZh || tr.titleZh,
+      desc: tr.desc || "",
+      descZh: tr.descZh || "",
+      district: tr.district || "sai-kung",
+      difficulty: tr.difficulty || 2,
+      distance: tr.distanceKm != null ? tr.distanceKm + " km" : (tr.distance || "—"),
+      duration: tr.duration || "—",
+      elevation: tr.elevation || "—",
+      rating: tr.rating || 4.5,
+      image: tr.image || "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=600&q=60",
+      tags: tr.tags || tr.categories || [],
+    }));
+    document.getElementById("homeRecRoutes").innerHTML = rec.length
+      ? rec.map((t) => renderTrailCard(t, { hidePlan: false })).join("")
+      : `<p style="color:var(--text-muted)">${TW.t("page_coming_filters")}</p>`;
+    document.querySelectorAll(".plan-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const id = btn.dataset.trail;
+        if (TW.isPlanned(id)) TW.unplanTrail(id);
+        else TW.planTrail(id);
+        location.reload();
       });
     });
+
+    const homeArticles = (TW.getFeaturedArticles
+      ? TW.getFeaturedArticles()
+      : TW.getArticles
+        ? TW.getArticles({ featured: true })
+        : (TW.articles || []).filter((a) => a.featured)
+    ).slice(0, 3);
+    document.getElementById("homeArticles").innerHTML = homeArticles.map((a) => {
+      const zh = TW.getLang() === "zh";
+      const type = TW.articleCategoryLabel ? TW.articleCategoryLabel(a.category) : a.category;
+      const title = zh ? a.titleZh : a.title;
+      const url = zh ? (a.urlZh || a.url) : a.url;
+      return `<article class="article-card"><div class="meta">${type} · ${a.date}</div><strong><a href="${url}" target="_blank" rel="noopener noreferrer">${title}</a></strong></article>`;
+    }).join("");
+
+    document.getElementById("homeFeed").innerHTML = (TW.feed || []).slice(0, 3).map(renderFeedCard).join("");
+    bindLikes();
   </script>
 </body>
 </html>

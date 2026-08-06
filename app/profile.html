@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>TrailWatch App — Profile</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/styles.css" />
+  <style>
+    body { margin: 0; }
+    .phone-body { flex: 1; overflow-y: auto; padding: 0.75rem 0.9rem 1rem; background: #f7faf7; }
+    .app-head {
+      padding: 2.3rem 0.9rem 0.85rem; background: #fff; border-bottom: 1px solid var(--border);
+    }
+    .profile-row { display: flex; align-items: center; gap: 0.75rem; }
+    .profile-row h1 { font-size: 1.05rem; color: var(--green-900); margin: 0; }
+    .profile-row .rank { font-size: 0.72rem; color: var(--text-muted); margin-top: 0.15rem; }
+    .head-actions { margin-left: auto; display: flex; gap: 0.35rem; }
+    .icon-round {
+      width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--border);
+      background: #fff; display: grid; place-items: center; position: relative; cursor: pointer;
+      color: var(--green-900); text-decoration: none;
+    }
+    .icon-round .dot {
+      position: absolute; top: 4px; right: 4px; width: 7px; height: 7px;
+      border-radius: 50%; background: #e84a3c; border: 1.5px solid #fff;
+    }
+    .life-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.4rem; margin-bottom: 0.75rem;
+    }
+    .life-box {
+      background: #fff; border: 1px solid var(--border); border-radius: 12px;
+      padding: 0.65rem 0.35rem; text-align: center;
+    }
+    .life-box .val { font-size: 1rem; font-weight: 800; color: var(--green-900); }
+    .life-box .lbl { font-size: 0.62rem; color: var(--text-muted); font-weight: 600; }
+    .badge-card {
+      background: #fff; border: 1px solid var(--border); border-radius: 12px;
+      padding: 0.75rem 0.85rem; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.65rem;
+    }
+    .menu-list { background: #fff; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+    .menu-list a, .menu-list button {
+      display: flex; align-items: center; gap: 0.65rem; width: 100%;
+      padding: 0.75rem 0.85rem; border: none; border-bottom: 1px solid #f0f0f0;
+      background: #fff; text-align: left; text-decoration: none; color: var(--green-900);
+      font-size: 0.85rem; font-weight: 600; cursor: pointer;
+    }
+    .menu-list a:last-child, .menu-list button:last-child { border-bottom: none; }
+    .menu-list .chev { margin-left: auto; color: #9ca3af; font-weight: 400; }
+    .menu-list .prem { margin-left: auto; }
+    .section-label {
+      font-size: 0.7rem; font-weight: 800; color: var(--text-muted);
+      text-transform: uppercase; letter-spacing: 0.04em; margin: 0.85rem 0 0.4rem;
+    }
+    .badge-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.45rem; }
+    .badge-item {
+      background: #fff; border: 1px solid var(--border); border-radius: 10px;
+      padding: 0.55rem 0.3rem; text-align: center; cursor: pointer; font-size: 0.65rem; font-weight: 700;
+      color: var(--green-900);
+    }
+    .badge-item.locked { opacity: 0.4; filter: grayscale(1); }
+    .badge-item .ico { font-size: 1.2rem; display: block; margin-bottom: 0.2rem; }
+    .settings-sheet {
+      display: none; position: absolute; inset: 0; z-index: 40; background: #f7faf7;
+      flex-direction: column;
+    }
+    .settings-sheet.open { display: flex; }
+    .settings-sheet .sheet-head {
+      padding: 2.4rem 0.9rem 0.75rem; background: #fff; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 0.5rem;
+    }
+    .friend-card {
+      background: #fff; border: 1px solid var(--border); border-radius: 12px;
+      padding: 0.7rem 0.8rem; margin-bottom: 0.55rem; display: flex; align-items: center; gap: 0.55rem;
+    }
+    .friend-card strong { display: block; font-size: 0.85rem; color: var(--green-900); }
+    .friend-card span { font-size: 0.68rem; color: var(--text-muted); }
+  </style>
+</head>
+<body>
+  <div class="app-page">
+    <div class="app-page-top">
+      <a href="../get-app.html" id="backWeb"></a>
+      <div class="lang-switch" style="margin:0.75rem auto 0;width:fit-content;background:rgba(255,255,255,0.15);border-color:rgba(255,255,255,0.25)">
+        <button type="button" data-lang="en" style="color:#fff">EN</button>
+        <button type="button" data-lang="zh" style="color:#fff">繁</button>
+      </div>
+    </div>
+
+    <div class="phone-frame">
+      <div class="phone-notch"></div>
+      <div class="phone-screen" style="position:relative">
+        <div class="app-head">
+          <div class="profile-row">
+            <div id="avatarWrap" style="width:52px;height:52px;border-radius:50%;background:var(--green-100);overflow:hidden;flex-shrink:0"></div>
+            <div>
+              <h1 id="userName"></h1>
+              <div class="rank" id="userRank"></div>
+            </div>
+            <div class="head-actions">
+              <button type="button" class="icon-round" id="btnNotif" aria-label="Notifications">
+                <span id="bellIcon"></span><span class="dot"></span>
+              </button>
+              <button type="button" class="icon-round" id="btnSettings" aria-label="Settings">⚙</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="phone-body" id="mainBody">
+          <div class="section-label" id="lblLifetime"></div>
+          <div class="life-grid">
+            <div class="life-box"><div class="val" id="lifeKm">—</div><div class="lbl" id="lblKm"></div></div>
+            <div class="life-box"><div class="val" id="lifeHrs">—</div><div class="lbl" id="lblHrs"></div></div>
+            <div class="life-box"><div class="val" id="lifeRec">—</div><div class="lbl" id="lblRec"></div></div>
+          </div>
+
+          <div class="badge-card">
+            <span style="font-size:1.4rem">🌿</span>
+            <div style="flex:1">
+              <div style="font-size:0.65rem;font-weight:700;color:var(--text-muted);text-transform:uppercase" id="lblSelBadge"></div>
+              <strong id="selBadge" style="color:var(--green-900);font-size:0.9rem"></strong>
+            </div>
+            <a href="#badges" style="font-size:0.72rem;font-weight:700;color:var(--green-800)" id="linkBadges"></a>
+          </div>
+
+          <div class="menu-list" id="mainMenu"></div>
+
+          <div class="section-label" id="lblMore"></div>
+          <div class="menu-list" id="moreMenu"></div>
+
+          <div class="section-label" id="lblBadgesSec"></div>
+          <p style="font-size:0.68rem;color:var(--text-muted);margin:0 0 0.4rem" id="badgeHint"></p>
+          <div class="badge-grid" id="badgeGrid"></div>
+
+          <div class="section-label" id="lblPremium"></div>
+          <div class="menu-list" id="premiumList"></div>
+        </div>
+
+        <!-- Settings panel -->
+        <div class="settings-sheet" id="settingsSheet">
+          <div class="sheet-head">
+            <button type="button" id="closeSettings" style="border:none;background:none;font-size:1.3rem;color:var(--green-900);cursor:pointer">‹</button>
+            <strong style="flex:1;text-align:center;color:var(--green-900)" id="settingsTitle"></strong>
+            <span style="width:24px"></span>
+          </div>
+          <div class="phone-body">
+            <div class="menu-list">
+              <a href="#"><span id="setProfile"></span><span class="chev">›</span></a>
+              <a href="#"><span id="setPremium"></span><span class="prem"><span class="app-premium-pill" id="setPremPill"></span></span></a>
+              <a href="#"><span id="setOffline"></span><span class="prem"><span class="app-premium-pill"></span></span></a>
+              <a href="#"><span id="setOverseas"></span><span class="prem"><span class="app-premium-pill"></span></span></a>
+            </div>
+            <button type="button" class="btn btn-primary btn-block" style="margin-top:1rem" id="btnTrial"></button>
+          </div>
+        </div>
+
+        <!-- Notifications panel -->
+        <div class="settings-sheet" id="notifSheet">
+          <div class="sheet-head">
+            <button type="button" id="closeNotif" style="border:none;background:none;font-size:1.3rem;color:var(--green-900);cursor:pointer">‹</button>
+            <strong style="flex:1;text-align:center;color:var(--green-900)" id="notifTitle"></strong>
+            <span style="width:24px"></span>
+          </div>
+          <div class="phone-body">
+            <div class="friend-card"><div><strong id="n1t"></strong><span id="n1b"></span></div></div>
+            <div class="friend-card"><div><strong id="n2t"></strong><span id="n2b"></span></div></div>
+          </div>
+        </div>
+
+        <!-- Friends / records / gallery panels as simple overlays via hash sections in body -->
+        <div data-app-nav></div>
+      </div>
+    </div>
+  </div>
+  <div class="toast" id="toast"></div>
+
+  <script src="../js/i18n.js"></script>
+  <script src="../js/data.js"></script>
+  <script src="../js/env-badge.js"></script>
+  <script src="../js/hikes.js"></script>
+  <script src="../js/app.js"></script>
+  <script>
+    document.documentElement.lang = TW.getLang() === "zh" ? "zh-Hant" : "en";
+    const lang = TW.getLang();
+    const t = TW.t;
+    document.querySelectorAll(".lang-switch button").forEach((b) => {
+      b.classList.toggle("active", b.dataset.lang === lang);
+      b.addEventListener("click", () => { TW.setLang(b.dataset.lang); location.reload(); });
+    });
+    document.getElementById("backWeb").textContent = t("app_back_web");
+    twMountAppNav("profile");
+
+    const u = TW.user || { name: "Hiker", rank: "Explorer", rankZh: "探索者" };
+    document.getElementById("avatarWrap").innerHTML = TW.avatarHtml(u.avatar, "", 'style="width:52px;height:52px;object-fit:cover"')
+      || `<div style="width:52px;height:52px;display:grid;place-items:center;font-weight:800;color:var(--green-900)">${(u.name || "H")[0]}</div>`;
+    document.getElementById("userName").textContent = u.name;
+    document.getElementById("userRank").textContent = lang === "zh" ? (u.rankZh || u.rank) : u.rank;
+    document.getElementById("bellIcon").innerHTML = twIcon("bell");
+
+    TW.ensureDemoHike();
+    document.getElementById("lblLifetime").textContent = t("dash_lifetime");
+    document.getElementById("lifeKm").textContent = ((TW.stats && TW.stats.distanceKm) || 128) + " km";
+    document.getElementById("lifeHrs").textContent = ((TW.stats && TW.stats.movingHrs) || 48.5) + " h";
+    document.getElementById("lifeRec").textContent = String((TW.stats && TW.stats.records) || TW.getHikes().length || 12);
+    document.getElementById("lblKm").textContent = t("app_distance");
+    document.getElementById("lblHrs").textContent = t("app_duration");
+    document.getElementById("lblRec").textContent = t("app_my_records");
+    document.getElementById("lblSelBadge").textContent = t("dash_selected_badge");
+    document.getElementById("selBadge").textContent = lang === "zh" ? (u.rankZh || "環保徽章") : (u.rank || "Environmental Badge");
+    document.getElementById("linkBadges").textContent = t("app_my_badges");
+    document.getElementById("lblMore").textContent = t("app_more");
+    document.getElementById("lblBadgesSec").textContent = t("app_my_badges");
+    document.getElementById("badgeHint").textContent = t("app_badge_criteria");
+    document.getElementById("lblPremium").textContent = t("app_premium");
+
+    document.getElementById("mainMenu").innerHTML = [
+      { href: "records.html", label: t("app_my_records") },
+      { href: "index.html?mode=plan", label: t("app_my_plans") },
+      { href: "hikes.html?mine=1", label: t("app_my_groups") },
+      { href: "index.html", label: t("app_my_reports"), toast: false },
+      { href: "gallery.html", label: t("app_my_gallery") },
+      { href: "friends.html", label: t("app_my_friends") },
+    ].map((item) => `<a href="${item.href}"><span>${item.label}</span><span class="chev">›</span></a>`).join("");
+
+    document.getElementById("moreMenu").innerHTML = `
+      <a href="milestones.html"><span>${t("app_milestones")}</span><span class="chev">›</span></a>
+      <a href="insights.html"><span>${t("app_insights")}</span><span class="prem"><span class="app-premium-pill">${t("app_detailed_insights")}</span></span></a>`;
+
+    const badges = [
+      { ico: "🥾", label: lang === "zh" ? "首 10 km" : "First 10 km", locked: false, cat: "hike" },
+      { ico: "⛰", label: lang === "zh" ? "高峰挑戰" : "Peak challenge", locked: false, cat: "hike" },
+      { ico: "🧭", label: lang === "zh" ? "夜行" : "Night hike", locked: true, cat: "hike" },
+      { ico: "🌿", label: lang === "zh" ? "生態打卡" : "Nature check-in", locked: false, cat: "env" },
+      { ico: "🧹", label: lang === "zh" ? "清潔行動" : "Cleanup", locked: true, cat: "env" },
+      { ico: "🌳", label: lang === "zh" ? "植樹" : "Tree planting", locked: true, cat: "env" },
+    ];
+    document.getElementById("badgeGrid").innerHTML =
+      `<p style="grid-column:1/-1;font-size:0.68rem;font-weight:700;color:var(--green-800);margin:0">${t("app_badge_hiking")}</p>` +
+      badges.filter((b) => b.cat === "hike").map((b) =>
+        `<button type="button" class="badge-item ${b.locked ? "locked" : ""}" data-label="${b.label}"><span class="ico">${b.ico}</span>${b.label}</button>`
+      ).join("") +
+      `<p style="grid-column:1/-1;font-size:0.68rem;font-weight:700;color:var(--green-800);margin:0.35rem 0 0">${t("app_badge_env")}</p>` +
+      badges.filter((b) => b.cat === "env").map((b) =>
+        `<button type="button" class="badge-item ${b.locked ? "locked" : ""}" data-label="${b.label}"><span class="ico">${b.ico}</span>${b.label}</button>`
+      ).join("");
+
+    document.getElementById("badgeGrid").addEventListener("click", (e) => {
+      const btn = e.target.closest(".badge-item");
+      if (!btn) return;
+      showToast(btn.dataset.label + " — " + t("app_badge_criteria"));
+    });
+
+    document.getElementById("premiumList").innerHTML = [
+      { label: t("app_live_share"), note: t("app_live_share_premium") },
+      { label: t("app_group_organize_premium"), note: t("app_upgrade") },
+      { label: t("app_footprint_map"), note: t("app_premium_lock") },
+      { label: t("app_offline_maps"), note: t("app_premium_lock") },
+      { label: t("app_overseas_maps"), note: t("app_premium_lock") },
+      { label: t("app_unlimited_photos"), note: t("app_premium_lock") },
+    ].map((p) =>
+      `<button type="button" data-upgrade><span>${p.label}</span><span class="prem"><span class="app-premium-pill">${t("app_upgrade")}</span></span></button>`
+    ).join("");
+    document.getElementById("premiumList").addEventListener("click", (e) => {
+      if (e.target.closest("[data-upgrade]")) showToast(t("app_free_trial"));
+    });
+
+    document.getElementById("settingsTitle").textContent = t("app_settings");
+    document.getElementById("setProfile").textContent = t("nav_profile");
+    document.getElementById("setPremium").textContent = t("app_premium");
+    document.getElementById("setPremPill").textContent = t("app_premium");
+    document.getElementById("setOffline").textContent = t("app_offline_maps");
+    document.getElementById("setOverseas").textContent = t("app_overseas_maps");
+    document.getElementById("btnTrial").textContent = t("app_free_trial");
+    document.getElementById("btnTrial").addEventListener("click", () => showToast(t("app_free_trial")));
+
+    document.getElementById("notifTitle").textContent = t("app_notifications");
+    document.getElementById("n1t").textContent = lang === "zh" ? "聯誼邀請" : "Group hike invite";
+    document.getElementById("n1b").textContent = lang === "zh" ? "Sarah 邀請你參加龍脊聯誼" : "Sarah invited you to Dragon's Back";
+    document.getElementById("n2t").textContent = lang === "zh" ? "好友請求" : "Friend request";
+    document.getElementById("n2b").textContent = lang === "zh" ? "James 想加你為好友" : "James wants to be friends";
+
+    document.getElementById("btnSettings").addEventListener("click", () => {
+      document.getElementById("settingsSheet").classList.add("open");
+    });
+    document.getElementById("closeSettings").addEventListener("click", () => {
+      document.getElementById("settingsSheet").classList.remove("open");
+    });
+    document.getElementById("btnNotif").addEventListener("click", () => {
+      document.getElementById("notifSheet").classList.add("open");
+    });
+    document.getElementById("closeNotif").addEventListener("click", () => {
+      document.getElementById("notifSheet").classList.remove("open");
+    });
+  </script>
+</body>
+</html>

@@ -3,33 +3,182 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-  <title>TrailWatch App — Track</title>
+  <title>TrailWatch App — Map</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="../css/styles.css" />
+  <link rel="icon" href="../assets/brand/icon.svg" type="image/svg+xml" />
   <style>
     body { margin: 0; }
     .site-header, .site-footer { display: none !important; }
     #appMap { width: 100%; height: 100%; }
+    .sr-only {
+      position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+      overflow: hidden; clip: rect(0,0,0,0); border: 0;
+    }
     .phone-topbar {
       position: absolute; top: 0; left: 0; right: 0; z-index: 20;
       display: flex; justify-content: space-between; align-items: center;
-      padding: 2.4rem 0.75rem 0.5rem; pointer-events: none;
+      padding: 2.4rem 0.75rem 0.5rem; pointer-events: none; gap: 0.4rem;
     }
     .phone-topbar > * { pointer-events: auto; }
+    .mode-toggle {
+      display: flex; background: #fff; border-radius: 999px;
+      box-shadow: 0 2px 10px rgba(0,0,0,.12); padding: 0.15rem; gap: 0.1rem;
+    }
+    .mode-toggle button {
+      border: none; background: transparent; border-radius: 999px;
+      padding: 0.35rem 0.7rem; font-size: 0.72rem; font-weight: 800;
+      color: var(--text-muted); cursor: pointer;
+    }
+    .mode-toggle button.active { background: var(--green-900); color: #fff; }
     .round-btn {
-      width: 40px; height: 40px; border-radius: 50%; background: white;
-      box-shadow: 0 2px 10px rgba(0,0,0,.15); display: grid; place-items: center;
-      font-weight: 700; color: #111;
+      width: 42px; height: 42px; border-radius: 50%; background: #fff;
+      box-shadow: 0 2px 12px rgba(0,0,0,.2); display: grid; place-items: center;
+      color: #111; text-decoration: none; z-index: 30; position: relative;
+      border: none; cursor: pointer; padding: 0; flex-shrink: 0;
+    }
+    .round-btn svg {
+      width: 20px; height: 20px; stroke: #111; fill: none;
+      stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round;
     }
     .gps-pill {
-      background: white; border-radius: 999px; padding: 0.4rem 0.75rem;
-      font-size: 0.72rem; font-weight: 700; color: var(--green-900);
-      box-shadow: 0 2px 10px rgba(0,0,0,.12); display: flex; align-items: center; gap: 0.35rem;
+      background: white; border-radius: 999px; padding: 0.35rem 0.65rem;
+      font-size: 0.68rem; font-weight: 700; color: var(--green-900);
+      box-shadow: 0 2px 10px rgba(0,0,0,.12); display: flex; align-items: center; gap: 0.3rem;
     }
     .gps-pill .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green-500); }
+    .figma-map-controls { top: auto !important; bottom: 10.5rem; right: 0.75rem; }
+    .phone-screen.track-focus .app-bottom-nav { display: grid; }
+    .figma-start-bar {
+      padding: 0.75rem 1.1rem 1.1rem !important;
+      align-items: flex-end; gap: 0.5rem; background: #fff; border-radius: 0;
+    }
+    .start-bar-spacer { width: 56px; flex-shrink: 0; }
+    .figma-start {
+      flex-direction: column; gap: 0.35rem; background: transparent !important;
+      color: #1a1a1a !important; max-width: none; padding: 0; font-size: 0.8rem; font-weight: 600;
+    }
+    .figma-start-pill {
+      width: 88px; height: 52px; border-radius: 999px; background: var(--green-900);
+      display: grid; place-items: center; box-shadow: 0 4px 14px rgba(11, 66, 26, 0.35);
+    }
+    .figma-start:hover .figma-start-pill { background: var(--green-800); }
+    .figma-sheet {
+      padding: 0.45rem 1.1rem 1rem !important; max-height: 42%; overflow-y: auto;
+      transition: max-height 0.25s ease;
+    }
+    .figma-sheet.expanded { max-height: 62% !important; }
+    .figma-pause-sheet { max-height: 70% !important; }
+    .sheet-handle {
+      width: 36px; height: 4px; border-radius: 999px;
+      background: #d1d5db; margin: 0 auto 0.65rem; cursor: pointer;
+    }
+    .figma-actions { gap: 2rem !important; margin-bottom: 0.65rem !important; }
+    .action-circle .circle {
+      width: 54px; height: 54px; box-shadow: 0 3px 10px rgba(0,0,0,0.12);
+    }
+    .action-circle .circle.red { background: #e84a3c; }
+    .action-circle .circle.amber { background: #f0a020; }
+    .action-circle .circle.blue { background: #4a90c8; }
+    .action-circle .circle.green { background: #1f8f4a; }
+    .figma-live-stats {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.35rem;
+      padding-top: 0.15rem; border-top: 1px solid #eee;
+    }
+    .live-stat, .p-stat {
+      display: flex; align-items: center; justify-content: center; gap: 0.3rem;
+      font-size: 0.82rem; font-weight: 700; color: #1a1a1a; padding: 0.5rem 0.15rem;
+    }
+    .live-stat + .live-stat { border-left: 1px solid #e5e7eb; }
+    .drawer-extra { display: none; margin-top: 0.65rem; }
+    .figma-sheet.expanded .drawer-extra { display: block; }
+    .figma-sheet.expanded .pause-in-drawer { display: flex; }
+    .pause-in-drawer { display: none; justify-content: center; margin: 0.35rem 0 0.55rem; }
+    .extra-stats {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.25rem;
+      margin-bottom: 0.55rem;
+    }
+    .extra-stat {
+      text-align: center; padding: 0.4rem 0.2rem; background: #f7faf7; border-radius: 10px;
+    }
+    .extra-stat .val { font-size: 0.85rem; font-weight: 800; color: var(--green-900); }
+    .extra-stat .lbl { font-size: 0.62rem; color: var(--text-muted); font-weight: 600; }
+    .pace-graph {
+      height: 48px; border-radius: 8px; background:
+        linear-gradient(180deg, rgba(74,144,200,0.12), transparent),
+        repeating-linear-gradient(90deg, transparent, transparent 11px, #e5e7eb 11px, #e5e7eb 12px);
+      position: relative; overflow: hidden; margin-bottom: 0.35rem;
+    }
+    .pace-graph svg { width: 100%; height: 100%; display: block; }
+    .drawer-toggle-btn {
+      display: block; width: 100%; border: none; background: none; cursor: pointer;
+      font-size: 0.7rem; font-weight: 700; color: var(--green-700); padding: 0.35rem;
+    }
+    .figma-pause-stats {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.15rem 0; margin-bottom: 0.75rem;
+    }
+    .p-stat { font-size: 0.78rem; }
+    .cleanup-link, .follow-hint {
+      display: block; width: 100%; text-align: center; margin-top: 0.25rem; padding: 0.3rem;
+      font-size: 0.72rem; font-weight: 600; color: var(--green-700); background: none; border: none; cursor: pointer;
+    }
+    .follow-banner {
+      display: none; margin: 0 0.75rem; padding: 0.45rem 0.65rem; border-radius: 10px;
+      background: rgba(255,255,255,0.95); box-shadow: 0 2px 10px rgba(0,0,0,.1);
+      font-size: 0.72rem; font-weight: 600; color: var(--green-900); z-index: 22;
+      position: absolute; left: 0; right: 0; top: 5.6rem;
+    }
+    .follow-banner.show { display: block; }
+    .ico-clock::before, .ico-pin::before, .ico-elev::before,
+    .ico-elev-up::before, .ico-elev-down::before, .ico-pace::before, .ico-alt::before {
+      font-size: 0.8rem; opacity: 0.85;
+    }
+    .ico-clock::before { content: "⏱"; color: #2d8a45; }
+    .ico-pin::before { content: "📍"; color: #4a90c8; }
+    .ico-elev::before, .ico-elev-up::before { content: "〰"; color: #e84a3c; font-weight: 800; }
+    .ico-elev-down::before { content: "〰"; color: #4a90c8; }
+    .ico-pace::before { content: "◔"; color: #4a90c8; }
+    .ico-alt::before { content: "▴"; color: #0b421a; }
+    .figma-field { margin-bottom: 0.65rem; }
+    .figma-field-label {
+      display: block; font-size: 0.8rem; font-weight: 700; color: var(--green-900); margin-bottom: 0.3rem;
+    }
+    .figma-input {
+      background: #eef7f0 !important; border: 1px solid #d5e6da !important; border-radius: 10px !important;
+    }
+    .privacy-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 0.35rem; margin-bottom: 0.55rem;
+    }
+    .privacy-grid label {
+      display: flex; align-items: center; gap: 0.35rem; font-size: 0.72rem; font-weight: 600;
+      padding: 0.4rem 0.5rem; border: 1px solid #d5e6da; border-radius: 8px; background: #f7faf7;
+      cursor: pointer; color: var(--green-900);
+    }
+    .privacy-grid input { accent-color: var(--green-700); }
+    .report-fab {
+      position: absolute; left: 0.75rem; bottom: 10.5rem; z-index: 28;
+      width: 48px; height: 48px; border-radius: 50%; border: none; cursor: pointer;
+      background: #e84a3c; color: #fff; box-shadow: 0 4px 14px rgba(232,74,60,0.4);
+      display: grid; place-items: center; font-size: 1.1rem; font-weight: 800;
+    }
+    .report-fab span { font-size: 0.55rem; font-weight: 700; position: absolute; bottom: -1.05rem; color: var(--green-900); width: 64px; text-align: center; left: 50%; transform: translateX(-50%); text-shadow: 0 0 4px #fff; }
+    .plan-panel {
+      display: none; background: #fff; padding: 0.75rem 1rem 1rem; border-top: 1px solid var(--border);
+    }
+    .plan-panel.show { display: block; }
+    .plan-row { display: flex; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.45rem; font-size: 0.78rem; }
+    .plan-row strong { color: var(--green-900); }
+    .plan-stats {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.35rem; margin: 0.55rem 0;
+    }
+    .plan-stat {
+      text-align: center; background: #f7faf7; border-radius: 10px; padding: 0.45rem 0.2rem;
+    }
+    .plan-stat .val { font-weight: 800; color: var(--green-900); font-size: 0.85rem; }
+    .plan-stat .lbl { font-size: 0.62rem; color: var(--text-muted); }
     .env-modal {
       position: absolute; inset: 0; z-index: 45; display: none;
       background: rgba(0,0,0,0.35); align-items: flex-end;
@@ -39,12 +188,48 @@
       background: white; border-radius: 20px 20px 0 0; padding: 1.15rem 1.2rem 1.35rem;
       width: 100%; max-height: 70%; overflow-y: auto;
     }
+    .figma-photo-modal .env-modal-sheet { max-height: 92%; padding: 0; border-radius: 0; }
+    .figma-photo-sheet { display: flex; flex-direction: column; min-height: 100%; }
+    .figma-photo-head {
+      display: flex; align-items: center; gap: 0.5rem;
+      padding: 0.85rem 1rem; border-bottom: 1px solid #eee;
+    }
+    .figma-photo-head strong { flex: 1; text-align: center; color: var(--green-900); margin-right: 2rem; }
+    .figma-back {
+      width: 36px; height: 36px; border: none; background: none;
+      font-size: 1.5rem; color: var(--green-900); cursor: pointer;
+    }
+    .figma-photo-preview {
+      height: 160px; background:
+        linear-gradient(160deg, rgba(11,66,26,0.25), rgba(0,0,0,0.15)),
+        url("https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=800&q=80") center/cover;
+      position: relative;
+    }
+    .figma-photo-add {
+      font-size: 0.85rem; font-weight: 700; color: var(--green-900);
+      padding: 0.85rem 1.1rem 0.35rem; margin: 0;
+    }
+    .figma-photo-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 0.65rem 1.1rem; border-bottom: 1px solid #eee;
+      font-size: 0.85rem; color: var(--text-muted);
+    }
+    .figma-photo-val { color: var(--green-900); font-weight: 700; }
+    .figma-icon-pick { display: flex !important; gap: 0.35rem; margin: 0 !important; }
+    .figma-icon-pick button { padding: 0.35rem 0.55rem !important; font-size: 0.7rem !important; }
+    .figma-photo-sheet .figma-field { padding: 0 1.1rem; }
+    .figma-photo-sheet .btn { margin: 1rem 1.1rem 1.25rem; width: calc(100% - 2.2rem); }
+    .figma-photo-modal.open { align-items: stretch; background: #fff; }
+    .share-url {
+      font-size: 0.72rem; word-break: break-all; background: #f3f4f6;
+      padding: 0.55rem 0.65rem; border-radius: 8px; margin: 0.65rem 0; color: var(--green-900);
+    }
   </style>
 </head>
 <body>
   <div class="app-page">
     <div class="app-page-top">
-      <a href="../plan.html" id="backWeb"></a>
+      <a href="../get-app.html" id="backWeb"></a>
       <p style="font-size:0.8rem;opacity:0.8;margin-top:0.5rem" id="appNote"></p>
       <div id="envPillWrap" style="margin-top:0.5rem"></div>
       <div class="lang-switch" style="margin:0.75rem auto 0;width:fit-content;background:rgba(255,255,255,0.15);border-color:rgba(255,255,255,0.25)">
@@ -55,102 +240,189 @@
 
     <div class="phone-frame">
       <div class="phone-notch"></div>
-      <div class="phone-screen">
+      <div class="phone-screen track-focus">
         <div class="map-shell">
           <div id="appMap"></div>
           <div class="phone-topbar">
-            <a class="round-btn" href="../profile.html" title="Profile">‹</a>
-            <div class="gps-pill"><span class="dot"></span><span id="gpsText"></span></div>
+            <a class="round-btn" href="home.html" id="trackBack" title="Back" aria-label="Back">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+            </a>
+            <div class="mode-toggle" id="modeToggle" role="group">
+              <button type="button" class="active" data-mode="track" id="modeTrack">Track</button>
+              <button type="button" data-mode="plan" id="modePlan">Plan</button>
+            </div>
+            <div class="gps-pill figma-gps">
+              <span class="gps-label">GPS</span>
+              <span class="dot"></span>
+              <span id="gpsText"></span>
+            </div>
           </div>
-          <div class="map-controls" style="top:4.5rem">
-            <button class="ctrl" id="btnLocate" type="button">◎</button>
-            <button class="ctrl" type="button" id="btnLayers">🗺</button>
-            <button class="ctrl" type="button">⬆</button>
+          <div class="follow-banner" id="followBanner"></div>
+          <div class="map-controls figma-map-controls">
+            <button class="ctrl" id="btnLocate" type="button" aria-label="Locate">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+            </button>
+            <button class="ctrl" type="button" id="btnLiveShare" aria-label="Live share">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>
+            </button>
+            <button class="ctrl" type="button" id="btnLayers" aria-label="Layers">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+            </button>
           </div>
+          <button type="button" class="report-fab" id="fabReport" aria-label="Report">!<span id="fabReportLbl"></span></button>
         </div>
 
-        <div class="start-bar" id="idleBar" style="padding:0.85rem 1rem">
+        <!-- Idle Track -->
+        <div class="start-bar figma-start-bar" id="idleBar">
           <button class="action-circle" type="button" id="idleReport">
-            <span class="circle red">⚠</span>
+            <span class="circle red" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 3L2 21h20L12 3z" fill="white"/><path d="M12 10v5M12 17.5v.5" stroke="#d64545" stroke-width="2" stroke-linecap="round"/></svg>
+            </span>
             <span id="lblReport1"></span>
           </button>
-          <button class="btn-start" id="btnStart"><span id="lblStart"></span></button>
-          <div style="width:56px"></div>
+          <button class="btn-start figma-start" id="btnStart" type="button">
+            <span class="figma-start-pill" aria-hidden="true">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>
+            </span>
+            <span id="lblStart"></span>
+          </button>
+          <button class="action-circle" type="button" id="btnFollow" title="Track and follow">
+            <span class="circle blue" aria-hidden="true">👥</span>
+            <span id="lblFollow" style="font-size:0.65rem"></span>
+          </button>
         </div>
 
-        <div class="track-sheet hidden" id="activeSheet" style="padding:1rem 1.1rem 1.15rem">
-          <div class="track-actions" style="gap:0.85rem;flex-wrap:wrap">
+        <!-- Plan panel -->
+        <div class="plan-panel" id="planPanel">
+          <div class="plan-row"><span id="lblPlanStart"></span><strong id="planStartVal">—</strong></div>
+          <div class="plan-row"><span id="lblPlanEnd"></span><strong id="planEndVal">—</strong></div>
+          <button type="button" class="btn btn-secondary btn-block" style="margin-bottom:0.45rem;padding:0.45rem;font-size:0.8rem" id="btnAddPoi"></button>
+          <div class="plan-stats">
+            <div class="plan-stat"><div class="val" id="planDist">—</div><div class="lbl" id="planDistLbl"></div></div>
+            <div class="plan-stat"><div class="val" id="planDur">—</div><div class="lbl" id="planDurLbl"></div></div>
+            <div class="plan-stat"><div class="val" id="planGain">—</div><div class="lbl" id="planGainLbl"></div></div>
+          </div>
+          <p style="font-size:0.7rem;color:var(--text-muted);margin:0 0 0.5rem" id="planHint"></p>
+          <button type="button" class="btn btn-primary btn-block" id="btnPlanTrack" style="padding:0.55rem;font-size:0.85rem"></button>
+        </div>
+
+        <!-- Live tracking drawer -->
+        <div class="track-sheet figma-sheet hidden" id="activeSheet">
+          <div class="sheet-handle" id="sheetHandle" aria-hidden="true"></div>
+          <div class="track-actions figma-actions">
             <button class="action-circle" type="button" id="activeReport">
-              <span class="circle red">⚠</span>
+              <span class="circle red" aria-hidden="true">!</span>
               <span id="lblReport2"></span>
             </button>
-            <button class="action-circle" type="button" id="btnPause">
-              <span class="circle amber">⏸</span>
-              <span id="lblPause"></span>
-            </button>
             <button class="action-circle" type="button" id="btnPhoto">
-              <span class="circle blue">📷</span>
+              <span class="circle blue" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+              </span>
               <span id="lblPhoto"></span>
             </button>
-            <button class="action-circle" type="button" id="btnCleanup">
-              <span class="circle green">🧹</span>
-              <span id="lblCleanup">D</span>
+            <button class="action-circle" type="button" id="btnPauseTop">
+              <span class="circle amber" aria-hidden="true">❚❚</span>
+              <span id="lblPauseTop"></span>
             </button>
           </div>
-          <div class="track-metrics cols-6">
-            <div class="metric"><div class="val" id="mTime">00:00:00</div><div class="lbl" id="lTime"></div></div>
-            <div class="metric"><div class="val" id="mDist">0.00 km</div><div class="lbl" id="lDist"></div></div>
-            <div class="metric"><div class="val" id="mGain">0 m</div><div class="lbl" id="lGain"></div></div>
-            <div class="metric"><div class="val" id="mPace">— /km</div><div class="lbl" id="lPace"></div></div>
-            <div class="metric"><div class="val" id="mCal">0 kcal</div><div class="lbl" id="lCal"></div></div>
-            <div class="metric"><div class="val" id="mLoss">0 m</div><div class="lbl" id="lLoss"></div></div>
+          <div class="pause-in-drawer">
+            <button class="action-circle" type="button" id="btnPause">
+              <span class="circle amber" aria-hidden="true">❚❚</span>
+              <span id="lblPause"></span>
+            </button>
           </div>
+          <div class="figma-live-stats">
+            <div class="live-stat"><span class="ico-clock"></span><span id="mTime">00:00:00</span></div>
+            <div class="live-stat"><span class="ico-pin"></span><span id="mDist">0.00 km</span></div>
+            <div class="live-stat"><span class="ico-alt"></span><span id="mAlt">142 m</span></div>
+          </div>
+          <div class="drawer-extra">
+            <div class="extra-stats">
+              <div class="extra-stat"><div class="val" id="mPace">— /km</div><div class="lbl" id="lPace"></div></div>
+              <div class="extra-stat"><div class="val" id="mGain">0 m</div><div class="lbl" id="lGain"></div></div>
+              <div class="extra-stat"><div class="val" id="mLoss">0 m</div><div class="lbl" id="lLoss"></div></div>
+            </div>
+            <div class="pace-graph" aria-hidden="true">
+              <svg viewBox="0 0 120 40" preserveAspectRatio="none">
+                <polyline fill="none" stroke="#4a90c8" stroke-width="2"
+                  points="0,28 15,22 30,26 45,14 60,18 75,10 90,16 105,8 120,12" />
+              </svg>
+            </div>
+            <div class="extra-stat" style="text-align:left;padding-left:0.4rem">
+              <span class="lbl" id="lblPaceGraph"></span>
+            </div>
+          </div>
+          <button type="button" class="drawer-toggle-btn" id="btnExpandDrawer"></button>
+          <button type="button" class="cleanup-link" id="btnCleanup"><span id="lblCleanup">Cleanup</span></button>
+          <span class="sr-only" id="lTime"></span>
+          <span class="sr-only" id="lDist"></span>
+          <span class="sr-only" id="lCal"></span>
+          <span class="sr-only" id="mCal">0</span>
         </div>
 
-        <div class="track-sheet hidden" id="pauseSheet" style="padding:1rem 1.1rem 1.15rem;max-height:55%;overflow:auto">
-          <div class="track-actions" style="gap:1.5rem">
+        <!-- Pause / Save -->
+        <div class="track-sheet figma-sheet figma-pause-sheet hidden" id="pauseSheet">
+          <div class="sheet-handle" aria-hidden="true"></div>
+          <div class="track-actions figma-actions">
             <button class="action-circle" type="button" id="btnDiscard">
-              <span class="circle red">🗑</span>
+              <span class="circle red" aria-hidden="true">✕</span>
               <span id="lblDiscard"></span>
             </button>
             <button class="action-circle" type="button" id="btnResume">
-              <span class="circle amber">▶</span>
+              <span class="circle amber" aria-hidden="true">▶</span>
               <span id="lblResume"></span>
             </button>
             <button class="action-circle" type="button" id="btnSave">
-              <span class="circle green">💾</span>
+              <span class="circle green" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+              </span>
               <span id="lblSave"></span>
             </button>
           </div>
-          <div class="track-metrics" style="margin-bottom:0.85rem">
-            <div class="metric"><div class="val" id="pTime">00:00:00</div><div class="lbl" id="plDur"></div></div>
-            <div class="metric"><div class="val" id="pDist">0.00 km</div><div class="lbl" id="plDist"></div></div>
-            <div class="metric"><div class="val" id="pGain">0 m</div><div class="lbl" id="plGain"></div></div>
+          <div class="figma-pause-stats">
+            <div class="p-stat"><span class="ico-clock"></span><span id="pTime">00:00:00</span></div>
+            <div class="p-stat"><span class="ico-pin"></span><span id="pDist">0.00 km</span></div>
+            <div class="p-stat"><span class="ico-alt"></span><span id="pAlt">142 m</span></div>
+            <div class="p-stat"><span class="ico-pace"></span><span id="pPace">— /km</span></div>
+            <div class="p-stat"><span class="ico-elev-up"></span><span id="pGain">0 m</span></div>
+            <div class="p-stat"><span class="ico-elev-down"></span><span id="pLoss">0 m</span></div>
           </div>
-          <div class="form-group" style="margin-bottom:0.65rem">
-            <div style="display:flex;justify-content:space-between">
-              <label id="lblTitle"></label>
-              <label style="font-weight:500;color:var(--text-muted);font-size:0.8rem;display:flex;gap:0.35rem;align-items:center;margin:0">
-                <span id="lblPrivate"></span> <input type="checkbox" />
-              </label>
+          <div class="form-group figma-field">
+            <label id="lblTitle" class="figma-field-label"></label>
+            <input class="form-input figma-input" id="hikeTitle" />
+          </div>
+          <div class="form-group figma-field">
+            <label id="lblPrivacy" class="figma-field-label"></label>
+            <div class="privacy-grid" id="privacyGrid">
+              <label><input type="radio" name="privacy" value="public" checked /> <span id="privPublic"></span></label>
+              <label><input type="radio" name="privacy" value="private" /> <span id="privPrivate"></span></label>
+              <label><input type="radio" name="privacy" value="friends" /> <span id="privFriends"></span></label>
+              <label><input type="radio" name="privacy" value="participants" /> <span id="privParticipants"></span></label>
             </div>
-            <input class="form-input" id="hikeTitle" />
           </div>
-          <div class="form-group" style="margin:0">
-            <label id="lblDetails"></label>
-            <textarea class="form-textarea" id="hikeDetails" style="min-height:64px"></textarea>
+          <div class="form-group figma-field">
+            <label id="lblPhotoPrivacy" class="figma-field-label"></label>
+            <select class="form-select figma-input" id="photoPrivacy">
+              <option value="public"></option>
+              <option value="private"></option>
+              <option value="friends"></option>
+              <option value="participants"></option>
+            </select>
           </div>
+          <div class="form-group figma-field" style="margin:0">
+            <label id="lblDetails" class="figma-field-label"></label>
+            <textarea class="form-textarea figma-input" id="hikeDetails" rows="2"></textarea>
+          </div>
+          <span class="sr-only" id="plDur"></span>
+          <span class="sr-only" id="plDist"></span>
+          <span class="sr-only" id="plGain"></span>
         </div>
 
-        <!-- Act A: start checklist -->
         <div class="env-modal" id="modalA">
           <div class="env-modal-sheet">
             <strong style="color:var(--green-900)" id="aTitle"></strong>
             <p style="font-size:0.8rem;color:var(--text-muted);margin:0.35rem 0 0" id="aHint"></p>
-            <label class="env-sheet-check">
-              <input type="checkbox" id="checkA" />
-              <span id="aLabel"></span>
-            </label>
+            <label class="env-sheet-check"><input type="checkbox" id="checkA" /> <span id="aLabel"></span></label>
             <div style="display:flex;gap:0.5rem">
               <button type="button" class="btn btn-secondary" style="flex:1" id="skipA"></button>
               <button type="button" class="btn btn-primary" style="flex:1" id="confirmA"></button>
@@ -158,15 +430,11 @@
           </div>
         </div>
 
-        <!-- Act E: stop checklist -->
         <div class="env-modal" id="modalE">
           <div class="env-modal-sheet">
             <strong style="color:var(--green-900)" id="eTitle"></strong>
             <p style="font-size:0.8rem;color:var(--text-muted);margin:0.35rem 0 0" id="eHint"></p>
-            <label class="env-sheet-check">
-              <input type="checkbox" id="checkE" />
-              <span id="eLabel"></span>
-            </label>
+            <label class="env-sheet-check"><input type="checkbox" id="checkE" /> <span id="eLabel"></span></label>
             <div style="display:flex;gap:0.5rem">
               <button type="button" class="btn btn-secondary" style="flex:1" id="skipE"></button>
               <button type="button" class="btn btn-primary" style="flex:1" id="confirmE"></button>
@@ -174,24 +442,39 @@
           </div>
         </div>
 
-        <!-- Act B: nature photo -->
-        <div class="env-modal" id="modalB">
-          <div class="env-modal-sheet">
-            <div style="display:flex;justify-content:space-between">
-              <strong style="color:var(--green-900)" id="bTitle"></strong>
-              <button type="button" id="closeB">✕</button>
+        <div class="env-modal figma-photo-modal" id="modalB">
+          <div class="env-modal-sheet figma-photo-sheet">
+            <header class="figma-photo-head">
+              <button type="button" class="figma-back" id="closeB" aria-label="Back">‹</button>
+              <strong id="bTitle"></strong>
+            </header>
+            <div class="figma-photo-preview"></div>
+            <p class="figma-photo-add" id="bHint"></p>
+            <div class="figma-photo-row"><span>Category</span><span class="figma-photo-val">Biodiversity ▾</span></div>
+            <div class="figma-photo-row">
+              <span id="lblIcon">Icon</span>
+              <div class="photo-type-grid figma-icon-pick">
+                <button type="button" class="active" data-ptype="landscape" id="ptL"></button>
+                <button type="button" data-ptype="animal" id="ptA"></button>
+                <button type="button" data-ptype="plant" id="ptP"></button>
+              </div>
             </div>
-            <p style="font-size:0.8rem;color:var(--text-muted);margin:0.35rem 0" id="bHint"></p>
-            <div class="photo-type-grid">
-              <button type="button" class="active" data-ptype="landscape" id="ptL"></button>
-              <button type="button" data-ptype="animal" id="ptA"></button>
-              <button type="button" data-ptype="plant" id="ptP"></button>
+            <div class="form-group figma-field" style="margin-top:0.75rem">
+              <label class="figma-field-label" id="lblPhotoPrivModal"></label>
+              <select class="form-select figma-input" id="photoPrivModal">
+                <option value="public"></option>
+                <option value="friends"></option>
+                <option value="private"></option>
+              </select>
+            </div>
+            <div class="form-group figma-field">
+              <label class="figma-field-label">Description</label>
+              <textarea class="form-textarea figma-input" id="photoDesc" rows="2"></textarea>
             </div>
             <button type="button" class="btn btn-primary btn-block" id="submitB"></button>
           </div>
         </div>
 
-        <!-- Act D: cleanup (no same-spot required) -->
         <div class="env-modal" id="modalD">
           <div class="env-modal-sheet">
             <div style="display:flex;justify-content:space-between;align-items:center;gap:0.5rem">
@@ -208,7 +491,19 @@
           </div>
         </div>
 
-        <!-- Report — Act C -->
+        <div class="env-modal" id="modalShare">
+          <div class="env-modal-sheet">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <strong style="color:var(--green-900)" id="shareTitle"></strong>
+              <button type="button" id="closeShare">✕</button>
+            </div>
+            <p style="font-size:0.8rem;color:var(--text-muted);margin:0.4rem 0" id="shareBody"></p>
+            <span class="app-premium-pill" id="sharePremium"></span>
+            <div class="share-url" id="shareUrl"></div>
+            <button type="button" class="btn btn-primary btn-block" id="copyShare"></button>
+          </div>
+        </div>
+
         <div class="app-report-sheet" id="reportSheet">
           <div class="map-part">
             <div id="reportMiniMap" style="width:100%;height:100%"></div>
@@ -220,9 +515,7 @@
               <button type="button" id="closeAppReport">✕</button>
             </div>
             <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:0.75rem" id="reportLive"></p>
-            <div class="loc-preview" style="margin-bottom:0.75rem">
-              <div id="liveCoords">📍 —</div>
-            </div>
+            <div class="loc-preview" style="margin-bottom:0.75rem"><div id="liveCoords">📍 —</div></div>
             <div class="form-group" style="margin-bottom:0.65rem">
               <label id="lblCat"></label>
               <select class="form-select" id="appCat">
@@ -237,13 +530,7 @@
           </div>
         </div>
 
-        <nav class="app-bottom-nav">
-          <a href="../index.html"><span class="ico">🏠</span><span id="nHome"></span></a>
-          <a href="hikes.html"><span class="ico">🗺</span><span id="nHikes"></span></a>
-          <a href="index.html" class="active"><span class="ico">✈</span><span id="nTrack"></span></a>
-          <a href="donate.html"><span class="ico">💚</span><span id="nDonate"></span></a>
-          <a href="../profile.html"><span class="ico">👤</span><span id="nDash"></span></a>
-        </nav>
+        <div data-app-nav></div>
       </div>
     </div>
   </div>
@@ -269,8 +556,13 @@
     let photoType = "landscape";
     let cleanupBefore = false;
     let cleanupAfter = false;
-    let pendingStart = false;
-    let pendingSave = false;
+    let drawerOpen = false;
+    let mapMode = "track";
+    let planStart = null;
+    let planEnd = null;
+    let planPois = [];
+    let altitude = 142;
+    let following = false;
 
     function refreshEnvPill() {
       const st = TW.getEnvState();
@@ -293,28 +585,52 @@
       return true;
     }
 
+    function fillPrivacyOptions(sel) {
+      const map = {
+        public: "app_privacy_public",
+        private: "app_privacy_private",
+        friends: "app_privacy_friends",
+        participants: "app_privacy_participants",
+      };
+      Array.from(sel.options).forEach((o) => { o.text = TW.t(map[o.value] || o.value); });
+    }
+
     function i18nUI() {
       const t = TW.t;
       document.getElementById("backWeb").textContent = t("app_back_web");
       document.getElementById("appNote").textContent = t("app_tracking_note");
       document.getElementById("gpsText").textContent = t("app_gps_ready");
-      document.getElementById("lblStart").textContent = "▶ " + t("app_start");
+      document.getElementById("modeTrack").textContent = t("app_mode_track");
+      document.getElementById("modePlan").textContent = t("app_mode_plan");
+      document.getElementById("lblStart").textContent = t("app_start");
       document.getElementById("lblReport1").textContent = t("app_report");
       document.getElementById("lblReport2").textContent = t("app_report");
+      document.getElementById("fabReportLbl").textContent = t("app_report");
       document.getElementById("lblPause").textContent = t("app_pause");
+      document.getElementById("lblPauseTop").textContent = t("app_pause");
       document.getElementById("lblPhoto").textContent = t("app_photo");
+      document.getElementById("lblFollow").textContent = t("app_track_follow");
       document.getElementById("lblCleanup").textContent = t("env_act_d_short");
       document.getElementById("lblDiscard").textContent = t("app_discard");
       document.getElementById("lblResume").textContent = t("app_resume");
       document.getElementById("lblSave").textContent = t("app_save");
-      ["lTime","plDur"].forEach((id) => (document.getElementById(id).textContent = t("app_duration")));
-      ["lDist","plDist"].forEach((id) => (document.getElementById(id).textContent = t("app_distance")));
-      ["lGain","plGain"].forEach((id) => (document.getElementById(id).textContent = t("app_elev_gain")));
-      document.getElementById("lPace").textContent = t("app_pace");
-      document.getElementById("lCal").textContent = t("app_calories");
+      document.getElementById("lTime").textContent = t("app_duration");
+      document.getElementById("lDist").textContent = t("app_distance");
+      document.getElementById("lPace").textContent = t("app_avg_pace");
+      document.getElementById("lGain").textContent = t("app_elev_gain");
       document.getElementById("lLoss").textContent = t("app_elev_loss");
+      document.getElementById("lblPaceGraph").textContent = t("app_pace_graph");
+      document.getElementById("btnExpandDrawer").textContent = t("app_drawer_more");
       document.getElementById("lblTitle").textContent = t("app_hike_title");
-      document.getElementById("lblPrivate").textContent = t("app_private");
+      document.getElementById("lblPrivacy").textContent = t("app_privacy");
+      document.getElementById("lblPhotoPrivacy").textContent = t("app_photo_privacy");
+      document.getElementById("lblPhotoPrivModal").textContent = t("app_photo_privacy");
+      document.getElementById("privPublic").textContent = t("app_privacy_public");
+      document.getElementById("privPrivate").textContent = t("app_privacy_private");
+      document.getElementById("privFriends").textContent = t("app_privacy_friends");
+      document.getElementById("privParticipants").textContent = t("app_privacy_participants");
+      fillPrivacyOptions(document.getElementById("photoPrivacy"));
+      fillPrivacyOptions(document.getElementById("photoPrivModal"));
       document.getElementById("lblDetails").textContent = t("app_hike_details");
       document.getElementById("hikeTitle").placeholder = t("app_title_ph");
       document.getElementById("hikeDetails").placeholder = t("app_details_ph");
@@ -329,11 +645,21 @@
       cat.options[1].text = t("cat_tree");
       cat.options[2].text = t("cat_vandalism");
       cat.options[3].text = t("cat_obstruction");
-      document.getElementById("nHome").textContent = t("app_home");
-      document.getElementById("nHikes").textContent = t("nav_hikes");
-      document.getElementById("nTrack").textContent = t("app_track");
-      document.getElementById("nDonate").textContent = t("nav_donate");
-      document.getElementById("nDash").textContent = t("app_dashboard");
+      document.getElementById("lblPlanStart").textContent = t("app_plan_start");
+      document.getElementById("lblPlanEnd").textContent = t("app_plan_end");
+      document.getElementById("btnAddPoi").textContent = "+ " + t("app_plan_poi");
+      document.getElementById("planDistLbl").textContent = t("app_distance");
+      document.getElementById("planDurLbl").textContent = t("app_duration");
+      document.getElementById("planGainLbl").textContent = t("app_elev_gain");
+      document.getElementById("planHint").textContent = t("app_plan_set_start");
+      document.getElementById("btnPlanTrack").textContent = t("app_track_follow");
+      document.getElementById("followBanner").textContent = t("app_track_follow_hint");
+      document.getElementById("shareTitle").textContent = t("app_live_share_title");
+      document.getElementById("shareBody").textContent = t("app_live_share_body");
+      document.getElementById("sharePremium").textContent = t("app_live_share_premium");
+      document.getElementById("copyShare").textContent = t("app_live_share_copy");
+      document.getElementById("shareUrl").textContent = location.origin + "/app/index.html?live=" + hikeId;
+      twMountAppNav("track");
 
       document.getElementById("aTitle").textContent = t("env_start_title");
       document.getElementById("aHint").textContent = t("env_start_hint");
@@ -345,12 +671,12 @@
       document.getElementById("eLabel").textContent = t("env_act_e_label");
       document.getElementById("skipE").textContent = t("env_skip");
       document.getElementById("confirmE").textContent = t("app_save");
-      document.getElementById("bTitle").textContent = t("env_photo_title");
-      document.getElementById("bHint").textContent = t("env_photo_hint");
-      document.getElementById("ptL").textContent = "🏔 " + t("env_photo_landscape");
-      document.getElementById("ptA").textContent = "🦊 " + t("env_photo_animal");
-      document.getElementById("ptP").textContent = "🌿 " + t("env_photo_plant");
-      document.getElementById("submitB").textContent = t("confirm") + " (+B)";
+      document.getElementById("bTitle").textContent = t("app_photo");
+      document.getElementById("bHint").textContent = lang === "zh" ? "新增資訊（可選）" : "Add Info (Optional)";
+      document.getElementById("ptL").textContent = t("env_photo_landscape");
+      document.getElementById("ptA").textContent = t("env_photo_animal");
+      document.getElementById("ptP").textContent = t("env_photo_plant");
+      document.getElementById("submitB").textContent = t("app_save");
       document.getElementById("dTitle").textContent = t("env_cleanup_title");
       document.getElementById("dHint").textContent = t("env_cleanup_hint");
       document.getElementById("dBefore").textContent = t("env_cleanup_before");
@@ -361,31 +687,47 @@
     i18nUI();
     refreshEnvPill();
 
+    document.getElementById("trackBack").addEventListener("click", (e) => {
+      if (history.length > 1) { e.preventDefault(); history.back(); }
+    });
+
     const route = [
       [22.348, 114.242], [22.350, 114.248], [22.353, 114.252],
       [22.357, 114.255], [22.360, 114.258], [22.363, 114.262], [22.365, 114.268],
     ];
     const map = L.map("appMap", { zoomControl: false }).setView(route[0], 14);
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "© OSM", maxZoom: 18 }).addTo(map);
-    L.polyline([[22.345, 114.24], [22.355, 114.25], [22.368, 114.27]], { color: "#f5a623", weight: 2, dashArray: "6 6", opacity: 0.7 }).addTo(map);
+    const plannedRoute = L.polyline([[22.345, 114.24], [22.355, 114.25], [22.368, 114.27]], { color: "#f5a623", weight: 2, dashArray: "6 6", opacity: 0.7 }).addTo(map);
     let pathLine = null;
+    let planLine = null;
+    let planMarkers = [];
     let recordedPath = [route[0]];
     let hikeStartedAt = null;
     let marker = L.circleMarker(route[0], { radius: 8, color: "#fff", weight: 3, fillColor: "#0b421a", fillOpacity: 1 }).addTo(map);
 
     let state = "idle";
-    let seconds = 0, dist = 0, gain = 0, loss = 0, calories = 0, routeIdx = 0, timer = null;
+    let seconds = 0, dist = 0, gain = 0, loss = 0, routeIdx = 0, timer = null;
     const idleBar = document.getElementById("idleBar");
     const activeSheet = document.getElementById("activeSheet");
     const pauseSheet = document.getElementById("pauseSheet");
+    const planPanel = document.getElementById("planPanel");
 
     function showState(s) {
       state = s;
-      idleBar.classList.toggle("hidden", s !== "idle");
+      idleBar.classList.toggle("hidden", s !== "idle" || mapMode === "plan");
       activeSheet.classList.toggle("hidden", s !== "active");
       pauseSheet.classList.toggle("hidden", s !== "paused");
       document.getElementById("gpsText").textContent =
         s === "idle" ? TW.t("app_gps_ready") : s === "active" ? TW.t("app_gps_good") : TW.t("app_gps_paused");
+      document.getElementById("fabReport").style.display = (s === "idle" && mapMode === "track") ? "grid" : "none";
+    }
+
+    function setDrawer(open) {
+      drawerOpen = open;
+      activeSheet.classList.toggle("expanded", open);
+      document.getElementById("btnExpandDrawer").textContent = TW.t(open ? "app_drawer_less" : "app_drawer_more");
+      // Prefer pause inside drawer when expanded to reduce accidental taps
+      document.getElementById("btnPauseTop").style.display = open ? "none" : "";
     }
 
     function fmtTime(sec) {
@@ -406,7 +748,7 @@
       dist += 0.012 + Math.random() * 0.008;
       const elevDelta = (Math.random() - 0.45) * 8;
       if (elevDelta > 0) gain += elevDelta; else loss += -elevDelta;
-      calories = Math.round(dist * 95);
+      altitude = Math.max(20, Math.round(altitude + elevDelta * 0.4));
       if (routeIdx < route.length - 1 && seconds % 8 === 0) {
         routeIdx++;
         recordedPath = route.slice(0, routeIdx + 1);
@@ -417,53 +759,139 @@
       }
       document.getElementById("mTime").textContent = fmtTime(seconds);
       document.getElementById("mDist").textContent = dist.toFixed(2) + " km";
+      document.getElementById("mAlt").textContent = altitude + " m";
       document.getElementById("mGain").textContent = Math.round(gain) + " m";
       document.getElementById("mLoss").textContent = Math.round(loss) + " m";
       document.getElementById("mPace").textContent = paceStr();
-      document.getElementById("mCal").textContent = calories + " kcal";
     }
 
     function beginTracking() {
       hikeStarted = true;
       hikeStartedAt = new Date().toISOString();
       recordedPath = [route[0]];
+      setDrawer(false);
       showState("active");
       if (!timer) timer = setInterval(tick, 1000);
       if (!pathLine) pathLine = L.polyline([route[0]], { color: "#2563eb", weight: 5 }).addTo(map);
-      showToast(TW.getLang() === "zh" ? "已開始追蹤" : "Tracking started");
+      showToast(lang === "zh" ? "已開始追蹤" : "Tracking started");
     }
 
     function finishSave() {
       clearInterval(timer); timer = null;
       const titleInput = document.getElementById("hikeTitle").value.trim();
-      const defaultTitle = TW.getLang() === "zh" ? TW.t("hikes_untitled") : TW.t("hikes_untitled");
+      const privacy = (document.querySelector('input[name="privacy"]:checked') || {}).value || "public";
+      const photoPriv = document.getElementById("photoPrivacy").value;
       const saved = TW.saveHike({
         id: hikeId,
-        title: titleInput || defaultTitle,
+        title: titleInput || TW.t("hikes_untitled"),
         titleZh: titleInput || TW.t("hikes_untitled"),
         seconds,
         distanceKm: dist,
         elevGain: gain,
         elevLoss: loss,
+        privacy,
+        photoPrivacy: photoPriv,
         path: recordedPath.length > 1 ? recordedPath : route.slice(0, Math.max(2, routeIdx + 1)),
         startedAt: hikeStartedAt || new Date().toISOString(),
         endedAt: new Date().toISOString(),
       });
-      showToast(TW.t("toast_saved"));
+      showToast(TW.t("toast_saved") + " · " + TW.t("app_privacy_" + privacy));
       setTimeout(() => (location.href = "hike-detail.html?id=" + encodeURIComponent(saved.id)), 800);
     }
 
+    function setMapMode(mode) {
+      mapMode = mode;
+      document.querySelectorAll("#modeToggle button").forEach((b) => b.classList.toggle("active", b.dataset.mode === mode));
+      planPanel.classList.toggle("show", mode === "plan");
+      if (mode === "plan") {
+        idleBar.classList.add("hidden");
+        activeSheet.classList.add("hidden");
+        pauseSheet.classList.add("hidden");
+        document.getElementById("fabReport").style.display = "none";
+        document.getElementById("planHint").textContent = TW.t("app_plan_set_start");
+      } else {
+        showState(state === "active" || state === "paused" ? state : "idle");
+      }
+    }
+
+    document.getElementById("modeToggle").addEventListener("click", (e) => {
+      const btn = e.target.closest("button[data-mode]");
+      if (!btn) return;
+      if (state === "active" || state === "paused") {
+        showToast(lang === "zh" ? "請先結束追蹤" : "End tracking first");
+        return;
+      }
+      setMapMode(btn.dataset.mode);
+    });
+
+    map.on("click", (e) => {
+      if (mapMode !== "plan") return;
+      if (!planStart) {
+        planStart = e.latlng;
+        planMarkers.push(L.circleMarker(e.latlng, { radius: 7, color: "#fff", weight: 2, fillColor: "#2d8a45", fillOpacity: 1 }).addTo(map));
+        document.getElementById("planStartVal").textContent = e.latlng.lat.toFixed(4) + ", " + e.latlng.lng.toFixed(4);
+        document.getElementById("planHint").textContent = TW.t("app_plan_set_end");
+      } else if (!planEnd) {
+        planEnd = e.latlng;
+        planMarkers.push(L.circleMarker(e.latlng, { radius: 7, color: "#fff", weight: 2, fillColor: "#d64545", fillOpacity: 1 }).addTo(map));
+        document.getElementById("planEndVal").textContent = e.latlng.lat.toFixed(4) + ", " + e.latlng.lng.toFixed(4);
+        if (planLine) map.removeLayer(planLine);
+        planLine = L.polyline([planStart, ...planPois, planEnd], { color: "#2563eb", weight: 4 }).addTo(map);
+        document.getElementById("planDist").textContent = "6.2 km";
+        document.getElementById("planDur").textContent = "2h 10m";
+        document.getElementById("planGain").textContent = "380 m";
+        document.getElementById("planHint").textContent = TW.t("app_plan_done");
+      }
+    });
+
+    document.getElementById("btnAddPoi").addEventListener("click", () => {
+      if (!planStart || !planEnd) {
+        showToast(TW.t("app_plan_set_start"));
+        return;
+      }
+      const mid = L.latLng(
+        (planStart.lat + planEnd.lat) / 2 + 0.004,
+        (planStart.lng + planEnd.lng) / 2
+      );
+      planPois.push(mid);
+      planMarkers.push(L.circleMarker(mid, { radius: 6, color: "#fff", weight: 2, fillColor: "#f5a623", fillOpacity: 1 }).addTo(map));
+      if (planLine) map.removeLayer(planLine);
+      planLine = L.polyline([planStart, ...planPois, planEnd], { color: "#2563eb", weight: 4 }).addTo(map);
+      document.getElementById("planDist").textContent = "6.8 km";
+      showToast("+ POI");
+    });
+
+    document.getElementById("btnPlanTrack").addEventListener("click", () => {
+      following = true;
+      document.getElementById("followBanner").classList.add("show");
+      setMapMode("track");
+      showToast(TW.t("app_track_follow"));
+    });
+
+    document.getElementById("btnFollow").addEventListener("click", () => {
+      following = !following;
+      document.getElementById("followBanner").classList.toggle("show", following);
+      showToast(TW.t("app_track_follow_hint"));
+    });
+
+    function doPause() {
+      clearInterval(timer); timer = null;
+      document.getElementById("pTime").textContent = fmtTime(seconds);
+      document.getElementById("pDist").textContent = dist.toFixed(2) + " km";
+      document.getElementById("pAlt").textContent = altitude + " m";
+      document.getElementById("pPace").textContent = paceStr();
+      document.getElementById("pGain").textContent = Math.round(gain) + " m";
+      document.getElementById("pLoss").textContent = Math.round(loss) + " m";
+      showState("paused");
+    }
+
     document.getElementById("btnStart").addEventListener("click", () => {
-      pendingStart = true;
       document.getElementById("checkA").checked = false;
       document.getElementById("modalA").classList.add("open");
     });
-
     document.getElementById("confirmA").addEventListener("click", () => {
       document.getElementById("modalA").classList.remove("open");
-      if (document.getElementById("checkA").checked) {
-        notifyAct(TW.recordEnvAct("A", { hikeId }), "env_toast_a");
-      }
+      if (document.getElementById("checkA").checked) notifyAct(TW.recordEnvAct("A", { hikeId }), "env_toast_a");
       beginTracking();
     });
     document.getElementById("skipA").addEventListener("click", () => {
@@ -471,36 +899,32 @@
       beginTracking();
     });
 
-    document.getElementById("btnPause").addEventListener("click", () => {
-      clearInterval(timer); timer = null;
-      document.getElementById("pTime").textContent = fmtTime(seconds);
-      document.getElementById("pDist").textContent = dist.toFixed(2) + " km";
-      document.getElementById("pGain").textContent = Math.round(gain) + " m";
-      showState("paused");
-    });
+    document.getElementById("btnPause").addEventListener("click", doPause);
+    document.getElementById("btnPauseTop").addEventListener("click", doPause);
+    document.getElementById("sheetHandle").addEventListener("click", () => setDrawer(!drawerOpen));
+    document.getElementById("btnExpandDrawer").addEventListener("click", () => setDrawer(!drawerOpen));
+
     document.getElementById("btnResume").addEventListener("click", () => {
       showState("active");
       if (!timer) timer = setInterval(tick, 1000);
     });
     document.getElementById("btnDiscard").addEventListener("click", () => {
       clearInterval(timer); timer = null;
-      seconds = dist = gain = loss = calories = routeIdx = 0;
+      seconds = dist = gain = loss = routeIdx = 0;
+      altitude = 142;
       hikeStarted = false;
       if (pathLine) { map.removeLayer(pathLine); pathLine = null; }
       marker.setLatLng(route[0]);
       showState("idle");
-      showToast(TW.getLang() === "zh" ? "已捨棄行程" : "Hike discarded");
+      showToast(lang === "zh" ? "已捨棄行程" : "Hike discarded");
     });
     document.getElementById("btnSave").addEventListener("click", () => {
-      pendingSave = true;
       document.getElementById("checkE").checked = false;
       document.getElementById("modalE").classList.add("open");
     });
     document.getElementById("confirmE").addEventListener("click", () => {
       document.getElementById("modalE").classList.remove("open");
-      if (document.getElementById("checkE").checked) {
-        notifyAct(TW.recordEnvAct("E", { hikeId }), "env_toast_e");
-      }
+      if (document.getElementById("checkE").checked) notifyAct(TW.recordEnvAct("E", { hikeId }), "env_toast_e");
       finishSave();
     });
     document.getElementById("skipE").addEventListener("click", () => {
@@ -508,10 +932,9 @@
       finishSave();
     });
 
-    // Act B
     document.getElementById("btnPhoto").addEventListener("click", () => {
       if (state !== "active") {
-        showToast(TW.getLang() === "zh" ? "請在追蹤中拍攝" : "Take photos during active tracking");
+        showToast(lang === "zh" ? "請在追蹤中拍攝" : "Take photos during active tracking");
         return;
       }
       document.getElementById("modalB").classList.add("open");
@@ -526,16 +949,12 @@
     document.getElementById("closeB").addEventListener("click", () => document.getElementById("modalB").classList.remove("open"));
     document.getElementById("submitB").addEventListener("click", () => {
       const result = TW.recordEnvAct("B", {
-        hikeId,
-        duringTrack: state === "active",
-        photoType: "nature_" + photoType,
-        note: photoType,
+        hikeId, duringTrack: state === "active", photoType: "nature_" + photoType, note: photoType,
       });
       document.getElementById("modalB").classList.remove("open");
       notifyAct(result, "env_toast_b");
     });
 
-    // Act D — before/after optional pairing, no same-spot; +1 D when at least one photo logged
     function updateCleanupSubmit() {
       document.getElementById("submitD").disabled = !(cleanupBefore || cleanupAfter);
     }
@@ -547,25 +966,16 @@
       document.getElementById("modalD").classList.add("open");
     });
     document.getElementById("slotBefore").addEventListener("click", () => {
-      cleanupBefore = true;
-      document.getElementById("slotBefore").classList.add("filled");
-      updateCleanupSubmit();
+      cleanupBefore = true; document.getElementById("slotBefore").classList.add("filled"); updateCleanupSubmit();
     });
     document.getElementById("slotAfter").addEventListener("click", () => {
-      cleanupAfter = true;
-      document.getElementById("slotAfter").classList.add("filled");
-      updateCleanupSubmit();
+      cleanupAfter = true; document.getElementById("slotAfter").classList.add("filled"); updateCleanupSubmit();
     });
     document.getElementById("closeD").addEventListener("click", () => document.getElementById("modalD").classList.remove("open"));
     document.getElementById("backD").addEventListener("click", () => document.getElementById("modalD").classList.remove("open"));
     document.getElementById("submitD").addEventListener("click", () => {
       const n = (cleanupBefore ? 1 : 0) + (cleanupAfter ? 1 : 0);
-      const result = TW.recordEnvAct("D", {
-        hikeId,
-        photoCount: n,
-        photoType: "cleanup",
-        note: (cleanupBefore ? "before" : "") + (cleanupAfter ? "+after" : ""),
-      });
+      const result = TW.recordEnvAct("D", { hikeId, photoCount: n, photoType: "cleanup", note: (cleanupBefore ? "before" : "") + (cleanupAfter ? "+after" : "") });
       document.getElementById("modalD").classList.remove("open");
       notifyAct(result, "env_toast_d");
     });
@@ -574,7 +984,19 @@
       map.setView(route[Math.min(routeIdx, route.length - 1)], 14);
     });
 
-    // Act C — report
+    document.getElementById("btnLiveShare").addEventListener("click", () => {
+      document.getElementById("modalShare").classList.add("open");
+    });
+    document.getElementById("closeShare").addEventListener("click", () => document.getElementById("modalShare").classList.remove("open"));
+    document.getElementById("copyShare").addEventListener("click", () => {
+      const url = document.getElementById("shareUrl").textContent;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(url).catch(() => {});
+      }
+      document.getElementById("modalShare").classList.remove("open");
+      showToast(TW.t("app_live_share_copied"));
+    });
+
     let reportMap, reportMarker;
     const reportSheet = document.getElementById("reportSheet");
     function openReport() {
@@ -592,8 +1014,7 @@
           });
           reportMap.on("click", (e) => {
             reportMarker.setLatLng(e.latlng);
-            document.getElementById("liveCoords").textContent =
-              "📍 " + e.latlng.lat.toFixed(6) + ", " + e.latlng.lng.toFixed(6);
+            document.getElementById("liveCoords").textContent = "📍 " + e.latlng.lat.toFixed(6) + ", " + e.latlng.lng.toFixed(6);
           });
         } else {
           reportMap.setView(pos, 15);
@@ -605,19 +1026,16 @@
     }
     document.getElementById("idleReport").addEventListener("click", openReport);
     document.getElementById("activeReport").addEventListener("click", openReport);
+    document.getElementById("fabReport").addEventListener("click", openReport);
     document.getElementById("closeAppReport").addEventListener("click", () => reportSheet.classList.remove("open"));
     document.getElementById("submitAppReport").addEventListener("click", () => {
       reportSheet.classList.remove("open");
       const result = TW.recordEnvAct("C", { hikeId, note: "incident" });
       if (result.ok) {
         showToast(TW.t("env_toast_c") + " · " + TW.t("toast_report"));
-        if (result.leveledUp) {
-          setTimeout(() => showToast(TW.t("env_toast_level").replace("{n}", String(result.leveledUp))), 900);
-        }
+        if (result.leveledUp) setTimeout(() => showToast(TW.t("env_toast_level").replace("{n}", String(result.leveledUp))), 900);
         refreshEnvPill();
-      } else {
-        showToast(TW.t("toast_report"));
-      }
+      } else showToast(TW.t("toast_report"));
     });
     document.getElementById("appAddPhotos").addEventListener("click", () => showToast("📷"));
 
@@ -626,6 +1044,11 @@
     if (trailId) {
       const trail = TW.trails.find((x) => x.id === trailId);
       if (trail) document.getElementById("hikeTitle").value = TW.tt(trail, "title");
+    }
+    if (params.get("mode") === "plan") setMapMode("plan");
+    if (params.get("follow") === "1") {
+      following = true;
+      document.getElementById("followBanner").classList.add("show");
     }
   </script>
 </body>

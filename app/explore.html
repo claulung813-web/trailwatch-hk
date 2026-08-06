@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>TrailWatch App — Explore</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/styles.css" />
+  <style>
+    body { margin: 0; }
+    .phone-body { flex: 1; overflow-y: auto; padding: 0.75rem 0.9rem 1rem; background: #f7faf7; }
+    .app-head {
+      padding: 2.4rem 0.9rem 0.55rem; background: #fff; border-bottom: 1px solid var(--border);
+      text-align: center;
+    }
+    .app-head h1 { font-size: 1.05rem; color: var(--green-900); margin: 0; }
+    .tabs {
+      display: flex; gap: 0.35rem; padding: 0.55rem 0.9rem 0.35rem; background: #fff;
+      border-bottom: 1px solid var(--border); overflow-x: auto;
+    }
+    .tabs button {
+      border: none; border-radius: 999px; padding: 0.4rem 0.8rem;
+      font-size: 0.75rem; font-weight: 700; background: var(--green-50); color: var(--green-900);
+      white-space: nowrap; cursor: pointer;
+    }
+    .tabs button.active { background: var(--green-900); color: #fff; }
+    .subfilters { padding: 0.5rem 0.9rem; background: #fff; border-bottom: 1px solid var(--border); }
+    .search-mini {
+      width: 100%; border: 1px solid var(--border); border-radius: 10px;
+      padding: 0.45rem 0.7rem; font-size: 0.8rem; margin-bottom: 0.45rem; background: #f7faf7;
+    }
+    .route-card {
+      display: flex; gap: 0.75rem; background: #fff; border: 1px solid var(--border);
+      border-radius: 12px; overflow: hidden; margin-bottom: 0.65rem; text-decoration: none; color: inherit;
+    }
+    .route-card img { width: 84px; height: 84px; object-fit: cover; flex-shrink: 0; background: var(--green-100); }
+    .route-card .meta { padding: 0.5rem 0.5rem 0.5rem 0; min-width: 0; }
+    .route-card strong { display: block; font-size: 0.85rem; color: var(--green-900); }
+    .route-card p { font-size: 0.7rem; color: var(--text-muted); margin: 0.2rem 0 0; }
+    .record-row {
+      background: #fff; border: 1px solid var(--border); border-radius: 12px;
+      padding: 0.7rem 0.8rem; margin-bottom: 0.55rem;
+    }
+    .record-row strong { display: block; color: var(--green-900); font-size: 0.85rem; }
+    .record-row p { margin: 0.2rem 0 0; font-size: 0.72rem; color: var(--text-muted); }
+  </style>
+</head>
+<body>
+  <div class="app-page">
+    <div class="app-page-top">
+      <a href="../get-app.html" id="backWeb"></a>
+      <div class="lang-switch" style="margin:0.75rem auto 0;width:fit-content;background:rgba(255,255,255,0.15);border-color:rgba(255,255,255,0.25)">
+        <button type="button" data-lang="en" style="color:#fff">EN</button>
+        <button type="button" data-lang="zh" style="color:#fff">繁</button>
+      </div>
+    </div>
+
+    <div class="phone-frame">
+      <div class="phone-notch"></div>
+      <div class="phone-screen">
+        <div class="app-head"><h1 id="pageTitle">Explore</h1></div>
+        <div class="tabs" id="tabs">
+          <button type="button" class="active" data-tab="routes" id="tabRoutes">Routes</button>
+          <button type="button" data-tab="records" id="tabRecords">Records</button>
+          <button type="button" data-tab="incidents" id="tabIncidents">Incidents</button>
+        </div>
+        <div class="subfilters" id="subfilters"></div>
+        <div class="phone-body" id="list"></div>
+        <div data-app-nav></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="../js/i18n.js"></script>
+  <script src="../js/data.js"></script>
+  <script src="../js/cms-store.js"></script>
+  <script src="../js/app.js"></script>
+  <script>
+    document.documentElement.lang = TW.getLang() === "zh" ? "zh-Hant" : "en";
+    const lang = TW.getLang();
+    const t = TW.t;
+    document.querySelectorAll(".lang-switch button").forEach((b) => {
+      b.classList.toggle("active", b.dataset.lang === lang);
+      b.addEventListener("click", () => { TW.setLang(b.dataset.lang); location.reload(); });
+    });
+    document.getElementById("backWeb").textContent = t("app_back_web");
+    document.getElementById("pageTitle").textContent = t("nav_explore");
+    document.getElementById("tabRoutes").textContent = lang === "zh" ? "路線" : "Routes";
+    document.getElementById("tabRecords").textContent = lang === "zh" ? "記錄" : "Records";
+    document.getElementById("tabIncidents").textContent = lang === "zh" ? "事故" : "Incidents";
+    twMountAppNav("explore");
+
+    const trails = (typeof TW.getPublishedTrails === "function" ? TW.getPublishedTrails() : null) || TW.trails || [];
+    const records = TW.records || [];
+    const list = document.getElementById("list");
+    const sub = document.getElementById("subfilters");
+    let tab = "routes";
+    let routeFilter = "editors"; // default Editor's Choice
+    let recQ = "";
+    let recFriends = false;
+    let recDate = "all";
+
+    function editorsChoice() {
+      return trails.filter((tr, i) => tr.monthly || i < 4);
+    }
+
+    function renderSub() {
+      if (tab === "routes") {
+        sub.innerHTML = `
+          <div class="app-chip-row" id="routeChips">
+            <button type="button" data-rf="all" class="${routeFilter === "all" ? "active" : ""}">${t("app_routes_all")}</button>
+            <button type="button" data-rf="editors" class="${routeFilter === "editors" ? "active" : ""}">${t("app_editors_choice")}</button>
+            <button type="button" data-rf="categories" class="${routeFilter === "categories" ? "active" : ""}">${t("app_routes_categories")}</button>
+          </div>
+          <p style="margin:0.4rem 0 0;font-size:0.65rem"><span class="app-tbd">${t("app_tbd_official")}</span></p>`;
+        document.getElementById("routeChips").addEventListener("click", (e) => {
+          const btn = e.target.closest("button[data-rf]");
+          if (!btn) return;
+          routeFilter = btn.dataset.rf;
+          render();
+        });
+      } else if (tab === "records") {
+        sub.innerHTML = `
+          <input class="search-mini" id="recSearch" type="search" placeholder="${t("app_filter_keyword")}…" value="${recQ}" />
+          <div class="app-chip-row" id="recChips">
+            <button type="button" data-rf="friends" class="${recFriends ? "active" : ""}">${t("app_filter_friends")}</button>
+            <button type="button" data-rf="duration">${t("app_filter_duration")}</button>
+            <button type="button" data-rf="date" class="${recDate !== "all" ? "active" : ""}">${t("app_filter_date")}</button>
+          </div>
+          <p style="margin:0.35rem 0 0;font-size:0.65rem"><span class="app-tbd">${t("app_tbd_tags")}</span></p>`;
+        document.getElementById("recSearch").addEventListener("input", (e) => {
+          recQ = e.target.value.trim().toLowerCase();
+          renderListOnly();
+        });
+        document.getElementById("recChips").addEventListener("click", (e) => {
+          const btn = e.target.closest("button[data-rf]");
+          if (!btn) return;
+          if (btn.dataset.rf === "friends") {
+            recFriends = !recFriends;
+            btn.classList.toggle("active", recFriends);
+          } else if (btn.dataset.rf === "date") {
+            recDate = recDate === "all" ? "month" : "all";
+            btn.classList.toggle("active", recDate !== "all");
+          } else {
+            showToast(t("app_filter_duration") + " · TBD");
+          }
+          renderListOnly();
+        });
+      } else {
+        sub.innerHTML = `<p style="margin:0;font-size:0.75rem;color:var(--text-muted)">${t("app_incidents_hint")}</p>`;
+      }
+    }
+
+    function routeCards(rows) {
+      return rows.length
+        ? rows.map((tr) => {
+            const name = lang === "zh" ? (tr.nameZh || tr.titleZh || tr.name || tr.title) : (tr.name || tr.title);
+            const dist = tr.distanceKm != null ? tr.distanceKm + " km" : (tr.distance || "");
+            const img = tr.image || "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=200&q=60";
+            return `<a class="route-card" href="../rec-trail.html?id=${encodeURIComponent(tr.id || "")}">
+              <img src="${img}" alt="" />
+              <div class="meta">
+                <strong>${name || "Trail"}</strong>
+                <p>${dist}${tr.duration ? " · " + tr.duration : ""}</p>
+                <p><span class="app-tbd">${t("app_tbd_official")}</span></p>
+              </div>
+            </a>`;
+          }).join("")
+        : `<p style="text-align:center;color:var(--text-muted);padding:2rem 1rem">${lang === "zh" ? "暫無路線" : "No routes yet"}</p>`;
+    }
+
+    function renderListOnly() {
+      if (tab === "routes") {
+        let rows = trails.slice();
+        if (routeFilter === "editors") rows = editorsChoice();
+        else if (routeFilter === "categories") {
+          const chips = (TW.trailFilters || []).map((f) =>
+            `<button type="button" class="app-chip" data-cat="${f.id}">${t(f.labelKey)}</button>`
+          ).join("");
+          list.innerHTML = `
+            <div class="app-chip-row" id="catChips" style="margin-bottom:0.75rem;flex-wrap:wrap">${chips}</div>
+            <div id="catRoutes">${routeCards(trails.slice(0, 8))}</div>`;
+          document.getElementById("catChips").addEventListener("click", (e) => {
+            const btn = e.target.closest("button[data-cat]");
+            if (!btn) return;
+            document.querySelectorAll("#catChips button").forEach((b) => b.classList.toggle("active", b === btn));
+            const cat = btn.dataset.cat;
+            const filtered = cat === "all"
+              ? trails
+              : trails.filter((tr) => (tr.tags || []).includes(cat));
+            document.getElementById("catRoutes").innerHTML = routeCards(filtered.slice(0, 10));
+          });
+          return;
+        }
+        list.innerHTML = routeCards(rows.slice(0, 10));
+      } else if (tab === "records") {
+        let rows = records.slice();
+        if (recQ) {
+          rows = rows.filter((r) => {
+            const text = ((r.title || "") + " " + (r.titleZh || "") + " " + (r.user || "")).toLowerCase();
+            return text.includes(recQ);
+          });
+        }
+        if (recFriends) rows = rows.filter((_, i) => i % 2 === 0);
+        if (recDate === "month") rows = rows.slice(0, 3);
+        list.innerHTML = rows.length
+          ? rows.map((r) => {
+              const title = TW.tt(r, "title") || r.title;
+              return `<div class="record-row">
+                <strong>${title}</strong>
+                <p>${r.user || ""} · ${r.distance || ""} · ${r.duration || ""}</p>
+                <p><span class="app-tbd">${t("app_tbd_tags")}</span></p>
+              </div>`;
+            }).join("")
+          : `<p style="text-align:center;color:var(--text-muted);padding:2rem 1rem">${t("hikes_empty")}</p>`;
+      } else {
+        list.innerHTML = `
+          <p style="text-align:center;color:var(--text-muted);padding:1.25rem 0.5rem 0.75rem">${t("app_incidents_hint")}</p>
+          <a class="btn btn-primary btn-block" href="index.html">${t("app_report")}</a>`;
+      }
+    }
+
+    function render() {
+      renderSub();
+      renderListOnly();
+    }
+
+    document.getElementById("tabs").addEventListener("click", (e) => {
+      const btn = e.target.closest("button[data-tab]");
+      if (!btn) return;
+      tab = btn.dataset.tab;
+      document.querySelectorAll(".tabs button").forEach((b) => b.classList.toggle("active", b === btn));
+      render();
+    });
+
+    render();
+  </script>
+</body>
+</html>

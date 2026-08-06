@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>TrailWatch App — Community</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/styles.css" />
+  <style>
+    body { margin: 0; }
+    .phone-body { flex: 1; overflow-y: auto; padding: 0.75rem 0.9rem 1rem; background: #f7faf7; }
+    .app-head {
+      display: flex; align-items: center; gap: 0.55rem;
+      padding: 2.4rem 0.9rem 0.65rem; background: #fff; border-bottom: 1px solid var(--border);
+    }
+    .app-head h1 { flex: 1; font-size: 1.05rem; color: var(--green-900); margin: 0; text-align: center; }
+    .head-link {
+      font-size: 0.72rem; font-weight: 700; color: var(--green-800); text-decoration: none; white-space: nowrap;
+    }
+    .search-mini {
+      width: 100%; border: 1px solid var(--border); border-radius: 10px;
+      padding: 0.45rem 0.7rem; font-size: 0.8rem; margin-bottom: 0.5rem; background: #fff;
+    }
+    .feed-card {
+      background: #fff; border-radius: 12px; border: 1px solid var(--border);
+      padding: 0.85rem; margin-bottom: 0.7rem;
+    }
+    .feed-card .top { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.45rem; }
+    .feed-card .name { font-size: 0.8rem; font-weight: 700; color: var(--green-900); }
+    .feed-card .time { font-size: 0.65rem; color: var(--text-muted); }
+    .feed-card strong { color: var(--green-900); display: block; margin-bottom: 0.25rem; font-size: 0.88rem; }
+    .feed-card p { font-size: 0.78rem; color: var(--text-muted); margin: 0; }
+    .feed-card .expand-body { display: none; margin-top: 0.5rem; font-size: 0.75rem; color: var(--text); }
+    .feed-card.expanded .expand-body { display: block; }
+    .tag {
+      display: inline-block; font-size: 0.62rem; font-weight: 700; padding: 0.15rem 0.4rem;
+      border-radius: 6px; background: var(--green-100); color: var(--green-800); margin-left: auto;
+    }
+    .expand-btn {
+      border: none; background: none; color: var(--green-700); font-size: 0.7rem;
+      font-weight: 700; padding: 0.35rem 0 0; cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-page">
+    <div class="app-page-top">
+      <a href="../get-app.html" id="backWeb"></a>
+      <div class="lang-switch" style="margin:0.75rem auto 0;width:fit-content;background:rgba(255,255,255,0.15);border-color:rgba(255,255,255,0.25)">
+        <button type="button" data-lang="en" style="color:#fff">EN</button>
+        <button type="button" data-lang="zh" style="color:#fff">繁</button>
+      </div>
+    </div>
+
+    <div class="phone-frame">
+      <div class="phone-notch"></div>
+      <div class="phone-screen">
+        <div class="app-head">
+          <span id="homeLogo" style="width:28px;height:28px;border-radius:8px;background:var(--green-100);display:grid;place-items:center;color:var(--green-900)"></span>
+          <h1 id="pageTitle">Trail Feed</h1>
+          <a class="head-link" href="hikes.html" id="linkGroups"></a>
+        </div>
+        <div class="phone-body">
+          <input class="search-mini" id="feedSearch" type="search" />
+          <div class="app-chip-row" id="feedFilters" style="margin-bottom:0.65rem"></div>
+          <div id="feed"></div>
+        </div>
+        <div data-app-nav></div>
+      </div>
+    </div>
+  </div>
+  <div class="toast" id="toast"></div>
+
+  <script src="../js/i18n.js"></script>
+  <script src="../js/data.js"></script>
+  <script src="../js/app.js"></script>
+  <script>
+    document.documentElement.lang = TW.getLang() === "zh" ? "zh-Hant" : "en";
+    const lang = TW.getLang();
+    const t = TW.t;
+    document.querySelectorAll(".lang-switch button").forEach((b) => {
+      b.classList.toggle("active", b.dataset.lang === lang);
+      b.addEventListener("click", () => { TW.setLang(b.dataset.lang); location.reload(); });
+    });
+    document.getElementById("backWeb").textContent = t("app_back_web");
+    document.getElementById("pageTitle").textContent = t("feed_title");
+    document.getElementById("linkGroups").textContent = t("nav_groups");
+    document.getElementById("feedSearch").placeholder = t("app_filter_keyword") + "…";
+    document.querySelector("#homeLogo").innerHTML = twIcon("tree");
+    twMountAppNav("home");
+
+    let filter = "all";
+    let q = "";
+    const filters = [
+      { id: "all", key: "feed_filter_all" },
+      { id: "Record", key: "feed_filter_records" },
+      { id: "Route", key: "feed_filter_routes" },
+      { id: "Incident", key: "feed_filter_incidents" },
+      { id: "Group Hike", key: "feed_filter_groups" },
+      { id: "date", key: "app_filter_date" },
+    ];
+    document.getElementById("feedFilters").innerHTML = filters.map((f, i) =>
+      `<button type="button" class="${i === 0 ? "active" : ""}" data-f="${f.id}">${t(f.key)}</button>`
+    ).join("");
+
+    function render() {
+      const items = (TW.feed || []).filter((p) => {
+        const tag = p.tag || "";
+        let okF = filter === "all" || tag === filter
+          || (filter === "Incident" && /Community|Incident/i.test(tag))
+          || (filter === "date");
+        if (filter === "date") okF = true;
+        const text = ((p.title || "") + " " + (p.body || "") + " " + (p.user || "")).toLowerCase();
+        const okQ = !q || text.includes(q);
+        return okF && okQ;
+      });
+      document.getElementById("feed").innerHTML = items.map((p, i) => {
+        const title = TW.tt(p, "title");
+        const body = TW.tt(p, "body");
+        const tag = TW.tt(p, "tag") || p.tag;
+        const time = TW.tt(p, "time") || p.time;
+        const expandable = /Community|Sponsored|announcement/i.test(tag || "") || p.type === "community";
+        return `<article class="feed-card" data-i="${i}">
+          <div class="top">
+            ${TW.avatarHtml(p.avatar, "avatar-sm") || `<span style="width:28px;height:28px;border-radius:50%;background:var(--green-100)"></span>`}
+            <div><div class="name">${p.user || "TrailWatch"}</div><div class="time">${time}</div></div>
+            <span class="tag">${tag}</span>
+          </div>
+          ${title ? `<strong>${title}</strong>` : ""}
+          <p>${body || ""}</p>
+          ${expandable ? `<div class="expand-body">${lang === "zh" ? "完整公告詳情與活動連結（示範）。點擊展開查看更多。" : "Full announcement details and promo links (demo). Expand for more."}</div>
+            <button type="button" class="expand-btn" data-expand>${lang === "zh" ? "展開" : "Expand"}</button>` : ""}
+          ${p.tag === "Group Hike" ? `<a href="group-detail.html?id=${i}" style="display:inline-block;margin-top:0.45rem;font-size:0.72rem;font-weight:700;color:var(--green-800)">${t("nav_groups")} →</a>` : ""}
+        </article>`;
+      }).join("") || `<p style="text-align:center;color:var(--text-muted);padding:2rem 0">${t("hikes_empty")}</p>`;
+    }
+
+    document.getElementById("feedFilters").addEventListener("click", (e) => {
+      const btn = e.target.closest("button[data-f]");
+      if (!btn) return;
+      filter = btn.dataset.f;
+      document.querySelectorAll("#feedFilters button").forEach((c) => c.classList.toggle("active", c === btn));
+      render();
+    });
+    document.getElementById("feedSearch").addEventListener("input", (e) => {
+      q = e.target.value.trim().toLowerCase();
+      render();
+    });
+    document.getElementById("feed").addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-expand]");
+      if (!btn) return;
+      const card = btn.closest(".feed-card");
+      card.classList.toggle("expanded");
+      btn.textContent = card.classList.contains("expanded")
+        ? (lang === "zh" ? "收起" : "Collapse")
+        : (lang === "zh" ? "展開" : "Expand");
+    });
+    render();
+  </script>
+</body>
+</html>

@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Articles — TrailWatch HK</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div id="app-header"></div>
+  <main class="page">
+    <div class="container">
+      <h1 class="page-title" data-i18n="articles_title"></h1>
+      <p class="page-sub" data-i18n="articles_sub"></p>
+
+      <section class="articles-featured" aria-labelledby="articlesFeaturedHeading">
+        <h2 id="articlesFeaturedHeading" class="articles-section-title" data-i18n="articles_featured"></h2>
+        <div class="articles-featured-grid" id="featuredArticles"></div>
+      </section>
+
+      <section class="articles-main" aria-labelledby="articlesAllHeading">
+        <div class="articles-toolbar">
+          <div class="search-bar articles-search">
+            <input type="search" id="articleSearch" data-i18n-placeholder="article_search_placeholder" />
+          </div>
+          <div class="articles-sort">
+            <label for="articleSort" data-i18n="article_sort_label"></label>
+            <select id="articleSort">
+              <option value="newest" data-i18n="article_sort_newest"></option>
+              <option value="oldest" data-i18n="article_sort_oldest"></option>
+            </select>
+          </div>
+        </div>
+        <div class="chip-row" id="articleCategoryFilter" aria-label="Article categories"></div>
+        <h2 id="articlesAllHeading" class="articles-section-title articles-section-title--sm" data-i18n="articles_all_heading"></h2>
+        <div id="articleList"></div>
+      </section>
+    </div>
+  </main>
+  <div id="app-footer"></div>
+  <script src="js/i18n.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    document.documentElement.lang = TW.getLang() === "zh" ? "zh-Hant" : "en";
+    initShell("articles");
+
+    let activeCategory = "all";
+    let activeSort = "newest";
+
+    function escapeHtml(s) {
+      return String(s == null ? "" : s)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function renderCategoryChips() {
+      const row = document.getElementById("articleCategoryFilter");
+      row.innerHTML = (TW.articleCategories || []).map((c) => {
+        const label = TW.t(c.labelKey);
+        const active = c.id === activeCategory ? " active" : "";
+        return `<button type="button" class="chip${active}" data-cat="${escapeHtml(c.id)}">${escapeHtml(label)}</button>`;
+      }).join("");
+      row.querySelectorAll("[data-cat]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          activeCategory = btn.dataset.cat;
+          renderCategoryChips();
+          renderList();
+        });
+      });
+    }
+
+    function renderArticleCard(a, opts) {
+      opts = opts || {};
+      const zh = TW.getLang() === "zh";
+      const title = zh ? a.titleZh : a.title;
+      const excerpt = zh ? a.excerptZh : a.excerpt;
+      const url = zh ? (a.urlZh || a.url) : a.url;
+      const cat = TW.articleCategoryLabel(a.category);
+      const tags = (a.tags || [])
+        .map((t) => `<span class="article-tag">${escapeHtml(zh ? t.nameZh : t.name)}</span>`)
+        .join("");
+      const img = a.image
+        ? `<div class="article-card-media"><img src="${escapeHtml(a.image)}" alt="" loading="lazy" /></div>`
+        : "";
+      const author = a.author
+        ? `<span>${escapeHtml(TW.t("article_by"))} ${escapeHtml(a.author)}</span>`
+        : "";
+      const compact = opts.compact ? " article-card--featured" : "";
+      const excerptHtml = opts.compact
+        ? `<p class="article-excerpt article-excerpt--short">${escapeHtml(excerpt)}</p>`
+        : `<p class="article-excerpt">${escapeHtml(excerpt)}</p>`;
+      return `<article class="article-card article-card--rich${compact}">
+        ${img}
+        <div class="article-card-body">
+          <div class="meta">${escapeHtml(cat)} · ${escapeHtml(a.date)}${author ? " · " + author : ""}</div>
+          <strong><a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(title)}</a></strong>
+          ${excerptHtml}
+          ${opts.compact ? "" : `<div class="article-tags">${tags}</div>`}
+          <a class="article-more" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(TW.t("article_read_more"))}</a>
+        </div>
+      </article>`;
+    }
+
+    function renderFeatured() {
+      const el = document.getElementById("featuredArticles");
+      const featured = TW.getFeaturedArticles ? TW.getFeaturedArticles() : TW.getArticles({ featured: true });
+      if (!featured.length) {
+        el.closest(".articles-featured").hidden = true;
+        return;
+      }
+      el.innerHTML = featured.map((a) => renderArticleCard(a, { compact: true })).join("");
+    }
+
+    function renderList() {
+      const q = document.getElementById("articleSearch").value.trim();
+      const list = TW.getArticles({
+        category: activeCategory,
+        query: q,
+        sort: activeSort,
+      });
+      const el = document.getElementById("articleList");
+      if (!list.length) {
+        el.innerHTML = `<p class="article-empty">${escapeHtml(TW.t("article_empty"))}</p>`;
+        return;
+      }
+      el.innerHTML = list.map((a) => renderArticleCard(a)).join("");
+    }
+
+    function applySortI18n() {
+      const sel = document.getElementById("articleSort");
+      sel.querySelectorAll("option[data-i18n]").forEach((opt) => {
+        opt.textContent = TW.t(opt.getAttribute("data-i18n"));
+      });
+    }
+
+    renderFeatured();
+    renderCategoryChips();
+    applySortI18n();
+    document.getElementById("articleSearch").addEventListener("input", renderList);
+    document.getElementById("articleSort").addEventListener("change", (e) => {
+      activeSort = e.target.value === "oldest" ? "oldest" : "newest";
+      renderList();
+    });
+    renderList();
+  </script>
+</body>
+</html>

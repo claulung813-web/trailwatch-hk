@@ -51,14 +51,21 @@
 
     document.getElementById("regForm").addEventListener("submit", (e) => {
       e.preventDefault();
+      const name = document.getElementById("regName").value;
+      const email = document.getElementById("regEmail").value;
       CMS.submitMember({
-        name: document.getElementById("regName").value,
-        email: document.getElementById("regEmail").value,
+        name: name,
+        email: email,
         phone: document.getElementById("regPhone").value,
         newsletter: document.getElementById("regNews").checked,
       });
+      TW.loginMember({ name: name, email: email });
       showToast(TW.t("register_thanks"));
       e.target.reset();
+      // Auth change → navigate so header swaps Register → Me
+      setTimeout(() => {
+        location.href = "profile.html#overview";
+      }, 900);
     });
   </script>
 </body>

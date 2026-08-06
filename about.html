@@ -20,11 +20,27 @@
         <a class="btn btn-primary" href="register.html" data-i18n="register_cta"></a>
       </p>
 
-      <div class="card" style="padding:1.25rem;margin-top:1.5rem">
+      <div class="card" style="padding:1.25rem;margin-top:1.5rem" id="contact">
         <h2 style="font-size:1.1rem;color:var(--green-900);margin-bottom:0.75rem" data-i18n="contact_title">Contact</h2>
         <p style="margin-bottom:0.4rem"><strong data-i18n="contact_email_label">Email</strong>: <a id="cEmail" href="#"></a></p>
         <p style="margin-bottom:0.4rem"><strong data-i18n="contact_phone_label">Phone</strong>: <span id="cPhone"></span></p>
         <p><strong data-i18n="contact_address_label">Address</strong>: <span id="cAddr"></span></p>
+      </div>
+
+      <div class="card" style="padding:1.25rem;margin-top:1.5rem" id="faq">
+        <h2 style="font-size:1.1rem;color:var(--green-900);margin-bottom:0.75rem" data-i18n="footer_faq"></h2>
+        <p style="font-size:0.9rem;color:var(--text-muted);margin-bottom:0.65rem"><strong>Q.</strong> Is TrailWatch free? — Yes. Premium unlocks offline maps and extras.</p>
+        <p style="font-size:0.9rem;color:var(--text-muted);margin-bottom:0.65rem"><strong>Q.</strong> Plan on web or app? — Plan on the website; track GPS in the app.</p>
+        <p style="font-size:0.9rem;color:var(--text-muted)"><strong>Q.</strong> What are CTC / MyTree / Backyard Trails? — Related Parks &amp; Trails programmes for conservation and local nature access.</p>
+      </div>
+
+      <div class="card" style="padding:1.25rem;margin-top:1.5rem" id="newsletter">
+        <h2 style="font-size:1.1rem;color:var(--green-900);margin-bottom:0.5rem" data-i18n="footer_newsletter"></h2>
+        <p style="font-size:0.9rem;color:var(--text-muted);margin-bottom:0.85rem">Get trail tips, events, and conservation news.</p>
+        <form id="newsletterForm" style="display:flex;gap:0.5rem;flex-wrap:wrap">
+          <input class="form-input" type="email" required placeholder="you@email.com" style="flex:1;min-width:200px" />
+          <button type="submit" class="btn btn-primary" data-i18n="confirm"></button>
+        </form>
       </div>
 
       <div class="card" style="padding:1.35rem;margin-top:1.5rem">
@@ -77,6 +93,12 @@
         subject: document.getElementById("fbSubject").value,
         message: document.getElementById("fbMessage").value,
       });
+      showToast(TW.t("feedback_thanks"));
+      e.target.reset();
+    });
+    const nl = document.getElementById("newsletterForm");
+    if (nl) nl.addEventListener("submit", (e) => {
+      e.preventDefault();
       showToast(TW.t("feedback_thanks"));
       e.target.reset();
     });

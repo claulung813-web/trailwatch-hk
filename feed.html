@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Trail Feed — TrailWatch HK</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div id="app-header"></div>
+  <main class="page">
+    <div class="container">
+      <h1 class="page-title" data-i18n="feed_title"></h1>
+      <p class="page-sub" data-i18n="feed_sub"></p>
+      <div class="search-bar">
+        <input type="search" id="feedSearch" data-i18n-placeholder="search_placeholder" />
+      </div>
+      <div class="chip-row filters" id="feedFilters">
+        <button type="button" class="chip active" data-f="all" data-i18n="feed_filter_all"></button>
+        <button type="button" class="chip" data-f="Record" data-i18n="feed_filter_records"></button>
+        <button type="button" class="chip" data-f="Route" data-i18n="feed_filter_routes"></button>
+        <button type="button" class="chip" data-f="Community" data-i18n="feed_filter_incidents"></button>
+        <button type="button" class="chip" data-f="Group Hike" data-i18n="feed_filter_groups"></button>
+      </div>
+      <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:1rem" data-i18n="page_coming_filters"></p>
+      <div id="feedList"></div>
+    </div>
+  </main>
+  <div id="app-footer"></div>
+  <script src="js/i18n.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/cms-store.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    document.documentElement.lang = TW.getLang() === "zh" ? "zh-Hant" : "en";
+    initShell("feed");
+    let filter = "all";
+    let q = "";
+    function render() {
+      const items = (TW.feed || []).filter((p) => {
+        const tag = p.tag || "";
+        const okF = filter === "all" || tag === filter || (filter === "Community" && /Community|Story|Sponsored/i.test(tag));
+        const text = ((p.title || "") + " " + (p.body || "") + " " + (p.user || "")).toLowerCase();
+        const okQ = !q || text.includes(q);
+        return okF && okQ;
+      });
+      document.getElementById("feedList").innerHTML = items.map(renderFeedCard).join("") || `<p style="color:var(--text-muted);padding:2rem 0">${TW.t("hikes_empty")}</p>`;
+      bindLikes();
+    }
+    document.getElementById("feedFilters").addEventListener("click", (e) => {
+      const btn = e.target.closest("button[data-f]");
+      if (!btn) return;
+      filter = btn.dataset.f;
+      document.querySelectorAll("#feedFilters .chip").forEach((c) => c.classList.toggle("active", c === btn));
+      render();
+    });
+    document.getElementById("feedSearch").addEventListener("input", (e) => {
+      q = e.target.value.trim().toLowerCase();
+      render();
+    });
+    render();
+  </script>
+</body>
+</html>

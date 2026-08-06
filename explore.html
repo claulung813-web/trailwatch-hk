@@ -46,9 +46,8 @@
       </div>
 
       <div class="tabs" id="exploreTabs">
-        <button class="tab" data-tab="records" data-i18n="tab_records"></button>
         <button class="tab active" data-tab="routes" data-i18n="tab_routes"></button>
-        <button class="tab" data-tab="incidents" data-i18n="tab_incidents"></button>
+        <button class="tab" data-tab="records" data-i18n="tab_records"></button>
       </div>
 
       <div id="view-routes">
@@ -80,15 +79,9 @@
         <div class="record-list" id="exploreRecords"></div>
       </div>
 
-      <div id="view-incidents" class="hidden">
-        <div class="section-head">
-          <h2 data-i18n="trail_incidents"></h2>
-          <a class="link-more" href="reports.html" data-i18n="my_reports"></a>
-        </div>
-        <p style="margin-bottom:1rem;color:var(--text-muted);font-size:0.9rem" data-i18n="incidents_help"></p>
-        <div class="report-list" id="exploreIncidents"></div>
-        <a class="btn btn-primary mt-2" href="reports.html" style="margin-top:1rem;display:inline-flex" data-i18n="report_cta"></a>
-      </div>
+      <p style="margin-top:1.5rem;font-size:0.9rem;color:var(--text-muted)">
+        <a href="reports.html" data-i18n="footer_incidents"></a>
+      </p>
     </div>
   </main>
 
@@ -246,12 +239,13 @@
     });
 
     document.getElementById("exploreRecords").innerHTML = TW.records.map(renderRecordItem).join("");
-    document.getElementById("exploreIncidents").innerHTML =
-      TW.getPublicIncidents().map(renderReportItem).join("") ||
-      `<p style="color:var(--text-muted)">${TW.t("no_trails")}</p>`;
 
     function showExploreTab(tab) {
-      ["routes", "records", "incidents"].forEach((id) => {
+      if (tab === "incidents") {
+        location.href = "reports.html";
+        return;
+      }
+      ["routes", "records"].forEach((id) => {
         document.getElementById("view-" + id).classList.toggle("hidden", id !== tab);
       });
       document.querySelectorAll("#exploreTabs .tab").forEach((t) => {
@@ -261,7 +255,7 @@
     bindTabs("#exploreTabs", showExploreTab);
 
     const params = new URLSearchParams(location.search);
-    if (params.get("tab") === "incidents") showExploreTab("incidents");
+    if (params.get("tab") === "incidents") location.href = "reports.html";
     if (params.get("tab") === "records") showExploreTab("records");
 
     renderAll();

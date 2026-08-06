@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>TrailWatch App — Friends</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/styles.css" />
+  <style>
+    body { margin: 0; }
+    .phone-body { flex: 1; overflow-y: auto; padding: 0.75rem 0.9rem 1rem; background: #f7faf7; }
+    .app-head { padding: 2.4rem 0.9rem 0.65rem; background: #fff; border-bottom: 1px solid var(--border); text-align: center; }
+    .app-head h1 { font-size: 1.05rem; color: var(--green-900); margin: 0; }
+    .card {
+      background: #fff; border: 1px solid var(--border); border-radius: 12px;
+      padding: 0.75rem 0.85rem; margin-bottom: 0.55rem; display: flex; align-items: center; gap: 0.6rem;
+    }
+    .card strong { display: block; font-size: 0.85rem; color: var(--green-900); }
+    .card span { font-size: 0.68rem; color: var(--text-muted); }
+    .card .actions { margin-left: auto; display: flex; flex-direction: column; gap: 0.25rem; }
+    .card button {
+      border: none; border-radius: 8px; padding: 0.3rem 0.55rem; font-size: 0.68rem; font-weight: 700;
+      background: var(--green-900); color: #fff; cursor: pointer;
+    }
+    .card button.sec { background: var(--green-50); color: var(--green-900); }
+  </style>
+</head>
+<body>
+  <div class="app-page">
+    <div class="app-page-top">
+      <a href="profile.html" id="backWeb"></a>
+      <div class="lang-switch" style="margin:0.75rem auto 0;width:fit-content;background:rgba(255,255,255,0.15);border-color:rgba(255,255,255,0.25)">
+        <button type="button" data-lang="en" style="color:#fff">EN</button>
+        <button type="button" data-lang="zh" style="color:#fff">繁</button>
+      </div>
+    </div>
+    <div class="phone-frame">
+      <div class="phone-notch"></div>
+      <div class="phone-screen">
+        <div class="app-head"><h1 id="pageTitle"></h1></div>
+        <div class="phone-body">
+          <div class="app-chip-row" id="tabs" style="margin-bottom:0.65rem"></div>
+          <div id="list"></div>
+          <div id="friendProfile" style="display:none"></div>
+        </div>
+        <div data-app-nav></div>
+      </div>
+    </div>
+  </div>
+  <div class="toast" id="toast"></div>
+  <script src="../js/i18n.js"></script>
+  <script src="../js/data.js"></script>
+  <script src="../js/app.js"></script>
+  <script>
+    document.documentElement.lang = TW.getLang() === "zh" ? "zh-Hant" : "en";
+    const lang = TW.getLang();
+    const t = TW.t;
+    document.querySelectorAll(".lang-switch button").forEach((b) => {
+      b.classList.toggle("active", b.dataset.lang === lang);
+      b.addEventListener("click", () => { TW.setLang(b.dataset.lang); location.reload(); });
+    });
+    document.getElementById("backWeb").textContent = "‹ " + t("app_profile");
+    document.getElementById("pageTitle").textContent = t("app_my_friends");
+    twMountAppNav("profile");
+
+    let tab = "list";
+    const friends = [
+      { name: "Sarah Chen", status: "friend", routes: 12 },
+      { name: "James Wilson", status: "friend", routes: 8 },
+      { name: "Alex Ng", status: "pending", routes: 0 },
+    ];
+    const strangers = [{ name: "Maya Liu", status: "none", routes: 3 }];
+
+    document.getElementById("tabs").innerHTML = `
+      <button type="button" class="active" data-t="list">${t("friends_list")}</button>
+      <button type="button" data-t="pending">${t("friends_pending")}</button>`;
+
+    function render() {
+      const rows = tab === "pending" ? friends.filter((f) => f.status === "pending") : friends.filter((f) => f.status === "friend");
+      document.getElementById("list").innerHTML = rows.map((f, i) => `
+        <div class="card">
+          <div style="width:36px;height:36px;border-radius:50%;background:var(--green-100);display:grid;place-items:center;font-weight:800;color:var(--green-900)">${f.name[0]}</div>
+          <div><strong>${f.name}</strong><span>${f.routes} ${lang === "zh" ? "路線" : "routes"}</span></div>
+          <div class="actions">
+            <button type="button" data-view="${f.name}">${lang === "zh" ? "查看" : "View"}</button>
+            ${f.status === "friend" ? `<button type="button" class="sec" data-invite>${t("app_friend_invite_hike")}</button>` : `<button type="button" class="sec" data-accept>${t("confirm")}</button>`}
+          </div>
+        </div>`).join("") + (tab === "list" ? strangers.map((f) => `
+        <div class="card">
+          <div style="width:36px;height:36px;border-radius:50%;background:#eee;display:grid;place-items:center;font-weight:800">${f.name[0]}</div>
+          <div><strong>${f.name}</strong><span>${lang === "zh" ? "尚未成為好友" : "Not friends yet"}</span></div>
+          <div class="actions"><button type="button" data-add>${t("app_friend_add")}</button></div>
+        </div>`).join("") : "");
+      document.getElementById("friendProfile").style.display = "none";
+    }
+
+    document.getElementById("tabs").addEventListener("click", (e) => {
+      const btn = e.target.closest("button[data-t]");
+      if (!btn) return;
+      tab = btn.dataset.t;
+      document.querySelectorAll("#tabs button").forEach((c) => c.classList.toggle("active", c === btn));
+      render();
+    });
+    document.getElementById("list").addEventListener("click", (e) => {
+      if (e.target.closest("[data-invite]")) { showToast(t("app_friend_invite_hike")); return; }
+      if (e.target.closest("[data-add]")) { showToast(t("app_friend_add")); return; }
+      if (e.target.closest("[data-accept]")) { showToast(t("confirm")); return; }
+      const view = e.target.closest("[data-view]");
+      if (view) {
+        const name = view.dataset.view;
+        const isFriend = friends.find((f) => f.name === name && f.status === "friend");
+        document.getElementById("friendProfile").style.display = "block";
+        document.getElementById("friendProfile").innerHTML = `
+          <div class="card" style="flex-direction:column;align-items:stretch">
+            <strong style="font-size:1rem">${name}</strong>
+            <span style="margin:0.35rem 0">${isFriend ? (lang === "zh" ? "好友 · 完整資料" : "Friend · full profile") : (lang === "zh" ? "非好友 · 有限資料" : "Limited profile")}</span>
+            ${isFriend
+              ? `<p style="font-size:0.75rem;margin:0.35rem 0">${lang === "zh" ? "最近路線與記錄" : "Recent routes & records"}</p>
+                 <a href="explore.html?tab=records" style="font-size:0.75rem;font-weight:700;color:var(--green-800)">${lang === "zh" ? "查看全部（可搜尋／篩選）" : "Full list with search / filter"} →</a>
+                 <button type="button" class="btn btn-primary btn-block" style="margin-top:0.65rem" onclick="showToast(TW.t('app_friend_invite_hike'))">${t("app_friend_invite_hike")}</button>`
+              : `<button type="button" class="btn btn-primary btn-block" style="margin-top:0.65rem" onclick="showToast(TW.t('app_friend_add'))">${t("app_friend_add")}</button>`}
+          </div>`;
+      }
+    });
+    render();
+  </script>
+</body>
+</html>

@@ -53,8 +53,8 @@ CMS.defaultStore = function () {
       contactAddress: "Hong Kong · Country parks community",
       contactAddressZh: "香港 · 郊野公園社群",
       translations: {
-        hero_tagline_en: "Plan trails on web. Track them on the app.",
-        hero_tagline_zh: "網頁規劃路線，App 追蹤行程。",
+        hero_tagline_en: "Empower hikers for easy nature access and stewardship",
+        hero_tagline_zh: "賦能行山友，輕鬆走進自然並守護郊野",
         footer_extra_en: "Protect Hong Kong's countryside together.",
         footer_extra_zh: "一起守護香港郊野。",
       },
@@ -163,6 +163,15 @@ CMS.getStore = function () {
     );
     // migrate older stores that pre-date these collections
     let migrated = false;
+    const tr = store.content.translations;
+    if (tr.hero_tagline_en === "Plan trails on web. Track them on the app.") {
+      tr.hero_tagline_en = base.content.translations.hero_tagline_en;
+      migrated = true;
+    }
+    if (tr.hero_tagline_zh === "網頁規劃路線，App 追蹤行程。") {
+      tr.hero_tagline_zh = base.content.translations.hero_tagline_zh;
+      migrated = true;
+    }
     if (!("members" in parsed)) {
       store.members = CMS.seedMembers();
       migrated = true;
@@ -306,9 +315,12 @@ CMS.trailToRecommended = function (t, i) {
     lantau: [22.266, 113.95],
     "hk-island": [22.26, 114.2],
     "sai-kung": [22.38, 114.3],
+    kowloon: [22.33, 114.18],
     "sha-tin": [22.38, 114.2],
     "tai-po": [22.45, 114.2],
     "tsuen-wan": [22.37, 114.12],
+    "tuen-mun": [22.39, 113.97],
+    north: [22.49, 114.14],
   };
   const c = centers[t.district] || [22.32, 114.17];
   return {
@@ -460,7 +472,7 @@ TW.applyCmsCopy = function () {
   const zh = TW.getLang && TW.getLang() === "zh";
   const heroOverride = zh ? tr.hero_tagline_zh : tr.hero_tagline_en;
   if (heroOverride) {
-    const hero = document.querySelector('[data-i18n="hero_desc"]');
+    const hero = document.querySelector('[data-i18n="hero_title"]');
     if (hero) hero.textContent = heroOverride;
   }
   const footExtra = zh ? tr.footer_extra_zh : tr.footer_extra_en;

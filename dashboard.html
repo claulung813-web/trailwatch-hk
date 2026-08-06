@@ -2,106 +2,28 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Dashboard — TrailWatch HK</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/styles.css" />
+  <meta http-equiv="refresh" content="0;url=profile.html#overview" />
+  <title>Redirecting…</title>
+  <script>
+    (function () {
+      var h = (location.hash || "#overview").replace(/^#/, "") || "overview";
+      var map = {
+        dashboard: "overview",
+        hikes: "activity&type=records",
+        records: "activity&type=records",
+        plans: "activity&type=plans",
+        groups: "activity&type=groups",
+        reports: "activity&type=reports",
+        gallery: "activity&type=gallery",
+        bookmarks: "overview",
+        milestones: "badges",
+        profile: "settings"
+      };
+      location.replace("profile.html#" + (map[h] || h));
+    })();
+  </script>
 </head>
 <body>
-  <div id="app-header"></div>
-
-  <main class="page topo-bg">
-    <div class="container" style="position:relative;z-index:1">
-      <div class="profile-header">
-        <img class="profile-avatar" id="avatar" alt="" />
-        <div>
-          <h1 id="name"></h1>
-          <div class="rank" id="rank"></div>
-        </div>
-        <div style="margin-left:auto;display:flex;gap:0.5rem;flex-wrap:wrap">
-          <a class="btn btn-secondary" href="insights.html" data-i18n="dash_insights"></a>
-          <a class="btn btn-primary" href="milestones.html" data-i18n="dash_milestones"></a>
-        </div>
-      </div>
-
-      <h2 class="page-title" style="font-size:1.2rem;margin-bottom:1rem" data-i18n="dash_portfolio"></h2>
-      <div class="portfolio-grid" id="portfolio"></div>
-
-      <div class="section-head mt-2">
-        <h2 data-i18n="dash_my_hikes"></h2>
-        <a class="link-more" href="my-hikes.html" data-i18n="view_all"></a>
-      </div>
-      <div class="record-list" id="trackedList"></div>
-
-      <div class="section-head mt-2">
-        <h2 data-i18n="dash_recent"></h2>
-        <a class="link-more" href="explore.html?tab=records" data-i18n="view_all"></a>
-      </div>
-      <div class="record-list" id="recent"></div>
-    </div>
-  </main>
-
-  <div id="app-footer"></div>
-
-  <script src="js/i18n.js"></script>
-  <script src="js/data.js"></script>
-  <script src="js/env-badge.js"></script>
-  <script src="js/hikes.js"></script>
-  <script src="js/app.js"></script>
-  <script>
-    document.documentElement.lang = TW.getLang() === "zh" ? "zh-Hant" : "en";
-    initShell("dashboard");
-    document.getElementById("avatar").src = TW.user.avatar;
-    document.getElementById("name").textContent = TW.user.name;
-    document.getElementById("rank").textContent =
-      "🦶 " + (TW.getLang() === "zh" ? TW.user.rankZh : TW.user.rank);
-
-    const tiles = [
-      { key: "records", labelKey: "tile_records", icon: "records", href: "explore.html?tab=records" },
-      { key: "hikes", labelKey: "tile_hikes", icon: "hikes", href: "my-hikes.html", custom: true },
-      { key: "routes", labelKey: "tile_routes", icon: "routes", href: "explore.html" },
-      { key: "bookmarks", labelKey: "tile_bookmarks", icon: "bookmarks", href: "#", toastKey: "tile_bookmarks" },
-      { key: "friends", labelKey: "tile_friends", icon: "friends", href: "#", toastKey: "tile_friends" },
-      { key: "reports", labelKey: "tile_reports", icon: "reports", href: "reports.html" },
-      { key: "badges", labelKey: "tile_badges", icon: "badges", href: "profile.html" },
-      { key: "events", labelKey: "tile_events", icon: "events", href: "index.html" },
-      { key: "trees", labelKey: "tile_trees", icon: "trees", href: "trees.html" },
-      { key: "env", labelKey: "tile_env", icon: "env", href: "profile.html", custom: true },
-      { key: "photos", labelKey: "tile_photos", icon: "photos", href: "#", toastKey: "tile_photos" },
-      { key: "groupHikes", labelKey: "tile_group", icon: "groupHikes", href: "index.html" },
-    ];
-
-    TW.ensureDemoHike();
-    const hikeCount = TW.getHikes().length;
-
-    document.getElementById("portfolio").innerHTML = tiles
-      .map((t) => {
-        let val = TW.stats[t.key];
-        if (t.key === "env") val = "L" + TW.getEnvLevel();
-        if (t.key === "hikes") val = hikeCount;
-        const label = TW.t(t.labelKey);
-        const attrs = t.toastKey
-          ? `href="#" data-toast="${TW.t(t.toastKey)}"`
-          : `href="${t.href}"`;
-        return `
-        <a class="portfolio-tile" ${attrs}>
-          <div class="portfolio-tile-body">
-            ${twPortfolioIcon(t.icon)}
-            <div class="value">${val}</div>
-          </div>
-          <div class="portfolio-tile-foot">${label}</div>
-        </a>`;
-      })
-      .join("");
-
-    const hikes = TW.getHikes().slice(0, 3);
-    document.getElementById("trackedList").innerHTML = hikes.length
-      ? hikes.map((h) => TW.renderHikeListItem(h, "hike-detail.html?id=" + encodeURIComponent(h.id))).join("")
-      : `<p style="color:var(--text-muted)">${TW.t("hikes_empty")}</p>`;
-
-    document.getElementById("recent").innerHTML = TW.records.map(renderRecordItem).join("");
-  </script>
+  <p><a href="profile.html#overview">Me / Profile</a></p>
 </body>
 </html>
