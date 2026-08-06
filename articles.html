@@ -23,18 +23,28 @@
 
       <section class="articles-main" aria-labelledby="articlesAllHeading">
         <div class="articles-toolbar">
-          <div class="search-bar articles-search">
-            <input type="search" id="articleSearch" data-i18n-placeholder="article_search_placeholder" />
+          <div class="articles-cat-filter">
+            <span class="articles-cat-label" id="articleFilterLabel" data-i18n="article_filter_label"></span>
+            <div
+              class="chip-row articles-cat-chips"
+              id="articleCategoryFilter"
+              role="toolbar"
+              aria-labelledby="articleFilterLabel"
+            ></div>
           </div>
-          <div class="articles-sort">
-            <label for="articleSort" data-i18n="article_sort_label"></label>
-            <select id="articleSort">
-              <option value="newest" data-i18n="article_sort_newest"></option>
-              <option value="oldest" data-i18n="article_sort_oldest"></option>
-            </select>
+          <div class="articles-toolbar-controls">
+            <div class="search-bar articles-search">
+              <input type="search" id="articleSearch" data-i18n-placeholder="article_search_placeholder" />
+            </div>
+            <div class="articles-sort">
+              <label for="articleSort" data-i18n="article_sort_label"></label>
+              <select id="articleSort">
+                <option value="newest" data-i18n="article_sort_newest"></option>
+                <option value="oldest" data-i18n="article_sort_oldest"></option>
+              </select>
+            </div>
           </div>
         </div>
-        <div class="chip-row" id="articleCategoryFilter" aria-label="Article categories"></div>
         <h2 id="articlesAllHeading" class="articles-section-title articles-section-title--sm" data-i18n="articles_all_heading"></h2>
         <div id="articleList"></div>
       </section>
@@ -63,8 +73,9 @@
       const row = document.getElementById("articleCategoryFilter");
       row.innerHTML = (TW.articleCategories || []).map((c) => {
         const label = TW.t(c.labelKey);
-        const active = c.id === activeCategory ? " active" : "";
-        return `<button type="button" class="chip${active}" data-cat="${escapeHtml(c.id)}">${escapeHtml(label)}</button>`;
+        const isActive = c.id === activeCategory;
+        const active = isActive ? " active" : "";
+        return `<button type="button" class="chip${active}" data-cat="${escapeHtml(c.id)}" aria-pressed="${isActive ? "true" : "false"}">${escapeHtml(label)}</button>`;
       }).join("");
       row.querySelectorAll("[data-cat]").forEach((btn) => {
         btn.addEventListener("click", () => {

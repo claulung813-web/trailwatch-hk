@@ -2141,10 +2141,73 @@ img.profile-avatar[hidden] {
 }
 .articles-toolbar {
   display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.85rem;
+  margin-bottom: 1.15rem;
+  padding: 0.9rem 1rem;
+  background: var(--mint);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+.articles-cat-filter {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  min-width: 0;
+}
+.articles-cat-label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--green-900);
+}
+.articles-cat-chips.chip-row,
+.articles-main .chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  overflow-x: visible;
+  overflow-y: visible;
+  margin-bottom: 0;
+  padding-bottom: 0;
+  min-height: 2.4rem;
+}
+.articles-main .chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.25rem;
+  padding: 0.5rem 1rem;
+  border: 1.5px solid var(--border);
+  border-radius: 999px;
+  background: var(--white);
+  color: var(--text);
+  font-size: 0.85rem;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+  box-shadow: 0 1px 2px rgba(11, 66, 26, 0.05);
+}
+.articles-main .chip:hover {
+  border-color: var(--green-600);
+  color: var(--green-900);
+  background: var(--green-50);
+}
+.articles-main .chip.active {
+  border-color: var(--green-600);
+  border-bottom: 1.5px solid var(--green-600);
+  background: var(--green-100);
+  color: var(--green-900);
+  box-shadow: none;
+}
+.articles-toolbar-controls {
+  display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 0.75rem 1rem;
-  margin-bottom: 0.85rem;
 }
 .articles-search {
   flex: 1 1 220px;
@@ -2175,9 +2238,6 @@ img.profile-avatar[hidden] {
 .articles-sort select:focus {
   border-color: var(--green-600);
 }
-.articles-main .chip-row {
-  margin-bottom: 1rem;
-}
 @media (max-width: 640px) {
   .article-card--rich {
     grid-template-columns: 1fr;
@@ -2187,6 +2247,16 @@ img.profile-avatar[hidden] {
   }
   .articles-featured-grid {
     grid-template-columns: 1fr;
+  }
+  .articles-toolbar {
+    padding: 0.85rem 0.75rem;
+  }
+  .articles-cat-chips.chip-row {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    padding-bottom: 0.15rem;
   }
 }
 .gallery-grid {
