@@ -13,33 +13,33 @@
   <div id="app-header"></div>
   <main class="page">
     <div class="container" style="max-width:520px">
-      <h1 class="page-title" data-i18n="register_title"></h1>
-      <p class="page-sub" data-i18n="register_sub"></p>
+      <h1 class="page-title" id="regTitle">Create an account</h1>
+      <p class="page-sub" id="regSub">Join TrailWatch to plan trails, join challenges, and help protect country parks.</p>
 
       <form class="card" id="regForm" style="padding:1.35rem">
         <div class="form-group">
-          <label data-i18n="profile_name"></label>
-          <input class="form-input" id="regName" required autocomplete="name" />
+          <label for="regName" id="regNameLabel">Name</label>
+          <input class="form-input" id="regName" name="name" type="text" required autocomplete="name" placeholder="Your name" />
         </div>
         <div class="form-group">
-          <label data-i18n="profile_email"></label>
-          <input class="form-input" id="regEmail" type="email" required autocomplete="email" />
+          <label for="regEmail" id="regEmailLabel">Email</label>
+          <input class="form-input" id="regEmail" name="email" type="email" required autocomplete="email" placeholder="you@email.com" />
         </div>
         <div class="form-group">
-          <label data-i18n="register_phone"></label>
-          <input class="form-input" id="regPhone" type="tel" autocomplete="tel" />
+          <label for="regPhone" id="regPhoneLabel">Phone (optional)</label>
+          <input class="form-input" id="regPhone" name="phone" type="tel" autocomplete="tel" placeholder="Phone" />
         </div>
         <div class="form-group">
           <label style="display:flex;gap:0.5rem;align-items:flex-start;font-weight:500">
             <input type="checkbox" id="regNews" style="margin-top:0.2rem" />
-            <span data-i18n="profile_newsletter"></span>
+            <span id="regNewsLabel">Newsletter — culture, history and ecology of Hong Kong’s trails and Country Parks!</span>
           </label>
         </div>
-        <button type="submit" class="btn btn-primary btn-block btn-lg" data-i18n="register_cta"></button>
-        <p style="font-size:0.75rem;color:var(--text-muted);margin-top:0.75rem;text-align:center" data-i18n="register_note"></p>
+        <button type="submit" class="btn btn-primary btn-block btn-lg" id="regCta">Register</button>
+        <p style="font-size:0.75rem;color:var(--text-muted);margin-top:0.75rem;text-align:center" id="regNote">Demo registration — staff review new members in the CMS.</p>
         <p class="auth-switch">
-          <span data-i18n="register_have_account"></span>
-          <a href="login.html" data-i18n="nav_login"></a>
+          <span id="regHaveAccount">Already have an account?</span>
+          <a href="login.html" id="regLoginLink">Log in</a>
         </p>
       </form>
     </div>
@@ -53,6 +53,51 @@
     document.documentElement.lang = TW.getLang() === "zh" ? "zh-Hant" : "en";
     initShell("register");
 
+    (function applyRegisterCopy() {
+      const zh = {
+        regTitle: "註冊帳戶",
+        regSub: "加入 TrailWatch，規劃路線、參與挑戰，一起守護郊野公園。",
+        regNameLabel: "姓名",
+        regEmailLabel: "電郵",
+        regPhoneLabel: "電話（可選）",
+        regNewsLabel: "電子報——香港徑道與郊野公園的文化、歷史與生態！",
+        regCta: "註冊",
+        regNote: "示範註冊——職員會在 CMS 審核新會員。",
+        regHaveAccount: "已有帳戶？",
+        regLoginLink: "登入",
+        regNamePh: "你的姓名",
+        regEmailPh: "you@email.com",
+        regPhonePh: "電話",
+      };
+      const en = {
+        regTitle: "Create an account",
+        regSub: "Join TrailWatch to plan trails, join challenges, and help protect country parks.",
+        regNameLabel: "Name",
+        regEmailLabel: "Email",
+        regPhoneLabel: "Phone (optional)",
+        regNewsLabel: "Newsletter — culture, history and ecology of Hong Kong’s trails and Country Parks!",
+        regCta: "Register",
+        regNote: "Demo registration — staff review new members in the CMS.",
+        regHaveAccount: "Already have an account?",
+        regLoginLink: "Log in",
+        regNamePh: "Your name",
+        regEmailPh: "you@email.com",
+        regPhonePh: "Phone",
+      };
+      const copy = TW.getLang() === "zh" ? zh : en;
+      Object.keys(copy).forEach((id) => {
+        if (id.endsWith("Ph")) return;
+        const el = document.getElementById(id);
+        if (el) el.textContent = copy[id];
+      });
+      const name = document.getElementById("regName");
+      const email = document.getElementById("regEmail");
+      const phone = document.getElementById("regPhone");
+      if (name) name.placeholder = copy.regNamePh;
+      if (email) email.placeholder = copy.regEmailPh;
+      if (phone) phone.placeholder = copy.regPhonePh;
+    })();
+
     document.getElementById("regForm").addEventListener("submit", (e) => {
       e.preventDefault();
       const name = document.getElementById("regName").value;
@@ -64,9 +109,8 @@
         newsletter: document.getElementById("regNews").checked,
       });
       TW.loginMember({ name: name, email: email });
-      showToast(TW.t("register_thanks"));
+      showToast(TW.getLang() === "zh" ? "謝謝！你的註冊已提交，待職員審核。" : "Thanks! Your registration was submitted for staff review.");
       e.target.reset();
-      // Auth change → navigate so header swaps Log in → Me
       setTimeout(() => {
         location.href = "profile.html#overview";
       }, 900);

@@ -475,11 +475,16 @@ function initShell(active) {
 
   document.querySelectorAll("[data-i18n]").forEach((el) => {
     const key = el.getAttribute("data-i18n");
-    if (key) el.textContent = TW.t(key);
+    if (!key) return;
+    const translated = TW.t(key);
+    // Never expose raw keys (e.g. login_email) — keep HTML fallback text instead
+    if (translated && translated !== key) el.textContent = translated;
   });
   document.querySelectorAll("[data-i18n-placeholder]").forEach((el) => {
     const key = el.getAttribute("data-i18n-placeholder");
-    if (key) el.setAttribute("placeholder", TW.t(key));
+    if (!key) return;
+    const translated = TW.t(key);
+    if (translated && translated !== key) el.setAttribute("placeholder", translated);
   });
 
   if (typeof TW.applyCmsCopy === "function") TW.applyCmsCopy();
