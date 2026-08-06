@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CMS — User management</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/cms.css" />
+</head>
+<body class="cms-body">
+  <div id="cmsShell">
+    <h1>User management</h1>
+    <p class="sub">Search app users, filter by premium status or subscription period, edit accounts, merge duplicates, and export GPS.</p>
+
+    <div class="cms-stats" id="stats" style="margin-bottom:1rem"></div>
+
+    <div class="cms-card">
+      <div class="cms-filter-grid">
+        <div style="grid-column: span 2">
+          <label for="q">Search</label>
+          <input id="q" type="search" placeholder="Name, email, user ID, Facebook ID…" />
+        </div>
+        <div>
+          <label for="filterStatus">Status</label>
+          <select id="filterStatus">
+            <option value="all">All</option>
+            <option value="premium">Paid (premium now)</option>
+            <option value="free">Free</option>
+            <option value="editor">Trail feed editors</option>
+          </select>
+        </div>
+        <div>
+          <label for="premFrom">Premium from</label>
+          <input id="premFrom" type="date" />
+        </div>
+        <div>
+          <label for="premTo">Premium to</label>
+          <input id="premTo" type="date" />
+        </div>
+        <div>
+          <label>&nbsp;</label>
+          <button type="button" class="cms-btn cms-btn-secondary" id="btnClearFilters" style="width:100%">Clear filters</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="cms-toolbar">
+      <span class="cms-muted" id="selCount">0 selected</span>
+      <button type="button" class="cms-btn cms-btn-secondary cms-btn-sm" id="btnExportJson">Export GPS (JSON)</button>
+      <button type="button" class="cms-btn cms-btn-secondary cms-btn-sm" id="btnExportCsv">Export GPS (CSV)</button>
+      <button type="button" class="cms-btn cms-btn-secondary cms-btn-sm" id="btnSelectAll">Select all visible</button>
+      <button type="button" class="cms-btn cms-btn-secondary cms-btn-sm" id="btnSelectNone">Clear selection</button>
+    </div>
+
+    <div class="cms-row">
+      <div class="cms-card" style="flex:1.4;overflow:auto">
+        <table class="cms-table">
+          <thead>
+            <tr>
+              <th class="cms-check"><input type="checkbox" id="checkAll" title="Select all visible" /></th>
+              <th>User</th>
+              <th>Status</th>
+              <th>Premium period</th>
+              <th>Login</th>
+              <th>Roles</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="list"></tbody>
+        </table>
+      </div>
+      <div class="cms-card" id="detailPanel" style="display:none;flex:1;min-width:280px">
+        <h3 style="margin-top:0" id="dName">—</h3>
+        <p class="cms-muted" id="dMeta"></p>
+        <form class="cms-form" id="userForm">
+          <input type="hidden" id="userId" />
+          <label>Premium status</label>
+          <select id="premium">
+            <option value="true">Premium (paid)</option>
+            <option value="false">Free</option>
+          </select>
+          <label>Premium start</label>
+          <input type="date" id="premiumStart" />
+          <label>Premium end</label>
+          <input type="date" id="premiumEnd" />
+          <label>Set duration from today</label>
+          <div class="cms-toolbar" style="margin:0.35rem 0 0">
+            <button type="button" class="cms-btn cms-btn-secondary cms-btn-sm" data-days="30">+30 days</button>
+            <button type="button" class="cms-btn cms-btn-secondary cms-btn-sm" data-days="90">+90 days</button>
+            <button type="button" class="cms-btn cms-btn-secondary cms-btn-sm" data-days="365">+1 year</button>
+          </div>
+          <label>Email</label>
+          <input type="email" id="email" />
+          <label>Login method</label>
+          <select id="loginMethod"></select>
+          <label>Facebook ID</label>
+          <input type="text" id="facebookId" placeholder="Optional" />
+          <label class="cms-checks" style="margin-top:0.75rem">
+            <input type="checkbox" id="trailFeedEditor" /> Trail feed editor
+          </label>
+          <label class="cms-checks">
+            <input type="checkbox" id="hasGps" /> GPS exportable
+          </label>
+          <label>Staff note</label>
+          <textarea id="note" placeholder="Internal notes…"></textarea>
+          <div class="cms-toolbar" style="margin-top:0.75rem">
+            <button type="submit" class="cms-btn cms-btn-primary">Save</button>
+            <button type="button" class="cms-btn cms-btn-warn" id="btnMerge">Merge into…</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="cms-modal-backdrop" id="mergeModal" role="dialog" aria-modal="true">
+    <div class="cms-modal">
+      <h3>Merge users</h3>
+      <p class="cms-modal-sub" id="mergeSub">Choose the account to keep. The source account will be removed.</p>
+      <div class="cms-form">
+        <label>Keep (target) user</label>
+        <select id="mergeTarget"></select>
+      </div>
+      <div class="cms-modal-actions">
+        <button type="button" class="cms-btn cms-btn-danger" id="mergeConfirm">Merge &amp; delete source</button>
+        <button type="button" class="cms-btn cms-btn-secondary" id="mergeCancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../js/data.js"></script>
+  <script src="../js/cms-store.js"></script>
+  <script src="js/cms-ui.js"></script>
+  <script>
+    cmsInitShell("users");
+
+    document.getElementById("loginMethod").innerHTML = CMS.LOGIN_METHODS.map(
+      (m) => `<option value="${m.id}">${m.label}</option>`
+    ).join("");
+
+    const selected = new Set();
+    let mergeSourceId = null;
+
+    function esc(s) {
+      return String(s == null ? "" : s)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function addDays(isoDate, days) {
+      const d = isoDate ? new Date(isoDate + "T12:00:00") : new Date();
+      d.setDate(d.getDate() + days);
+      return d.toISOString().slice(0, 10);
+    }
+
+    function todayISO() {
+      return new Date().toISOString().slice(0, 10);
+    }
+
+    function filteredUsers() {
+      const q = (document.getElementById("q").value || "").trim().toLowerCase();
+      const status = document.getElementById("filterStatus").value;
+      const from = document.getElementById("premFrom").value;
+      const to = document.getElementById("premTo").value;
+      let list = (CMS.getStore().users || []).slice();
+
+      if (q) {
+        list = list.filter((u) => {
+          const hay = [u.id, u.name, u.email, u.facebookId].join(" ").toLowerCase();
+          return hay.indexOf(q) >= 0;
+        });
+      }
+      if (status === "premium") list = list.filter((u) => CMS.isUserPremiumNow(u));
+      else if (status === "free") list = list.filter((u) => !CMS.isUserPremiumNow(u));
+      else if (status === "editor") list = list.filter((u) => u.trailFeedEditor);
+
+      if (from || to) {
+        list = list.filter((u) => CMS.userPremiumOverlaps(u, from || null, to || null));
+      }
+      return list;
+    }
+
+    function renderStats() {
+      const all = CMS.getStore().users || [];
+      const premium = all.filter((u) => CMS.isUserPremiumNow(u)).length;
+      const editors = all.filter((u) => u.trailFeedEditor).length;
+      document.getElementById("stats").innerHTML = `
+        <div class="cms-stat"><div class="v">${all.length}</div><div class="l">App users</div></div>
+        <div class="cms-stat"><div class="v">${premium}</div><div class="l">Premium now</div></div>
+        <div class="cms-stat"><div class="v">${all.length - premium}</div><div class="l">Free now</div></div>
+        <div class="cms-stat"><div class="v">${editors}</div><div class="l">Trail feed editors</div></div>
+      `;
+    }
+
+    function updateSelCount() {
+      document.getElementById("selCount").textContent = selected.size + " selected";
+    }
+
+    function renderList() {
+      const list = filteredUsers();
+      document.getElementById("list").innerHTML =
+        list
+          .map((u) => {
+            const nowPrem = CMS.isUserPremiumNow(u);
+            const period =
+              u.premiumStart || u.premiumEnd
+                ? (u.premiumStart || "—") + " → " + (u.premiumEnd || "—")
+                : "—";
+            return `
+        <tr>
+          <td class="cms-check">
+            <input type="checkbox" data-sel="${esc(u.id)}" ${selected.has(u.id) ? "checked" : ""} />
+          </td>
+          <td>
+            <strong>${esc(u.name)}</strong><br/>
+            <span class="cms-muted">${esc(u.email)}</span><br/>
+            <span class="cms-muted">${esc(u.id)}${u.facebookId ? " · FB " + esc(u.facebookId) : ""}</span>
+          </td>
+          <td>
+            <span class="cms-badge ${nowPrem ? "pub" : "draft"}">${nowPrem ? "Premium" : "Free"}</span>
+            ${u.premium && !nowPrem ? '<br/><span class="cms-muted">flag on, not current</span>' : ""}
+          </td>
+          <td><span class="cms-muted">${esc(period)}</span></td>
+          <td>${esc(CMS.loginMethodLabel(u.loginMethod))}</td>
+          <td>
+            ${u.trailFeedEditor ? '<span class="cms-badge gov">Feed editor</span>' : '<span class="cms-muted">—</span>'}
+            ${u.hasGps ? '<br/><span class="cms-muted">GPS</span>' : ""}
+          </td>
+          <td><button type="button" class="cms-btn cms-btn-secondary cms-btn-sm" data-open="${esc(u.id)}">Open</button></td>
+        </tr>`;
+          })
+          .join("") || '<tr><td colspan="7">No users match these filters.</td></tr>';
+
+      document.querySelectorAll("[data-open]").forEach((b) =>
+        b.addEventListener("click", () => openDetail(b.dataset.open))
+      );
+      document.querySelectorAll("[data-sel]").forEach((c) =>
+        c.addEventListener("change", () => {
+          if (c.checked) selected.add(c.dataset.sel);
+          else selected.delete(c.dataset.sel);
+          updateSelCount();
+        })
+      );
+      updateSelCount();
+    }
+
+    function openDetail(id) {
+      const u = (CMS.getStore().users || []).find((x) => x.id === id);
+      if (!u) return;
+      document.getElementById("detailPanel").style.display = "block";
+      document.getElementById("userId").value = u.id;
+      document.getElementById("dName").textContent = u.name;
+      document.getElementById("dMeta").textContent =
+        u.id +
+        (u.facebookId ? " · FB " + u.facebookId : "") +
+        " · Joined " +
+        (u.createdAt ? new Date(u.createdAt).toLocaleString() : "—");
+      document.getElementById("premium").value = u.premium ? "true" : "false";
+      document.getElementById("premiumStart").value = u.premiumStart || "";
+      document.getElementById("premiumEnd").value = u.premiumEnd || "";
+      document.getElementById("email").value = u.email || "";
+      document.getElementById("loginMethod").value = u.loginMethod || "email";
+      document.getElementById("facebookId").value = u.facebookId || "";
+      document.getElementById("trailFeedEditor").checked = !!u.trailFeedEditor;
+      document.getElementById("hasGps").checked = !!u.hasGps;
+      document.getElementById("note").value = u.note || "";
+    }
+
+    function saveUser() {
+      const id = document.getElementById("userId").value;
+      const store = CMS.getStore();
+      const idx = (store.users || []).findIndex((x) => x.id === id);
+      if (idx < 0) return;
+      const premium = document.getElementById("premium").value === "true";
+      store.users[idx] = Object.assign({}, store.users[idx], {
+        premium: premium,
+        premiumStart: document.getElementById("premiumStart").value || "",
+        premiumEnd: document.getElementById("premiumEnd").value || "",
+        email: document.getElementById("email").value.trim().toLowerCase(),
+        loginMethod: document.getElementById("loginMethod").value,
+        facebookId: document.getElementById("facebookId").value.trim(),
+        trailFeedEditor: document.getElementById("trailFeedEditor").checked,
+        hasGps: document.getElementById("hasGps").checked,
+        note: document.getElementById("note").value.trim(),
+      });
+      CMS.setStore(store);
+      renderStats();
+      renderList();
+      openDetail(id);
+      cmsToast("User updated");
+    }
+
+    function downloadExport(format) {
+      const ids = Array.from(selected);
+      if (!ids.length) {
+        cmsToast("Select one or more users first");
+        return;
+      }
+      const file = CMS.exportUsersGps(ids, format);
+      const blob = new Blob([file.body], { type: file.mime });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = file.filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1500);
+      cmsToast("Exported " + ids.length + " user(s)");
+    }
+
+    function openMergeModal() {
+      const id = document.getElementById("userId").value;
+      if (!id) return;
+      mergeSourceId = id;
+      const others = (CMS.getStore().users || []).filter((u) => u.id !== id);
+      if (!others.length) {
+        cmsToast("No other users to merge into");
+        return;
+      }
+      document.getElementById("mergeSub").textContent =
+        "Source " + id + " will be merged into the target and then removed.";
+      document.getElementById("mergeTarget").innerHTML = others
+        .map(
+          (u) =>
+            `<option value="${esc(u.id)}">${esc(u.name)} (${esc(u.id)} · ${esc(u.email)})</option>`
+        )
+        .join("");
+      document.getElementById("mergeModal").classList.add("open");
+    }
+
+    document.getElementById("userForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      saveUser();
+    });
+
+    document.querySelectorAll("[data-days]").forEach((b) =>
+      b.addEventListener("click", () => {
+        const days = +b.dataset.days;
+        const start = todayISO();
+        document.getElementById("premium").value = "true";
+        document.getElementById("premiumStart").value = start;
+        document.getElementById("premiumEnd").value = addDays(start, days);
+      })
+    );
+
+    document.getElementById("btnMerge").addEventListener("click", openMergeModal);
+    document.getElementById("mergeCancel").addEventListener("click", () => {
+      document.getElementById("mergeModal").classList.remove("open");
+    });
+    document.getElementById("mergeModal").addEventListener("click", (e) => {
+      if (e.target.id === "mergeModal") document.getElementById("mergeModal").classList.remove("open");
+    });
+    document.getElementById("mergeConfirm").addEventListener("click", () => {
+      const targetId = document.getElementById("mergeTarget").value;
+      const merged = CMS.mergeUsers(mergeSourceId, targetId);
+      document.getElementById("mergeModal").classList.remove("open");
+      if (!merged) {
+        cmsToast("Merge failed");
+        return;
+      }
+      selected.delete(mergeSourceId);
+      document.getElementById("detailPanel").style.display = "none";
+      renderStats();
+      renderList();
+      openDetail(targetId);
+      cmsToast("Users merged");
+    });
+
+    document.getElementById("btnExportJson").addEventListener("click", () => downloadExport("json"));
+    document.getElementById("btnExportCsv").addEventListener("click", () => downloadExport("csv"));
+
+    document.getElementById("btnSelectAll").addEventListener("click", () => {
+      filteredUsers().forEach((u) => selected.add(u.id));
+      renderList();
+    });
+    document.getElementById("btnSelectNone").addEventListener("click", () => {
+      selected.clear();
+      renderList();
+    });
+    document.getElementById("checkAll").addEventListener("change", (e) => {
+      const ids = filteredUsers().map((u) => u.id);
+      if (e.target.checked) ids.forEach((id) => selected.add(id));
+      else ids.forEach((id) => selected.delete(id));
+      renderList();
+    });
+
+    document.getElementById("btnClearFilters").addEventListener("click", () => {
+      document.getElementById("q").value = "";
+      document.getElementById("filterStatus").value = "all";
+      document.getElementById("premFrom").value = "";
+      document.getElementById("premTo").value = "";
+      renderList();
+    });
+
+    ["q", "filterStatus", "premFrom", "premTo"].forEach((id) => {
+      document.getElementById(id).addEventListener("input", renderList);
+      document.getElementById(id).addEventListener("change", renderList);
+    });
+
+    renderStats();
+    renderList();
+  </script>
+</body>
+</html>

@@ -199,6 +199,58 @@ body.cms-body {
 }
 .cms-toast.show { transform: translateY(0); }
 
+.cms-modal-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 30, 20, 0.45);
+  z-index: 80;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+.cms-modal-backdrop.open { display: flex; }
+.cms-modal {
+  background: white;
+  border-radius: 14px;
+  width: min(480px, 100%);
+  max-height: 90vh;
+  overflow: auto;
+  padding: 1.25rem 1.35rem 1.35rem;
+  box-shadow: 0 16px 40px rgba(0,0,0,.2);
+}
+.cms-modal h3 { margin: 0 0 0.35rem; color: var(--cms-sidebar); font-size: 1.1rem; }
+.cms-modal .cms-modal-sub { margin: 0 0 1rem; font-size: 0.85rem; color: #6b7280; }
+.cms-modal-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1rem; }
+.cms-filter-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 0.5rem 0.75rem;
+  width: 100%;
+  align-items: end;
+}
+.cms-filter-grid label {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-bottom: 0.25rem;
+}
+.cms-filter-grid input,
+.cms-filter-grid select {
+  width: 100%;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--cms-border);
+  border-radius: 8px;
+  font: inherit;
+  font-size: 0.875rem;
+}
+.cms-table .cms-check { width: 1.5rem; }
+.cms-muted { font-size: 0.75rem; color: #6b7280; }
+.cms-action-row { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+
 @media (max-width: 800px) {
   .cms-shell { flex-direction: column; }
   .cms-sidebar { width: 100%; }

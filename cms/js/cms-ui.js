@@ -21,6 +21,7 @@ function cmsSidebar(active) {
     <a href="trails.html" class="${active === "trails" ? "active" : ""}">Recommended Trails</a>
     <a href="incidents.html" class="${active === "incidents" ? "active" : ""}">Incident Reports</a>
     <a href="members.html" class="${active === "members" ? "active" : ""}">Members</a>
+    <a href="users.html" class="${active === "users" ? "active" : ""}">User management</a>
     <a href="donations.html" class="${active === "donations" ? "active" : ""}">Donations</a>
     <a href="feedback.html" class="${active === "feedback" ? "active" : ""}">Feedback</a>
     <a href="challenges.html" class="${active === "challenges" ? "active" : ""}">Challenges</a>

@@ -1269,6 +1269,24 @@ img.profile-avatar[hidden] {
   resize: vertical;
 }
 
+.auth-switch {
+  margin-top: 1rem;
+  text-align: center;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+.auth-switch a {
+  color: var(--green-700);
+  font-weight: 600;
+  text-decoration: none;
+  margin-left: 0.25rem;
+}
+
+.auth-switch a:hover {
+  text-decoration: underline;
+}
+
 .checkbox-row {
   display: flex;
   align-items: flex-start;
@@ -2830,20 +2848,40 @@ img.profile-avatar[hidden] {
   background: var(--green-700);
 }
 
-/* —— App phone shell —— */
+/* —— App phone shell (iPhone-style demo frame) —— */
 .app-page {
   min-height: 100vh;
-  background: linear-gradient(160deg, #0b421a 0%, #1a3a28 40%, #243528 100%);
+  min-height: 100dvh;
+  background-color: #0b421a;
+  background-image:
+    linear-gradient(165deg, rgba(11, 66, 26, 0.92) 0%, rgba(15, 52, 34, 0.88) 42%, rgba(26, 42, 32, 0.94) 100%),
+    url("../assets/brand/img-hiking.jpg");
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 1.25rem 1rem 2rem;
+  justify-content: center;
+  padding: 1.5rem 1rem 2rem;
+  position: relative;
+}
+.app-page::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(132, 199, 116, 0.18), transparent 55%),
+    radial-gradient(ellipse 60% 40% at 90% 90%, rgba(51, 137, 122, 0.15), transparent 50%);
+  pointer-events: none;
 }
 .app-page-top {
   width: min(420px, 100%);
   color: white;
-  margin-bottom: 1rem;
+  margin-bottom: 1.15rem;
   text-align: center;
+  position: relative;
+  z-index: 1;
 }
 .app-page-top a {
   color: rgba(255,255,255,0.85);
@@ -2852,37 +2890,274 @@ img.profile-avatar[hidden] {
 }
 .phone-frame {
   width: min(390px, 100%);
-  height: min(780px, calc(100vh - 120px));
-  background: #111;
-  border-radius: 36px;
-  padding: 10px;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.45);
+  height: min(844px, calc(100vh - 110px));
+  height: min(844px, calc(100dvh - 110px));
+  background: linear-gradient(160deg, #2a2a2c 0%, #1a1a1c 40%, #0c0c0e 100%);
+  border-radius: 52px;
+  padding: 12px;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.08) inset,
+    0 1px 0 rgba(255, 255, 255, 0.12) inset,
+    0 28px 80px rgba(0, 0, 0, 0.55),
+    0 8px 24px rgba(0, 0, 0, 0.35);
   position: relative;
+  z-index: 1;
+  flex-shrink: 0;
 }
-.phone-notch {
+.phone-frame::after {
+  content: "";
   position: absolute;
-  top: 14px;
+  bottom: 8px;
   left: 50%;
   transform: translateX(-50%);
-  width: 110px;
-  height: 24px;
-  background: #111;
-  border-radius: 0 0 14px 14px;
-  z-index: 30;
+  width: 120px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.22);
+  border-radius: 999px;
+  z-index: 35;
+  pointer-events: none;
+}
+/* Side buttons */
+.phone-btn {
+  position: absolute;
+  background: linear-gradient(90deg, #3a3a3c, #1f1f21);
+  border-radius: 2px;
+  z-index: 0;
+  pointer-events: none;
+  box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.4);
+}
+.phone-btn-silent {
+  left: -3px;
+  top: 108px;
+  width: 3px;
+  height: 28px;
+  border-radius: 2px 0 0 2px;
+}
+.phone-btn-vol-up {
+  left: -3px;
+  top: 158px;
+  width: 3px;
+  height: 52px;
+  border-radius: 2px 0 0 2px;
+}
+.phone-btn-vol-down {
+  left: -3px;
+  top: 220px;
+  width: 3px;
+  height: 52px;
+  border-radius: 2px 0 0 2px;
+}
+.phone-btn-power {
+  right: -3px;
+  top: 190px;
+  width: 3px;
+  height: 72px;
+  border-radius: 0 2px 2px 0;
+  background: linear-gradient(90deg, #1f1f21, #3a3a3c);
+}
+/* Dynamic Island (legacy .phone-notch kept for existing markup) */
+.phone-notch,
+.phone-island {
+  position: absolute;
+  top: 22px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 118px;
+  height: 34px;
+  background: #0a0a0a;
+  border-radius: 999px;
+  z-index: 32;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+}
+.phone-notch::before,
+.phone-island::before {
+  content: "";
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #1a2a3a 0%, #0a1018 70%);
+  box-shadow: 0 0 0 1.5px #111;
 }
 .phone-screen {
   width: 100%;
   height: 100%;
   background: white;
-  border-radius: 28px;
+  border-radius: 42px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
   position: relative;
+  isolation: isolate;
 }
 .phone-screen .map-shell {
   flex: 1;
   min-height: 0;
+}
+/* Status strip inside screen (time · brand · sys) */
+.phone-status {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 52px;
+  z-index: 28;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: 0 22px 10px;
+  pointer-events: none;
+  color: var(--green-900);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+}
+.phone-status-lead {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.phone-status-time {
+  min-width: 2.2rem;
+}
+.phone-status-sys {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: auto;
+}
+.phone-status-logo {
+  width: 15px;
+  height: 15px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+.phone-sig,
+.phone-wifi,
+.phone-batt {
+  display: block;
+  background: currentColor;
+  opacity: 0.9;
+}
+.phone-sig {
+  width: 15px;
+  height: 10px;
+  clip-path: polygon(0 100%, 20% 100%, 20% 70%, 40% 70%, 40% 45%, 60% 45%, 60% 25%, 80% 25%, 80% 0, 100% 0, 100% 100%);
+}
+.phone-wifi {
+  width: 14px;
+  height: 10px;
+  background: transparent;
+  border: 1.5px solid currentColor;
+  border-radius: 50%;
+  border-bottom: none;
+  border-left-color: transparent;
+  border-right-color: transparent;
+  transform: translateY(2px);
+  opacity: 0.85;
+}
+.phone-batt {
+  width: 22px;
+  height: 10px;
+  border-radius: 2.5px;
+  background: transparent;
+  border: 1.5px solid currentColor;
+  position: relative;
+  opacity: 0.9;
+}
+.phone-batt::after {
+  content: "";
+  position: absolute;
+  inset: 1.5px;
+  width: 70%;
+  background: currentColor;
+  border-radius: 1px;
+}
+.phone-batt::before {
+  content: "";
+  position: absolute;
+  right: -3.5px;
+  top: 2px;
+  width: 2px;
+  height: 4px;
+  background: currentColor;
+  border-radius: 0 1px 1px 0;
+  opacity: 0.7;
+}
+.phone-screen.track-focus .phone-status {
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+}
+.phone-screen.track-focus .phone-status-logo {
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.35));
+}
+.phone-screen.track-focus .phone-status-sys {
+  /* Keep map topbar clear on the right (GPS pill) */
+  visibility: hidden;
+}
+/* In-app brand mark (headers) */
+.app-brand-mark {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  flex-shrink: 0;
+  display: block;
+}
+.app-brand-mark.lg {
+  width: 32px;
+  height: 32px;
+}
+.app-head-brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+}
+.app-head-brand h1 {
+  flex: 0 1 auto;
+}
+.app-head .app-brand-mark {
+  border-radius: 7px;
+}
+@media (max-width: 520px) {
+  .app-page {
+    padding: 0;
+    justify-content: stretch;
+    background-attachment: scroll;
+  }
+  .app-page-top {
+    width: 100%;
+    margin: 0;
+    padding: 0.55rem 0.75rem 0.35rem;
+    background: rgba(11, 66, 26, 0.94);
+    backdrop-filter: blur(8px);
+  }
+  .phone-frame {
+    width: 100%;
+    height: calc(100vh - 52px);
+    height: calc(100dvh - 52px);
+    border-radius: 0;
+    padding: 0;
+    box-shadow: none;
+    background: #000;
+  }
+  .phone-frame::after,
+  .phone-btn {
+    display: none;
+  }
+  .phone-notch,
+  .phone-island {
+    top: max(10px, env(safe-area-inset-top, 0px));
+  }
+  .phone-screen {
+    border-radius: 0;
+  }
 }
 .app-bottom-nav {
   display: grid;

@@ -74,6 +74,73 @@ function twPortfolioIcon(name) {
   return `<span class="icon-btn-fig" aria-hidden="true">${twIcon(name)}</span>`;
 }
 
+/** Resolve brand asset path from /app/* or site root */
+function twAppBrandSrc(file) {
+  const name = file || "icon.svg";
+  const path = (location.pathname || "").replace(/\\/g, "/");
+  const inApp = /\/app(?:\/|$)/.test(path);
+  return (inApp ? "../" : "") + "assets/brand/" + name;
+}
+
+/** TrailWatch logo mark (icon.svg by default; use header-logo.webp for wordmark) */
+function twAppLogoHtml(opts) {
+  const o = opts || {};
+  const cls = o.className || "app-brand-mark";
+  const file = o.file || "icon.svg";
+  const alt = o.alt != null ? o.alt : "TrailWatch";
+  return `<img class="${cls}" src="${twAppBrandSrc(file)}" alt="${alt}" width="28" height="28" decoding="async" />`;
+}
+
+/**
+ * Enhance every .phone-frame into an iPhone-style shell:
+ * side buttons, Dynamic Island, status strip with brand mark.
+ */
+function twMountPhoneShell() {
+  document.querySelectorAll(".phone-frame").forEach((frame) => {
+    if (frame.dataset.shellReady === "1") return;
+    frame.dataset.shellReady = "1";
+
+    if (!frame.querySelector(".phone-btn")) {
+      frame.insertAdjacentHTML(
+        "afterbegin",
+        `<span class="phone-btn phone-btn-silent" aria-hidden="true"></span>` +
+          `<span class="phone-btn phone-btn-vol-up" aria-hidden="true"></span>` +
+          `<span class="phone-btn phone-btn-vol-down" aria-hidden="true"></span>` +
+          `<span class="phone-btn phone-btn-power" aria-hidden="true"></span>`
+      );
+    }
+
+    const notch = frame.querySelector(".phone-notch, .phone-island");
+    if (notch) notch.classList.add("phone-island");
+
+    const screen = frame.querySelector(".phone-screen");
+    if (screen && !screen.querySelector(".phone-status")) {
+      screen.insertAdjacentHTML(
+        "afterbegin",
+        `<div class="phone-status" aria-hidden="true">` +
+          `<span class="phone-status-lead">` +
+          `<span class="phone-status-time">9:41</span>` +
+          twAppLogoHtml({ className: "phone-status-logo", alt: "" }) +
+          `</span>` +
+          `<span class="phone-status-sys">` +
+          `<i class="phone-sig"></i><i class="phone-wifi"></i><i class="phone-batt"></i>` +
+          `</span></div>`
+      );
+    }
+  });
+
+  document.querySelectorAll("[data-app-logo]").forEach((el) => {
+    if (el.dataset.logoReady === "1") return;
+    el.dataset.logoReady = "1";
+    const file = el.getAttribute("data-app-logo") || "icon.svg";
+    const lg = el.classList.contains("lg") ? " app-brand-mark lg" : " app-brand-mark";
+    el.innerHTML = twAppLogoHtml({
+      file: file === "" ? "icon.svg" : file,
+      className: (el.getAttribute("data-logo-class") || lg.trim()),
+    });
+  });
+}
+
 /** App bottom nav: Explore · Community · Map · Profile */
 function twAppBottomNav(active) {
   const t = (typeof TW !== "undefined" && TW.t) ? TW.t : (k) => k;
@@ -93,9 +160,14 @@ function twAppBottomNav(active) {
 }
 
 function twMountAppNav(active, selector) {
+  twMountPhoneShell();
   const el = document.querySelector(selector || "[data-app-nav]");
   if (el) el.outerHTML = twAppBottomNav(active);
 }
+
+window.twAppBrandSrc = twAppBrandSrc;
+window.twAppLogoHtml = twAppLogoHtml;
+window.twMountPhoneShell = twMountPhoneShell;
 
 function difficultyPips(level) {
   let html = '<span class="diff-pips" title="L' + level + '">';
@@ -213,7 +285,7 @@ function renderHeader(active) {
             <button type="button" class="nav-account-logout" id="accountLogout">${t("nav_logout")}</button>
           </div>
         </div>`
-    : `<a href="register.html" class="${active === "register" ? "active" : ""}" id="navRegister">${t("nav_register")}</a>`;
+    : `<a href="login.html" class="${active === "login" ? "active" : ""}" id="navLogin">${t("nav_login")}</a>`;
   return `
   <header class="site-header">
     <div class="container">

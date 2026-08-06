@@ -37,12 +37,20 @@ CMS.FEEDBACK_STATUSES = [
   { id: "closed", label: "Closed", labelZh: "已關閉" },
 ];
 
+CMS.LOGIN_METHODS = [
+  { id: "email", label: "Email / password" },
+  { id: "facebook", label: "Facebook" },
+  { id: "apple", label: "Apple" },
+  { id: "google", label: "Google" },
+];
+
 CMS.defaultStore = function () {
   return {
     recommended: [],
     incidents: [],
     challenges: null,
     members: [],
+    users: [],
     donations: [],
     feedback: [],
     content: {
@@ -86,6 +94,242 @@ CMS.seedMembers = function () {
       createdAt: "2026-07-10T08:30:00.000Z",
     },
   ];
+};
+
+/** App user accounts (distinct from membership registration queue) */
+CMS.seedUsers = function () {
+  return [
+    {
+      id: "usr_1001",
+      name: "Alex Chan",
+      email: "alex@example.com",
+      facebookId: "fb_88291001",
+      loginMethod: "facebook",
+      premium: true,
+      premiumStart: "2026-01-01",
+      premiumEnd: "2026-12-31",
+      hasGps: true,
+      trailFeedEditor: false,
+      note: "",
+      createdAt: "2025-11-02T10:00:00.000Z",
+    },
+    {
+      id: "usr_1002",
+      name: "Mei Wong",
+      email: "mei.wong@example.com",
+      facebookId: "",
+      loginMethod: "email",
+      premium: false,
+      premiumStart: "",
+      premiumEnd: "",
+      hasGps: true,
+      trailFeedEditor: false,
+      note: "",
+      createdAt: "2026-02-14T08:30:00.000Z",
+    },
+    {
+      id: "usr_1003",
+      name: "Jamie Lau",
+      email: "jamie@example.com",
+      facebookId: "fb_44100233",
+      loginMethod: "facebook",
+      premium: true,
+      premiumStart: "2026-06-01",
+      premiumEnd: "2026-08-31",
+      hasGps: true,
+      trailFeedEditor: true,
+      note: "Trail feed editor",
+      createdAt: "2025-08-20T12:00:00.000Z",
+    },
+    {
+      id: "usr_1004",
+      name: "Chris Ng",
+      email: "chris@example.com",
+      facebookId: "",
+      loginMethod: "apple",
+      premium: true,
+      premiumStart: "2025-09-01",
+      premiumEnd: "2026-02-28",
+      hasGps: false,
+      trailFeedEditor: false,
+      note: "Premium expired Feb 2026",
+      createdAt: "2025-09-01T09:00:00.000Z",
+    },
+    {
+      id: "usr_1005",
+      name: "Pat Ho",
+      email: "pat.ho@example.com",
+      facebookId: "fb_99001122",
+      loginMethod: "google",
+      premium: false,
+      premiumStart: "",
+      premiumEnd: "",
+      hasGps: true,
+      trailFeedEditor: false,
+      note: "",
+      createdAt: "2026-05-18T16:45:00.000Z",
+    },
+    {
+      id: "usr_1006",
+      name: "Sam Cheung",
+      email: "sam.cheung@example.com",
+      facebookId: "",
+      loginMethod: "email",
+      premium: true,
+      premiumStart: "2026-07-01",
+      premiumEnd: "2027-06-30",
+      hasGps: true,
+      trailFeedEditor: false,
+      note: "Annual plan",
+      createdAt: "2026-07-01T07:20:00.000Z",
+    },
+    {
+      id: "usr_1007",
+      name: "Taylor Ip",
+      email: "taylor.ip@example.com",
+      facebookId: "fb_55667788",
+      loginMethod: "facebook",
+      premium: false,
+      premiumStart: "2025-01-01",
+      premiumEnd: "2025-06-30",
+      hasGps: true,
+      trailFeedEditor: false,
+      note: "Duplicate risk with usr_1008",
+      createdAt: "2024-12-10T11:00:00.000Z",
+    },
+    {
+      id: "usr_1008",
+      name: "Taylor Ip (FB)",
+      email: "taylor.fb@example.com",
+      facebookId: "fb_55667788",
+      loginMethod: "facebook",
+      premium: false,
+      premiumStart: "",
+      premiumEnd: "",
+      hasGps: false,
+      trailFeedEditor: false,
+      note: "Likely duplicate of usr_1007",
+      createdAt: "2025-03-22T14:10:00.000Z",
+    },
+  ];
+};
+
+CMS.isUserPremiumNow = function (u, onDate) {
+  if (!u || !u.premium) return false;
+  const d = onDate ? new Date(onDate) : new Date();
+  const day = d.toISOString().slice(0, 10);
+  const start = u.premiumStart || "";
+  const end = u.premiumEnd || "";
+  if (start && day < start) return false;
+  if (end && day > end) return false;
+  return true;
+};
+
+CMS.userPremiumOverlaps = function (u, from, to) {
+  if (!u) return false;
+  const start = u.premiumStart || "";
+  const end = u.premiumEnd || "9999-12-31";
+  if (!start && !u.premium) return false;
+  if (!start && u.premium) return true;
+  const rangeStart = from || "0000-01-01";
+  const rangeEnd = to || "9999-12-31";
+  return start <= rangeEnd && end >= rangeStart;
+};
+
+CMS.loginMethodLabel = function (id) {
+  const m = (CMS.LOGIN_METHODS || []).find((x) => x.id === id);
+  return m ? m.label : id || "—";
+};
+
+CMS.exportUsersGps = function (userIds, format) {
+  const store = CMS.getStore();
+  const ids = userIds || [];
+  const users = (store.users || []).filter((u) => ids.indexOf(u.id) >= 0);
+  const tracks = users.map((u, i) => {
+    const baseLat = 22.25 + (i % 5) * 0.02;
+    const baseLng = 114.1 + (i % 4) * 0.03;
+    const points = [];
+    for (let p = 0; p < 8; p++) {
+      points.push({
+        lat: +(baseLat + p * 0.004).toFixed(5),
+        lng: +(baseLng + p * 0.003).toFixed(5),
+        t: new Date(Date.now() - (8 - p) * 600000).toISOString(),
+      });
+    }
+    return {
+      userId: u.id,
+      name: u.name,
+      email: u.email,
+      hasGps: !!u.hasGps,
+      summary: {
+        trails: 2 + (i % 3),
+        distanceKm: +(4.2 + i * 1.7).toFixed(1),
+        durationMin: 45 + i * 12,
+      },
+      sampleTrack: u.hasGps ? points : [],
+    };
+  });
+  const payload = {
+    exportedAt: new Date().toISOString(),
+    source: "TrailWatch CMS demo",
+    userCount: tracks.length,
+    tracks: tracks,
+  };
+  if (format === "csv") {
+    const rows = ["userId,name,email,hasGps,trails,distanceKm,durationMin"];
+    tracks.forEach((t) => {
+      rows.push(
+        [
+          t.userId,
+          JSON.stringify(t.name || ""),
+          t.email || "",
+          t.hasGps ? "yes" : "no",
+          t.summary.trails,
+          t.summary.distanceKm,
+          t.summary.durationMin,
+        ].join(",")
+      );
+    });
+    return { filename: "gps-export-" + Date.now() + ".csv", mime: "text/csv", body: rows.join("\n") };
+  }
+  return {
+    filename: "gps-export-" + Date.now() + ".json",
+    mime: "application/json",
+    body: JSON.stringify(payload, null, 2),
+  };
+};
+
+CMS.mergeUsers = function (sourceId, targetId) {
+  const store = CMS.getStore();
+  const users = store.users || [];
+  const srcIdx = users.findIndex((u) => u.id === sourceId);
+  const tgtIdx = users.findIndex((u) => u.id === targetId);
+  if (srcIdx < 0 || tgtIdx < 0 || sourceId === targetId) return null;
+  const src = users[srcIdx];
+  const tgt = users[tgtIdx];
+  const merged = Object.assign({}, tgt, {
+    email: tgt.email || src.email,
+    facebookId: tgt.facebookId || src.facebookId,
+    loginMethod: tgt.loginMethod || src.loginMethod,
+    premium: !!(tgt.premium || src.premium),
+    premiumStart: tgt.premiumStart || src.premiumStart,
+    premiumEnd: tgt.premiumEnd || src.premiumEnd,
+    hasGps: !!(tgt.hasGps || src.hasGps),
+    trailFeedEditor: !!(tgt.trailFeedEditor || src.trailFeedEditor),
+    note: [tgt.note, src.note ? "Merged from " + src.id + ": " + src.note : "Merged from " + src.id]
+      .filter(Boolean)
+      .join(" · "),
+  });
+  if (src.premium && src.premiumEnd && (!tgt.premiumEnd || src.premiumEnd > tgt.premiumEnd)) {
+    merged.premiumEnd = src.premiumEnd;
+  }
+  if (src.premium && src.premiumStart && (!tgt.premiumStart || src.premiumStart < tgt.premiumStart)) {
+    merged.premiumStart = src.premiumStart;
+  }
+  store.users[tgtIdx] = merged;
+  store.users.splice(srcIdx, 1);
+  CMS.setStore(store);
+  return merged;
 };
 
 CMS.seedDonations = function () {
@@ -147,6 +391,7 @@ CMS.getStore = function () {
         s.incidents = TW.reports.map((r, i) => CMS.reportToIncident(r, i));
       }
       s.members = CMS.seedMembers();
+      s.users = CMS.seedUsers();
       s.donations = CMS.seedDonations();
       s.feedback = CMS.seedFeedback();
       CMS.setStore(s);
@@ -176,6 +421,10 @@ CMS.getStore = function () {
       store.members = CMS.seedMembers();
       migrated = true;
     } else store.members = parsed.members || [];
+    if (!("users" in parsed) || !(parsed.users && parsed.users.length)) {
+      store.users = CMS.seedUsers();
+      migrated = true;
+    } else store.users = parsed.users || [];
     if (!("donations" in parsed)) {
       store.donations = CMS.seedDonations();
       migrated = true;

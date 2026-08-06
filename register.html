@@ -37,6 +37,10 @@
         </div>
         <button type="submit" class="btn btn-primary btn-block btn-lg" data-i18n="register_cta"></button>
         <p style="font-size:0.75rem;color:var(--text-muted);margin-top:0.75rem;text-align:center" data-i18n="register_note"></p>
+        <p class="auth-switch">
+          <span data-i18n="register_have_account"></span>
+          <a href="login.html" data-i18n="nav_login"></a>
+        </p>
       </form>
     </div>
   </main>
@@ -62,7 +66,7 @@
       TW.loginMember({ name: name, email: email });
       showToast(TW.t("register_thanks"));
       e.target.reset();
-      // Auth change → navigate so header swaps Register → Me
+      // Auth change → navigate so header swaps Log in → Me
       setTimeout(() => {
         location.href = "profile.html#overview";
       }, 900);

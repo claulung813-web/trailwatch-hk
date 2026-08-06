@@ -18,6 +18,7 @@
         <a class="cms-btn cms-btn-primary" href="trails.html">+ Recommended trail</a>
         <a class="cms-btn cms-btn-secondary" href="incidents.html">Review incidents</a>
         <a class="cms-btn cms-btn-secondary" href="members.html">Members</a>
+        <a class="cms-btn cms-btn-secondary" href="users.html">User management</a>
         <a class="cms-btn cms-btn-secondary" href="donations.html">Donations</a>
         <a class="cms-btn cms-btn-secondary" href="feedback.html">Feedback</a>
         <a class="cms-btn cms-btn-secondary" href="challenges.html">Edit challenges</a>
@@ -37,19 +38,21 @@
     const rec = s.recommended || [];
     const inc = s.incidents || [];
     const mem = s.members || [];
+    const users = s.users || [];
     const don = s.donations || [];
     const fb = s.feedback || [];
     const pending = inc.filter((i) => i.status === "received" || i.status === "under_review").length;
     const memPending = mem.filter((m) => m.status === "pending").length;
+    const premiumNow = users.filter((u) => CMS.isUserPremiumNow(u)).length;
     const fbNew = fb.filter((f) => f.status === "new").length;
     const donTotal = don.reduce((n, d) => n + (+d.amount || 0), 0);
     document.getElementById("stats").innerHTML = `
       <div class="cms-stat"><div class="v">${rec.filter((r) => r.published).length}</div><div class="l">Published recommendations</div></div>
       <div class="cms-stat"><div class="v">${pending}</div><div class="l">Incidents awaiting action</div></div>
       <div class="cms-stat"><div class="v">${memPending}</div><div class="l">Member registrations pending</div></div>
+      <div class="cms-stat"><div class="v">${users.length}</div><div class="l">App users (${premiumNow} premium)</div></div>
       <div class="cms-stat"><div class="v">${fbNew}</div><div class="l">New feedback messages</div></div>
       <div class="cms-stat"><div class="v">HK$${donTotal.toLocaleString()}</div><div class="l">Donations pledged (demo)</div></div>
-      <div class="cms-stat"><div class="v">${don.length}</div><div class="l">Donation records</div></div>
     `;
   </script>
 </body>
