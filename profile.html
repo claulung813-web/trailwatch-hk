@@ -545,13 +545,9 @@
       { key: "records", labelKey: "tile_records", icon: "records", href: "#activity&type=records", jump: "activity&type=records" },
       { key: "hikes", labelKey: "tile_hikes", icon: "hikes", href: "#activity&type=records", jump: "activity&type=records", custom: true },
       { key: "routes", labelKey: "tile_routes", icon: "routes", href: "#activity&type=plans", jump: "activity&type=plans" },
-      { key: "friends", labelKey: "tile_friends", icon: "friends", href: "#friends", jump: "friends" },
       { key: "reports", labelKey: "tile_reports", icon: "reports", href: "#activity&type=reports", jump: "activity&type=reports" },
       { key: "badges", labelKey: "tile_badges", icon: "badges", href: "#badges", jump: "badges" },
-      { key: "events", labelKey: "tile_events", icon: "events", href: "#activity&type=groups", jump: "activity&type=groups" },
-      { key: "trees", labelKey: "tile_trees", icon: "trees", href: "#trees", jump: "trees" },
       { key: "env", labelKey: "tile_env", icon: "env", href: "#badges", jump: "badges", custom: true },
-      { key: "photos", labelKey: "tile_photos", icon: "photos", href: "#activity&type=gallery", jump: "activity&type=gallery" },
       { key: "groupHikes", labelKey: "tile_group", icon: "groupHikes", href: "#activity&type=groups", jump: "activity&type=groups" },
     ];
     document.getElementById("portfolio").innerHTML = tiles
@@ -630,25 +626,45 @@
     /* Groups */
     let groupFilter = "joined";
     function renderGroups() {
-      const list = (TW.meetups || []).filter((m, i) => {
-        if (groupFilter === "past") return i >= Math.ceil((TW.meetups || []).length / 2);
-        if (groupFilter === "joined") return i % 2 === 0;
-        return i < Math.ceil((TW.meetups || []).length / 2);
+      const email = TW.memberEmail();
+      const custom = (TW.getGroupHikes ? TW.getGroupHikes() : []).filter((g) => {
+        if (groupFilter === "past") return !!g.past;
+        if (groupFilter === "upcoming") return !g.past;
+        return (
+          (g.organizerEmail && g.organizerEmail === email) ||
+          (TW.canViewGroupHike && TW.canViewGroupHike(g)) ||
+          g.joined
+        );
       });
+      const demo = (TW.meetups || [])
+        .map((m, i) => ({
+          ...m,
+          id: "meetup_" + i,
+          visibility: "public",
+          past: i >= Math.ceil((TW.meetups || []).length / 2),
+          joined: i % 2 === 0,
+        }))
+        .filter((m) => {
+          if (groupFilter === "past") return m.past;
+          if (groupFilter === "upcoming") return !m.past;
+          return m.joined;
+        });
+      const list = custom.concat(demo);
       document.getElementById("groupGrid").innerHTML = list.length
         ? list.map((m) => {
             const title = TW.tt(m, "title") || m.title;
             const place = TW.tt(m, "place") || m.place || "";
             const date = TW.tt(m, "date") || m.date || "";
             const img = m.image || "https://images.unsplash.com/photo-1551632811-561732d1e5ec?w=600&q=60";
+            const href = "group-hike-detail.html?id=" + encodeURIComponent(m.id);
             return `<article class="trail-card">
               <img src="${img}" alt="" loading="lazy" />
               <div class="trail-card-body">
                 <strong>${title}</strong>
                 <p class="meta">${date} · ${place}</p>
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-top:0.5rem">
-                  <span style="font-size:0.8rem;color:var(--text-muted)">${m.spots != null ? m.spots + " " + TW.t("spots_left") : ""}</span>
-                  <button class="btn btn-primary" style="padding:0.35rem 0.85rem;font-size:0.8rem" onclick="showToast(TW.t('toast_joined'))">${TW.t("join")}</button>
+                  <span style="font-size:0.8rem;color:var(--text-muted)">${m.visibility === "private" ? TW.t("groups_badge_private") : m.spots != null ? m.spots + " " + TW.t("spots_left") : ""}</span>
+                  <a class="btn btn-primary" style="padding:0.35rem 0.85rem;font-size:0.8rem" href="${href}">${TW.t("groups_view")}</a>
                 </div>
               </div>
             </article>`;

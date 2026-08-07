@@ -111,8 +111,9 @@
       TW.loginMember({ name: name, email: email });
       showToast(TW.getLang() === "zh" ? "謝謝！你的註冊已提交，待職員審核。" : "Thanks! Your registration was submitted for staff review.");
       e.target.reset();
+      const dest = TW.authNextUrl("profile.html#overview");
       setTimeout(() => {
-        location.href = "profile.html#overview";
+        location.href = dest;
       }, 900);
     });
   </script>

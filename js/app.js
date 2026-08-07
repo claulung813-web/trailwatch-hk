@@ -224,6 +224,241 @@ TW.logoutMember = function () {
   localStorage.removeItem(TW.MEMBER_AUTH_KEY);
 };
 
+TW.memberEmail = function () {
+  const a = TW.getMemberAuth();
+  return a && a.email ? String(a.email).trim().toLowerCase() : "";
+};
+
+/** Rough demo path around a point (Leaflet [lat,lng]) */
+TW.demoPathAround = function (lat, lng) {
+  const a = Number(lat) || TW.hkCenter[0];
+  const b = Number(lng) || TW.hkCenter[1];
+  return [
+    [a, b],
+    [a + 0.006, b + 0.005],
+    [a + 0.012, b + 0.014],
+    [a + 0.018, b + 0.008],
+    [a + 0.024, b + 0.016],
+  ];
+};
+
+TW.ROUTE_DRAFTS_KEY = "tw_route_drafts";
+TW.ACTIVE_DRAFT_KEY = "tw_route_active";
+
+TW.getRouteDrafts = function () {
+  try {
+    return JSON.parse(localStorage.getItem(TW.ROUTE_DRAFTS_KEY) || "[]");
+  } catch (e) {
+    return [];
+  }
+};
+
+TW.setRouteDrafts = function (list) {
+  localStorage.setItem(TW.ROUTE_DRAFTS_KEY, JSON.stringify(list || []));
+};
+
+TW.getRouteDraft = function (id) {
+  return TW.getRouteDrafts().find((d) => d.id === id) || null;
+};
+
+TW.saveRouteDraft = function (draft) {
+  if (!draft || !draft.id) return null;
+  const list = TW.getRouteDrafts().filter((d) => d.id !== draft.id);
+  draft.updatedAt = Date.now();
+  list.unshift(draft);
+  TW.setRouteDrafts(list.slice(0, 40));
+  return draft;
+};
+
+TW.deleteRouteDraft = function (id) {
+  TW.setRouteDrafts(TW.getRouteDrafts().filter((d) => d.id !== id));
+  if (localStorage.getItem(TW.ACTIVE_DRAFT_KEY) === id) {
+    localStorage.removeItem(TW.ACTIVE_DRAFT_KEY);
+  }
+};
+
+TW.setActiveDraftId = function (id) {
+  if (id) localStorage.setItem(TW.ACTIVE_DRAFT_KEY, id);
+  else localStorage.removeItem(TW.ACTIVE_DRAFT_KEY);
+};
+
+TW.getActiveDraftId = function () {
+  return localStorage.getItem(TW.ACTIVE_DRAFT_KEY) || "";
+};
+
+TW.pathDistanceKm = function (path) {
+  if (!path || path.length < 2) return 0;
+  const toRad = (d) => (d * Math.PI) / 180;
+  let sum = 0;
+  for (let i = 1; i < path.length; i++) {
+    const a = path[i - 1];
+    const b = path[i];
+    const R = 6371;
+    const dLat = toRad(b[0] - a[0]);
+    const dLng = toRad(b[1] - a[1]);
+    const lat1 = toRad(a[0]);
+    const lat2 = toRad(b[0]);
+    const h =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+    sum += 2 * R * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
+  }
+  return Math.round(sum * 100) / 100;
+};
+
+TW.newRouteDraft = function (opts) {
+  opts = opts || {};
+  const id = "draft_" + Date.now();
+  const draft = {
+    id: id,
+    name: opts.name || (TW.getLang() === "zh" ? "未命名路線" : "Untitled route"),
+    nameZh: opts.nameZh || opts.name || "未命名路線",
+    notes: "",
+    path: Array.isArray(opts.path) ? opts.path : [],
+    sourceId: opts.sourceId || null,
+    privacy: "private",
+    updatedAt: Date.now(),
+  };
+  TW.saveRouteDraft(draft);
+  TW.setActiveDraftId(id);
+  return draft;
+};
+
+/** Duplicate a trail/recommended/record into an editable draft */
+TW.duplicateRoute = function (source) {
+  source = source || {};
+  const baseTitle = TW.tt ? TW.tt(source, "title") : source.title || "Route";
+  const titleEn = source.title || baseTitle || "Route";
+  const titleZh = source.titleZh || source.title || baseTitle || "路線";
+  let path = Array.isArray(source.path) ? source.path.map((p) => [Number(p[0]), Number(p[1])]) : [];
+  path = path.filter((p) => !isNaN(p[0]) && !isNaN(p[1]));
+  if (path.length < 2) {
+    path = TW.demoPathAround(source.lat, source.lng);
+  }
+  const draft = TW.newRouteDraft({
+    name: titleEn + " (copy)",
+    nameZh: titleZh + "（副本）",
+    path: path,
+    sourceId: source.id || null,
+  });
+  draft.name = titleEn + " (copy)";
+  draft.nameZh = titleZh + "（副本）";
+  draft.start = path[0];
+  draft.end = path[path.length - 1];
+  draft.vias = path.length > 2 ? path.slice(1, -1) : [];
+  draft.pois = [];
+  TW.saveRouteDraft(draft);
+  return draft;
+};
+
+TW.resolveTrailSource = function (id) {
+  if (!id) return null;
+  const fromTrails = (TW.trails || []).find((t) => t.id === id);
+  if (fromTrails) return fromTrails;
+  if (typeof TW.getRecommendedTrail === "function") {
+    const rec = TW.getRecommendedTrail(id);
+    if (rec) return rec;
+  }
+  const draft = TW.getRouteDraft(id);
+  if (draft) {
+    return {
+      id: draft.id,
+      title: draft.name,
+      titleZh: draft.nameZh || draft.name,
+      path: draft.path,
+      lat: draft.path && draft.path[0] ? draft.path[0][0] : null,
+      lng: draft.path && draft.path[0] ? draft.path[0][1] : null,
+    };
+  }
+  return null;
+};
+
+TW.GROUP_HIKES_KEY = "tw_group_hikes";
+
+TW.getGroupHikes = function () {
+  try {
+    return JSON.parse(localStorage.getItem(TW.GROUP_HIKES_KEY) || "[]");
+  } catch (e) {
+    return [];
+  }
+};
+
+TW.setGroupHikes = function (list) {
+  localStorage.setItem(TW.GROUP_HIKES_KEY, JSON.stringify(list || []));
+};
+
+TW.getGroupHike = function (id) {
+  return TW.getGroupHikes().find((g) => g.id === id) || null;
+};
+
+TW.saveGroupHike = function (hike) {
+  if (!hike || !hike.id) return null;
+  const list = TW.getGroupHikes().filter((g) => g.id !== hike.id);
+  hike.updatedAt = Date.now();
+  list.unshift(hike);
+  TW.setGroupHikes(list.slice(0, 60));
+  return hike;
+};
+
+TW.makeInviteToken = function () {
+  return "inv_" + Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
+};
+
+/** Record invite acceptance for a logged-in member */
+TW.acceptGroupInvite = function (hike, token) {
+  if (!hike || !token || hike.inviteToken !== token) return false;
+  if (!TW.isLoggedIn()) return false;
+  const email = TW.memberEmail();
+  hike.invitedEmails = hike.invitedEmails || [];
+  if (email && hike.invitedEmails.indexOf(email) < 0) {
+    hike.invitedEmails.push(email);
+    TW.saveGroupHike(hike);
+  }
+  return true;
+};
+
+/** Can the current visitor see a private group hike route? */
+TW.canViewGroupHike = function (hike, token) {
+  if (!hike) return false;
+  if (hike.visibility !== "private") return true;
+  // Same-browser demo: local creator can open without login
+  if (hike.local && (!hike.organizerEmail || hike.organizerEmail === TW.memberEmail())) return true;
+  if (token && hike.inviteToken === token) {
+    if (!TW.isLoggedIn()) return false;
+    TW.acceptGroupInvite(hike, token);
+    return true;
+  }
+  if (!TW.isLoggedIn()) return false;
+  const email = TW.memberEmail();
+  const name = (TW.memberDisplayName() || "").trim().toLowerCase();
+  if (hike.organizerEmail && email && hike.organizerEmail === email) return true;
+  if (email && (hike.invitedEmails || []).indexOf(email) >= 0) return true;
+  const invites = hike.invited || [];
+  const friends = TW.demoFriends || [];
+  return invites.some((fid) => {
+    const f = friends.find((x) => x.id === fid);
+    if (!f) return false;
+    if (email && String(f.email || "").toLowerCase() === email) return true;
+    if (name && String(f.name || "").toLowerCase() === name) return true;
+    return false;
+  });
+};
+
+TW.authNextUrl = function (fallback) {
+  try {
+    const next = new URLSearchParams(location.search).get("next");
+    if (
+      next &&
+      !/^https?:/i.test(next) &&
+      next.indexOf("//") < 0 &&
+      next.indexOf("javascript:") < 0
+    ) {
+      return next;
+    }
+  } catch (e) { /* ignore */ }
+  return fallback || "profile.html#overview";
+};
+
 function twEsc(s) {
   return String(s == null ? "" : s)
     .replace(/&/g, "&amp;")
@@ -566,6 +801,11 @@ function renderTrailCard(t, opts) {
     : `<button type="button" class="btn ${planned ? "btn-secondary" : "btn-primary"} plan-btn" data-trail="${t.id}" style="margin-top:0.75rem;width:100%;padding:0.45rem;font-size:0.8rem">
         ${planned ? "✓ " + TW.t("planned") : "+ " + TW.t("mark_plan")}
       </button>`;
+  const dupBtn = opts.hideDuplicate
+    ? ""
+    : `<button type="button" class="btn btn-secondary dup-btn" data-trail="${t.id}" style="margin-top:0.45rem;width:100%;padding:0.45rem;font-size:0.8rem">
+        ${TW.t("route_duplicate")}
+      </button>`;
 
   return `
   <article class="trail-card" id="${t.id}">
@@ -588,6 +828,7 @@ function renderTrailCard(t, opts) {
         <span>⬆ ${t.elevation}</span>
       </div>
       ${planBtn}
+      ${dupBtn}
     </div>
   </article>`;
 }
@@ -637,6 +878,28 @@ document.addEventListener("click", (e) => {
   btn.style.cssText = "margin-top:0.75rem;width:100%;padding:0.45rem;font-size:0.8rem";
   btn.textContent = added ? "✓ " + TW.t("planned") : "+ " + TW.t("mark_plan");
   btn.dataset.trail = id;
+});
+
+document.addEventListener("click", (e) => {
+  const btn = e.target.closest(".dup-btn");
+  if (!btn) return;
+  e.preventDefault();
+  e.stopPropagation();
+  const id = btn.dataset.trail;
+  const source =
+    (typeof TW.resolveTrailSource === "function" && TW.resolveTrailSource(id)) ||
+    (TW.trails || []).find((t) => t.id === id) ||
+    (typeof TW.getRecommendedTrail === "function" ? TW.getRecommendedTrail(id) : null) ||
+    null;
+  if (!source) {
+    showToast(TW.t("route_dup_missing"));
+    return;
+  }
+  const draft = TW.duplicateRoute(source);
+  showToast(TW.isLoggedIn() ? TW.t("toast_duplicated") : TW.t("toast_duplicated_guest"));
+  setTimeout(() => {
+    location.href = "plan.html?edit=" + encodeURIComponent(draft.id);
+  }, 450);
 });
 
 function bindTabs(selector, onChange) {

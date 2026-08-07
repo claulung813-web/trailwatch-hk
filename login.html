@@ -112,6 +112,11 @@
       if (email) email.placeholder = copy.loginEmailPh;
       if (password) password.placeholder = copy.loginPasswordPh;
       if (name) name.placeholder = copy.loginNamePh;
+      const reg = document.getElementById("loginRegisterLink");
+      if (reg) {
+        const next = new URLSearchParams(location.search).get("next");
+        if (next) reg.href = "register.html?next=" + encodeURIComponent(next);
+      }
     })();
 
     function resolveLoginName(email, optionalName) {
@@ -138,8 +143,9 @@
       const name = resolveLoginName(email, document.getElementById("loginName").value);
       TW.loginMember({ name: name, email: email });
       showToast(TW.getLang() === "zh" ? "歡迎回來！" : "Welcome back!");
+      const dest = typeof TW.authNextUrl === "function" ? TW.authNextUrl("profile.html#overview") : "profile.html#overview";
       setTimeout(() => {
-        location.href = "profile.html#overview";
+        location.href = dest;
       }, 700);
     });
   </script>

@@ -8,13 +8,104 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/styles.css" />
+  <style>
+    .vis-toggle {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin: 0.35rem 0 0.75rem;
+    }
+    .vis-toggle label {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.45rem 0.85rem;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--green-900);
+      background: #fff;
+    }
+    .vis-toggle input { accent-color: var(--green-800); }
+    .friend-invite-list {
+      display: grid;
+      gap: 0.45rem;
+      margin: 0.5rem 0 1rem;
+    }
+    .friend-invite-list label {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      padding: 0.55rem 0.7rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: #fff;
+      cursor: pointer;
+      font-size: 0.88rem;
+    }
+    .gh-badge {
+      display: inline-block;
+      font-size: 0.68rem;
+      font-weight: 700;
+      padding: 0.15rem 0.45rem;
+      border-radius: 4px;
+      margin-right: 0.35rem;
+    }
+    .gh-public { background: #ecfdf5; color: #047857; }
+    .gh-private { background: #eff6ff; color: #1d4ed8; }
+    .gh-invited { background: #fef3c7; color: #92400e; }
+  </style>
 </head>
 <body>
   <div id="app-header"></div>
   <main class="page">
     <div class="container">
-      <h1 class="page-title" data-i18n="groups_title"></h1>
-      <p class="page-sub" data-i18n="groups_sub"></p>
+      <div class="section-head" style="align-items:flex-start">
+        <div>
+          <h1 class="page-title" data-i18n="groups_title"></h1>
+          <p class="page-sub" data-i18n="groups_sub"></p>
+        </div>
+        <button type="button" class="btn btn-primary" id="btnCreate" data-i18n="groups_create"></button>
+      </div>
+
+      <div class="card" id="createPanel" style="padding:1.25rem;margin-bottom:1.5rem;display:none">
+        <h2 style="font-size:1.1rem;margin:0 0 0.85rem;color:var(--green-900)" data-i18n="groups_create_title"></h2>
+        <div class="form-group">
+          <label for="ghName" data-i18n="groups_name"></label>
+          <input class="form-input" id="ghName" type="text" required />
+        </div>
+        <div class="form-group">
+          <label for="ghPlace" data-i18n="groups_place"></label>
+          <input class="form-input" id="ghPlace" type="text" />
+        </div>
+        <div class="form-group">
+          <label for="ghDate" data-i18n="groups_date"></label>
+          <input class="form-input" id="ghDate" type="text" placeholder="Sat, Jun 28 · 08:00" />
+        </div>
+        <div class="form-group">
+          <label data-i18n="groups_visibility"></label>
+          <div class="vis-toggle">
+            <label><input type="radio" name="ghVis" value="public" checked /> <span data-i18n="groups_public"></span></label>
+            <label><input type="radio" name="ghVis" value="private" /> <span data-i18n="groups_private"></span></label>
+          </div>
+        </div>
+        <div id="inviteBlock" style="display:none">
+          <label style="font-weight:700;color:var(--green-900);font-size:0.85rem" data-i18n="groups_invite_friends"></label>
+          <p style="font-size:0.78rem;color:var(--text-muted);margin:0.25rem 0 0.5rem" data-i18n="groups_invite_hint"></p>
+          <div class="friend-invite-list" id="friendInviteList"></div>
+        </div>
+        <div class="form-group">
+          <label for="ghRouteDraft" data-i18n="groups_route"></label>
+          <select class="form-select" id="ghRouteDraft"></select>
+        </div>
+        <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
+          <button type="button" class="btn btn-primary" id="submitCreate" data-i18n="groups_create_submit"></button>
+          <button type="button" class="btn btn-secondary" id="cancelCreate" data-i18n="groups_cancel"></button>
+        </div>
+      </div>
+
       <div class="search-bar">
         <input type="search" id="groupSearch" data-i18n-placeholder="search_placeholder" />
       </div>
@@ -36,40 +127,122 @@
       location.replace("profile.html#activity&type=groups");
     } else {
     initShell("group-hikes");
-    const mine = false;
-    let filter = mine ? "joined" : "upcoming";
-    if (mine) {
-      document.querySelectorAll("#groupFilters .chip").forEach((c) => c.classList.toggle("active", c.dataset.f === "joined"));
-    }
+
+    let filter = "upcoming";
     let q = "";
+
+    function seedDemoPath() {
+      return TW.demoPathAround(22.35, 114.25);
+    }
+
+    function builtInMeetups() {
+      return (TW.meetups || []).map((m, i) => ({
+        id: "meetup_" + i,
+        title: m.title,
+        titleZh: m.titleZh,
+        date: m.date,
+        dateZh: m.dateZh,
+        place: m.place,
+        placeZh: m.placeZh,
+        spots: m.spots,
+        image: m.image,
+        visibility: "public",
+        invited: [],
+        path: seedDemoPath(),
+        builtIn: true,
+        past: i >= Math.ceil((TW.meetups || []).length / 2),
+        joined: i % 2 === 0,
+      }));
+    }
+
+    function visibleHikes() {
+      const email = TW.memberEmail();
+      const custom = TW.getGroupHikes().filter((g) => {
+        if (g.visibility !== "private") return true;
+        if (g.local && (!g.organizerEmail || g.organizerEmail === email)) return true;
+        if (g.organizerEmail && g.organizerEmail === email) return true;
+        return TW.canViewGroupHike(g);
+      });
+      return builtInMeetups().concat(custom);
+    }
+
+    function isInvited(g) {
+      if (!TW.isLoggedIn() || !g.invited || !g.invited.length) return false;
+      return TW.canViewGroupHike(g) && !(g.organizerEmail && g.organizerEmail === TW.memberEmail());
+    }
+
+    function renderInviteFriends() {
+      const list = TW.demoFriends || [];
+      document.getElementById("friendInviteList").innerHTML = list
+        .map(
+          (f) => `<label>
+            <input type="checkbox" name="invite" value="${f.id}" />
+            ${TW.avatarHtml(f.avatar, "avatar-sm")}
+            <span><strong>${twEsc(f.name)}</strong><br/><span style="font-size:0.75rem;color:var(--text-muted)">${twEsc(f.email)}</span></span>
+          </label>`
+        )
+        .join("");
+    }
+
+    function fillRouteSelect() {
+      const sel = document.getElementById("ghRouteDraft");
+      const drafts = TW.getRouteDrafts();
+      const zh = TW.getLang() === "zh";
+      sel.innerHTML =
+        `<option value="">${TW.t("groups_no_route")}</option>` +
+        drafts
+          .map((d) => {
+            const label = zh ? d.nameZh || d.name : d.name;
+            return `<option value="${d.id}">${twEsc(label)} (${(d.path || []).length})</option>`;
+          })
+          .join("");
+    }
+
+    function syncVisibilityUI() {
+      const vis = (document.querySelector('input[name="ghVis"]:checked') || {}).value || "public";
+      document.getElementById("inviteBlock").style.display = vis === "private" ? "block" : "none";
+    }
+
     function render() {
-      const list = (TW.meetups || []).filter((m, i) => {
+      const list = visibleHikes().filter((m) => {
         const title = (TW.tt(m, "title") || m.title || "").toLowerCase();
         const okQ = !q || title.includes(q);
-        if (filter === "past") return okQ && i >= Math.ceil((TW.meetups || []).length / 2);
-        if (filter === "joined") return okQ && (mine || i % 2 === 0);
-        return okQ && i < Math.ceil((TW.meetups || []).length / 2);
+        if (filter === "past") return okQ && m.past;
+        if (filter === "joined") return okQ && (m.joined || isInvited(m) || (m.organizerEmail && m.organizerEmail === TW.memberEmail()));
+        return okQ && !m.past;
       });
       document.getElementById("groupGrid").innerHTML = list.length
-        ? list.map((m) => {
-            const title = TW.tt(m, "title") || m.title;
-            const place = TW.tt(m, "place") || m.place || "";
-            const date = TW.tt(m, "date") || m.date || "";
-            const img = m.image || "https://images.unsplash.com/photo-1551632811-561732d1e5ec?w=600&q=60";
-            return `<article class="trail-card">
+        ? list
+            .map((m) => {
+              const title = TW.tt(m, "title") || m.title;
+              const place = TW.tt(m, "place") || m.place || "";
+              const date = TW.tt(m, "date") || m.date || "";
+              const img = m.image || "https://images.unsplash.com/photo-1551632811-561732d1e5ec?w=600&q=60";
+              const vis = m.visibility === "private" ? "private" : "public";
+              const badges =
+                `<span class="gh-badge ${vis === "private" ? "gh-private" : "gh-public"}">${TW.t(vis === "private" ? "groups_badge_private" : "groups_badge_public")}</span>` +
+                (isInvited(m) ? `<span class="gh-badge gh-invited">${TW.t("groups_badge_invited")}</span>` : "") +
+                (m.organizerEmail && m.organizerEmail === TW.memberEmail()
+                  ? `<span class="gh-badge gh-public">${TW.t("groups_mine")}</span>`
+                  : "");
+              const href = "group-hike-detail.html?id=" + encodeURIComponent(m.id);
+              return `<article class="trail-card">
               <img src="${img}" alt="" loading="lazy" />
               <div class="trail-card-body">
-                <strong>${title}</strong>
-                <p class="meta">${date} · ${place}</p>
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-top:0.5rem">
+                <div style="margin-bottom:0.35rem">${badges}</div>
+                <strong>${twEsc(title)}</strong>
+                <p class="meta">${twEsc(date)} · ${twEsc(place)}</p>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-top:0.5rem;gap:0.5rem">
                   <span style="font-size:0.8rem;color:var(--text-muted)">${m.spots != null ? m.spots + " " + TW.t("spots_left") : ""}</span>
-                  <button class="btn btn-primary" style="padding:0.35rem 0.85rem;font-size:0.8rem" onclick="showToast(TW.t('toast_joined'))">${TW.t("join")}</button>
+                  <a class="btn btn-primary" style="padding:0.35rem 0.85rem;font-size:0.8rem" href="${href}">${TW.t("groups_view")}</a>
                 </div>
               </div>
             </article>`;
-          }).join("")
+            })
+            .join("")
         : `<p style="color:var(--text-muted);padding:2rem 0">${TW.t("hikes_empty")}</p>`;
     }
+
     document.getElementById("groupFilters").addEventListener("click", (e) => {
       const btn = e.target.closest("button[data-f]");
       if (!btn) return;
@@ -81,6 +254,75 @@
       q = e.target.value.trim().toLowerCase();
       render();
     });
+
+    const panel = document.getElementById("createPanel");
+    document.getElementById("btnCreate").addEventListener("click", () => {
+      panel.style.display = panel.style.display === "none" ? "block" : "none";
+      fillRouteSelect();
+      renderInviteFriends();
+      syncVisibilityUI();
+    });
+    document.getElementById("cancelCreate").addEventListener("click", () => {
+      panel.style.display = "none";
+    });
+    document.querySelectorAll('input[name="ghVis"]').forEach((r) => {
+      r.addEventListener("change", syncVisibilityUI);
+    });
+
+    document.getElementById("submitCreate").addEventListener("click", () => {
+      const name = document.getElementById("ghName").value.trim();
+      if (!name) {
+        showToast(TW.t("groups_name"));
+        return;
+      }
+      const vis = (document.querySelector('input[name="ghVis"]:checked') || {}).value || "public";
+      const invited = [];
+      if (vis === "private") {
+        document.querySelectorAll('input[name="invite"]:checked').forEach((c) => invited.push(c.value));
+      }
+      const draftId = document.getElementById("ghRouteDraft").value;
+      const draft = draftId ? TW.getRouteDraft(draftId) : null;
+      const path = draft && draft.path && draft.path.length >= 2 ? draft.path : seedDemoPath();
+      const auth = TW.getMemberAuth();
+      const hike = {
+        id: "gh_" + Date.now(),
+        title: name,
+        titleZh: name,
+        place: document.getElementById("ghPlace").value.trim() || "Hong Kong",
+        placeZh: document.getElementById("ghPlace").value.trim() || "香港",
+        date: document.getElementById("ghDate").value.trim() || "Coming soon",
+        dateZh: document.getElementById("ghDate").value.trim() || "即將舉行",
+        visibility: vis,
+        invited: invited,
+        inviteToken: vis === "private" ? TW.makeInviteToken() : "",
+        invitedEmails: [],
+        path: path,
+        routeDraftId: draftId || "",
+        organizerEmail: (auth && auth.email) || "",
+        organizerName: TW.memberDisplayName() || (TW.getLang() === "zh" ? "主辦人" : "Organizer"),
+        local: true,
+        image: "https://images.unsplash.com/photo-1551632811-561732d1e5ec?w=600&q=60",
+        spots: "12",
+        past: false,
+        joined: true,
+      };
+      TW.saveGroupHike(hike);
+      showToast(TW.t("groups_created"));
+      panel.style.display = "none";
+      document.getElementById("ghName").value = "";
+      render();
+      setTimeout(() => {
+        location.href = "group-hike-detail.html?id=" + encodeURIComponent(hike.id);
+      }, 500);
+    });
+
+    const search = document.getElementById("groupSearch");
+    if (search && search.dataset.i18nPlaceholder) {
+      search.placeholder = TW.t(search.dataset.i18nPlaceholder);
+    }
+
+    renderInviteFriends();
+    fillRouteSelect();
     render();
     } </script>
 </body>

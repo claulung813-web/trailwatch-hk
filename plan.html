@@ -7,7 +7,154 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="css/styles.css" />
+  <style>
+    #planMap {
+      height: 460px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      background: var(--green-50);
+    }
+    .plan-meta-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.85rem;
+      margin-bottom: 0.85rem;
+    }
+    @media (max-width: 640px) {
+      .plan-meta-row { grid-template-columns: 1fr; }
+      #planMap { height: 340px; }
+    }
+    .plan-draw-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: center;
+      margin: 0.65rem 0 0.85rem;
+    }
+    .plan-draw-toolbar .chip.active {
+      background: var(--green-900);
+      color: #fff;
+      border-color: var(--green-900);
+    }
+    .plan-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-bottom: 0.65rem;
+    }
+    .plan-legend span { display: inline-flex; align-items: center; gap: 0.35rem; }
+    .plan-dot {
+      width: 14px; height: 14px; border-radius: 50%;
+      border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,0.2);
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 8px; font-weight: 800; color: #fff; line-height: 1;
+    }
+    .plan-dot.start { background: #2d8a45; }
+    .plan-dot.end { background: #d64545; border-radius: 3px; }
+    .plan-dot.via { background: #003229; box-shadow: 0 0 0 2px #33897a; }
+    .plan-dot.poi { background: #f1a637; }
+    .plan-ctx {
+      position: absolute;
+      z-index: 1000;
+      min-width: 230px;
+      background: #fff;
+      border-radius: 12px;
+      padding: 0.85rem 1rem 0.75rem;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.25);
+      display: none;
+    }
+    .plan-ctx button {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      width: 100%;
+      border: 0;
+      background: transparent;
+      text-align: left;
+      padding: 0.45rem 0.15rem;
+      font-weight: 700;
+      font-size: 0.92rem;
+      color: #3f3f46;
+      cursor: pointer;
+    }
+    .plan-ctx button:hover { color: var(--green-900); }
+    .plan-ctx button[hidden] { display: none; }
+    .plan-ctx hr {
+      border: 0;
+      border-top: 1px solid #f4f4f5;
+      margin: 0.55rem 0;
+    }
+    .plan-ctx .cancel {
+      font-weight: 500;
+      color: var(--text-muted);
+      padding-top: 0.15rem;
+    }
+    .marker-label {
+      background: transparent !important;
+      border: 0 !important;
+    }
+    .mk {
+      border: 2px solid #fff;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.35);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      color: #fff;
+      line-height: 1;
+    }
+    .mk-start {
+      width: 24px; height: 24px; border-radius: 50%;
+      background: #2d8a45; font-size: 11px;
+    }
+    .mk-end {
+      width: 24px; height: 24px; border-radius: 4px;
+      background: #d64545; font-size: 11px;
+    }
+    .mk-via {
+      width: 22px; height: 22px; border-radius: 50%;
+      background: #003229;
+      box-shadow: 0 0 0 2px #33897a, 0 1px 4px rgba(0,0,0,0.35);
+      font-size: 10px;
+    }
+    .mk-poi {
+      width: 22px; height: 22px; border-radius: 50% 50% 50% 0;
+      background: #f1a637;
+      transform: rotate(-45deg);
+      font-size: 11px;
+    }
+    .mk-poi span {
+      transform: rotate(45deg);
+      display: block;
+    }
+    .mk-poi-tip {
+      background: #fff;
+      color: var(--green-900);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.15rem 0.4rem;
+      font-size: 0.72rem;
+      font-weight: 600;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+    }
+    .draft-list-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem 0.9rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 0.55rem;
+      background: #fff;
+    }
+    .draft-list-item strong { color: var(--green-900); }
+    .draft-list-item .meta { font-size: 0.78rem; color: var(--text-muted); }
+  </style>
 </head>
 <body>
   <div id="app-header"></div>
@@ -28,25 +175,588 @@
         </div>
       </div>
 
+      <section class="card" style="padding:1.25rem;margin-bottom:1.75rem;position:relative">
+        <div class="section-head" style="margin-bottom:0.35rem">
+          <h2 data-i18n="plan_draw_title"></h2>
+          <button type="button" class="btn btn-secondary" style="padding:0.35rem 0.75rem;font-size:0.8rem" id="btnNewDraw" data-i18n="plan_new_draw"></button>
+        </div>
+        <p class="page-sub" style="margin-bottom:0.5rem" data-i18n="plan_ctx_hint"></p>
+        <p style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.75rem" data-i18n="plan_draw_sub"></p>
+        <p id="planLoadHint" class="meta" style="display:none;margin-bottom:0.65rem;color:var(--green-800)"></p>
+
+        <div class="plan-meta-row">
+          <div class="form-group" style="margin:0">
+            <label for="routeName" data-i18n="plan_route_name"></label>
+            <input class="form-input" id="routeName" type="text" />
+          </div>
+          <div class="form-group" style="margin:0">
+            <label for="routeNotes" data-i18n="plan_route_notes"></label>
+            <input class="form-input" id="routeNotes" type="text" data-i18n-placeholder="plan_route_notes_ph" />
+          </div>
+        </div>
+
+        <div class="plan-legend">
+          <span><i class="plan-dot start">A</i> <span data-i18n="plan_legend_start"></span></span>
+          <span><i class="plan-dot end">B</i> <span data-i18n="plan_legend_end"></span></span>
+          <span><i class="plan-dot via">1</i> <span data-i18n="plan_legend_via"></span></span>
+          <span><i class="plan-dot poi">★</i> <span data-i18n="plan_legend_poi"></span></span>
+        </div>
+
+        <div class="plan-draw-toolbar">
+          <button type="button" class="chip active" data-draw="menu" id="modeMenu" data-i18n="plan_mode_menu"></button>
+          <button type="button" class="chip" data-draw="click" id="modeClick" data-i18n="plan_mode_click"></button>
+          <button type="button" class="chip" data-draw="freehand" id="modeFree" data-i18n="plan_mode_freehand"></button>
+          <button type="button" class="btn btn-secondary" style="padding:0.35rem 0.75rem;font-size:0.8rem" id="btnUndo" data-i18n="plan_undo"></button>
+          <button type="button" class="btn btn-secondary" style="padding:0.35rem 0.75rem;font-size:0.8rem" id="btnClear" data-i18n="plan_clear"></button>
+          <span class="meta" id="pointCount"></span>
+          <span class="meta" id="distEst"></span>
+          <button type="button" class="btn btn-primary" style="margin-left:auto;padding:0.4rem 0.9rem;font-size:0.85rem" id="btnSaveDraft" data-i18n="plan_save_draft"></button>
+        </div>
+
+        <div style="position:relative">
+          <div id="planMap"></div>
+          <div class="plan-ctx" id="planCtx" role="menu">
+            <button type="button" data-type="start"><span class="plan-dot start">A</span><span data-i18n="plan_ctx_start"></span></button>
+            <button type="button" data-type="end"><span class="plan-dot end">B</span><span data-i18n="plan_ctx_end"></span></button>
+            <button type="button" data-type="poi"><span class="plan-dot poi">★</span><span data-i18n="plan_ctx_poi"></span></button>
+            <button type="button" data-type="via"><span class="plan-dot via">V</span><span data-i18n="plan_ctx_via"></span></button>
+            <hr />
+            <button type="button" class="cancel" data-type="cancel" data-i18n="plan_ctx_cancel"></button>
+          </div>
+        </div>
+      </section>
+
+      <div class="section-head">
+        <h2 data-i18n="plan_drafts"></h2>
+      </div>
+      <div id="draftList" style="margin-bottom:1.75rem"></div>
+
       <div id="planEmpty" class="card" style="padding:2rem;text-align:center;display:none">
         <p style="color:var(--text-muted);margin-bottom:1rem" data-i18n="plan_empty"></p>
         <a class="btn btn-primary" href="explore.html" data-i18n="plan_go_explore"></a>
       </div>
 
+      <div class="section-head">
+        <h2 data-i18n="plan_marked_trails"></h2>
+      </div>
       <div class="trail-grid" id="planGrid"></div>
     </div>
   </main>
 
   <div id="app-footer"></div>
 
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="js/i18n.js"></script>
   <script src="js/data.js"></script>
+  <script src="js/cms-store.js"></script>
   <script src="js/app.js"></script>
   <script>
     document.documentElement.lang = TW.getLang() === "zh" ? "zh-Hant" : "en";
     initShell("plan");
 
-    function render() {
+    /**
+     * Map actions match live trailwatch.hk/plan-route:
+     * click / right-click / long-press → menu with Start, End, POI, Via.
+     * Drawing order: start → vias → end; POIs are off-route labeled markers.
+     * Freehand + click-points modes keep editable route drawing.
+     */
+    let draftId = new URLSearchParams(location.search).get("edit") || TW.getActiveDraftId() || "";
+    let start = null; // [lat,lng]
+    let end = null;
+    let vias = []; // [[lat,lng], ...]
+    let pois = []; // [{lat,lng,label}, ...]
+    let drawMode = "menu"; // menu | click | freehand
+    let line = null;
+    let markers = [];
+    let freehand = false;
+    let pendingLatLng = null;
+    let longPressTimer = null;
+    let longPressMoved = false;
+    let suppressClick = false;
+
+    const mapEl = document.getElementById("planMap");
+    const ctx = document.getElementById("planCtx");
+    const map = L.map("planMap", { doubleClickZoom: false }).setView(TW.hkCenter, 12);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "© OpenStreetMap",
+      maxZoom: 19,
+    }).addTo(map);
+
+    function spinePoints() {
+      const pts = [];
+      if (start) pts.push(start);
+      vias.forEach((v) => pts.push(v));
+      if (end) pts.push(end);
+      return pts;
+    }
+
+    function syncFromPath(path) {
+      if (!path || path.length < 1) {
+        start = end = null;
+        vias = [];
+        return;
+      }
+      start = [Number(path[0][0]), Number(path[0][1])];
+      if (path.length === 1) {
+        end = null;
+        vias = [];
+        return;
+      }
+      end = [Number(path[path.length - 1][0]), Number(path[path.length - 1][1])];
+      vias = path.slice(1, -1).map((p) => [Number(p[0]), Number(p[1])]);
+    }
+
+    function iconFor(type, viaIndex) {
+      if (type === "start") {
+        return L.divIcon({
+          className: "marker-label",
+          html: '<div class="mk mk-start">A</div>',
+          iconSize: [24, 24],
+          iconAnchor: [12, 12],
+        });
+      }
+      if (type === "end") {
+        return L.divIcon({
+          className: "marker-label",
+          html: '<div class="mk mk-end">B</div>',
+          iconSize: [24, 24],
+          iconAnchor: [12, 12],
+        });
+      }
+      if (type === "via") {
+        const n = viaIndex != null ? viaIndex + 1 : "V";
+        return L.divIcon({
+          className: "marker-label",
+          html: '<div class="mk mk-via">' + n + "</div>",
+          iconSize: [22, 22],
+          iconAnchor: [11, 11],
+        });
+      }
+      return L.divIcon({
+        className: "marker-label",
+        html: '<div class="mk mk-poi"><span>★</span></div>',
+        iconSize: [22, 22],
+        iconAnchor: [11, 20],
+      });
+    }
+
+    function hideCtx() {
+      ctx.style.display = "none";
+      pendingLatLng = null;
+    }
+
+    function refreshCtxOptions() {
+      // Match live: Start/End only offered if not already set; Via + POI always available.
+      const startBtn = ctx.querySelector('[data-type="start"]');
+      const endBtn = ctx.querySelector('[data-type="end"]');
+      if (startBtn) startBtn.hidden = !!start;
+      if (endBtn) endBtn.hidden = !!end;
+    }
+
+    function showCtx(latlng, containerPoint) {
+      pendingLatLng = [latlng.lat, latlng.lng];
+      refreshCtxOptions();
+      let x = containerPoint.x + 12;
+      let y = containerPoint.y + 12;
+      ctx.style.display = "block";
+      const w = ctx.offsetWidth || 230;
+      const h = ctx.offsetHeight || 240;
+      const mapRect = mapEl.getBoundingClientRect();
+      if (x + w > mapRect.width - 8) x = containerPoint.x - w - 8;
+      if (y + h > mapRect.height - 8) y = containerPoint.y - h - 8;
+      ctx.style.left = Math.max(8, x) + "px";
+      ctx.style.top = Math.max(8, y) + "px";
+    }
+
+    function updateStats() {
+      const path = spinePoints();
+      document.getElementById("pointCount").textContent =
+        TW.t("plan_points") +
+        ": " +
+        (start ? 1 : 0) +
+        "/" +
+        (end ? 1 : 0) +
+        " · via " +
+        vias.length +
+        " · poi " +
+        pois.length;
+      const km = TW.pathDistanceKm(path);
+      document.getElementById("distEst").textContent =
+        path.length >= 2 ? TW.t("plan_est_distance") + ": " + km + " km" : TW.t("plan_est_distance") + ": —";
+    }
+
+    function clearLayers() {
+      if (line) {
+        map.removeLayer(line);
+        line = null;
+      }
+      markers.forEach((m) => map.removeLayer(m));
+      markers = [];
+    }
+
+    function addDraggable(latlng, type, index) {
+      const m = L.marker(latlng, { icon: iconFor(type, index), draggable: true }).addTo(map);
+      m._twType = type;
+      m._twIndex = index;
+      m.on("dragend", () => {
+        const ll = m.getLatLng();
+        const pt = [ll.lat, ll.lng];
+        if (type === "start") start = pt;
+        else if (type === "end") end = pt;
+        else if (type === "via") vias[index] = pt;
+        else if (type === "poi") {
+          pois[index] = Object.assign({}, pois[index], { lat: pt[0], lng: pt[1] });
+        }
+        redraw();
+        persistSoft();
+      });
+      m.on("click", (e) => {
+        L.DomEvent.stop(e);
+        if (drawMode === "freehand") return;
+        showCtx(e.latlng, map.latLngToContainerPoint(e.latlng));
+      });
+      m.on("contextmenu", (e) => {
+        L.DomEvent.stop(e);
+        showCtx(e.latlng, map.latLngToContainerPoint(e.latlng));
+      });
+      if (type === "via" || type === "poi") {
+        m.on("dblclick", (e) => {
+          L.DomEvent.stop(e);
+          if (type === "via") vias.splice(index, 1);
+          else pois.splice(index, 1);
+          redraw();
+          persistSoft();
+        });
+        m.bindTooltip(TW.t("plan_ctx_remove"), { direction: "top" });
+      }
+      if (type === "poi") {
+        const label = (pois[index] && pois[index].label) || TW.t("plan_legend_poi") + " " + (index + 1);
+        m.bindTooltip(label, {
+          permanent: true,
+          direction: "top",
+          offset: [0, -14],
+          className: "mk-poi-tip",
+        });
+      }
+      markers.push(m);
+    }
+
+    function redraw() {
+      clearLayers();
+      const path = spinePoints();
+      if (path.length >= 2) {
+        line = L.polyline(path, { color: "#2563eb", weight: 5, opacity: 0.9 }).addTo(map);
+      }
+      if (start) addDraggable(start, "start");
+      vias.forEach((v, i) => addDraggable(v, "via", i));
+      if (end) addDraggable(end, "end");
+      pois.forEach((p, i) => addDraggable([p.lat, p.lng], "poi", i));
+      updateStats();
+    }
+
+    function persistSoft() {
+      if (!draftId && !start && !end && !vias.length && !pois.length) return;
+      const nameEl = document.getElementById("routeName");
+      const notesEl = document.getElementById("routeNotes");
+      if (!draftId) draftId = "draft_" + Date.now();
+      const path = spinePoints();
+      TW.saveRouteDraft({
+        id: draftId,
+        name: nameEl.value.trim() || (TW.getLang() === "zh" ? "未命名路線" : "Untitled route"),
+        nameZh: nameEl.value.trim() || "未命名路線",
+        notes: notesEl.value.trim(),
+        path: path,
+        start: start,
+        end: end,
+        vias: vias,
+        pois: pois,
+        privacy: "private",
+      });
+      TW.setActiveDraftId(draftId);
+    }
+
+    function normalizePois(list) {
+      if (!Array.isArray(list)) return [];
+      return list
+        .map((p, i) => {
+          if (Array.isArray(p)) {
+            return { lat: Number(p[0]), lng: Number(p[1]), label: TW.t("plan_legend_poi") + " " + (i + 1) };
+          }
+          return {
+            lat: Number(p.lat != null ? p.lat : p[0]),
+            lng: Number(p.lng != null ? p.lng : p[1]),
+            label: p.label || TW.t("plan_legend_poi") + " " + (i + 1),
+          };
+        })
+        .filter((p) => !isNaN(p.lat) && !isNaN(p.lng));
+    }
+
+    function loadDraft(id) {
+      const d = TW.getRouteDraft(id);
+      if (!d) return false;
+      draftId = d.id;
+      TW.setActiveDraftId(draftId);
+      document.getElementById("routeName").value =
+        TW.getLang() === "zh" ? d.nameZh || d.name : d.name || "";
+      document.getElementById("routeNotes").value = d.notes || "";
+      start = d.start ? [Number(d.start[0]), Number(d.start[1])] : null;
+      end = d.end ? [Number(d.end[0]), Number(d.end[1])] : null;
+      vias = Array.isArray(d.vias) ? d.vias.map((p) => [Number(p[0]), Number(p[1])]) : [];
+      pois = normalizePois(d.pois);
+      if (!start && !end && Array.isArray(d.path) && d.path.length >= 1) {
+        syncFromPath(d.path);
+      }
+      redraw();
+      const fit = spinePoints().concat(pois.map((p) => [p.lat, p.lng]));
+      if (fit.length) map.fitBounds(L.latLngBounds(fit).pad(0.2));
+      const hint = document.getElementById("planLoadHint");
+      hint.style.display = "block";
+      hint.textContent = TW.t("plan_load_hint");
+      return true;
+    }
+
+    function setDrawMode(mode) {
+      drawMode = mode;
+      document.querySelectorAll("[data-draw]").forEach((c) => {
+        c.classList.toggle("active", c.dataset.draw === mode);
+      });
+      map.getContainer().style.cursor =
+        mode === "freehand" ? "crosshair" : mode === "click" ? "pointer" : "crosshair";
+      hideCtx();
+    }
+
+    function addClickPoint(latlng) {
+      const pt = [latlng.lat, latlng.lng];
+      if (!start) start = pt;
+      else if (!end) end = pt;
+      else vias.push(pt);
+      redraw();
+      persistSoft();
+    }
+
+    function applyMenuAction(type) {
+      if (type === "cancel" || !pendingLatLng) {
+        hideCtx();
+        return;
+      }
+      const pt = pendingLatLng.slice();
+      if (type === "start") start = pt;
+      else if (type === "end") end = pt;
+      else if (type === "via") vias.push(pt);
+      else if (type === "poi") {
+        pois.push({
+          lat: pt[0],
+          lng: pt[1],
+          label: TW.t("plan_legend_poi") + " " + (pois.length + 1),
+        });
+      }
+      hideCtx();
+      redraw();
+      persistSoft();
+    }
+
+    map.on("click", (e) => {
+      if (suppressClick) {
+        suppressClick = false;
+        return;
+      }
+      if (drawMode === "freehand") return;
+      if (drawMode === "click") {
+        hideCtx();
+        addClickPoint(e.latlng);
+        return;
+      }
+      // menu mode — same as live plan-route click menu
+      showCtx(e.latlng, e.containerPoint);
+    });
+
+    map.on("contextmenu", (e) => {
+      L.DomEvent.preventDefault(e);
+      showCtx(e.latlng, e.containerPoint);
+    });
+
+    // Long-press for touch (≈ live mobile tap-hold)
+    map.getContainer().addEventListener(
+      "touchstart",
+      (ev) => {
+        if (!ev.touches || ev.touches.length !== 1) return;
+        longPressMoved = false;
+        const touch = ev.touches[0];
+        const rect = mapEl.getBoundingClientRect();
+        const point = L.point(touch.clientX - rect.left, touch.clientY - rect.top);
+        longPressTimer = setTimeout(() => {
+          if (longPressMoved) return;
+          const latlng = map.containerPointToLatLng(point);
+          suppressClick = true;
+          showCtx(latlng, point);
+        }, 520);
+      },
+      { passive: true }
+    );
+    map.getContainer().addEventListener(
+      "touchmove",
+      () => {
+        longPressMoved = true;
+        if (longPressTimer) {
+          clearTimeout(longPressTimer);
+          longPressTimer = null;
+        }
+      },
+      { passive: true }
+    );
+    map.getContainer().addEventListener(
+      "touchend",
+      () => {
+        if (longPressTimer) {
+          clearTimeout(longPressTimer);
+          longPressTimer = null;
+        }
+      },
+      { passive: true }
+    );
+
+    map.on("mousedown", (e) => {
+      if (drawMode !== "freehand") return;
+      freehand = true;
+      map.dragging.disable();
+      hideCtx();
+      const path = spinePoints();
+      path.push([e.latlng.lat, e.latlng.lng]);
+      syncFromPath(path);
+      redraw();
+    });
+    map.on("mousemove", (e) => {
+      if (!freehand || drawMode !== "freehand") return;
+      const path = spinePoints();
+      const last = path[path.length - 1];
+      if (!last) return;
+      const dlat = Math.abs(last[0] - e.latlng.lat);
+      const dlng = Math.abs(last[1] - e.latlng.lng);
+      if (dlat + dlng < 0.00035) return;
+      path.push([e.latlng.lat, e.latlng.lng]);
+      syncFromPath(path);
+      if (line) line.setLatLngs(path);
+      else redraw();
+      updateStats();
+    });
+    map.on("mouseup", () => {
+      if (!freehand) return;
+      freehand = false;
+      map.dragging.enable();
+      redraw();
+      persistSoft();
+    });
+
+    ctx.addEventListener("click", (e) => {
+      const btn = e.target.closest("button[data-type]");
+      if (!btn) return;
+      e.stopPropagation();
+      applyMenuAction(btn.dataset.type);
+    });
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") hideCtx();
+    });
+    document.addEventListener("click", (e) => {
+      if (!ctx.contains(e.target) && !mapEl.contains(e.target)) hideCtx();
+    });
+
+    document.querySelectorAll("[data-draw]").forEach((btn) => {
+      btn.addEventListener("click", () => setDrawMode(btn.dataset.draw));
+    });
+
+    document.getElementById("btnUndo").addEventListener("click", () => {
+      if (vias.length) vias.pop();
+      else if (end) end = null;
+      else if (start) start = null;
+      else if (pois.length) pois.pop();
+      hideCtx();
+      redraw();
+      persistSoft();
+    });
+
+    document.getElementById("btnClear").addEventListener("click", () => {
+      start = end = null;
+      vias = [];
+      pois = [];
+      hideCtx();
+      redraw();
+      persistSoft();
+    });
+
+    document.getElementById("btnSaveDraft").addEventListener("click", () => {
+      if (!start || !end) {
+        showToast(TW.t("plan_ctx_hint"));
+        return;
+      }
+      persistSoft();
+      renderDrafts();
+      showToast(TW.t("toast_draft_saved"));
+      history.replaceState(null, "", "plan.html?edit=" + encodeURIComponent(draftId));
+    });
+
+    document.getElementById("btnNewDraw").addEventListener("click", () => {
+      draftId = "draft_" + Date.now();
+      start = end = null;
+      vias = [];
+      pois = [];
+      document.getElementById("routeName").value = "";
+      document.getElementById("routeNotes").value = "";
+      document.getElementById("planLoadHint").style.display = "none";
+      TW.setActiveDraftId(draftId);
+      hideCtx();
+      redraw();
+      map.setView(TW.hkCenter, 12);
+      history.replaceState(null, "", "plan.html?edit=" + encodeURIComponent(draftId));
+    });
+
+    function renderDrafts() {
+      const list = TW.getRouteDrafts();
+      const el = document.getElementById("draftList");
+      if (!list.length) {
+        el.innerHTML = `<p style="color:var(--text-muted);font-size:0.9rem">${TW.t("plan_draft_empty")}</p>`;
+        return;
+      }
+      el.innerHTML = list
+        .map((d) => {
+          const title = TW.getLang() === "zh" ? d.nameZh || d.name : d.name;
+          const km = TW.pathDistanceKm(d.path || []);
+          const poiN = Array.isArray(d.pois) ? d.pois.length : 0;
+          return `<div class="draft-list-item">
+            <div>
+              <strong>${twEsc(title)}</strong>
+              <div class="meta">${(d.path || []).length} ${TW.t("plan_points")}${poiN ? " · " + poiN + " " + TW.t("plan_legend_poi") : ""}${km ? " · " + km + " km" : ""}${d.notes ? " · " + twEsc(d.notes) : ""}</div>
+            </div>
+            <div style="display:flex;gap:0.4rem">
+              <button type="button" class="btn btn-primary" style="padding:0.35rem 0.75rem;font-size:0.8rem" data-edit="${d.id}">${TW.t("plan_edit_draft")}</button>
+              <button type="button" class="btn btn-secondary" style="padding:0.35rem 0.75rem;font-size:0.8rem" data-del="${d.id}">${TW.t("plan_remove")}</button>
+            </div>
+          </div>`;
+        })
+        .join("");
+      el.querySelectorAll("[data-edit]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          loadDraft(btn.dataset.edit);
+          history.replaceState(null, "", "plan.html?edit=" + encodeURIComponent(btn.dataset.edit));
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        });
+      });
+      el.querySelectorAll("[data-del]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          TW.deleteRouteDraft(btn.dataset.del);
+          if (draftId === btn.dataset.del) {
+            draftId = "";
+            start = end = null;
+            vias = [];
+            pois = [];
+            redraw();
+          }
+          renderDrafts();
+        });
+      });
+    }
+
+    function renderPlans() {
       const ids = TW.getPlans();
       const trails = ids.map((id) => TW.trails.find((t) => t.id === id)).filter(Boolean);
       const empty = document.getElementById("planEmpty");
@@ -60,18 +770,6 @@
       grid.innerHTML = trails
         .map(
           (t) => `
-        ${renderTrailCard(t, { hidePlan: true })}
-        <div style="margin-top:-0.5rem;margin-bottom:0.5rem;display:flex;gap:0.5rem;grid-column:span 1">
-          <button class="btn btn-secondary" style="flex:1;font-size:0.8rem" data-remove="${t.id}">${TW.t("plan_remove")}</button>
-          <a class="btn btn-primary" style="flex:1;font-size:0.8rem" href="app/index.html?trail=${t.id}">${TW.t("plan_open_app")}</a>
-        </div>`
-        )
-        .join("");
-
-      // Fix layout: wrap each trail+actions
-      grid.innerHTML = trails
-        .map(
-          (t) => `
         <div>
           ${renderTrailCard(t, { hidePlan: true })}
           <div style="display:flex;gap:0.5rem;margin-top:0.5rem">
@@ -81,17 +779,24 @@
         </div>`
         )
         .join("");
-
       grid.querySelectorAll("[data-remove]").forEach((btn) => {
         btn.addEventListener("click", () => {
           TW.togglePlan(btn.dataset.remove);
           showToast(TW.t("toast_unplanned"));
-          render();
+          renderPlans();
         });
       });
     }
 
-    render();
+    const ph = document.getElementById("routeNotes");
+    if (ph && ph.dataset.i18nPlaceholder) ph.placeholder = TW.t(ph.dataset.i18nPlaceholder);
+
+    if (draftId) loadDraft(draftId);
+    else updateStats();
+    setDrawMode("menu");
+    renderDrafts();
+    renderPlans();
+    setTimeout(() => map.invalidateSize(), 200);
   </script>
 </body>
 </html>

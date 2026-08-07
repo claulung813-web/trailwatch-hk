@@ -1085,6 +1085,31 @@ TW.getFeaturedArticles = function () {
 
 TW.hkCenter = [22.3193, 114.1694];
 
+/** Demo friends for invites (website) */
+TW.demoFriends = [
+  {
+    id: "friend_elena",
+    name: "Elena Green",
+    email: "elena@example.com",
+    rank: "Rare Hiker Level 3",
+    avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop",
+  },
+  {
+    id: "friend_marcus",
+    name: "Marcus Lee",
+    email: "marcus@example.com",
+    rank: "Trail Friend Level 2",
+    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop",
+  },
+  {
+    id: "friend_sarah",
+    name: "Sarah Chen",
+    email: "sarah@example.com",
+    rank: "Weekend Walker",
+    avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop",
+  },
+];
+
 TW.getPlans = function () {
   try {
     return JSON.parse(localStorage.getItem("tw_plans") || "[]");

@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Group Hike — TrailWatch HK</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="css/styles.css" />
+  <style>
+    #ghMap { height: 380px; border-radius: var(--radius); border: 1px solid var(--border); }
+    .gh-badge {
+      display: inline-block; font-size: 0.72rem; font-weight: 700;
+      padding: 0.18rem 0.5rem; border-radius: 4px; margin-right: 0.35rem;
+    }
+    .gh-public { background: #ecfdf5; color: #047857; }
+    .gh-private { background: #eff6ff; color: #1d4ed8; }
+  </style>
+</head>
+<body>
+  <div id="app-header"></div>
+  <main class="page">
+    <div class="container" style="max-width:800px">
+      <a href="group-hikes.html" class="link-more" style="display:inline-block;margin-bottom:1rem" data-i18n="groups_title"></a>
+      <div id="badges" style="margin-bottom:0.5rem"></div>
+      <h1 class="page-title" id="ghTitle"></h1>
+      <p class="page-sub" id="ghMeta"></p>
+      <p id="ghOrg" style="font-size:0.85rem;color:var(--text-muted);margin-bottom:1rem"></p>
+
+      <div id="shareBox" class="card" style="padding:1rem;display:none;margin-bottom:1.25rem">
+        <p style="margin:0 0 0.65rem;font-size:0.85rem;color:var(--text-muted)" data-i18n="groups_invite_hint"></p>
+        <button type="button" class="btn btn-secondary" id="btnShare" data-i18n="groups_share_link"></button>
+      </div>
+
+      <div id="lockedBox" class="card" style="padding:1.5rem;display:none;margin-bottom:1.25rem">
+        <p id="lockedMsg" style="margin:0 0 1rem;color:var(--text-muted)"></p>
+        <a class="btn btn-primary" id="loginCta" href="login.html" data-i18n="groups_login_cta"></a>
+        <a class="btn btn-secondary" id="regCta" href="register.html" style="margin-left:0.5rem" data-i18n="nav_register"></a>
+      </div>
+
+      <div id="routeBox" style="display:none">
+        <div class="section-head"><h2 data-i18n="groups_route"></h2></div>
+        <div id="ghMap"></div>
+      </div>
+    </div>
+  </main>
+  <div id="app-footer"></div>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="js/i18n.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    document.documentElement.lang = TW.getLang() === "zh" ? "zh-Hant" : "en";
+    initShell("group-hikes");
+
+    const params = new URLSearchParams(location.search);
+    const id = params.get("id");
+    const token = params.get("token") || "";
+
+    function findHike(hid) {
+      const custom = TW.getGroupHike(hid);
+      if (custom) return custom;
+      const m = /^meetup_(\d+)$/.exec(hid || "");
+      if (m) {
+        const i = Number(m[1]);
+        const src = (TW.meetups || [])[i];
+        if (!src) return null;
+        return {
+          id: hid,
+          title: src.title,
+          titleZh: src.titleZh,
+          date: src.date,
+          dateZh: src.dateZh,
+          place: src.place,
+          placeZh: src.placeZh,
+          image: src.image,
+          visibility: "public",
+          path: TW.demoPathAround(22.35 + i * 0.01, 114.25),
+          invited: [],
+        };
+      }
+      return null;
+    }
+
+    const hike = findHike(id);
+    if (!hike) {
+      location.href = "group-hikes.html";
+    } else {
+      const title = TW.tt(hike, "title") || hike.title;
+      document.getElementById("ghTitle").textContent = title;
+      document.getElementById("ghMeta").textContent =
+        (TW.tt(hike, "date") || hike.date || "") + " · " + (TW.tt(hike, "place") || hike.place || "");
+      if (hike.organizerName) {
+        document.getElementById("ghOrg").textContent =
+          (TW.getLang() === "zh" ? "主辦：" : "Organizer: ") + hike.organizerName;
+      }
+      const vis = hike.visibility === "private" ? "private" : "public";
+      document.getElementById("badges").innerHTML =
+        `<span class="gh-badge ${vis === "private" ? "gh-private" : "gh-public"}">${TW.t(
+          vis === "private" ? "groups_badge_private" : "groups_badge_public"
+        )}</span>`;
+
+      const nextPath =
+        "group-hike-detail.html?id=" + encodeURIComponent(id) + (token ? "&token=" + encodeURIComponent(token) : "");
+      const canSee = TW.canViewGroupHike(hike, token);
+      const locked = document.getElementById("lockedBox");
+      const routeBox = document.getElementById("routeBox");
+      const shareBox = document.getElementById("shareBox");
+      const isHost =
+        TW.isLoggedIn() &&
+        hike.organizerEmail &&
+        hike.organizerEmail === TW.memberEmail();
+
+      if (vis === "private" && (isHost || canSee) && hike.inviteToken) {
+        shareBox.style.display = "block";
+        document.getElementById("btnShare").addEventListener("click", () => {
+          const link =
+            location.origin +
+            location.pathname.replace(/[^/]+$/, "") +
+            "group-hike-detail.html?id=" +
+            encodeURIComponent(hike.id) +
+            "&token=" +
+            encodeURIComponent(hike.inviteToken);
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(link).then(() => showToast(TW.t("groups_link_copied")));
+          } else {
+            prompt(TW.t("groups_share_link"), link);
+          }
+        });
+      }
+
+      if (!canSee) {
+        locked.style.display = "block";
+        const msg = document.getElementById("lockedMsg");
+        const cta = document.getElementById("loginCta");
+        const reg = document.getElementById("regCta");
+        if (!TW.isLoggedIn()) {
+          msg.textContent = TW.t("groups_login_cta");
+          cta.href = "login.html?next=" + encodeURIComponent(nextPath);
+          reg.href = "register.html?next=" + encodeURIComponent(nextPath);
+          cta.style.display = "";
+          reg.style.display = "";
+        } else {
+          msg.textContent = TW.t("groups_private_locked");
+          cta.style.display = "none";
+          reg.style.display = "none";
+        }
+      } else {
+        routeBox.style.display = "block";
+        const path = (hike.path && hike.path.length ? hike.path : TW.demoPathAround()).map((p) => [
+          Number(p[0]),
+          Number(p[1]),
+        ]);
+        const map = L.map("ghMap").setView(path[0], 13);
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+          attribution: "© OpenStreetMap",
+        }).addTo(map);
+        if (path.length > 1) {
+          const line = L.polyline(path, { color: "#2563eb", weight: 5 }).addTo(map);
+          map.fitBounds(line.getBounds().pad(0.2));
+          L.circleMarker(path[0], {
+            radius: 7,
+            color: "#fff",
+            weight: 2,
+            fillColor: "#2d8a45",
+            fillOpacity: 1,
+          }).addTo(map);
+          L.circleMarker(path[path.length - 1], {
+            radius: 7,
+            color: "#fff",
+            weight: 2,
+            fillColor: "#d64545",
+            fillOpacity: 1,
+          }).addTo(map);
+        }
+        setTimeout(() => map.invalidateSize(), 200);
+      }
+    }
+  </script>
+</body>
+</html>

@@ -25,9 +25,10 @@
       <div class="trail-meta" id="recMeta" style="margin-bottom:1.25rem"></div>
       <div class="section-head"><h2 data-i18n="hikes_route">Route</h2></div>
       <div id="recMap"></div>
-      <div style="margin-top:1.25rem">
+      <div style="margin-top:1.25rem;display:flex;flex-wrap:wrap;gap:0.5rem">
         <a class="btn btn-primary" id="recPlan" href="plan.html" data-i18n="mark_plan"></a>
-        <a class="btn btn-secondary" href="get-app.html" data-i18n="nav_app" style="margin-left:0.5rem"></a>
+        <button type="button" class="btn btn-secondary" id="recDup" data-i18n="route_duplicate"></button>
+        <a class="btn btn-secondary" href="get-app.html" data-i18n="nav_app"></a>
       </div>
     </div>
   </main>
@@ -63,6 +64,14 @@
           showToast(TW.t("toast_planned"));
         });
       }
+
+      document.getElementById("recDup").addEventListener("click", () => {
+        const draft = TW.duplicateRoute(r);
+        showToast(TW.isLoggedIn() ? TW.t("toast_duplicated") : TW.t("toast_duplicated_guest"));
+        setTimeout(() => {
+          location.href = "plan.html?edit=" + encodeURIComponent(draft.id);
+        }, 450);
+      });
 
       const path = (r.path && r.path.length ? r.path : [[22.32, 114.17]]).map((p) => [p[0], p[1]]);
       const map = L.map("recMap").setView(path[0], 13);
