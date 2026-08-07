@@ -122,17 +122,23 @@
         const tag = TW.tt(p, "tag") || p.tag;
         const time = TW.tt(p, "time") || p.time;
         const expandable = /Community|Sponsored|announcement/i.test(tag || "") || p.type === "community";
-        return `<article class="feed-card" data-i="${i}">
+        const recHref = (p.type === "record" || tag === "Record" || tag === "記錄") && p.recordId
+          ? "record-detail.html?id=" + encodeURIComponent(p.recordId)
+          : "";
+        const openAttr = recHref ? ` data-record-href="${recHref}" style="cursor:pointer"` : "";
+        return `<article class="feed-card"${openAttr} data-i="${i}">
           <div class="top">
-            ${TW.avatarHtml(p.avatar, "avatar-sm") || `<span style="width:28px;height:28px;border-radius:50%;background:var(--green-100)"></span>`}
+            ${TW.avatarHtml(p.avatar, "avatar-sm", "", p.user)}
             <div><div class="name">${p.user || "TrailWatch"}</div><div class="time">${time}</div></div>
             <span class="tag">${tag}</span>
           </div>
           ${title ? `<strong>${title}</strong>` : ""}
           <p>${body || ""}</p>
+          ${p.distance ? `<p style="font-size:0.72rem;color:var(--text-muted);margin:0.25rem 0 0">📏 ${p.distance}${p.duration ? " · ⏱ " + p.duration : ""}${p.rating != null ? " · ★ " + p.rating : ""}</p>` : ""}
           ${expandable ? `<div class="expand-body">${lang === "zh" ? "完整公告詳情與活動連結（示範）。點擊展開查看更多。" : "Full announcement details and promo links (demo). Expand for more."}</div>
             <button type="button" class="expand-btn" data-expand>${lang === "zh" ? "展開" : "Expand"}</button>` : ""}
           ${p.tag === "Group Hike" ? `<a href="group-detail.html?id=${i}" style="display:inline-block;margin-top:0.45rem;font-size:0.72rem;font-weight:700;color:var(--green-800)">${t("nav_groups")} →</a>` : ""}
+          ${recHref ? `<a href="${recHref}" style="display:inline-block;margin-top:0.45rem;font-size:0.72rem;font-weight:700;color:var(--green-800)">${t("rec_detail")} →</a>` : ""}
         </article>`;
       }).join("") || `<p style="text-align:center;color:var(--text-muted);padding:2rem 0">${t("hikes_empty")}</p>`;
     }
@@ -150,12 +156,17 @@
     });
     document.getElementById("feed").addEventListener("click", (e) => {
       const btn = e.target.closest("[data-expand]");
-      if (!btn) return;
-      const card = btn.closest(".feed-card");
-      card.classList.toggle("expanded");
-      btn.textContent = card.classList.contains("expanded")
-        ? (lang === "zh" ? "收起" : "Collapse")
-        : (lang === "zh" ? "展開" : "Expand");
+      if (btn) {
+        const card = btn.closest(".feed-card");
+        card.classList.toggle("expanded");
+        btn.textContent = card.classList.contains("expanded")
+          ? (lang === "zh" ? "收起" : "Collapse")
+          : (lang === "zh" ? "展開" : "Expand");
+        return;
+      }
+      const card = e.target.closest("[data-record-href]");
+      if (!card || e.target.closest("a, button")) return;
+      location.href = card.getAttribute("data-record-href");
     });
     render();
   </script>

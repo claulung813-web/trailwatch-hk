@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Record Detail — TrailWatch HK</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="css/styles.css" />
+  <style>
+    .rec-detail-wrap { max-width: 720px; margin: 0 auto; }
+    .rec-detail-head {
+      display: flex; align-items: center; gap: 0.65rem; margin-bottom: 0.85rem;
+    }
+    .rec-detail-head h1 {
+      flex: 1; font-size: 1.15rem; margin: 0; color: var(--green-900); text-align: center;
+    }
+    .rec-detail-head .icon-btn {
+      width: 40px; height: 40px; border: none; background: #f3f4f6; border-radius: 10px;
+      cursor: pointer; font-size: 1.1rem; color: var(--green-900);
+    }
+    #recMap {
+      height: 280px; border-radius: 14px; border: 1px solid var(--border);
+      position: relative; z-index: 1;
+    }
+    .rec-map-wrap { position: relative; margin-bottom: 1rem; }
+    .rec-expand {
+      position: absolute; top: 0.65rem; right: 0.65rem; z-index: 500;
+      width: 36px; height: 36px; border-radius: 8px; border: none; background: #fff;
+      box-shadow: 0 2px 8px rgba(0,0,0,.15); cursor: pointer; font-size: 0.95rem;
+    }
+    .rec-card {
+      background: #fff; border: 1px solid var(--border); border-radius: 16px;
+      padding: 1rem 1.1rem 1.15rem; box-shadow: 0 2px 12px rgba(0,0,0,.04);
+    }
+    .rec-user-row {
+      display: flex; align-items: center; gap: 0.65rem; margin-bottom: 1rem;
+    }
+    .rec-user-row .avatar-sm, .rec-user-row .avatar-fallback {
+      width: 44px; height: 44px; flex-shrink: 0;
+    }
+    .rec-user-meta { flex: 1; min-width: 0; }
+    .rec-user-meta .name { font-weight: 800; color: #111; font-size: 0.95rem; }
+    .rec-user-meta .date { font-size: 0.78rem; color: var(--text-muted); margin-top: 0.1rem; }
+    .rec-rating { font-weight: 700; color: #111; font-size: 0.95rem; white-space: nowrap; }
+    .rec-rating .star { color: #e8b923; margin-right: 0.15rem; }
+    .rec-stats-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.85rem 0.5rem;
+    }
+    .rec-stat .ico { font-size: 0.85rem; color: #9ca3af; margin-bottom: 0.15rem; }
+    .rec-stat .val { font-size: 0.95rem; font-weight: 800; color: #111; }
+    .rec-stat .lbl { font-size: 0.68rem; color: var(--text-muted); font-weight: 600; margin-top: 0.1rem; }
+    .rec-card-foot {
+      display: flex; justify-content: flex-end; margin-top: 1rem;
+    }
+    .rec-group-btn {
+      display: inline-flex; align-items: center; gap: 0.25rem;
+      background: var(--green-900); color: #fff; border: none; border-radius: 10px;
+      padding: 0.55rem 1rem; font-weight: 700; font-size: 0.85rem; text-decoration: none;
+    }
+    .rec-photos { margin-top: 1.25rem; }
+    .rec-photos h2 { font-size: 1rem; color: var(--green-900); margin: 0 0 0.65rem; }
+    .rec-photo-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.5rem;
+    }
+    .rec-photo-grid img {
+      width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 10px;
+      border: 1px solid var(--border); background: #f3f4f6;
+    }
+  </style>
+</head>
+<body>
+  <div id="app-header"></div>
+  <main class="page">
+    <div class="container rec-detail-wrap">
+      <div class="rec-detail-head">
+        <a class="icon-btn" href="explore.html" id="backBtn" aria-label="Back" style="display:grid;place-items:center;text-decoration:none">‹</a>
+        <h1 id="recTitle">—</h1>
+        <button type="button" class="icon-btn" id="btnBookmark" title="Save">🔖</button>
+        <button type="button" class="icon-btn" id="btnShare" title="Share">↗</button>
+      </div>
+      <div class="rec-map-wrap">
+        <div id="recMap"></div>
+        <button type="button" class="rec-expand" id="btnExpandMap" aria-label="Expand">⛶</button>
+      </div>
+      <div class="rec-card">
+        <div class="rec-user-row">
+          <div id="recAvatar"></div>
+          <div class="rec-user-meta">
+            <div class="name" id="recUser">—</div>
+            <div class="date" id="recDate">—</div>
+          </div>
+          <div class="rec-rating"><span class="star">★</span><span id="recRating">—</span></div>
+        </div>
+        <div class="rec-stats-grid" id="recStats"></div>
+        <div class="rec-card-foot" id="recGroupWrap" hidden>
+          <a class="rec-group-btn" id="recGroupBtn" href="group-hikes.html"><span id="recGroupLbl">Group</span> ›</a>
+        </div>
+      </div>
+      <section class="rec-photos">
+        <h2 id="photosHeading">Photos</h2>
+        <div class="rec-photo-grid" id="photoGrid"></div>
+        <p id="photoEmpty" style="display:none;color:var(--text-muted);font-size:0.85rem"></p>
+      </section>
+    </div>
+  </main>
+  <div id="app-footer"></div>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="js/i18n.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/cms-store.js"></script>
+  <script src="js/hikes.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    document.documentElement.lang = TW.getLang() === "zh" ? "zh-Hant" : "en";
+    initShell("explore");
+    const t = TW.t;
+    const lang = TW.getLang();
+    document.getElementById("photosHeading").textContent = t("rec_photos");
+    document.getElementById("recGroupLbl").textContent = t("rec_group");
+    document.getElementById("photoEmpty").textContent = t("rec_no_photos");
+    document.getElementById("btnBookmark").title = t("rec_bookmark");
+    document.getElementById("btnShare").title = t("rec_share");
+
+    const id = new URLSearchParams(location.search).get("id");
+    const ref = document.referrer || "";
+    if (ref.indexOf("profile") >= 0) document.getElementById("backBtn").href = "profile.html#activity&type=records";
+    else if (ref.indexOf("feed") >= 0) document.getElementById("backBtn").href = "feed.html";
+
+    const rec = TW.getRecord(id) || (TW.records && TW.records[0]);
+    if (!rec) {
+      location.href = "explore.html";
+    } else {
+      document.getElementById("recTitle").textContent = TW.tt(rec, "title");
+      document.getElementById("recUser").textContent = rec.user || "—";
+      document.getElementById("recDate").textContent = lang === "zh" && rec.dateZh ? rec.dateZh : (rec.date || "—");
+      document.getElementById("recRating").textContent = rec.rating != null ? rec.rating : "—";
+      document.getElementById("recAvatar").innerHTML = twAvatarHtml(rec.avatar, "avatar-sm", "", rec.user);
+
+      const elev = rec.elevGain != null ? rec.elevGain + " m" : (rec.elev || "—");
+      const started = lang === "zh" && rec.startedZh ? rec.startedZh : (rec.started || "—");
+      const finished = lang === "zh" && rec.finishedZh ? rec.finishedZh : (rec.finished || "—");
+      const stats = [
+        { ico: "📏", val: rec.distance || "—", lbl: t("app_distance") },
+        { ico: "⏱", val: rec.duration || "—", lbl: t("app_duration") },
+        { ico: "〰", val: elev, lbl: t("rec_elev_gain") },
+        { ico: "🔥", val: (rec.calories != null ? rec.calories + " kcal" : "—"), lbl: t("rec_calories") },
+        { ico: "◔", val: rec.pace || "—", lbl: t("rec_avg_pace") },
+        { ico: "▶", val: started, lbl: t("rec_started") },
+        { ico: "⚑", val: finished, lbl: t("rec_finished") },
+      ];
+      document.getElementById("recStats").innerHTML = stats.map((s) =>
+        `<div class="rec-stat"><div class="ico">${s.ico}</div><div class="val">${s.val}</div><div class="lbl">${s.lbl}</div></div>`
+      ).join("");
+
+      if (rec.groupId) {
+        document.getElementById("recGroupWrap").hidden = false;
+        document.getElementById("recGroupBtn").href = "group-hike-detail.html?id=" + encodeURIComponent(rec.groupId);
+      }
+
+      const photos = rec.photos || [];
+      const grid = document.getElementById("photoGrid");
+      if (photos.length) {
+        grid.innerHTML = photos.map((p) =>
+          `<img src="${TW.recordPhotoSrc(p)}" alt="" loading="lazy" onerror="this.remove()" />`
+        ).join("");
+      } else {
+        document.getElementById("photoEmpty").style.display = "block";
+      }
+
+      const path = (rec.path && rec.path.length ? rec.path : [[22.35, 114.25]]).map((p) => [p[0], p[1]]);
+      const map = L.map("recMap", { zoomControl: false }).setView(path[0], 13);
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "© OSM", maxZoom: 18 }).addTo(map);
+      if (path.length > 1) {
+        const line = L.polyline(path, { color: "#2563eb", weight: 5 }).addTo(map);
+        TW.addRouteEndpoints(map, path);
+        map.fitBounds(line.getBounds().pad(0.2));
+      }
+      document.getElementById("btnExpandMap").addEventListener("click", () => {
+        map.invalidateSize();
+        if (path.length > 1) map.fitBounds(L.polyline(path).getBounds().pad(0.15));
+      });
+    }
+
+    document.getElementById("btnBookmark").addEventListener("click", () => showToast(t("rec_bookmark")));
+    document.getElementById("btnShare").addEventListener("click", () => {
+      const url = location.href;
+      if (navigator.clipboard) navigator.clipboard.writeText(url).then(() => showToast(t("rec_share")));
+      else showToast(url);
+    });
+  </script>
+</body>
+</html>

@@ -98,11 +98,14 @@
     const records = TW.records || [];
     const list = document.getElementById("list");
     const sub = document.getElementById("subfilters");
-    let tab = "routes";
+    let tab = new URLSearchParams(location.search).get("tab") || "routes";
+    if (!["routes", "records", "incidents"].includes(tab)) tab = "routes";
     let routeFilter = "editors"; // default Editor's Choice
     let recQ = "";
     let recFriends = false;
     let recDate = "all";
+
+    document.querySelectorAll(".tabs button").forEach((b) => b.classList.toggle("active", b.dataset.tab === tab));
 
     function editorsChoice() {
       return trails.filter((tr, i) => tr.monthly || i < 4);
@@ -210,11 +213,12 @@
         list.innerHTML = rows.length
           ? rows.map((r) => {
               const title = TW.tt(r, "title") || r.title;
-              return `<div class="record-row">
+              const href = "record-detail.html?id=" + encodeURIComponent(r.id || "");
+              return `<a class="record-row" href="${href}" style="text-decoration:none;color:inherit;display:block">
                 <strong>${title}</strong>
                 <p>${r.user || ""} · ${r.distance || ""} · ${r.duration || ""}</p>
-                <p><span class="app-tbd">${t("app_tbd_tags")}</span></p>
-              </div>`;
+                <p>★ ${r.rating != null ? r.rating : "—"} · ${r.elev || (r.elevGain != null ? r.elevGain + " m" : "")}</p>
+              </a>`;
             }).join("")
           : `<p style="text-align:center;color:var(--text-muted);padding:2rem 1rem">${t("hikes_empty")}</p>`;
       } else {
@@ -233,7 +237,12 @@
       const btn = e.target.closest("button[data-tab]");
       if (!btn) return;
       tab = btn.dataset.tab;
-      document.querySelectorAll(".tabs button").forEach((b) => b.classList.toggle("active", b === btn));
+      document.querySelectorAll(".tabs button").forEach((c) => c.classList.toggle("active", c === btn));
+      try {
+        const u = new URL(location.href);
+        u.searchParams.set("tab", tab);
+        history.replaceState(null, "", u.pathname + u.search);
+      } catch (e) {}
       render();
     });
 

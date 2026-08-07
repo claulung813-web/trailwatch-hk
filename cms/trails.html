@@ -55,7 +55,7 @@
             <button type="button" class="cms-btn cms-btn-secondary cms-btn-sm" id="undoPoint">Undo point</button>
             <span id="pathCount" style="font-size:0.8rem;color:#6b7280">0 points</span>
           </div>
-          <div id="trailMap" class="cms-map"></div>
+          <div id="trailMap" class="cms-map cms-map--edit"></div>
           <div class="cms-toolbar" style="margin-top:0.75rem">
             <button type="submit" class="cms-btn cms-btn-primary">Save recommendation</button>
             <button type="button" class="cms-btn cms-btn-secondary" id="resetForm">New</button>
@@ -241,6 +241,7 @@
       path = (r.path || []).map((p) => [p[0], p[1]]);
       redrawPath();
       window.scrollTo({ top: 0, behavior: "smooth" });
+      setTimeout(() => map.invalidateSize(), 150);
     }
 
     function renderList() {
@@ -279,6 +280,7 @@
     }
     renderList();
     setTimeout(() => map.invalidateSize(), 100);
+    window.addEventListener("resize", () => map.invalidateSize());
   </script>
 </body>
 </html>

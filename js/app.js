@@ -37,18 +37,53 @@ function twHasAvatar(url) {
   return s !== "" && s !== "null" && s !== "undefined";
 }
 
-/** img HTML for an avatar — empty string when missing (no broken-image icon) */
-function twAvatarHtml(url, className, attrs) {
-  if (!twHasAvatar(url)) return "";
+/** Initials from a display name for avatar fallbacks */
+function twAvatarInitials(name) {
+  const parts = String(name || "")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+  if (!parts.length) return "?";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
+/** img HTML for an avatar — initials fallback when missing (no broken-image icon) */
+function twAvatarHtml(url, className, attrs, name) {
   const cls = className || "avatar-sm";
   const extra = attrs ? " " + attrs : "";
-  return `<img class="${cls}" src="${url}" alt="" loading="lazy" onerror="this.remove()"${extra} />`;
+  if (!twHasAvatar(url)) {
+    const initials = twAvatarInitials(name);
+    return `<span class="${cls} avatar-fallback" aria-hidden="true"${extra}>${initials}</span>`;
+  }
+  const nameAttr = name ? ` data-name="${String(name).replace(/"/g, "&quot;")}"` : "";
+  return `<img class="${cls}" src="${url}" alt="" loading="lazy" onerror="TW.replaceBrokenAvatar(this)"${nameAttr}${extra} />`;
+}
+
+/** Replace a broken <img> avatar with initials span */
+function twReplaceBrokenAvatar(img) {
+  if (!img || !img.parentNode) return;
+  const name = img.getAttribute("data-name") || img.alt || "";
+  const cls = img.className || "avatar-sm";
+  const span = document.createElement("span");
+  span.className = cls + (cls.indexOf("avatar-fallback") >= 0 ? "" : " avatar-fallback");
+  span.setAttribute("aria-hidden", "true");
+  span.textContent = twAvatarInitials(name);
+  img.parentNode.replaceChild(span, img);
 }
 
 /** Set or hide an existing <img> avatar element */
-function twSetAvatar(el, url) {
+function twSetAvatar(el, url, name) {
   if (!el) return;
   if (!twHasAvatar(url)) {
+    if (el.tagName === "IMG") {
+      const span = document.createElement("span");
+      span.className = (el.className || "avatar-sm") + " avatar-fallback";
+      span.setAttribute("aria-hidden", "true");
+      span.textContent = twAvatarInitials(name);
+      el.parentNode && el.parentNode.replaceChild(span, el);
+      return;
+    }
     el.removeAttribute("src");
     el.hidden = true;
     el.style.display = "none";
@@ -56,17 +91,18 @@ function twSetAvatar(el, url) {
   }
   el.hidden = false;
   el.style.removeProperty("display");
+  if (name) el.setAttribute("data-name", name);
   el.onerror = function () {
-    this.removeAttribute("src");
-    this.hidden = true;
-    this.style.display = "none";
+    twReplaceBrokenAvatar(this);
   };
   el.src = url;
 }
 
 window.TW = window.TW || {};
 TW.hasAvatar = twHasAvatar;
+TW.avatarInitials = twAvatarInitials;
 TW.avatarHtml = twAvatarHtml;
+TW.replaceBrokenAvatar = twReplaceBrokenAvatar;
 TW.setAvatar = twSetAvatar;
 
 /** Circular mint button with outline icon — portfolio / dashboard tiles */
@@ -507,7 +543,7 @@ function renderHeader(active) {
   const accountNav = loggedIn
     ? `<div class="nav-account ${accountActive ? "has-active" : ""}" id="navAccount">
           <button type="button" class="nav-account-trigger" id="accountToggle" aria-expanded="false" aria-haspopup="true">
-            ${twAvatarHtml(u && u.avatar, "avatar-sm")}
+            ${twAvatarHtml(u && u.avatar, "avatar-sm", "", u && u.name)}
             <span class="nav-account-trigger-name">${twEsc(memberName)}</span>
           </button>
           <div class="nav-account-menu" id="accountMenu" hidden>
@@ -762,11 +798,19 @@ function renderFeedCard(post) {
   const body = TW.tt(post, "body");
   const tag = TW.tt(post, "tag") || post.tag;
   const time = TW.tt(post, "time") || post.time;
+  const inApp = /\/app(?:\/|$)/.test((location.pathname || "").replace(/\\/g, "/"));
+  const recHref =
+    post.type === "record" && post.recordId
+      ? (inApp ? "record-detail.html" : "record-detail.html") + "?id=" + encodeURIComponent(post.recordId)
+      : "";
+  const openAttr = recHref
+    ? ` role="link" tabindex="0" data-record-href="${recHref}" style="cursor:pointer"`
+    : "";
 
   return `
-  <article class="card feed-card">
+  <article class="card feed-card"${openAttr}>
     <div class="feed-card-header">
-      ${twAvatarHtml(post.avatar, "avatar-sm")}
+      ${twAvatarHtml(post.avatar, "avatar-sm", "", post.user)}
       <div class="user-info">
         <div class="name">${post.user}</div>
         <div class="time">${time}</div>
@@ -785,7 +829,9 @@ function renderFeedCard(post) {
       ${
         post.type === "group"
           ? `<button type="button" class="btn btn-primary" style="margin-left:auto;padding:0.4rem 0.9rem;font-size:0.8rem" onclick="showToast(TW.t('toast_joined'))">${TW.t("join")}</button>`
-          : ""
+          : recHref
+            ? `<a class="btn btn-secondary" style="margin-left:auto;padding:0.4rem 0.9rem;font-size:0.8rem" href="${recHref}">${TW.t("rec_detail")}</a>`
+            : ""
       }
     </div>
   </article>`;
@@ -833,22 +879,83 @@ function renderTrailCard(t, opts) {
   </article>`;
 }
 
-function renderRecordItem(r) {
+function renderRecordItem(r, detailHref) {
+  const id = r.id || "";
+  const inApp = /\/app(?:\/|$)/.test((location.pathname || "").replace(/\\/g, "/"));
+  const href =
+    detailHref ||
+    (id
+      ? (inApp ? "record-detail.html" : "record-detail.html") + "?id=" + encodeURIComponent(id)
+      : "#");
+  const date = TW.getLang() === "zh" && r.dateZh ? r.dateZh : r.date;
   return `
-  <article class="record-item">
+  <a class="record-item" href="${href}" style="text-decoration:none;color:inherit">
     <img src="${r.image}" alt="" loading="lazy" />
     <div class="body">
-      <div class="top"><span>${r.date}</span><span>★ ${r.rating}</span></div>
+      <div class="top"><span>${date || ""}</span><span>★ ${r.rating != null ? r.rating : "—"}</span></div>
       <h4>${TW.tt(r, "title")}</h4>
       <p class="snippet">${TW.tt(r, "snippet")}</p>
       <div class="trail-meta">
-        <span>📏 ${r.distance}</span>
-        <span>⏱ ${r.duration}</span>
-        <span>⬆ ${r.elev}</span>
+        <span>📏 ${r.distance || "—"}</span>
+        <span>⏱ ${r.duration || "—"}</span>
+        <span>⬆ ${r.elev || (r.elevGain != null ? r.elevGain + " m" : "—")}</span>
       </div>
     </div>
-  </article>`;
+  </a>`;
 }
+
+TW.getRecord = function (id) {
+  if (!id) return null;
+  return (TW.records || []).find((r) => r.id === id) || null;
+};
+
+/** Resolve photo URLs for records/hikes relative to current page (app vs root) */
+TW.recordPhotoSrc = function (src) {
+  if (!src) return "";
+  if (/^https?:\/\//i.test(src) || src.startsWith("data:")) return src;
+  const inApp = /\/app(?:\/|$)/.test((location.pathname || "").replace(/\\/g, "/"));
+  if (src.startsWith("../")) return src;
+  if (src.startsWith("assets/") && inApp) return "../" + src;
+  return src;
+};
+
+/** Draw start (white circle) + end (red square) markers on a Leaflet map */
+TW.addRouteEndpoints = function (map, path) {
+  if (!map || !path || path.length < 1) return;
+  const start = path[0];
+  const end = path[path.length - 1];
+  L.circleMarker(start, {
+    radius: 8,
+    color: "#111",
+    weight: 2,
+    fillColor: "#fff",
+    fillOpacity: 1,
+  }).addTo(map);
+  const endIcon = L.divIcon({
+    className: "tw-end-marker",
+    html: '<span style="display:block;width:14px;height:14px;background:#e84a3c;border:2px solid #fff;box-shadow:0 0 0 1px #e84a3c;border-radius:2px"></span>',
+    iconSize: [14, 14],
+    iconAnchor: [7, 7],
+  });
+  L.marker(end, { icon: endIcon }).addTo(map);
+};
+
+document.addEventListener("click", (e) => {
+  const card = e.target.closest("[data-record-href]");
+  if (!card) return;
+  if (e.target.closest("a, button, .like-btn")) return;
+  const href = card.getAttribute("data-record-href");
+  if (href) location.href = href;
+});
+
+document.addEventListener("keydown", (e) => {
+  if (e.key !== "Enter" && e.key !== " ") return;
+  const card = e.target.closest("[data-record-href]");
+  if (!card || e.target !== card) return;
+  e.preventDefault();
+  const href = card.getAttribute("data-record-href");
+  if (href) location.href = href;
+});
 
 function bindLikes() {
   document.querySelectorAll(".like-btn").forEach((btn) => {

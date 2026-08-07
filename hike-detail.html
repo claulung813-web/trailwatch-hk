@@ -10,41 +10,84 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="css/styles.css" />
   <style>
-    #hikeMap { height: 360px; border-radius: var(--radius); border: 1px solid var(--border); }
+    .rec-detail-wrap { max-width: 720px; margin: 0 auto; }
+    .rec-detail-head {
+      display: flex; align-items: center; gap: 0.65rem; margin-bottom: 0.85rem;
+    }
+    .rec-detail-head h1 {
+      flex: 1; font-size: 1.15rem; margin: 0; color: var(--green-900); text-align: center;
+    }
+    .rec-detail-head .icon-btn {
+      width: 40px; height: 40px; border: none; background: #f3f4f6; border-radius: 10px;
+      cursor: pointer; font-size: 1.1rem; color: var(--green-900);
+      display: grid; place-items: center; text-decoration: none;
+    }
+    #hikeMap {
+      height: 280px; border-radius: 14px; border: 1px solid var(--border);
+    }
+    .rec-map-wrap { position: relative; margin-bottom: 1rem; }
+    .rec-expand {
+      position: absolute; top: 0.65rem; right: 0.65rem; z-index: 500;
+      width: 36px; height: 36px; border-radius: 8px; border: none; background: #fff;
+      box-shadow: 0 2px 8px rgba(0,0,0,.15); cursor: pointer;
+    }
+    .rec-card {
+      background: #fff; border: 1px solid var(--border); border-radius: 16px;
+      padding: 1rem 1.1rem 1.15rem; box-shadow: 0 2px 12px rgba(0,0,0,.04);
+    }
+    .rec-user-row { display: flex; align-items: center; gap: 0.65rem; margin-bottom: 1rem; }
+    .rec-user-row .avatar-sm, .rec-user-row .avatar-fallback { width: 44px; height: 44px; flex-shrink: 0; }
+    .rec-user-meta { flex: 1; min-width: 0; }
+    .rec-user-meta .name { font-weight: 800; color: #111; font-size: 0.95rem; }
+    .rec-user-meta .date { font-size: 0.78rem; color: var(--text-muted); margin-top: 0.1rem; }
+    .rec-rating { font-weight: 700; color: #111; font-size: 0.95rem; }
+    .rec-rating .star { color: #e8b923; }
+    .rec-stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.85rem 0.5rem; }
+    .rec-stat .ico { font-size: 0.85rem; color: #9ca3af; margin-bottom: 0.15rem; }
+    .rec-stat .val { font-size: 0.95rem; font-weight: 800; color: #111; }
+    .rec-stat .lbl { font-size: 0.68rem; color: var(--text-muted); font-weight: 600; margin-top: 0.1rem; }
+    .rec-photos { margin-top: 1.25rem; }
+    .rec-photos h2 { font-size: 1rem; color: var(--green-900); margin: 0 0 0.65rem; }
+    .rec-photo-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.5rem;
+    }
+    .rec-photo-grid img {
+      width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 10px;
+      border: 1px solid var(--border); background: #f3f4f6;
+    }
   </style>
 </head>
 <body>
   <div id="app-header"></div>
 
   <main class="page">
-    <div class="container" style="max-width:800px">
-      <a href="my-hikes.html" class="link-more" data-i18n="hikes_back_list" style="display:inline-block;margin-bottom:1rem"></a>
-      <h1 class="page-title" id="hikeTitle"></h1>
-      <p class="page-sub" id="hikeDate"></p>
-
-      <div class="stats-grid cols-4 mb-2">
-        <div class="stat-box">
-          <div class="value" id="vDur">—</div>
-          <div class="label" data-i18n="hikes_duration"></div>
-        </div>
-        <div class="stat-box">
-          <div class="value" id="vDist">—</div>
-          <div class="label" data-i18n="hikes_distance"></div>
-        </div>
-        <div class="stat-box">
-          <div class="value" id="vGain">—</div>
-          <div class="label" data-i18n="hikes_gain"></div>
-        </div>
-        <div class="stat-box">
-          <div class="value" id="vLoss">—</div>
-          <div class="label" data-i18n="hikes_loss"></div>
-        </div>
+    <div class="container rec-detail-wrap">
+      <div class="rec-detail-head">
+        <a class="icon-btn" href="profile.html#activity&type=records" id="backBtn">‹</a>
+        <h1 id="hikeTitle">—</h1>
+        <button type="button" class="icon-btn" id="btnBookmark">🔖</button>
+        <button type="button" class="icon-btn" id="btnShare">↗</button>
       </div>
-
-      <div class="section-head">
-        <h2 data-i18n="hikes_route"></h2>
+      <div class="rec-map-wrap">
+        <div id="hikeMap"></div>
+        <button type="button" class="rec-expand" id="btnExpandMap">⛶</button>
       </div>
-      <div id="hikeMap"></div>
+      <div class="rec-card">
+        <div class="rec-user-row">
+          <div id="recAvatar"></div>
+          <div class="rec-user-meta">
+            <div class="name" id="recUser">—</div>
+            <div class="date" id="hikeDate">—</div>
+          </div>
+          <div class="rec-rating" id="ratingWrap"><span class="star">★</span> <span id="recRating">—</span></div>
+        </div>
+        <div class="rec-stats-grid" id="recStats"></div>
+      </div>
+      <section class="rec-photos">
+        <h2 id="photosHeading">Photos</h2>
+        <div class="rec-photo-grid" id="photoGrid"></div>
+        <p id="photoEmpty" style="display:none;color:var(--text-muted);font-size:0.85rem"></p>
+      </section>
     </div>
   </main>
 
@@ -59,19 +102,48 @@
     document.documentElement.lang = TW.getLang() === "zh" ? "zh-Hant" : "en";
     initShell("hikes");
     TW.ensureDemoHike();
+    const t = TW.t;
+    document.getElementById("photosHeading").textContent = t("rec_photos");
+    document.getElementById("photoEmpty").textContent = t("rec_no_photos");
 
     const id = new URLSearchParams(location.search).get("id");
     const hike = TW.getHike(id) || TW.getHikes()[0];
     if (!hike) {
-      location.href = "my-hikes.html";
+      location.href = "profile.html#activity&type=records";
     } else {
       const title = TW.getLang() === "zh" ? hike.titleZh || hike.title : hike.title;
+      const user = hike.user || (TW.user && TW.user.name) || "Hiker";
+      const avatar = hike.avatar != null ? hike.avatar : (TW.user && TW.user.avatar);
       document.getElementById("hikeTitle").textContent = title;
       document.getElementById("hikeDate").textContent = TW.formatHikeDate(hike.endedAt || hike.startedAt);
-      document.getElementById("vDur").textContent = TW.formatDuration(hike.seconds);
-      document.getElementById("vDist").textContent = hike.distanceKm + " km";
-      document.getElementById("vGain").textContent = hike.elevGain + " m";
-      document.getElementById("vLoss").textContent = hike.elevLoss + " m";
+      document.getElementById("recUser").textContent = user;
+      document.getElementById("recAvatar").innerHTML = twAvatarHtml(avatar, "avatar-sm", "", user);
+      if (hike.rating != null) document.getElementById("recRating").textContent = hike.rating;
+      else document.getElementById("ratingWrap").style.visibility = "hidden";
+
+      const cal = hike.calories != null ? hike.calories : TW.estimateCalories(hike.seconds, hike.distanceKm, hike.elevGain);
+      const pace = hike.pace || TW.formatPace(hike.seconds, hike.distanceKm);
+      const stats = [
+        { ico: "📏", val: hike.distanceKm + " km", lbl: t("app_distance") },
+        { ico: "⏱", val: TW.formatDurationShort(hike.seconds), lbl: t("app_duration") },
+        { ico: "〰", val: hike.elevGain + " m", lbl: t("rec_elev_gain") },
+        { ico: "🔥", val: cal + " kcal", lbl: t("rec_calories") },
+        { ico: "◔", val: pace, lbl: t("rec_avg_pace") },
+        { ico: "▶", val: TW.formatClock(hike.startedAt), lbl: t("rec_started") },
+        { ico: "⚑", val: TW.formatClock(hike.endedAt), lbl: t("rec_finished") },
+      ];
+      document.getElementById("recStats").innerHTML = stats.map((s) =>
+        `<div class="rec-stat"><div class="ico">${s.ico}</div><div class="val">${s.val}</div><div class="lbl">${s.lbl}</div></div>`
+      ).join("");
+
+      const photos = hike.photos || [];
+      if (photos.length) {
+        document.getElementById("photoGrid").innerHTML = photos.map((p) =>
+          `<img src="${TW.recordPhotoSrc(p)}" alt="" loading="lazy" onerror="this.remove()" />`
+        ).join("");
+      } else {
+        document.getElementById("photoEmpty").style.display = "block";
+      }
 
       const path = hike.path && hike.path.length ? hike.path : [[22.35, 114.25]];
       const map = L.map("hikeMap").setView(path[0], 13);
@@ -79,10 +151,15 @@
         attribution: "© OpenStreetMap",
       }).addTo(map);
       const line = L.polyline(path, { color: "#2563eb", weight: 5 }).addTo(map);
-      L.circleMarker(path[0], { radius: 7, color: "#fff", weight: 2, fillColor: "#2d8a45", fillOpacity: 1 }).addTo(map);
-      L.circleMarker(path[path.length - 1], { radius: 7, color: "#fff", weight: 2, fillColor: "#d64545", fillOpacity: 1 }).addTo(map);
+      TW.addRouteEndpoints(map, path);
       map.fitBounds(line.getBounds().pad(0.2));
+      document.getElementById("btnExpandMap").addEventListener("click", () => {
+        map.invalidateSize();
+        map.fitBounds(line.getBounds().pad(0.12));
+      });
     }
+    document.getElementById("btnBookmark").addEventListener("click", () => showToast(t("rec_bookmark")));
+    document.getElementById("btnShare").addEventListener("click", () => showToast(t("rec_share")));
   </script>
 </body>
 </html>
