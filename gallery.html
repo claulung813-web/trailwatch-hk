@@ -7,6 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body>
@@ -15,35 +16,284 @@
     <div class="container">
       <h1 class="page-title" data-i18n="gallery_title"></h1>
       <p class="page-sub" data-i18n="gallery_sub"></p>
-      <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:1rem" data-i18n="page_coming_filters"></p>
-      <div class="gallery-grid" id="galleryGrid"></div>
+
+      <div class="gallery-toolbar">
+        <div class="search-bar gallery-search">
+          <input type="search" id="gallerySearch" data-i18n-placeholder="gallery_search_ph" />
+        </div>
+        <div class="gallery-filters">
+          <div class="gallery-filter-field">
+            <label for="galleryDateFrom" data-i18n="gallery_date_from"></label>
+            <input class="form-input" type="date" id="galleryDateFrom" />
+          </div>
+          <div class="gallery-filter-field">
+            <label for="galleryDateTo" data-i18n="gallery_date_to"></label>
+            <input class="form-input" type="date" id="galleryDateTo" />
+          </div>
+          <div class="gallery-filter-field">
+            <label for="gallerySort" data-i18n="gallery_sort_label"></label>
+            <select class="form-select" id="gallerySort">
+              <option value="newest" data-i18n="gallery_sort_newest"></option>
+              <option value="oldest" data-i18n="gallery_sort_oldest"></option>
+              <option value="category" data-i18n="gallery_sort_category"></option>
+            </select>
+          </div>
+        </div>
+        <div class="gallery-gps-panel">
+          <div class="gallery-gps-head">
+            <strong data-i18n="gallery_gps_title"></strong>
+            <span class="meta" data-i18n="gallery_gps_hint"></span>
+          </div>
+          <div class="gallery-gps-fields">
+            <input class="form-input" id="galleryGpsLat" type="number" step="0.0001" data-i18n-placeholder="gallery_gps_lat" />
+            <input class="form-input" id="galleryGpsLng" type="number" step="0.0001" data-i18n-placeholder="gallery_gps_lng" />
+            <select class="form-select" id="galleryGpsRadius">
+              <option value="" selected data-i18n="gallery_gps_off"></option>
+              <option value="0.5">0.5 km</option>
+              <option value="1">1 km</option>
+              <option value="2">2 km</option>
+              <option value="5">5 km</option>
+              <option value="10">10 km</option>
+            </select>
+            <button type="button" class="btn btn-secondary" id="galleryGpsPreset" data-i18n="gallery_gps_preset_db"></button>
+            <button type="button" class="btn btn-secondary" id="galleryGpsClear" data-i18n="gallery_gps_clear"></button>
+          </div>
+          <div class="gallery-map" id="galleryMap" aria-label="GPS filter map"></div>
+        </div>
+        <div class="chip-row" id="galleryCatFilter" role="toolbar"></div>
+      </div>
+
+      <section class="gallery-section" aria-labelledby="galleryFeaturedHeading">
+        <div class="gallery-section-head">
+          <h2 id="galleryFeaturedHeading" class="articles-section-title" data-i18n="gallery_featured"></h2>
+          <span class="meta" id="galleryFeaturedMeta"></span>
+        </div>
+        <div class="gallery-featured-grid" id="galleryFeatured"></div>
+      </section>
+
+      <section class="gallery-section" id="galleryTimelineSection" hidden aria-labelledby="galleryTimelineHeading">
+        <div class="gallery-section-head">
+          <h2 id="galleryTimelineHeading" class="articles-section-title" data-i18n="gallery_timeline"></h2>
+          <span class="meta" data-i18n="gallery_timeline_hint"></span>
+        </div>
+        <div class="gallery-timeline" id="galleryTimeline"></div>
+      </section>
+
+      <section class="gallery-section" aria-labelledby="galleryAllHeading">
+        <div class="gallery-section-head">
+          <h2 id="galleryAllHeading" class="articles-section-title articles-section-title--sm" data-i18n="gallery_all"></h2>
+          <span class="meta" id="galleryCount"></span>
+        </div>
+        <div class="gallery-card-grid" id="galleryGrid"></div>
+        <p class="gallery-empty" id="galleryEmpty" hidden data-i18n="gallery_empty"></p>
+      </section>
     </div>
   </main>
   <div id="app-footer"></div>
-  <script src="js/i18n.js"></script>
-  <script src="js/data.js"></script>
-  <script src="js/app.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="js/i18n.js?v=gallery1"></script>
+  <script src="js/data.js?v=gallery1"></script>
+  <script src="js/cms-store.js?v=gallery1"></script>
+  <script src="js/app.js?v=gallery1"></script>
   <script>
     document.documentElement.lang = TW.getLang() === "zh" ? "zh-Hant" : "en";
     if (new URLSearchParams(location.search).get("mine") === "1") {
       location.replace("profile.html#activity&type=gallery");
     } else {
     initShell("gallery");
-    const mine = false;
-    const photos = [
-      "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=400&q=60",
-      "https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=400&q=60",
-      "https://images.unsplash.com/photo-1551632811-561732d1e5ec?w=400&q=60",
-      "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=400&q=60",
-      "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400&q=60",
-      "https://images.unsplash.com/photo-1511497584788-876760111969?w=400&q=60",
-      "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&q=60",
-      "https://images.unsplash.com/photo-1439066615861-d1af74d74000?w=400&q=60",
-    ];
-    const list = mine ? photos.slice(0, 4) : photos;
-    document.getElementById("galleryGrid").innerHTML = list.map((src, i) =>
-      `<a href="explore.html" title="Route photo ${i + 1}"><img src="${src}" alt="" loading="lazy" onerror="this.parentElement.remove()" /></a>`
-    ).join("");
-    } </script>
+
+    let category = "all";
+    let map, mapMarker, mapCircle;
+
+    function esc(s) {
+      return TW.escapeHtml ? TW.escapeHtml(s) : String(s == null ? "" : s)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function filterOpts(extra) {
+      const radiusVal = document.getElementById("galleryGpsRadius").value;
+      return Object.assign({
+        query: document.getElementById("gallerySearch").value,
+        category: category,
+        dateFrom: document.getElementById("galleryDateFrom").value,
+        dateTo: document.getElementById("galleryDateTo").value,
+        sort: document.getElementById("gallerySort").value,
+        gpsLat: document.getElementById("galleryGpsLat").value,
+        gpsLng: document.getElementById("galleryGpsLng").value,
+        gpsRadius: radiusVal,
+      }, extra || {});
+    }
+
+    function routeLabel(p) {
+      if (!p.routeId) return "";
+      const trail = (TW.trails || []).find((t) => t.id === p.routeId);
+      if (!trail) return p.routeId;
+      return TW.tt ? TW.tt(trail, "title") : (TW.getLang() === "zh" ? trail.titleZh || trail.title : trail.title);
+    }
+
+    function catLabel(id) {
+      const c = (TW.galleryCategories || []).find((x) => x.id === id);
+      return c ? TW.t(c.labelKey) : id;
+    }
+
+    function renderPhotoCard(p, opts) {
+      opts = opts || {};
+      const zh = TW.getLang() === "zh";
+      const desc = zh ? p.descriptionZh || p.description : p.description;
+      const href = TW.galleryRouteHref(p);
+      const route = routeLabel(p);
+      const featured = opts.featured ? " gallery-card--featured" : "";
+      return `
+        <article class="gallery-card${featured}">
+          <a class="gallery-card-media" href="${esc(href)}">
+            <img src="${esc(p.src)}" alt="" loading="lazy" onerror="this.closest('article').remove()" />
+          </a>
+          <div class="gallery-card-body">
+            <div class="gallery-card-meta">
+              <span class="gallery-chip">${esc(catLabel(p.category))}</span>
+              <time datetime="${esc(p.date)}">${esc(p.date)}</time>
+            </div>
+            <p class="gallery-card-desc">${esc(desc || "")}</p>
+            <div class="gallery-card-links">
+              ${route ? `<a href="${esc(href)}">${esc(route)}</a>` : ""}
+              ${p.recordId ? `<span class="meta">ID ${esc(p.recordId)}</span>` : ""}
+            </div>
+            ${p.lat != null ? `<div class="meta gallery-card-gps">${Number(p.lat).toFixed(4)}, ${Number(p.lng).toFixed(4)}</div>` : ""}
+          </div>
+        </article>`;
+    }
+
+    function renderCats() {
+      document.getElementById("galleryCatFilter").innerHTML = (TW.galleryCategories || [])
+        .map((c) => {
+          const n = TW.getGalleryPhotos(filterOpts({ category: c.id, excludeFeatured: false })).length;
+          const active = category === c.id ? " active" : "";
+          return `<button type="button" class="chip${active}" data-cat="${esc(c.id)}">${esc(TW.t(c.labelKey))} (${n})</button>`;
+        })
+        .join("");
+    }
+
+    function updateMapPin() {
+      const latRaw = document.getElementById("galleryGpsLat").value;
+      const lngRaw = document.getElementById("galleryGpsLng").value;
+      const lat = Number(latRaw);
+      const lng = Number(lngRaw);
+      const radius = Number(document.getElementById("galleryGpsRadius").value);
+      if (!map) return;
+      if (!latRaw || !lngRaw || !Number.isFinite(lat) || !Number.isFinite(lng)) return;
+      if (mapMarker) map.removeLayer(mapMarker);
+      if (mapCircle) map.removeLayer(mapCircle);
+      mapMarker = L.marker([lat, lng]).addTo(map);
+      if (Number.isFinite(radius) && radius > 0) {
+        mapCircle = L.circle([lat, lng], { radius: radius * 1000, color: "#2f6b4f", fillOpacity: 0.12 }).addTo(map);
+        map.fitBounds(mapCircle.getBounds(), { padding: [24, 24] });
+      } else {
+        map.setView([lat, lng], 12);
+      }
+    }
+
+    function refresh() {
+      renderCats();
+      const matching = TW.getGalleryPhotos(filterOpts({ featuredOnly: false, excludeFeatured: false }));
+      const featuredIds = TW.getFeaturedGalleryIds();
+      const featuredFiltered = featuredIds
+        .map((id) => matching.find((p) => p.id === id))
+        .filter(Boolean)
+        .slice(0, 10);
+
+      document.getElementById("galleryFeatured").innerHTML =
+        featuredFiltered.map((p) => renderPhotoCard(p, { featured: true })).join("") ||
+        `<p class="meta">${TW.t("gallery_empty")}</p>`;
+      document.getElementById("galleryFeaturedMeta").textContent =
+        featuredFiltered.length + " / 10";
+
+      const rest = TW.getGalleryPhotos(filterOpts({ excludeFeatured: true }));
+      document.getElementById("galleryGrid").innerHTML = rest.map((p) => renderPhotoCard(p)).join("");
+      document.getElementById("galleryCount").textContent = rest.length + " " + TW.t("gallery_photos_count");
+      document.getElementById("galleryEmpty").hidden = rest.length > 0;
+
+      const gpsOn =
+        document.getElementById("galleryGpsLat").value &&
+        document.getElementById("galleryGpsLng").value &&
+        document.getElementById("galleryGpsRadius").value;
+      const timelineSec = document.getElementById("galleryTimelineSection");
+      if (gpsOn) {
+        const timeline = TW.getGalleryPhotos(filterOpts({ sort: "oldest", excludeFeatured: false }));
+        timelineSec.hidden = timeline.length < 2;
+        document.getElementById("galleryTimeline").innerHTML = timeline
+          .map((p, i) => {
+            const zh = TW.getLang() === "zh";
+            const desc = zh ? p.descriptionZh || p.description : p.description;
+            return `
+              <div class="gallery-timeline-item">
+                <div class="gallery-timeline-year">${esc(p.date)}</div>
+                <a class="gallery-timeline-media" href="${esc(TW.galleryRouteHref(p))}">
+                  <img src="${esc(p.src)}" alt="" loading="lazy" />
+                </a>
+                <p>${esc(desc || "")}</p>
+                ${i < timeline.length - 1 ? '<div class="gallery-timeline-arrow" aria-hidden="true">→</div>' : ""}
+              </div>`;
+          })
+          .join("");
+      } else {
+        timelineSec.hidden = true;
+      }
+      updateMapPin();
+    }
+
+    map = L.map("galleryMap").setView([22.32, 114.17], 10);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "© OpenStreetMap",
+    }).addTo(map);
+    map.on("click", (e) => {
+      document.getElementById("galleryGpsLat").value = e.latlng.lat.toFixed(4);
+      document.getElementById("galleryGpsLng").value = e.latlng.lng.toFixed(4);
+      if (!document.getElementById("galleryGpsRadius").value) {
+        document.getElementById("galleryGpsRadius").value = "1";
+      }
+      refresh();
+    });
+
+    document.getElementById("gallerySearch").addEventListener("input", refresh);
+    document.getElementById("galleryDateFrom").addEventListener("change", refresh);
+    document.getElementById("galleryDateTo").addEventListener("change", refresh);
+    document.getElementById("gallerySort").addEventListener("change", refresh);
+    ["galleryGpsLat", "galleryGpsLng", "galleryGpsRadius"].forEach((id) => {
+      document.getElementById(id).addEventListener("change", refresh);
+    });
+    document.getElementById("galleryCatFilter").addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-cat]");
+      if (!btn) return;
+      category = btn.dataset.cat;
+      refresh();
+    });
+    document.getElementById("galleryGpsPreset").addEventListener("click", () => {
+      document.getElementById("galleryGpsLat").value = "22.2445";
+      document.getElementById("galleryGpsLng").value = "114.2408";
+      document.getElementById("galleryGpsRadius").value = "1";
+      refresh();
+    });
+    document.getElementById("galleryGpsClear").addEventListener("click", () => {
+      document.getElementById("galleryGpsLat").value = "";
+      document.getElementById("galleryGpsLng").value = "";
+      document.getElementById("galleryGpsRadius").value = "";
+      if (mapMarker) map.removeLayer(mapMarker);
+      if (mapCircle) map.removeLayer(mapCircle);
+      map.setView([22.32, 114.17], 10);
+      refresh();
+    });
+
+    // Apply i18n to select options
+    document.querySelectorAll("#gallerySort option[data-i18n], #galleryGpsRadius option[data-i18n]").forEach((opt) => {
+      opt.textContent = TW.t(opt.getAttribute("data-i18n"));
+    });
+
+    refresh();
+    setTimeout(() => map.invalidateSize(), 200);
+    }
+  </script>
 </body>
 </html>

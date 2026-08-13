@@ -7,6 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body>
@@ -17,33 +18,54 @@
       <h1 class="page-title" data-i18n="explore_title"></h1>
       <p class="page-sub" data-i18n="explore_sub"></p>
 
-      <div class="search-bar">
-        <input type="search" id="trailSearch" data-i18n-placeholder="search_placeholder" />
-      </div>
-
-      <div class="section-head" style="margin-bottom:0.5rem">
-        <h2 style="font-size:0.85rem;text-transform:uppercase;letter-spacing:0.04em" data-i18n="filter_category"></h2>
-      </div>
-      <div class="chip-row" id="categoryFilter" style="margin-bottom:1.25rem"></div>
-
-      <div class="filter-bar">
-        <div>
-          <label data-i18n="filter_district"></label>
-          <select class="form-select" id="districtFilter"></select>
+      <div class="explore-search-row">
+        <div class="search-bar explore-search">
+          <input type="search" id="trailSearch" data-i18n-placeholder="search_placeholder" />
         </div>
-        <div>
-          <label data-i18n="filter_difficulty"></label>
-          <div class="diff-chips" id="diffFilter">
-            <button type="button" class="chip active" data-diff="all" data-i18n="all_levels"></button>
-            <button type="button" class="chip" data-diff="1">1</button>
-            <button type="button" class="chip" data-diff="2">2</button>
-            <button type="button" class="chip" data-diff="3">3</button>
-            <button type="button" class="chip" data-diff="4">4</button>
-            <button type="button" class="chip" data-diff="5">5</button>
+        <button type="button" class="btn btn-secondary" id="advancedToggle" data-i18n="explore_advanced"></button>
+      </div>
+
+      <div class="explore-advanced" id="advancedPanel" hidden>
+        <div class="filter-bar">
+          <div>
+            <label data-i18n="filter_district"></label>
+            <select class="form-select" id="districtFilter"></select>
           </div>
-          <p id="diffHint" style="font-size:0.75rem;color:var(--text-muted);margin-top:0.4rem"></p>
+          <div>
+            <label data-i18n="filter_difficulty"></label>
+            <div class="diff-chips" id="diffFilter">
+              <button type="button" class="chip active" data-diff="all" data-i18n="all_levels"></button>
+              <button type="button" class="chip" data-diff="1">1</button>
+              <button type="button" class="chip" data-diff="2">2</button>
+              <button type="button" class="chip" data-diff="3">3</button>
+              <button type="button" class="chip" data-diff="4">4</button>
+              <button type="button" class="chip" data-diff="5">5</button>
+            </div>
+            <p id="diffHint" style="font-size:0.75rem;color:var(--text-muted);margin-top:0.4rem"></p>
+          </div>
+          <div>
+            <label data-i18n="explore_duration"></label>
+            <select class="form-select" id="durationFilter">
+              <option value="all" data-i18n="explore_duration_any"></option>
+              <option value="short" data-i18n="explore_duration_short"></option>
+              <option value="mid" data-i18n="explore_duration_mid"></option>
+              <option value="long" data-i18n="explore_duration_long"></option>
+            </select>
+          </div>
+          <div>
+            <label data-i18n="explore_distance"></label>
+            <select class="form-select" id="distanceFilter">
+              <option value="all" data-i18n="explore_distance_any"></option>
+              <option value="short" data-i18n="explore_distance_short"></option>
+              <option value="mid" data-i18n="explore_distance_mid"></option>
+              <option value="long" data-i18n="explore_distance_long"></option>
+            </select>
+          </div>
         </div>
       </div>
+
+      <div class="explore-view-row" id="viewModes" role="tablist"></div>
+      <div class="chip-row explore-subchips" id="subChips"></div>
 
       <div class="tabs" id="exploreTabs">
         <button class="tab active" data-tab="routes" data-i18n="tab_routes"></button>
@@ -51,22 +73,12 @@
       </div>
 
       <div id="view-routes">
-        <div class="section-head">
-          <h2 data-i18n="recommended_staff"></h2>
-          <span class="meta" id="staffRecMeta"></span>
+        <div class="explore-toolbar">
+          <h2 class="explore-count" id="listCount"></h2>
+          <button type="button" class="btn btn-primary explore-map-btn" id="toggleMapView" data-i18n="explore_map_view"></button>
         </div>
-        <div class="trail-grid" id="staffRecGrid"></div>
-
-        <div class="section-head mt-2">
-          <h2 data-i18n="monthly_rec"></h2>
-          <span class="meta" id="monthLabel"></span>
-        </div>
-        <div class="month-tabs" id="monthTabs"></div>
-        <div class="trail-grid" id="monthlyGrid"></div>
-
-        <div class="section-head mt-2">
-          <h2 data-i18n="all_trails"></h2>
-          <span class="meta" id="listCount"></span>
+        <div id="exploreMapWrap" class="explore-map-wrap" hidden>
+          <div id="exploreMap"></div>
         </div>
         <div class="trail-grid" id="trailGrid"></div>
       </div>
@@ -87,6 +99,7 @@
 
   <div id="app-footer"></div>
 
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="js/i18n.js"></script>
   <script src="js/data.js"></script>
   <script src="js/cms-store.js"></script>
@@ -95,134 +108,280 @@
     document.documentElement.lang = TW.getLang() === "zh" ? "zh-Hant" : "en";
     initShell("explore");
 
+    let view = "editors";
+    let theme = "all";
+    let area = "all";
     let district = "all";
     let difficulty = "all";
-    let category = "all";
+    let duration = "all";
+    let distanceBand = "all";
     let query = "";
-    let month = TW.monthlyMeta.find((m) => m.current).id;
+    let mapMode = false;
+    let exploreMap = null;
+    let exploreLayer = null;
 
     function recAsTrail(r) {
+      const lat = r.lat != null ? r.lat : r.path && r.path[0] ? r.path[0][0] : 22.32;
+      const lng = r.lng != null ? r.lng : r.path && r.path[0] ? r.path[0][1] : 114.17;
       return {
         id: r.id,
-        title: r.title,
-        titleZh: r.titleZh,
-        desc: r.desc,
-        descZh: r.descZh,
+        trailId: r.trailId || r.id,
+        title: r.title || r.name,
+        titleZh: r.titleZh || r.nameZh,
+        desc: r.desc || "",
+        descZh: r.descZh || "",
         district: r.district,
         difficulty: r.difficulty || 2,
-        distance: r.distance || "—",
+        distance: r.distanceKm != null ? r.distanceKm + " km" : r.distance || "—",
         duration: r.duration || "—",
         elevation: r.elevation || "—",
-        rating: 4.5,
+        rating: r.rating || 4.5,
         image: r.image,
-        tags: r.categories || [],
-        author: "TrailWatch",
-        date: r.month || "",
+        tags: r.tags || r.categories || [],
+        lat: lat,
+        lng: lng,
+        path: r.path,
+        monthly: r.monthly,
+        editorChoice: !!(r.editorChoice || r.featured || r.monthly),
       };
     }
 
-    document.getElementById("categoryFilter").innerHTML = TW.trailFilters
-      .map(
-        (f) =>
-          `<button type="button" class="chip ${f.id === "all" ? "active" : ""}" data-cat="${f.id}">${TW.t(f.labelKey)}</button>`
-      )
-      .join("");
+    function allRoutes() {
+      const byId = {};
+      (TW.trails || []).forEach((t) => {
+        byId[t.id] = recAsTrail(t);
+      });
+      (typeof TW.getRecommendedTrails === "function" ? TW.getRecommendedTrails() : []).forEach((r) => {
+        const t = recAsTrail(r);
+        if (!byId[t.trailId]) byId[t.id] = t;
+      });
+      return Object.keys(byId).map((k) => byId[k]);
+    }
+
+    function editorsRoutes() {
+      const recs = (typeof TW.getRecommendedTrails === "function" ? TW.getRecommendedTrails() : []).map(recAsTrail);
+      const picks = (TW.trails || []).filter((t) => t.monthly || t.editorChoice).map(recAsTrail);
+      const byId = {};
+      recs.concat(picks).forEach((t) => {
+        byId[t.id] = t;
+      });
+      return Object.keys(byId).map((k) => byId[k]);
+    }
+
+    function parseHours(t) {
+      const s = String(t.duration || "");
+      const h = /(\d+(?:\.\d+)?)\s*h/i.exec(s);
+      const m = /(\d+)\s*m/i.exec(s);
+      return (h ? +h[1] : 0) + (m ? +m[1] / 60 : 0);
+    }
+    function parseKm(t) {
+      if (t.distanceKm != null) return +t.distanceKm;
+      const m = /([\d.]+)\s*km/i.exec(String(t.distance || ""));
+      return m ? +m[1] : NaN;
+    }
+
+    function applySearch(list) {
+      return list.filter((t) => {
+        const matchD = district === "all" || t.district === district;
+        const matchDiff = difficulty === "all" || String(t.difficulty) === String(difficulty);
+        const hrs = parseHours(t);
+        const matchDur =
+          duration === "all" ||
+          (duration === "short" && hrs > 0 && hrs < 2) ||
+          (duration === "mid" && hrs >= 2 && hrs <= 4) ||
+          (duration === "long" && hrs > 4);
+        const km = parseKm(t);
+        const matchDist =
+          distanceBand === "all" ||
+          (distanceBand === "short" && km < 8) ||
+          (distanceBand === "mid" && km >= 8 && km <= 15) ||
+          (distanceBand === "long" && km > 15);
+        const tags = t.tags || [];
+        const matchTheme = view !== "categories" || theme === "all" || tags.indexOf(theme) >= 0;
+        const matchArea = view !== "themes" || area === "all" || t.district === area;
+        const q = query.trim().toLowerCase();
+        const hay = (
+          TW.tt(t, "title") +
+          " " +
+          TW.tt(t, "desc") +
+          " " +
+          TW.districtName(t.district) +
+          " " +
+          tags.join(" ")
+        ).toLowerCase();
+        const matchQ = !q || hay.includes(q);
+        return matchD && matchDiff && matchDur && matchDist && matchTheme && matchArea && matchQ;
+      });
+    }
+
+    function baseForView() {
+      if (view === "editors") return editorsRoutes();
+      return allRoutes();
+    }
+
+    function resultCountLabel(n) {
+      const unit = n === 1 ? TW.t("explore_result_one") : TW.t("explore_results");
+      return n + " " + unit;
+    }
+
+    function renderViewModes() {
+      const allN = applySearch(allRoutes()).length;
+      const edN = applySearch(editorsRoutes()).length;
+      const modes = [
+        { id: "all", label: TW.t("explore_view_all"), n: allN },
+        { id: "editors", label: TW.t("explore_view_editors"), n: edN },
+        { id: "categories", label: TW.t("explore_view_categories"), n: allN },
+        { id: "themes", label: TW.t("explore_view_themes"), n: allN },
+      ];
+      document.getElementById("viewModes").innerHTML = modes
+        .map(
+          (m) =>
+            `<button type="button" class="explore-view-chip${m.id === view ? " active" : ""}" data-view="${m.id}">
+              ${m.label} <span class="n">${m.n}</span>
+            </button>`
+        )
+        .join("");
+    }
+
+    function renderSubChips(pool) {
+      const row = document.getElementById("subChips");
+      if (view === "categories") {
+        const filters = (TW.trailFilters || []).filter((f) => f.id !== "all");
+        row.innerHTML =
+          `<button type="button" class="chip${theme === "all" ? " active" : ""}" data-theme="all">${TW.t("filter_all")} (${pool.length})</button>` +
+          filters
+            .map((f) => {
+              const n = pool.filter((t) => (t.tags || []).indexOf(f.id) >= 0).length;
+              return `<button type="button" class="chip${theme === f.id ? " active" : ""}" data-theme="${f.id}">${TW.t(f.labelKey)} (${n})</button>`;
+            })
+            .join("");
+        row.hidden = false;
+      } else if (view === "themes") {
+        row.innerHTML =
+          `<button type="button" class="chip${area === "all" ? " active" : ""}" data-area="all">${TW.t("all_districts")} (${pool.length})</button>` +
+          TW.districts
+            .map((d) => {
+              const n = pool.filter((t) => t.district === d.id).length;
+              const name = TW.getLang() === "zh" ? d.nameZh : d.name;
+              return `<button type="button" class="chip${area === d.id ? " active" : ""}" data-area="${d.id}">${name} (${n})</button>`;
+            })
+            .join("");
+        row.hidden = false;
+      } else {
+        row.innerHTML = "";
+        row.hidden = true;
+      }
+    }
+
+    function renderMap(list) {
+      const wrap = document.getElementById("exploreMapWrap");
+      wrap.hidden = !mapMode;
+      document.getElementById("trailGrid").hidden = mapMode;
+      const btn = document.getElementById("toggleMapView");
+      btn.textContent = mapMode ? TW.t("explore_list_view") : TW.t("explore_map_view");
+      btn.classList.toggle("btn-secondary", mapMode);
+      btn.classList.toggle("btn-primary", !mapMode);
+      if (!mapMode) return;
+      if (!exploreMap) {
+        exploreMap = L.map("exploreMap").setView(TW.hkCenter || [22.32, 114.17], 11);
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+          attribution: "© OpenStreetMap",
+        }).addTo(exploreMap);
+      }
+      if (exploreLayer) exploreLayer.remove();
+      exploreLayer = L.layerGroup().addTo(exploreMap);
+      const bounds = [];
+      list.forEach((t) => {
+        if (t.lat == null || t.lng == null) return;
+        bounds.push([t.lat, t.lng]);
+        const name = TW.tt(t, "title");
+        L.marker([t.lat, t.lng])
+          .addTo(exploreLayer)
+          .bindPopup(
+            `<strong>${TW.escapeHtml(name)}</strong><br/>${TW.escapeHtml(t.distance || "")} · ${TW.escapeHtml(t.duration || "")}`
+          );
+      });
+      setTimeout(() => {
+        exploreMap.invalidateSize();
+        if (bounds.length) exploreMap.fitBounds(bounds, { padding: [28, 28], maxZoom: 13 });
+      }, 80);
+    }
+
+    function renderAll() {
+      const searched = applySearch(baseForView());
+      renderViewModes();
+      const savedTheme = theme;
+      const savedArea = area;
+      theme = "all";
+      area = "all";
+      const forCounts = applySearch(baseForView());
+      theme = savedTheme;
+      area = savedArea;
+      renderSubChips(forCounts);
+
+      document.getElementById("listCount").textContent = resultCountLabel(searched.length);
+      document.getElementById("trailGrid").innerHTML = searched.length
+        ? searched.map((t) => renderTrailCard(t)).join("")
+        : `<p style="color:var(--text-muted)">${TW.t("no_trails")}</p>`;
+      renderMap(searched);
+    }
 
     const distSel = document.getElementById("districtFilter");
     distSel.innerHTML =
       `<option value="all">${TW.t("all_districts")}</option>` +
       TW.districts
-        .map(
-          (d) =>
-            `<option value="${d.id}">${TW.getLang() === "zh" ? d.nameZh : d.name}</option>`
-        )
+        .map((d) => `<option value="${d.id}">${TW.getLang() === "zh" ? d.nameZh : d.name}</option>`)
         .join("");
 
-    function updateDiffHint() {
-      const el = document.getElementById("diffHint");
-      if (difficulty === "all") {
-        el.textContent = "1 " + TW.t("easy") + " → 5 " + TW.t("expert");
-      } else {
-        el.textContent = TW.t("level") + " " + difficulty + " · " + difficultyLabel(+difficulty);
-      }
-    }
-    updateDiffHint();
-
-    function filtered(list) {
-      return list.filter((t) => {
-        const matchD = district === "all" || t.district === district;
-        const matchDiff = difficulty === "all" || String(t.difficulty) === String(difficulty);
-        const tags = t.tags || t.categories || [];
-        const matchCat = category === "all" || tags.indexOf(category) >= 0;
-        const q = query.toLowerCase();
-        const hay = (TW.tt(t, "title") + " " + TW.tt(t, "desc") + " " + TW.districtName(t.district)).toLowerCase();
-        return matchD && matchDiff && matchCat && (!q || hay.includes(q));
-      });
-    }
-
-    function renderMonthTabs() {
-      document.getElementById("monthTabs").innerHTML = TW.monthlyMeta
-        .map((m) => {
-          const label = TW.getLang() === "zh" ? m.labelZh : m.label;
-          return `<button type="button" class="${m.id === month ? "active" : ""} ${m.current ? "current" : ""}" data-month="${m.id}">${label}${m.current ? " ★" : ""}</button>`;
-        })
-        .join("");
-      document.querySelectorAll("#monthTabs button").forEach((btn) => {
-        btn.addEventListener("click", () => {
-          month = btn.dataset.month;
-          renderAll();
-        });
-      });
-    }
-
-    function renderAll() {
-      renderMonthTabs();
-      const meta = TW.monthlyMeta.find((m) => m.id === month);
-      document.getElementById("monthLabel").textContent =
-        meta && meta.current
-          ? TW.t("monthly_rec")
-          : TW.t("past_rec") + " · " + (TW.getLang() === "zh" ? meta.labelZh : meta.label);
-
-      const staffRecs = filtered(TW.getRecommendedTrails({ category }).map(recAsTrail));
-      document.getElementById("staffRecMeta").textContent = staffRecs.length + " " + TW.t("available");
-      document.getElementById("staffRecGrid").innerHTML =
-        staffRecs
-          .map((t) => {
-            const card = renderTrailCard(t, { hidePlan: true });
-            return card.replace(
-              '<article class="trail-card"',
-              `<a href="rec-trail.html?id=${encodeURIComponent(t.id)}" class="trail-card-link" style="text-decoration:none;color:inherit"><article class="trail-card"`
-            ).replace("</article>", "</article></a>");
-          })
-          .join("") ||
-        `<p style="color:var(--text-muted)">${TW.t("no_trails")}</p>`;
-
-      const monthTrails = filtered(TW.trails.filter((t) => t.monthly === month));
-      document.getElementById("monthlyGrid").innerHTML =
-        monthTrails.map((t) => renderTrailCard(t)).join("") ||
-        `<p style="color:var(--text-muted)">${TW.t("no_trails")}</p>`;
-
-      const all = filtered(TW.trails);
-      document.getElementById("listCount").textContent = all.length + " " + TW.t("available");
-      document.getElementById("trailGrid").innerHTML =
-        all.map((t) => renderTrailCard(t)).join("") ||
-        `<p style="color:var(--text-muted)">${TW.t("no_trails")}</p>`;
-    }
-
-    document.querySelectorAll("#categoryFilter .chip").forEach((chip) => {
-      chip.addEventListener("click", () => {
-        document.querySelectorAll("#categoryFilter .chip").forEach((c) => c.classList.remove("active"));
-        chip.classList.add("active");
-        category = chip.dataset.cat;
-        renderAll();
+    ["durationFilter", "distanceFilter"].forEach((id) => {
+      const sel = document.getElementById(id);
+      sel.querySelectorAll("option[data-i18n]").forEach((opt) => {
+        opt.textContent = TW.t(opt.getAttribute("data-i18n"));
       });
     });
 
+    function updateDiffHint() {
+      const el = document.getElementById("diffHint");
+      if (difficulty === "all") el.textContent = "1 " + TW.t("easy") + " → 5 " + TW.t("expert");
+      else el.textContent = TW.t("level") + " " + difficulty + " · " + difficultyLabel(+difficulty);
+    }
+    updateDiffHint();
+
+    document.getElementById("viewModes").addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-view]");
+      if (!btn) return;
+      view = btn.dataset.view;
+      theme = "all";
+      area = "all";
+      renderAll();
+    });
+    document.getElementById("subChips").addEventListener("click", (e) => {
+      const themeBtn = e.target.closest("[data-theme]");
+      const areaBtn = e.target.closest("[data-area]");
+      if (themeBtn) theme = themeBtn.dataset.theme;
+      if (areaBtn) area = areaBtn.dataset.area;
+      if (themeBtn || areaBtn) renderAll();
+    });
+
+    document.getElementById("advancedToggle").addEventListener("click", () => {
+      const panel = document.getElementById("advancedPanel");
+      panel.hidden = !panel.hidden;
+      document.getElementById("advancedToggle").textContent = panel.hidden
+        ? TW.t("explore_advanced")
+        : TW.t("explore_hide_advanced");
+    });
     distSel.addEventListener("change", () => {
       district = distSel.value;
       renderAll();
     });
-
+    document.getElementById("durationFilter").addEventListener("change", (e) => {
+      duration = e.target.value;
+      renderAll();
+    });
+    document.getElementById("distanceFilter").addEventListener("change", (e) => {
+      distanceBand = e.target.value;
+      renderAll();
+    });
     document.querySelectorAll("#diffFilter .chip").forEach((chip) => {
       chip.addEventListener("click", () => {
         document.querySelectorAll("#diffFilter .chip").forEach((c) => c.classList.remove("active"));
@@ -232,9 +391,12 @@
         renderAll();
       });
     });
-
     document.getElementById("trailSearch").addEventListener("input", (e) => {
       query = e.target.value;
+      renderAll();
+    });
+    document.getElementById("toggleMapView").addEventListener("click", () => {
+      mapMode = !mapMode;
       renderAll();
     });
 
@@ -251,6 +413,7 @@
       document.querySelectorAll("#exploreTabs .tab").forEach((t) => {
         t.classList.toggle("active", t.dataset.tab === tab);
       });
+      if (tab === "routes" && mapMode && exploreMap) setTimeout(() => exploreMap.invalidateSize(), 80);
     }
     bindTabs("#exploreTabs", showExploreTab);
 

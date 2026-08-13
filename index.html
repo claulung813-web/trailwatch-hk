@@ -3,8 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>TrailWatch HK — Community Home</title>
-  <meta name="description" content="Plan Hong Kong trails on the web, track them in the TrailWatch app." />
+  <title>TrailWatch HK — Hong Kong hiking app, GPS tracking &amp; trail planning</title>
+  <meta name="description" content="TrailWatch is Hong Kong’s hiking app for GPS route tracking, trail planning, incident reports, offline maps, group hikes, and country-park stewardship. Download for iPhone and Android." />
+  <meta name="keywords" content="TrailWatch, Hong Kong hiking app, GPS tracking, trail planning, country parks, incident report, offline maps, group hike, real-time location, hiking insights, photo gallery, TrailWatch Premium" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -15,32 +16,64 @@
 
   <main class="page">
     <div class="container">
-      <section class="hero">
+      <section class="hero hero--app">
         <div class="hero-bg"></div>
         <div class="hero-content">
           <div class="hero-badge" data-i18n="hero_badge"></div>
+          <p class="hero-seo-kws" data-i18n="home_seo_keywords"></p>
           <h1 data-i18n="hero_title"></h1>
           <p data-i18n="hero_desc"></p>
+          <div class="store-row hero-stores">
+            <a href="https://itunes.apple.com/hk/app/trailwatch/id791098937" target="_blank" rel="noopener noreferrer" aria-label="Download on the App Store">
+              <img src="assets/brand/badge-app-store.webp" alt="Download on the App Store" />
+            </a>
+            <a href="https://play.google.com/store/apps/details?id=com.computancy.countrypark" target="_blank" rel="noopener noreferrer" aria-label="Get it on Google Play">
+              <img src="assets/brand/badge-google-play.webp" alt="GET IT ON Google Play" />
+            </a>
+          </div>
           <div class="hero-actions">
+            <a class="btn btn-ghost" href="get-app.html" data-i18n="home_app_cta"></a>
             <a class="btn btn-ghost" href="explore.html" data-i18n="hero_cta_explore"></a>
-            <a class="btn btn-ghost" href="get-app.html" data-i18n="nav_app"></a>
             <a class="btn btn-ghost" href="plan.html" data-i18n="hero_cta_plan"></a>
           </div>
         </div>
+        <div class="hero-device">
+          <img src="assets/brand/device.webp" alt="TrailWatch app on iPhone" />
+        </div>
       </section>
 
-      <div class="app-cta-banner">
-        <div>
-          <h3 data-i18n="plan_banner_title"></h3>
-          <p data-i18n="plan_banner_body"></p>
-        </div>
-        <div class="actions">
-          <a class="btn btn-ghost" href="get-app.html" data-i18n="nav_app"></a>
-          <a class="btn" style="background:white;color:var(--green-900)" href="explore.html" data-i18n="hero_cta_explore"></a>
-        </div>
-      </div>
-
       <section>
+        <div class="section-head">
+          <h2 data-i18n="home_rec_routes"></h2>
+          <a class="link-more" href="explore.html" data-i18n="view_all"></a>
+        </div>
+        <div class="trail-grid" id="homeRecRoutes"></div>
+      </section>
+
+      <section class="mt-2">
+        <div class="section-head">
+          <h2 data-i18n="home_featured_articles"></h2>
+          <a class="link-more" href="articles.html" data-i18n="view_all"></a>
+        </div>
+        <div class="articles-featured-grid" id="homeArticles"></div>
+      </section>
+
+      <section class="mt-2">
+        <div class="section-head">
+          <h2 data-i18n="home_features_title"></h2>
+          <a class="link-more" href="get-app.html" data-i18n="nav_app"></a>
+        </div>
+        <div class="home-feature-grid" id="homeFeatures"></div>
+        <div class="home-premium-cta">
+          <div>
+            <strong data-i18n="home_premium_title"></strong>
+            <p data-i18n="home_premium_body"></p>
+          </div>
+          <a class="btn btn-primary" href="get-app.html#premium" data-i18n="home_premium_cta"></a>
+        </div>
+      </section>
+
+      <section class="mt-2">
         <div class="section-head">
           <h2 data-i18n="home_figures"></h2>
         </div>
@@ -58,40 +91,6 @@
             <div class="label" data-i18n="home_fig_incidents"></div>
           </div>
         </div>
-      </section>
-
-      <section>
-        <div class="section-head">
-          <h2 data-i18n="home_features_title"></h2>
-          <a class="link-more" href="get-app.html" data-i18n="nav_app"></a>
-        </div>
-        <ul class="home-feature-list">
-          <li data-i18n="home_feat_track"></li>
-          <li data-i18n="home_feat_plan"></li>
-          <li data-i18n="home_feat_report"></li>
-          <li data-i18n="home_feat_explore"></li>
-          <li data-i18n="home_feat_offline"></li>
-          <li data-i18n="home_feat_groups"></li>
-          <li data-i18n="home_feat_live"></li>
-          <li data-i18n="home_feat_insights"></li>
-          <li data-i18n="home_feat_gallery"></li>
-        </ul>
-      </section>
-
-      <section>
-        <div class="section-head">
-          <h2 data-i18n="home_rec_routes"></h2>
-          <a class="link-more" href="explore.html" data-i18n="view_all"></a>
-        </div>
-        <div class="trail-grid" id="homeRecRoutes"></div>
-      </section>
-
-      <section class="mt-2">
-        <div class="section-head">
-          <h2 data-i18n="home_featured_articles"></h2>
-          <a class="link-more" href="articles.html" data-i18n="view_all"></a>
-        </div>
-        <div id="homeArticles"></div>
       </section>
 
       <section class="mt-2">
@@ -114,37 +113,37 @@
     document.documentElement.lang = TW.getLang() === "zh" ? "zh-Hant" : "en";
     initShell("home");
 
-    const trails = TW.trails || [];
-    document.getElementById("figRoutes").textContent = trails.length || TW.stats.routes || "102";
-    document.getElementById("figKm").textContent = (TW.stats.distanceKm || 12234).toLocaleString() + " km";
-    document.getElementById("figIncidents").textContent = (TW.reports && TW.reports.length) || "23";
+    const figs = TW.homeFigures || {};
+    const cmsIncidents = typeof TW.getPublicIncidents === "function" ? TW.getPublicIncidents() : [];
+    document.getElementById("figRoutes").textContent = (figs.routes || 18420).toLocaleString();
+    document.getElementById("figKm").textContent = (figs.distanceKm || 3256780).toLocaleString() + " km";
+    document.getElementById("figIncidents").textContent = (
+      figs.incidents || cmsIncidents.length || (TW.reports && TW.reports.length) || 2146
+    ).toLocaleString();
 
-    const rec = trails.slice(0, 3).map((tr) => ({
-      id: tr.id,
-      title: tr.name || tr.title,
-      titleZh: tr.nameZh || tr.titleZh,
-      desc: tr.desc || "",
-      descZh: tr.descZh || "",
-      district: tr.district || "sai-kung",
-      difficulty: tr.difficulty || 2,
-      distance: tr.distanceKm != null ? tr.distanceKm + " km" : (tr.distance || "—"),
-      duration: tr.duration || "—",
-      elevation: tr.elevation || "—",
-      rating: tr.rating || 4.5,
-      image: tr.image || "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=600&q=60",
-      tags: tr.tags || tr.categories || [],
-    }));
+    function recAsTrail(r) {
+      return {
+        id: r.trailId || r.id,
+        title: r.title || r.name,
+        titleZh: r.titleZh || r.nameZh,
+        desc: r.desc || "",
+        descZh: r.descZh || "",
+        district: r.district || "sai-kung",
+        difficulty: r.difficulty || 2,
+        distance: r.distanceKm != null ? r.distanceKm + " km" : (r.distance || "—"),
+        duration: r.duration || "—",
+        elevation: r.elevation || "—",
+        rating: r.rating || 4.5,
+        image: r.image || "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=600&q=60",
+        tags: r.tags || r.categories || [],
+      };
+    }
+    const cmsRecs = typeof TW.getRecommendedTrails === "function" ? TW.getRecommendedTrails() : [];
+    const recSource = cmsRecs.length ? cmsRecs : (TW.trails || []);
+    const rec = recSource.slice(0, 6).map(recAsTrail);
     document.getElementById("homeRecRoutes").innerHTML = rec.length
       ? rec.map((t) => renderTrailCard(t, { hidePlan: false })).join("")
       : `<p style="color:var(--text-muted)">${TW.t("page_coming_filters")}</p>`;
-    document.querySelectorAll(".plan-btn").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const id = btn.dataset.trail;
-        if (TW.isPlanned(id)) TW.unplanTrail(id);
-        else TW.planTrail(id);
-        location.reload();
-      });
-    });
 
     const homeArticles = (TW.getFeaturedArticles
       ? TW.getFeaturedArticles()
@@ -152,13 +151,31 @@
         ? TW.getArticles({ featured: true })
         : (TW.articles || []).filter((a) => a.featured)
     ).slice(0, 3);
-    document.getElementById("homeArticles").innerHTML = homeArticles.map((a) => {
-      const zh = TW.getLang() === "zh";
-      const type = TW.articleCategoryLabel ? TW.articleCategoryLabel(a.category) : a.category;
-      const title = zh ? a.titleZh : a.title;
-      const url = zh ? (a.urlZh || a.url) : a.url;
-      return `<article class="article-card"><div class="meta">${type} · ${a.date}</div><strong><a href="${url}" target="_blank" rel="noopener noreferrer">${title}</a></strong></article>`;
-    }).join("");
+    document.getElementById("homeArticles").innerHTML = homeArticles.length
+      ? homeArticles.map((a) => TW.renderArticleCard(a, { compact: true })).join("")
+      : `<p style="color:var(--text-muted)">${TW.t("article_empty")}</p>`;
+
+    const features = [
+      { icon: "track", key: "home_feat_track", href: "app/index.html", premium: false },
+      { icon: "plan", key: "home_feat_plan", href: "plan.html", premium: false },
+      { icon: "reports", key: "home_feat_report", href: "reports.html", premium: false },
+      { icon: "explore", key: "home_feat_explore", href: "explore.html", premium: false },
+      { icon: "download", key: "home_feat_offline", href: "get-app.html#premium", premium: true },
+      { icon: "groupHikes", key: "home_feat_groups", href: "group-hikes.html", premium: false },
+      { icon: "live", key: "home_feat_live", href: "get-app.html#premium", premium: true },
+      { icon: "insights", key: "home_feat_insights", href: "profile.html#insights", premium: true },
+      { icon: "badges", key: "home_feat_badge", href: "profile.html#badges", premium: false },
+      { icon: "photos", key: "home_feat_gallery", href: "gallery.html", premium: false },
+    ];
+    document.getElementById("homeFeatures").innerHTML = features
+      .map(
+        (f) => `<a class="home-feature-card" href="${f.href}">
+          <span class="fig">${twIcon(f.icon)}</span>
+          <span class="label">${TW.t(f.key)}</span>
+          ${f.premium ? `<span class="prem-pill">${TW.t("app_premium")}</span>` : ""}
+        </a>`
+      )
+      .join("");
 
     document.getElementById("homeFeed").innerHTML = (TW.feed || []).slice(0, 3).map(renderFeedCard).join("");
     bindLikes();

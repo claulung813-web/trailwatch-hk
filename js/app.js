@@ -26,6 +26,9 @@ function twIcon(name) {
     env: `<svg viewBox="0 0 24 24" ${stroke}><path d="M12 22c4-3 7-6.5 7-11a7 7 0 1 0-14 0c0 4.5 3 8 7 11z"/><path d="M9 12c1 2 3 3 3 5 4-3 2-4 3-5"/><path d="M14 10c-1 1-2 2-1 4"/></svg>`,
     photos: `<svg viewBox="0 0 24 24" ${stroke}><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2"/><path d="m21 16-4.5-4.5L9 19"/></svg>`,
     groupHikes: `<svg viewBox="0 0 24 24" ${stroke}><path d="m3 20 6-10 4 5 2-3 6 8"/><path d="M14 8a2 2 0 1 0 0-4 2 2 0 0 0 0 4"/><path d="M7 12a2 2 0 1 0 0-4 2 2 0 0 0 0 4"/></svg>`,
+    download: `<svg viewBox="0 0 24 24" ${stroke}><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>`,
+    live: `<svg viewBox="0 0 24 24" ${stroke}><path d="M12 21s7-4.5 7-11a7 7 0 1 0-14 0c0 6.5 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/><circle cx="12" cy="10" r="6" opacity=".35"/></svg>`,
+    insights: `<svg viewBox="0 0 24 24" ${stroke}><path d="M4 19V9"/><path d="M10 19V5"/><path d="M16 19v-8"/><path d="M22 19V3"/></svg>`,
   };
   return icons[name] || "";
 }
@@ -837,26 +840,70 @@ function renderFeedCard(post) {
   </article>`;
 }
 
+TW.escapeHtml = function (s) {
+  return String(s == null ? "" : s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+};
+
+TW.renderArticleCard = function (a, opts) {
+  opts = opts || {};
+  const zh = TW.getLang() === "zh";
+  const title = zh ? a.titleZh || a.title : a.title;
+  const excerpt = zh ? a.excerptZh || a.excerpt : a.excerpt;
+  const url = zh ? a.urlZh || a.url : a.url;
+  const cat = TW.articleCategoryLabel ? TW.articleCategoryLabel(a.category) : a.category || "";
+  const esc = TW.escapeHtml;
+  const tags = (a.tags || [])
+    .map((t) => `<span class="article-tag">${esc(zh ? t.nameZh || t.name : t.name)}</span>`)
+    .join("");
+  const img = a.image
+    ? `<div class="article-card-media"><img src="${esc(a.image)}" alt="" loading="lazy" /></div>`
+    : "";
+  const author = a.author ? `<span>${esc(TW.t("article_by"))} ${esc(a.author)}</span>` : "";
+  const compact = opts.compact ? " article-card--featured" : "";
+  const excerptHtml = excerpt
+    ? `<p class="article-excerpt${opts.compact ? " article-excerpt--short" : ""}">${esc(excerpt)}</p>`
+    : "";
+  return `<article class="article-card article-card--rich${compact}">
+    ${img}
+    <div class="article-card-body">
+      <div class="meta">${esc(cat)} · ${esc(a.date || "")}${author ? " · " + author : ""}</div>
+      <strong><a href="${esc(url)}" target="_blank" rel="noopener noreferrer">${esc(title)}</a></strong>
+      ${excerptHtml}
+      ${opts.compact ? "" : `<div class="article-tags">${tags}</div>`}
+      <a class="article-more" href="${esc(url)}" target="_blank" rel="noopener noreferrer">${esc(TW.t("article_read_more"))}</a>
+    </div>
+  </article>`;
+};
+
 function renderTrailCard(t, opts) {
   opts = opts || {};
   const planned = TW.isPlanned(t.id);
+  const bookmarked = typeof TW.isBookmarked === "function" && TW.isBookmarked(t.id);
   const title = TW.tt(t, "title");
   const desc = TW.tt(t, "desc");
   const planBtn = opts.hidePlan
     ? ""
-    : `<button type="button" class="btn ${planned ? "btn-secondary" : "btn-primary"} plan-btn" data-trail="${t.id}" style="margin-top:0.75rem;width:100%;padding:0.45rem;font-size:0.8rem">
+    : `<button type="button" class="btn ${planned ? "btn-secondary" : "btn-primary"} plan-btn" data-trail="${t.id}">
         ${planned ? "✓ " + TW.t("planned") : "+ " + TW.t("mark_plan")}
       </button>`;
   const dupBtn = opts.hideDuplicate
     ? ""
-    : `<button type="button" class="btn btn-secondary dup-btn" data-trail="${t.id}" style="margin-top:0.45rem;width:100%;padding:0.45rem;font-size:0.8rem">
+    : `<button type="button" class="btn btn-secondary dup-btn" data-trail="${t.id}">
         ${TW.t("route_duplicate")}
       </button>`;
+  const bookmarkBtn = opts.hideBookmark
+    ? ""
+    : `<button type="button" class="trail-bookmark bookmark-btn${bookmarked ? " active" : ""}" data-trail="${t.id}" aria-pressed="${bookmarked ? "true" : "false"}" title="${TW.t("rec_bookmark")}">${twIcon("bookmarks")}</button>`;
 
   return `
   <article class="trail-card" id="${t.id}">
     <div class="trail-card-img">
       <img src="${t.image}" alt="${title}" loading="lazy" />
+      ${bookmarkBtn}
       <span class="rating">${twIcon("star")} ${t.rating}</span>
       <span class="diff-badge">L${t.difficulty} · ${difficultyLabel(t.difficulty)}</span>
     </div>
@@ -873,8 +920,10 @@ function renderTrailCard(t, opts) {
         <span>⏱ ${t.duration}</span>
         <span>⬆ ${t.elevation}</span>
       </div>
+      <div class="trail-card-actions">
       ${planBtn}
       ${dupBtn}
+      </div>
     </div>
   </article>`;
 }
@@ -982,9 +1031,21 @@ document.addEventListener("click", (e) => {
   const added = TW.togglePlan(id);
   showToast(added ? TW.t("toast_planned") : TW.t("toast_unplanned"));
   btn.className = "btn " + (added ? "btn-secondary" : "btn-primary") + " plan-btn";
-  btn.style.cssText = "margin-top:0.75rem;width:100%;padding:0.45rem;font-size:0.8rem";
   btn.textContent = added ? "✓ " + TW.t("planned") : "+ " + TW.t("mark_plan");
   btn.dataset.trail = id;
+});
+
+document.addEventListener("click", (e) => {
+  const btn = e.target.closest(".bookmark-btn");
+  if (!btn) return;
+  e.preventDefault();
+  e.stopPropagation();
+  const id = btn.dataset.trail;
+  if (!id || typeof TW.toggleBookmark !== "function") return;
+  const on = TW.toggleBookmark(id);
+  btn.classList.toggle("active", on);
+  btn.setAttribute("aria-pressed", on ? "true" : "false");
+  showToast(on ? TW.t("toast_bookmarked") : TW.t("toast_unbookmarked"));
 });
 
 document.addEventListener("click", (e) => {
@@ -1038,10 +1099,14 @@ function statusClass(s) {
 
 function renderReportItem(r) {
   const note = TW.getLang() === "zh" ? r.staffNoteZh || r.staffNote : r.staffNote;
+  const reporter =
+    TW.getLang() === "zh" ? r.reporterZh || r.reporter : r.reporter || r.reporterZh;
+  const catKey = "cat_" + (TW.normalizeReportCategory ? TW.normalizeReportCategory(r.category) : r.category);
+  const catLabel = TW.t(catKey) !== catKey ? TW.t(catKey) : r.category || "";
   return `
   <article class="report-item">
     <div class="report-thumb-wrap">
-      <img class="report-thumb" src="${r.image}" alt="" />
+      <img class="report-thumb" src="${r.image || ""}" alt="" />
       <span class="status-badge ${statusClass(r.status)}">${statusLabel(r.status)}</span>
     </div>
     <div>
@@ -1052,7 +1117,12 @@ function renderReportItem(r) {
           ? `<p class="desc" style="color:var(--green-800);font-weight:500">${TW.t("staff_update")}: ${note}</p>`
           : ""
       }
-      <div class="meta"><span>📅 ${r.date || ""}</span><span>📍 ${r.coords || ""}</span></div>
+      <div class="meta">
+        <span>📅 ${r.date || ""}</span>
+        ${catLabel ? `<span>${catLabel}</span>` : ""}
+        ${reporter ? `<span>👤 ${reporter}</span>` : ""}
+        <span>📍 ${r.coords || ""}</span>
+      </div>
     </div>
   </article>`;
 }

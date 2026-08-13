@@ -13,6 +13,12 @@ TW.user = {
   premiumEnds: "30/06/2026",
 };
 
+TW.homeFigures = {
+  routes: 18420,
+  distanceKm: 3256780,
+  incidents: 2146,
+};
+
 TW.stats = {
   records: 384,
   routes: 18,
@@ -63,6 +69,28 @@ TW.trailFilters = [
 ];
 
 TW.trails = [
+  {
+    id: "dragons-back",
+    sourceId: 10001,
+    title: "Dragon's Back",
+    titleZh: "龍脊",
+    district: "hk-island",
+    difficulty: 2,
+    desc: "Hong Kong Island classic ridge walk with sea views toward Shek O and Tai Tam.",
+    descZh: "港島經典山脊徑，遠眺石澳與大潭海景。",
+    distance: "8.5 km",
+    duration: "3h 00m",
+    elevation: "284 m",
+    rating: 4.6,
+    image: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=800&q=80",
+    tags: ["coastal", "backyard"],
+    author: "TrailWatch",
+    date: "Aug 2026",
+    sourceUrl: "https://www.trailwatch.hk/browse",
+    editorChoice: true,
+    lat: 22.2445,
+    lng: 114.2408,
+  },
   {
     id: "lantau-trail-sections-1-12",
     sourceId: 1121559,
@@ -786,43 +814,164 @@ TW.records = [
 
 TW.reports = [
   {
+    id: "rep_waste_central",
     title: "Waste Dumping",
     titleZh: "非法棄置廢物",
     desc: "Garbage completely blocks access near the trail junction.",
     descZh: "垃圾完全阻塞路口附近通道。",
     status: "received",
-    category: "Waste",
+    category: "waste",
     date: "25/05/2026 13:59:46",
     coords: "22.285394, 114.153783",
     lat: 22.285394,
     lng: 114.153783,
+    reporter: "Mei Wong",
+    reporterZh: "黃美",
     image: "https://images.unsplash.com/photo-1532996122724-e3c354a0b4d5?w=200&q=80",
   },
   {
+    id: "rep_tree_saikung",
     title: "Fallen Tree",
     titleZh: "倒樹",
     desc: "Large tree blocking the path after recent storms.",
     descZh: "風暴後大樹阻塞路徑。",
     status: "updated",
-    category: "Obstruction",
+    category: "tree",
     date: "22/05/2026 09:12:03",
     coords: "22.381234, 114.268901",
     lat: 22.381234,
     lng: 114.268901,
+    reporter: "Jamie Lau",
+    reporterZh: "劉家明",
     image: "https://images.unsplash.com/photo-1511497584788-876760111969?w=200&q=80",
   },
   {
+    id: "rep_vandalism_island",
     title: "Vandalism",
     titleZh: "破壞行為",
     desc: "Graffiti on trail signage.",
     descZh: "指示牌上的塗鴉。",
     status: "closed",
-    category: "Vandalism",
+    category: "vandalism",
     date: "18/05/2026 16:40:11",
     coords: "22.269876, 114.234567",
     lat: 22.269876,
     lng: 114.234567,
+    reporter: "Alex Chan",
+    reporterZh: "陳志豪",
     image: "https://images.unsplash.com/photo-1569163139394-de440968e51c?w=200&q=80",
+  },
+  {
+    id: "rep_obstruction_lantau",
+    title: "Path Obstruction",
+    titleZh: "路徑阻塞",
+    desc: "Landslip debris covers half the trail near the ridge.",
+    descZh: "山脊附近山泥傾瀉碎石覆蓋半條徑。",
+    status: "updated",
+    category: "obstruction",
+    date: "03/07/2026 11:20:00",
+    coords: "22.255100, 113.952200",
+    lat: 22.2551,
+    lng: 113.9522,
+    reporter: "Sam Cheung",
+    reporterZh: "張心怡",
+    image: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=200&q=80",
+  },
+  {
+    id: "rep_waste_taipo",
+    title: "Illegal camping waste",
+    titleZh: "非法露營垃圾",
+    desc: "Food packaging and bottles left at a popular campsite.",
+    descZh: "熱門營地留下食物包裝與膠樽。",
+    status: "closed",
+    category: "waste",
+    date: "14/06/2026 18:05:22",
+    coords: "22.447800, 114.185600",
+    lat: 22.4478,
+    lng: 114.1856,
+    reporter: "Elena Green",
+    reporterZh: "Elena Green",
+    image: "https://images.unsplash.com/photo-1611273426858-450d8e3c9fce?w=200&q=80",
+  },
+  {
+    id: "rep_tree_kowloon",
+    title: "Broken branch hazard",
+    titleZh: "斷枝危險",
+    desc: "Hanging branch over a busy weekend path.",
+    descZh: "週末熱門徑上空有斷枝懸掛。",
+    status: "updated",
+    category: "tree",
+    date: "28/03/2026 08:40:00",
+    coords: "22.348200, 114.185100",
+    lat: 22.3482,
+    lng: 114.1851,
+    reporter: "Marcus Lee",
+    reporterZh: "李文傑",
+    image: "https://images.unsplash.com/photo-1502082553048-f009c37129b9?w=200&q=80",
+  },
+  {
+    id: "rep_vandalism_saikung",
+    title: "Damaged waymarker",
+    titleZh: "損壞路標",
+    desc: "Waymarker post snapped and spray-painted.",
+    descZh: "路標柱折斷並被噴漆。",
+    status: "closed",
+    category: "vandalism",
+    date: "09/04/2026 15:12:40",
+    coords: "22.395500, 114.312000",
+    lat: 22.3955,
+    lng: 114.312,
+    reporter: "Pat Ho",
+    reporterZh: "何柏",
+    image: "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=200&q=80",
+  },
+  {
+    id: "rep_obstruction_shatin",
+    title: "Flooded section",
+    titleZh: "積水路段",
+    desc: "Trail flooded after heavy rain; hard to pass safely.",
+    descZh: "暴雨後路徑積水，難以安全通過。",
+    status: "received",
+    category: "obstruction",
+    date: "02/08/2026 07:55:10",
+    coords: "22.392000, 114.198000",
+    lat: 22.392,
+    lng: 114.198,
+    reporter: "Sarah Chen",
+    reporterZh: "陳思雅",
+    image: "https://images.unsplash.com/photo-1433086966358-54843611c2d7?w=200&q=80",
+  },
+  {
+    id: "rep_waste_tuenmun",
+    title: "Fly-tipping near trailhead",
+    titleZh: "入口附近非法棄置",
+    desc: "Construction waste dumped beside the trailhead car park.",
+    descZh: "起點停車場旁棄置建築廢料。",
+    status: "updated",
+    category: "waste",
+    date: "19/02/2026 12:30:00",
+    coords: "22.391500, 113.972800",
+    lat: 22.3915,
+    lng: 113.9728,
+    reporter: "Chris Ng",
+    reporterZh: "吳志成",
+    image: "https://images.unsplash.com/photo-1604187351572-beb8ca48adf5?w=200&q=80",
+  },
+  {
+    id: "rep_tree_lantau",
+    title: "Uprooted tree across path",
+    titleZh: "連根拔起的大樹橫阻路徑",
+    desc: "Storm brought down a large tree across the coastal section.",
+    descZh: "風暴吹倒大樹橫阻海岸路段。",
+    status: "closed",
+    category: "tree",
+    date: "11/07/2026 16:18:33",
+    coords: "22.248800, 113.968900",
+    lat: 22.2488,
+    lng: 113.9689,
+    reporter: "Taylor Ip",
+    reporterZh: "葉曉彤",
+    image: "https://images.unsplash.com/photo-1448375240586-882707db888b?w=200&q=80",
   },
 ];
 
@@ -1304,6 +1453,382 @@ TW.togglePlan = function (trailId) {
 
 TW.isPlanned = function (trailId) {
   return TW.getPlans().indexOf(trailId) >= 0;
+};
+
+TW.BOOKMARK_KEY = "tw_bookmarks";
+
+TW.getBookmarks = function () {
+  try {
+    return JSON.parse(localStorage.getItem(TW.BOOKMARK_KEY) || "[]");
+  } catch (e) {
+    return [];
+  }
+};
+
+TW.setBookmarks = function (ids) {
+  localStorage.setItem(TW.BOOKMARK_KEY, JSON.stringify(ids || []));
+};
+
+TW.isBookmarked = function (trailId) {
+  return TW.getBookmarks().indexOf(trailId) >= 0;
+};
+
+TW.toggleBookmark = function (trailId) {
+  if (!trailId) return false;
+  const ids = TW.getBookmarks();
+  const i = ids.indexOf(trailId);
+  if (i >= 0) {
+    ids.splice(i, 1);
+    TW.setBookmarks(ids);
+    return false;
+  }
+  ids.push(trailId);
+  TW.setBookmarks(ids);
+  return true;
+};
+
+
+TW.galleryCategories = [
+  { id: "all", labelKey: "gallery_cat_all" },
+  { id: "landscape", labelKey: "gallery_cat_landscape" },
+  { id: "wildlife", labelKey: "gallery_cat_wildlife" },
+  { id: "trail", labelKey: "gallery_cat_trail" },
+  { id: "coastal", labelKey: "gallery_cat_coastal" },
+  { id: "community", labelKey: "gallery_cat_community" },
+];
+
+/** Public gallery photos (TW + community), with route links and GPS for historical filters */
+TW.galleryPhotos = [
+  {
+    id: "gal_db_2019",
+    src: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=800&q=80",
+    date: "2019-10-12",
+    category: "landscape",
+    description: "Dragon's Back ridge looking east — early autumn haze.",
+    descriptionZh: "龍脊東望 — 初秋薄霧。",
+    lat: 22.2445,
+    lng: 114.2408,
+    routeId: "dragons-back",
+    recordId: "rec_db_2019",
+    user: "TrailWatch",
+    source: "tw",
+  },
+  {
+    id: "gal_db_2021",
+    src: "https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=800&q=80",
+    date: "2021-03-08",
+    category: "landscape",
+    description: "Same Dragon's Back viewpoint after trail maintenance.",
+    descriptionZh: "同一龍脊觀景點，步道維修後。",
+    lat: 22.2448,
+    lng: 114.2410,
+    routeId: "dragons-back",
+    recordId: "rec_db_2021",
+    user: "TrailWatch",
+    source: "tw",
+  },
+  {
+    id: "gal_db_2023",
+    src: "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=800&q=80",
+    date: "2023-11-19",
+    category: "landscape",
+    description: "Dragon's Back at golden hour — denser shrub cover than 2019.",
+    descriptionZh: "龍脊金色時分 — 灌木較 2019 年更茂密。",
+    lat: 22.2446,
+    lng: 114.2409,
+    routeId: "dragons-back",
+    recordId: "rec_db_2023",
+    user: "TrailWatch",
+    source: "tw",
+  },
+  {
+    id: "gal_db_2026",
+    src: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800&q=80",
+    date: "2026-04-02",
+    category: "landscape",
+    description: "Dragon's Back spring panorama linked to the published route.",
+    descriptionZh: "龍脊春日全景，連結已發佈路線。",
+    lat: 22.2447,
+    lng: 114.2411,
+    routeId: "dragons-back",
+    recordId: "rec_db_2026",
+    user: "TrailWatch",
+    source: "tw",
+  },
+  {
+    id: "gal_tl_2018",
+    src: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&q=80",
+    date: "2018-07-22",
+    category: "coastal",
+    description: "Tai Long Wan beach before peak weekend crowds.",
+    descriptionZh: "大浪灣沙灘 — 旺季人潮前。",
+    lat: 22.3950,
+    lng: 114.3602,
+    routeId: "tai-long-sai-wan-ham-tin-chek-keng",
+    recordId: "rec_tl_2018",
+    user: "TrailWatch",
+    source: "tw",
+  },
+  {
+    id: "gal_tl_2022",
+    src: "https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=800&q=80",
+    date: "2022-09-14",
+    category: "coastal",
+    description: "Ham Tin boardwalk and dune edge after typhoon season.",
+    descriptionZh: "鹹田棧道與沙丘邊，颱風季後。",
+    lat: 22.3952,
+    lng: 114.3605,
+    routeId: "tai-long-sai-wan-ham-tin-chek-keng",
+    recordId: "tai-long-sai-wan",
+    user: "Sarah Chen",
+    source: "user",
+  },
+  {
+    id: "gal_tl_2026",
+    src: "https://images.unsplash.com/photo-1511497584788-876760111969?w=800&q=80",
+    date: "2026-08-02",
+    category: "coastal",
+    description: "Tai Long Sai Wan · Ham Tin · Chek Keng — recent user photo.",
+    descriptionZh: "大浪西灣、鹹田灣、赤徑 — 近期用家相片。",
+    lat: 22.3948,
+    lng: 114.3602,
+    routeId: "tai-long-sai-wan-ham-tin-chek-keng",
+    recordId: "tai-long-sai-wan",
+    user: "Sarah Chen",
+    source: "user",
+  },
+  {
+    id: "gal_lantau_2024",
+    src: "https://www.trailwatch.hk/uploads/route-activity-photo/63703/1e2cc968-cc75-4ae0-b609-b30a35f764d7.jpg",
+    date: "2024-05-18",
+    category: "trail",
+    description: "Lantau Trail coastal mountain section toward south Lantau.",
+    descriptionZh: "鳳凰徑海岸山段，望向南大嶼。",
+    lat: 22.2401,
+    lng: 113.9570,
+    routeId: "lantau-trail-sections-1-12",
+    recordId: "lantau-trail-1-12",
+    user: "TrailWatch",
+    source: "tw",
+  },
+  {
+    id: "gal_lantau_2026",
+    src: "https://images.unsplash.com/photo-1551632811-561732d1e5ec?w=800&q=80",
+    date: "2026-08-04",
+    category: "trail",
+    description: "Lantau Trail Sections 1 & 12 — community record photo.",
+    descriptionZh: "鳳徑第一、十二段 — 社群記錄相片。",
+    lat: 22.2450,
+    lng: 113.9650,
+    routeId: "lantau-trail-sections-1-12",
+    recordId: "lantau-trail-1-12",
+    user: "TrailWatch community",
+    source: "user",
+  },
+  {
+    id: "gal_mac_2020",
+    src: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80",
+    date: "2020-12-05",
+    category: "trail",
+    description: "Maclehose ridgeline winter clarity.",
+    descriptionZh: "麥理浩徑山脊冬日能見度佳。",
+    lat: 22.4074,
+    lng: 114.1052,
+    routeId: "maclehose-trail-sections-9-10",
+    recordId: "rec_mac_2020",
+    user: "TrailWatch",
+    source: "tw",
+  },
+  {
+    id: "gal_mac_2026",
+    src: "https://www.trailwatch.hk/uploads/route-activity-photo/63703/90f2a883-1bcc-488d-b035-58cd2193b6c2.jpg",
+    date: "2026-08-03",
+    category: "trail",
+    description: "Maclehose Trail Sections 9 & 10 — recent long day.",
+    descriptionZh: "麥理浩徑第九、十段 — 近期長途日。",
+    lat: 22.4100,
+    lng: 114.1150,
+    routeId: "maclehose-trail-sections-9-10",
+    recordId: "maclehose-9-10",
+    user: "TrailWatch community",
+    source: "user",
+  },
+  {
+    id: "gal_wild_2025",
+    src: "https://images.unsplash.com/photo-1439066615861-d1af74d74000?w=800&q=80",
+    date: "2025-02-11",
+    category: "wildlife",
+    description: "Wild cattle near Kam Shan country paths.",
+    descriptionZh: "金山郊野徑附近的野牛。",
+    lat: 22.3750,
+    lng: 114.1480,
+    routeId: "kwai-chung-kam-shan-loop",
+    recordId: "kwai-chung-kam-shan",
+    user: "金鷹",
+    source: "user",
+  },
+  {
+    id: "gal_harbour_2026",
+    src: "https://images.unsplash.com/photo-1536599018102-9f803c140fc1?w=800&q=80",
+    date: "2026-08-03",
+    category: "community",
+    description: "Harbourfront Coastal Trail — Yue Yi & Ching Sha segments.",
+    descriptionZh: "活力環島長廊：漁怡徑、晴沙徑。",
+    lat: 22.2850,
+    lng: 114.1550,
+    routeId: "harbourfront-coastal-trail-yue-yi-ching-sha",
+    recordId: "harbourfront-coastal",
+    user: "TrailWatch community",
+    source: "user",
+  },
+  {
+    id: "gal_wilson_2024",
+    src: "assets/brand/img-hiking.jpg",
+    date: "2024-05-11",
+    category: "trail",
+    description: "Wilson Trail Section 4 near Pat Sin Leng.",
+    descriptionZh: "衛奕信徑第四段，八仙嶺附近。",
+    lat: 22.4825,
+    lng: 114.2180,
+    routeId: "lui-kung-tin-to-ho-pui",
+    recordId: "wilson-trail-section-4",
+    user: "Alex Wong",
+    source: "user",
+  },
+  {
+    id: "gal_cleanup_2025",
+    src: "assets/brand/img-route.webp",
+    date: "2025-11-03",
+    category: "community",
+    description: "Community cleanup day — before bagging litter at a trail junction.",
+    descriptionZh: "社群清潔日 — 在路口裝袋前。",
+    lat: 22.3193,
+    lng: 114.1694,
+    routeId: null,
+    recordId: "rec_cleanup_2025",
+    user: "TrailWatch",
+    source: "tw",
+  },
+];
+
+TW.galleryDateValue = function (p) {
+  const raw = (p && p.date) || "";
+  const t = Date.parse(raw);
+  return Number.isFinite(t) ? t : 0;
+};
+
+TW.haversineKm = function (lat1, lng1, lat2, lng2) {
+  const toRad = (d) => (d * Math.PI) / 180;
+  const R = 6371;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+};
+
+TW.getFeaturedGalleryIds = function () {
+  try {
+    if (typeof CMS !== "undefined" && CMS.getStore) {
+      const ids = CMS.getStore().featuredGalleryIds;
+      if (Array.isArray(ids) && ids.length) return ids.slice(0, 10);
+    }
+  } catch (e) {}
+  try {
+    const raw = localStorage.getItem("tw_featured_gallery");
+    if (raw) {
+      const ids = JSON.parse(raw);
+      if (Array.isArray(ids)) return ids.slice(0, 10);
+    }
+  } catch (e) {}
+  // Default featured (TW historical set + recent highlights)
+  return ["gal_db_2026", "gal_tl_2026", "gal_lantau_2026", "gal_mac_2026", "gal_db_2019", "gal_tl_2018", "gal_wild_2025", "gal_harbour_2026"];
+};
+
+TW.setFeaturedGalleryIds = function (ids) {
+  const next = (ids || []).filter(Boolean).slice(0, 10);
+  try {
+    localStorage.setItem("tw_featured_gallery", JSON.stringify(next));
+  } catch (e) {}
+  try {
+    if (typeof CMS !== "undefined" && CMS.getStore && CMS.setStore) {
+      const store = CMS.getStore();
+      store.featuredGalleryIds = next;
+      CMS.setStore(store);
+    }
+  } catch (e) {}
+  return next;
+};
+
+TW.getGalleryPhotos = function (opts) {
+  opts = opts || {};
+  const cat = opts.category || "all";
+  const q = String(opts.query || "").trim().toLowerCase();
+  const sort = opts.sort === "oldest" ? "oldest" : opts.sort === "category" ? "category" : "newest";
+  const zh = TW.getLang && TW.getLang() === "zh";
+  const dateFrom = opts.dateFrom ? Date.parse(opts.dateFrom) : null;
+  const dateTo = opts.dateTo ? Date.parse(opts.dateTo) : null;
+  const gpsLat = opts.gpsLat != null && opts.gpsLat !== "" ? Number(opts.gpsLat) : null;
+  const gpsLng = opts.gpsLng != null && opts.gpsLng !== "" ? Number(opts.gpsLng) : null;
+  const gpsRadius = opts.gpsRadius != null && opts.gpsRadius !== "" ? Number(opts.gpsRadius) : null;
+  const useGps = Number.isFinite(gpsLat) && Number.isFinite(gpsLng) && Number.isFinite(gpsRadius) && gpsRadius > 0;
+
+  let list = (TW.galleryPhotos || []).filter((p) => {
+    if (opts.featuredOnly) {
+      const featured = TW.getFeaturedGalleryIds();
+      if (featured.indexOf(p.id) < 0) return false;
+    }
+    if (opts.excludeFeatured) {
+      const featured = TW.getFeaturedGalleryIds();
+      if (featured.indexOf(p.id) >= 0) return false;
+    }
+    if (cat && cat !== "all" && p.category !== cat) return false;
+    const ts = TW.galleryDateValue(p);
+    if (dateFrom != null && Number.isFinite(dateFrom) && ts < dateFrom) return false;
+    if (dateTo != null && Number.isFinite(dateTo)) {
+      const end = dateTo + 24 * 60 * 60 * 1000 - 1;
+      if (ts > end) return false;
+    }
+    if (useGps) {
+      if (p.lat == null || p.lng == null) return false;
+      if (TW.haversineKm(gpsLat, gpsLng, p.lat, p.lng) > gpsRadius) return false;
+    }
+    if (!q) return true;
+    const desc = zh ? p.descriptionZh || p.description : p.description;
+    const gpsStr = p.lat != null && p.lng != null ? p.lat.toFixed(5) + "," + p.lng.toFixed(5) + " " + p.lat + " " + p.lng : "";
+    const blob = [desc, p.category, p.recordId, p.routeId, p.user, p.date, gpsStr, p.id].join(" ").toLowerCase();
+    return blob.includes(q);
+  });
+
+  list = list.slice().sort((a, b) => {
+    if (sort === "category") {
+      const c = String(a.category || "").localeCompare(String(b.category || ""));
+      if (c) return c;
+    }
+    const da = TW.galleryDateValue(a);
+    const db = TW.galleryDateValue(b);
+    return sort === "oldest" ? da - db : db - da;
+  });
+
+  if (opts.featuredOnly) {
+    const order = TW.getFeaturedGalleryIds();
+    list.sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
+  }
+  return list;
+};
+
+TW.getFeaturedGalleryPhotos = function () {
+  return TW.getGalleryPhotos({ featuredOnly: true });
+};
+
+TW.galleryRouteHref = function (p) {
+  if (p && p.routeId) {
+    const trail = (TW.trails || []).find((t) => t.id === p.routeId);
+    if (trail) return "rec-trail.html?id=" + encodeURIComponent(p.routeId);
+  }
+  if (p && p.recordId) return "record-detail.html?id=" + encodeURIComponent(p.recordId);
+  return "explore.html";
 };
 
 TW.districtName = function (id) {

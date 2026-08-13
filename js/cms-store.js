@@ -67,6 +67,7 @@ CMS.defaultStore = function () {
         footer_extra_zh: "一起守護香港郊野。",
       },
     },
+    featuredGalleryIds: [],
     updatedAt: null,
   };
 };
@@ -433,6 +434,49 @@ CMS.getStore = function () {
       store.feedback = CMS.seedFeedback();
       migrated = true;
     } else store.feedback = parsed.feedback || [];
+    if (!Array.isArray(store.featuredGalleryIds)) {
+      store.featuredGalleryIds = [];
+      migrated = true;
+    }
+    // Refresh community incident seed when demo data grew (keep user-submitted ids)
+    if (window.TW && TW.reports && TW.reports.length) {
+      const seeded = TW.reports.map((r, i) => CMS.reportToIncident(r, i));
+      const existing = store.incidents || [];
+      const byId = {};
+      existing.forEach((inc) => {
+        byId[inc.id] = inc;
+      });
+      let incidentMigrated = false;
+      seeded.forEach((inc) => {
+        if (!byId[inc.id]) {
+          byId[inc.id] = inc;
+          incidentMigrated = true;
+        } else {
+          // Keep staff edits; backfill reporter/category if missing
+          const cur = byId[inc.id];
+          if (!cur.reporter && inc.reporter) {
+            cur.reporter = inc.reporter;
+            cur.reporterZh = inc.reporterZh;
+            incidentMigrated = true;
+          }
+          if (cur.category && /[A-Z]/.test(cur.category)) {
+            cur.category = String(cur.category).toLowerCase();
+            incidentMigrated = true;
+          }
+          if (cur.published === false && (cur.status === "received" || !cur.status)) {
+            // older seed hid "received" from public map — publish community demos
+            if (String(cur.id || "").indexOf("inc_") === 0 || String(cur.id || "").indexOf("rep_") === 0) {
+              cur.published = true;
+              incidentMigrated = true;
+            }
+          }
+        }
+      });
+      if (incidentMigrated || existing.length < seeded.length) {
+        store.incidents = Object.keys(byId).map((k) => byId[k]);
+        migrated = true;
+      }
+    }
     if (migrated) CMS.setStore(store);
     return store;
   } catch (e) {
@@ -478,8 +522,10 @@ CMS.submitIncident = function (data) {
     image:
       data.image ||
       "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=600&q=80",
+    reporter: data.reporter || "",
+    reporterZh: data.reporterZh || data.reporter || "",
     status: "received",
-    published: false,
+    published: data.published !== false,
     staffNote: "",
     staffNoteZh: "",
     updatedAt: new Date().toISOString(),
@@ -599,20 +645,41 @@ CMS.trailToRecommended = function (t, i) {
 };
 
 CMS.reportToIncident = function (r, i) {
+  const cat = String(r.category || "waste").toLowerCase();
+  const catMap = {
+    waste: "waste",
+    tree: "tree",
+    vandalism: "vandalism",
+    obstruction: "obstruction",
+    "fallen tree": "tree",
+    "path obstruction": "obstruction",
+  };
+  const category = catMap[cat] || cat.replace(/\s+/g, "_") || "waste";
+  const status =
+    r.status === "closed"
+      ? "handled"
+      : r.status === "updated"
+        ? "under_review"
+        : r.status === "received"
+          ? "received"
+          : r.status || "received";
   return {
-    id: "inc_" + i + "_" + (r.title || "x").replace(/\s+/g, "_").slice(0, 20),
+    id: r.id || "inc_" + i + "_" + (r.title || "x").replace(/\s+/g, "_").slice(0, 20),
     title: r.title,
     titleZh: r.titleZh,
     desc: r.desc,
     descZh: r.descZh,
-    category: r.category,
+    category: category,
     date: r.date,
     coords: r.coords,
     lat: r.lat,
     lng: r.lng,
     image: r.image,
-    status: r.status === "closed" ? "handled" : r.status === "updated" ? "under_review" : "received",
-    published: r.status === "closed" || r.status === "updated",
+    reporter: r.reporter || "",
+    reporterZh: r.reporterZh || r.reporter || "",
+    status: status,
+    // Community map shows all seeded demo reports (incl. newly received)
+    published: r.published !== false,
     staffNote:
       r.status === "closed"
         ? "Reported to AFCD / relevant departments. Case closed after site follow-up."
@@ -688,7 +755,7 @@ TW.getPublicIncidents = function () {
   return (store.incidents || []).filter((i) => i.published && i.status !== "rejected");
 };
 
-/** Published incidents + this browser's pending submissions */
+/** Published community incidents + this browser's pending submissions */
 TW.getReportsForUser = function () {
   const store = CMS.getStore();
   const mine = CMS.getMyReportIds();
@@ -698,6 +765,78 @@ TW.getReportsForUser = function () {
     else if (mine.indexOf(i.id) >= 0) byId[i.id] = i;
   });
   return Object.keys(byId).map((k) => byId[k]);
+};
+
+/** Parse report date strings like "25/05/2026 13:59:46" or ISO */
+TW.parseReportDate = function (value) {
+  if (!value) return null;
+  if (value instanceof Date) return isNaN(value.getTime()) ? null : value;
+  const s = String(value).trim();
+  const iso = Date.parse(s);
+  if (!isNaN(iso)) return new Date(iso);
+  const m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?/.exec(s);
+  if (m) {
+    return new Date(
+      +m[3],
+      +m[2] - 1,
+      +m[1],
+      m[4] ? +m[4] : 0,
+      m[5] ? +m[5] : 0,
+      m[6] ? +m[6] : 0
+    );
+  }
+  return null;
+};
+
+TW.normalizeReportCategory = function (cat) {
+  const c = String(cat || "").toLowerCase().trim();
+  if (!c || c === "all") return "all";
+  if (c.indexOf("waste") >= 0) return "waste";
+  if (c.indexOf("tree") >= 0 || c.indexOf("fallen") >= 0) return "tree";
+  if (c.indexOf("vandal") >= 0) return "vandalism";
+  if (c.indexOf("obstruct") >= 0 || c.indexOf("flood") >= 0) return "obstruction";
+  return c;
+};
+
+/**
+ * Community incident list (everyone's published reports + my pending).
+ * opts: { category, dateRange: '6m'|'30d'|'90d'|'year'|'all', from, to }
+ */
+TW.getCommunityReports = function (opts) {
+  opts = opts || {};
+  let list = typeof TW.getReportsForUser === "function" ? TW.getReportsForUser() : [];
+  const cat = TW.normalizeReportCategory(opts.category || "all");
+  if (cat !== "all") {
+    list = list.filter((r) => TW.normalizeReportCategory(r.category) === cat);
+  }
+  const now = new Date();
+  let from = opts.from ? TW.parseReportDate(opts.from) : null;
+  let to = opts.to ? TW.parseReportDate(opts.to) : null;
+  if (!from && opts.dateRange && opts.dateRange !== "all") {
+    from = new Date(now.getTime());
+    if (opts.dateRange === "30d") from.setDate(from.getDate() - 30);
+    else if (opts.dateRange === "90d") from.setDate(from.getDate() - 90);
+    else if (opts.dateRange === "year") from.setFullYear(from.getFullYear() - 1);
+    else from.setMonth(from.getMonth() - 6); // default / 6m
+  }
+  if (from || to) {
+    list = list.filter((r) => {
+      const d = TW.parseReportDate(r.date || r.updatedAt || r.createdAt);
+      if (!d) return true;
+      if (from && d < from) return false;
+      if (to) {
+        const end = new Date(to.getTime());
+        end.setHours(23, 59, 59, 999);
+        if (d > end) return false;
+      }
+      return true;
+    });
+  }
+  return list.slice().sort((a, b) => {
+    const da = TW.parseReportDate(a.date) || new Date(0);
+    const db = TW.parseReportDate(b.date) || new Date(0);
+    return db - da;
+  });
 };
 
 TW.getSiteContent = function () {
