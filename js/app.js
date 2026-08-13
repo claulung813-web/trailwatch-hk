@@ -536,6 +536,7 @@ function renderHeader(active) {
   const meHash = twMeHubHash();
   const onMeHub = active === "profile" || !!meHash;
   const activityTypes = ["records", "plans", "groups", "reports", "gallery"];
+  const communityActive = ["reports", "feed", "group-hikes", "articles", "gallery"].indexOf(active) >= 0;
   const meActive = (section) => {
     if (!onMeHub) return false;
     const cur = meHash || "overview";
@@ -547,7 +548,7 @@ function renderHeader(active) {
     ? `<div class="nav-account ${accountActive ? "has-active" : ""}" id="navAccount">
           <button type="button" class="nav-account-trigger" id="accountToggle" aria-expanded="false" aria-haspopup="true">
             ${twAvatarHtml(u && u.avatar, "avatar-sm", "", u && u.name)}
-            <span class="nav-account-trigger-name">${twEsc(memberName)}</span>
+            <span class="nav-account-trigger-name">${twEsc(memberName || t("nav_me"))}</span>
           </button>
           <div class="nav-account-menu" id="accountMenu" hidden>
             <p class="nav-account-heading">${twEsc(memberName)}</p>
@@ -563,20 +564,27 @@ function renderHeader(active) {
   return `
   <header class="site-header">
     <div class="container">
-      <a href="index.html" class="logo">
+      <a href="index.html" class="logo" aria-label="${t("nav_home")}">
         <img class="logo-img" src="assets/brand/header-logo.webp" alt="TrailWatch" />
       </a>
       <nav class="nav-links" id="navLinks">
-        <a href="index.html" class="${active === "home" ? "active" : ""}">${t("nav_home")}</a>
         <a href="explore.html" class="${active === "explore" ? "active" : ""}">${t("nav_explore")}</a>
         <a href="plan.html" class="${active === "plan" ? "active" : ""}">${t("nav_plan")}</a>
-        <a href="reports.html" class="${active === "reports" ? "active" : ""}">${t("nav_incidents")}</a>
-        <a href="feed.html" class="${active === "feed" ? "active" : ""}">${t("nav_feed")}</a>
-        <a href="group-hikes.html" class="${active === "group-hikes" ? "active" : ""}">${t("nav_groups")}</a>
-        <a href="articles.html" class="${active === "articles" ? "active" : ""}">${t("nav_articles")}</a>
-        <a href="get-app.html" class="nav-app ${active === "app" ? "active" : ""}">${t("nav_app")}</a>
-
+        <div class="nav-community ${communityActive ? "has-active" : ""}" id="navCommunity">
+          <button type="button" class="nav-community-trigger ${communityActive ? "active" : ""}" id="communityToggle" aria-expanded="false" aria-haspopup="true">
+            ${t("nav_community")}
+            <span class="nav-caret" aria-hidden="true">▾</span>
+          </button>
+          <div class="nav-community-menu" id="communityMenu" hidden>
+            <a href="reports.html" class="${active === "reports" ? "active" : ""}">${t("nav_incidents")}</a>
+            <a href="feed.html" class="${active === "feed" ? "active" : ""}">${t("nav_feed")}</a>
+            <a href="group-hikes.html" class="${active === "group-hikes" ? "active" : ""}">${t("nav_groups")}</a>
+            <a href="articles.html" class="${active === "articles" ? "active" : ""}">${t("nav_articles")}</a>
+            <a href="gallery.html" class="${active === "gallery" ? "active" : ""}">${t("nav_gallery")}</a>
+          </div>
+        </div>
         ${accountNav}
+        <a href="get-app.html" class="nav-app ${active === "app" ? "active" : ""}">${t("nav_app")}</a>
       </nav>
       <div class="header-actions">
         <div class="lang-switch" role="group" aria-label="Language">
@@ -646,6 +654,7 @@ function renderFooter() {
           <a href="about.html">${t("nav_about")}</a>
           <a href="about.html#contact">${t("footer_contact")}</a>
           <a href="about.html#faq">${t("footer_faq")}</a>
+          <a href="donate.html">${t("nav_donate")}</a>
           <div class="footer-social" aria-label="Social">
             <a href="https://www.facebook.com/" target="_blank" rel="noopener">Facebook</a>
             <a href="https://www.instagram.com/" target="_blank" rel="noopener">Instagram</a>
@@ -656,7 +665,7 @@ function renderFooter() {
     </div>
     <div class="footer-bottom">${t("footer_copy")}</div>
   </footer>
-  <a class="donate-fab" href="donate.html" title="${t("nav_donate")}">${t("nav_donate")}</a>
+  <a class="donate-fab hide-mobile-fab" href="donate.html" title="${t("nav_donate")}">${t("nav_donate")}</a>
   <div class="toast" id="toast"></div>`;
 }
 
@@ -679,6 +688,39 @@ function showToast(msg) {
   clearTimeout(window._toastTimer);
   window._toastTimer = setTimeout(() => t.classList.remove("show"), 2400);
 }
+
+/** Soft-gate guests: toast + optional redirect to login. Returns true if logged in. */
+TW.requireLogin = function (opts) {
+  opts = opts || {};
+  if (TW.isLoggedIn()) return true;
+  const key = opts.messageKey || "login_required";
+  showToast(TW.t(key));
+  if (opts.redirect !== false) {
+    const next = opts.next || (location.pathname.split("/").pop() + location.search + location.hash);
+    clearTimeout(window._loginRedirect);
+    window._loginRedirect = setTimeout(() => {
+      location.href = "login.html?next=" + encodeURIComponent(next);
+    }, opts.delay != null ? opts.delay : 900);
+  }
+  return false;
+};
+
+TW.emptyStateHtml = function (message, actionLabel, actionHrefOrAttr) {
+  const msg = TW.escapeHtml(message || TW.t("empty_generic"));
+  let action = "";
+  if (actionLabel && actionHrefOrAttr) {
+    if (String(actionHrefOrAttr).indexOf("http") === 0 || String(actionHrefOrAttr).indexOf(".html") >= 0 || String(actionHrefOrAttr).charAt(0) === "#") {
+      action = `<p class="empty-state-action"><a class="link-more" href="${TW.escapeHtml(actionHrefOrAttr)}">${TW.escapeHtml(actionLabel)}</a></p>`;
+    } else {
+      action = `<p class="empty-state-action"><button type="button" class="link-more" ${actionHrefOrAttr}>${TW.escapeHtml(actionLabel)}</button></p>`;
+    }
+  }
+  return `<div class="empty-state"><p>${msg}</p>${action}</div>`;
+};
+
+TW.resultCountHtml = function (count, label) {
+  return `<span class="result-count">${TW.escapeHtml(String(count))} ${TW.escapeHtml(label || "")}</span>`;
+};
 
 function initShell(active) {
   if (!document.querySelector('link[rel="icon"]')) {
@@ -708,6 +750,34 @@ function initShell(active) {
         const menu = document.getElementById("accountMenu");
         if (btn) btn.setAttribute("aria-expanded", "false");
         if (menu) menu.hidden = true;
+      }
+      const community = document.getElementById("navCommunity");
+      if (community && !links.classList.contains("open")) {
+        community.classList.remove("open");
+        const cBtn = document.getElementById("communityToggle");
+        const cMenu = document.getElementById("communityMenu");
+        if (cBtn) cBtn.setAttribute("aria-expanded", "false");
+        if (cMenu) cMenu.hidden = true;
+      }
+    });
+  }
+
+  const communityToggle = document.getElementById("communityToggle");
+  const communityMenu = document.getElementById("communityMenu");
+  const navCommunity = document.getElementById("navCommunity");
+  if (communityToggle && communityMenu && navCommunity) {
+    communityToggle.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const open = !navCommunity.classList.contains("open");
+      navCommunity.classList.toggle("open", open);
+      communityToggle.setAttribute("aria-expanded", open ? "true" : "false");
+      communityMenu.hidden = !open;
+    });
+    document.addEventListener("click", (e) => {
+      if (!navCommunity.contains(e.target)) {
+        navCommunity.classList.remove("open");
+        communityToggle.setAttribute("aria-expanded", "false");
+        communityMenu.hidden = true;
       }
     });
   }
@@ -775,6 +845,8 @@ function tagClass(tag) {
     Record: "tag-record",
     記錄: "tag-record",
     Route: "tag-route",
+    Announcement: "tag-community",
+    公告: "tag-community",
     Sponsored: "tag-sponsored",
   };
   return map[tag] || "tag-community";
@@ -810,12 +882,17 @@ function renderFeedCard(post) {
     ? ` role="link" tabindex="0" data-record-href="${recHref}" style="cursor:pointer"`
     : "";
 
+  const channel = post.channel || (post.pinned || post.user === "TrailWatch" || /Sponsored|Promo|Ad/i.test(post.tag || "") ? ( /Sponsored|Promo|Ad/i.test(post.tag || "") ? "official" : "official") : "friends");
+  const channelClass =
+    channel === "official" || post.pinned ? " feed-card--official" : channel === "ad" ? " feed-card--ad" : " feed-card--friends";
+  const pinBadge = post.pinned ? `<span class="feed-pin">${TW.t("feed_pinned")}</span>` : "";
+
   return `
-  <article class="card feed-card"${openAttr}>
+  <article class="card feed-card${channelClass}"${openAttr}>
     <div class="feed-card-header">
       ${twAvatarHtml(post.avatar, "avatar-sm", "", post.user)}
       <div class="user-info">
-        <div class="name">${post.user}</div>
+        <div class="name">${post.user}${pinBadge}</div>
         <div class="time">${time}</div>
       </div>
       <span class="tag ${tagClass(tag)}">${tag}</span>
@@ -831,7 +908,7 @@ function renderFeedCard(post) {
       <button type="button">💬 ${post.comments}</button>
       ${
         post.type === "group"
-          ? `<button type="button" class="btn btn-primary" style="margin-left:auto;padding:0.4rem 0.9rem;font-size:0.8rem" onclick="showToast(TW.t('toast_joined'))">${TW.t("join")}</button>`
+          ? `<button type="button" class="btn btn-primary join-group-btn" style="margin-left:auto;padding:0.4rem 0.9rem;font-size:0.8rem">${TW.t("join")}</button>`
           : recHref
             ? `<a class="btn btn-secondary" style="margin-left:auto;padding:0.4rem 0.9rem;font-size:0.8rem" href="${recHref}">${TW.t("rec_detail")}</a>`
             : ""
@@ -1027,6 +1104,7 @@ document.addEventListener("click", (e) => {
   if (!btn) return;
   e.preventDefault();
   e.stopPropagation();
+  if (!TW.requireLogin({ messageKey: "login_to_save" })) return;
   const id = btn.dataset.trail;
   const added = TW.togglePlan(id);
   showToast(added ? TW.t("toast_planned") : TW.t("toast_unplanned"));
@@ -1040,6 +1118,7 @@ document.addEventListener("click", (e) => {
   if (!btn) return;
   e.preventDefault();
   e.stopPropagation();
+  if (!TW.requireLogin({ messageKey: "login_to_save" })) return;
   const id = btn.dataset.trail;
   if (!id || typeof TW.toggleBookmark !== "function") return;
   const on = TW.toggleBookmark(id);
@@ -1053,6 +1132,7 @@ document.addEventListener("click", (e) => {
   if (!btn) return;
   e.preventDefault();
   e.stopPropagation();
+  if (!TW.requireLogin({ messageKey: "login_to_duplicate" })) return;
   const id = btn.dataset.trail;
   const source =
     (typeof TW.resolveTrailSource === "function" && TW.resolveTrailSource(id)) ||
@@ -1064,7 +1144,7 @@ document.addEventListener("click", (e) => {
     return;
   }
   const draft = TW.duplicateRoute(source);
-  showToast(TW.isLoggedIn() ? TW.t("toast_duplicated") : TW.t("toast_duplicated_guest"));
+  showToast(TW.t("toast_duplicated"));
   setTimeout(() => {
     location.href = "plan.html?edit=" + encodeURIComponent(draft.id);
   }, 450);

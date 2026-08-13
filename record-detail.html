@@ -104,6 +104,13 @@
         <div class="rec-photo-grid" id="photoGrid"></div>
         <p id="photoEmpty" style="display:none;color:var(--text-muted);font-size:0.85rem"></p>
       </section>
+      <div class="detail-next-steps" style="margin-top:1.5rem;display:flex;flex-wrap:wrap;gap:0.5rem">
+        <a class="btn btn-primary" href="explore.html" data-i18n="cta_find_similar"></a>
+        <a class="btn btn-secondary" href="app/index.html" data-i18n="cta_open_app_track"></a>
+        <a class="btn btn-secondary" href="reports.html" data-i18n="cta_report_nearby"></a>
+        <a class="btn btn-secondary" href="gallery.html" data-i18n="nav_gallery"></a>
+      </div>
+      <p class="meta" style="margin-top:0.65rem" data-i18n="cta_record_loop_hint"></p>
     </div>
   </main>
   <div id="app-footer"></div>
@@ -184,7 +191,10 @@
       });
     }
 
-    document.getElementById("btnBookmark").addEventListener("click", () => showToast(t("rec_bookmark")));
+    document.getElementById("btnBookmark").addEventListener("click", () => {
+      if (!TW.requireLogin({ messageKey: "login_to_save" })) return;
+      showToast(t("toast_bookmarked"));
+    });
     document.getElementById("btnShare").addEventListener("click", () => {
       const url = location.href;
       if (navigator.clipboard) navigator.clipboard.writeText(url).then(() => showToast(t("rec_share")));

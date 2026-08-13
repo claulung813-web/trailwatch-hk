@@ -18,11 +18,17 @@
       <h1 class="page-title" data-i18n="explore_title"></h1>
       <p class="page-sub" data-i18n="explore_sub"></p>
 
+      <div class="tw-toolbar">
       <div class="explore-search-row">
         <div class="search-bar explore-search">
           <input type="search" id="trailSearch" data-i18n-placeholder="search_placeholder" />
         </div>
         <button type="button" class="btn btn-secondary" id="advancedToggle" data-i18n="explore_advanced"></button>
+      </div>
+
+      <div class="tabs" id="exploreTabs">
+        <button class="tab active" data-tab="routes" data-i18n="tab_routes"></button>
+        <button class="tab" data-tab="records" data-i18n="tab_records"></button>
       </div>
 
       <div class="explore-advanced" id="advancedPanel" hidden>
@@ -67,9 +73,6 @@
       <div class="explore-view-row" id="viewModes" role="tablist"></div>
       <div class="chip-row explore-subchips" id="subChips"></div>
 
-      <div class="tabs" id="exploreTabs">
-        <button class="tab active" data-tab="routes" data-i18n="tab_routes"></button>
-        <button class="tab" data-tab="records" data-i18n="tab_records"></button>
       </div>
 
       <div id="view-routes">
@@ -221,7 +224,15 @@
 
     function resultCountLabel(n) {
       const unit = n === 1 ? TW.t("explore_result_one") : TW.t("explore_results");
-      return n + " " + unit;
+      const viewLabel =
+        view === "editors"
+          ? TW.t("explore_view_editors")
+          : view === "categories"
+            ? TW.t("explore_view_categories")
+            : view === "themes"
+              ? TW.t("explore_view_themes")
+              : TW.t("explore_view_all");
+      return n + " " + unit + " · " + viewLabel;
     }
 
     function renderViewModes() {
@@ -322,7 +333,24 @@
       document.getElementById("listCount").textContent = resultCountLabel(searched.length);
       document.getElementById("trailGrid").innerHTML = searched.length
         ? searched.map((t) => renderTrailCard(t)).join("")
-        : `<p style="color:var(--text-muted)">${TW.t("no_trails")}</p>`;
+        : TW.emptyStateHtml(TW.t("no_trails"), TW.t("explore_clear_filters"), 'id="exploreClear"');
+      const clearEx = document.getElementById("exploreClear");
+      if (clearEx) {
+        clearEx.addEventListener("click", () => {
+          query = "";
+          district = "all";
+          difficulty = "all";
+          duration = "all";
+          distanceBand = "all";
+          document.getElementById("trailSearch").value = "";
+          document.getElementById("districtFilter").value = "all";
+          document.getElementById("durationFilter").value = "all";
+          document.getElementById("distanceFilter").value = "all";
+          difficulty = "all";
+          document.querySelectorAll("#diffFilter .chip").forEach((c) => c.classList.toggle("active", c.dataset.diff === "all"));
+          renderAll();
+        });
+      }
       renderMap(searched);
     }
 

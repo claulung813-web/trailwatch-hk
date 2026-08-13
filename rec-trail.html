@@ -25,12 +25,14 @@
       <div class="trail-meta" id="recMeta" style="margin-bottom:1.25rem"></div>
       <div class="section-head"><h2 data-i18n="hikes_route">Route</h2></div>
       <div id="recMap"></div>
-      <div style="margin-top:1.25rem;display:flex;flex-wrap:wrap;gap:0.5rem">
+      <div style="margin-top:1.25rem;display:flex;flex-wrap:wrap;gap:0.5rem" class="detail-next-steps">
         <a class="btn btn-primary" id="recPlan" href="plan.html" data-i18n="mark_plan"></a>
         <button type="button" class="btn btn-secondary bookmark-btn" id="recBookmark" data-i18n="rec_bookmark"></button>
-        <button type="button" class="btn btn-secondary" id="recDup" data-i18n="route_duplicate"></button>
-        <a class="btn btn-secondary" href="get-app.html" data-i18n="nav_app"></a>
+        <button type="button" class="btn btn-secondary dup-btn" id="recDup" data-i18n="route_duplicate"></button>
+        <a class="btn btn-secondary" href="app/index.html" data-i18n="cta_open_app_track"></a>
+        <a class="btn btn-secondary" href="reports.html" data-i18n="cta_report_nearby"></a>
       </div>
+      <p class="meta detail-loop-hint" data-i18n="cta_route_loop_hint" style="margin-top:0.75rem"></p>
     </div>
   </main>
   <div id="app-footer"></div>
@@ -61,6 +63,7 @@
         document.getElementById("recPlan").href = "plan.html";
         document.getElementById("recPlan").addEventListener("click", (e) => {
           e.preventDefault();
+          if (!TW.requireLogin({ messageKey: "login_to_save" })) return;
           if (!TW.isPlanned(r.trailId)) TW.togglePlan(r.trailId);
           showToast(TW.t("toast_planned"));
         });
@@ -73,13 +76,8 @@
         bm.textContent = TW.t("rec_bookmark") + " ✓";
       }
 
-      document.getElementById("recDup").addEventListener("click", () => {
-        const draft = TW.duplicateRoute(r);
-        showToast(TW.isLoggedIn() ? TW.t("toast_duplicated") : TW.t("toast_duplicated_guest"));
-        setTimeout(() => {
-          location.href = "plan.html?edit=" + encodeURIComponent(draft.id);
-        }, 450);
-      });
+      const dup = document.getElementById("recDup");
+      dup.dataset.trail = r.trailId || r.id;
 
       const path = (r.path && r.path.length ? r.path : [[22.32, 114.17]]).map((p) => [p[0], p[1]]);
       const map = L.map("recMap").setView(path[0], 13);

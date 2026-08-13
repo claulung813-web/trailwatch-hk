@@ -23,7 +23,7 @@
         <button class="btn btn-primary" id="openReport" data-i18n="report_incident_btn"></button>
       </div>
 
-      <div class="reports-filters">
+      <div class="reports-filters tw-toolbar">
         <div>
           <label for="reportDateFilter" data-i18n="reports_filter_date"></label>
           <select class="form-select" id="reportDateFilter">
@@ -174,7 +174,16 @@
       document.getElementById("reportCount").textContent = list.length + " " + TW.t("reports_count");
       document.getElementById("reportList").innerHTML =
         list.map(renderReportItem).join("") ||
-        `<p style="color:var(--text-muted)">${TW.t("no_trails")}</p>`;
+        TW.emptyStateHtml(TW.t("no_trails"), TW.t("reports_date_6m"), 'id="reportReset"');
+      const reset = document.getElementById("reportReset");
+      if (reset) {
+        reset.addEventListener("click", () => {
+          dateRange = "6m";
+          category = "all";
+          dateSel.value = "6m";
+          refreshAll();
+        });
+      }
       return list;
     }
 

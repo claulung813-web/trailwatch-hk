@@ -106,6 +106,7 @@
         </div>
       </div>
 
+      <div class="tw-toolbar">
       <div class="search-bar">
         <input type="search" id="groupSearch" data-i18n-placeholder="search_placeholder" />
       </div>
@@ -113,6 +114,10 @@
         <button type="button" class="chip active" data-f="upcoming" data-i18n="groups_upcoming"></button>
         <button type="button" class="chip" data-f="past" data-i18n="groups_past"></button>
         <button type="button" class="chip" data-f="joined" data-i18n="groups_joined"></button>
+      </div>
+      </div>
+      <div class="explore-toolbar">
+        <h2 class="explore-count" id="groupCount"></h2>
       </div>
       <div class="trail-grid" id="groupGrid"></div>
     </div>
@@ -211,6 +216,8 @@
         if (filter === "joined") return okQ && (m.joined || isInvited(m) || (m.organizerEmail && m.organizerEmail === TW.memberEmail()));
         return okQ && !m.past;
       });
+      const countEl = document.getElementById("groupCount");
+      if (countEl) countEl.textContent = list.length + " · " + TW.t(filter === "past" ? "groups_past" : filter === "joined" ? "groups_joined" : "groups_upcoming");
       document.getElementById("groupGrid").innerHTML = list.length
         ? list
             .map((m) => {
@@ -240,7 +247,17 @@
             </article>`;
             })
             .join("")
-        : `<p style="color:var(--text-muted);padding:2rem 0">${TW.t("hikes_empty")}</p>`;
+        : TW.emptyStateHtml(TW.t("groups_empty"), TW.t("groups_clear_hint"), 'id="groupClear"');
+      const clear = document.getElementById("groupClear");
+      if (clear) {
+        clear.addEventListener("click", () => {
+          q = "";
+          filter = "upcoming";
+          document.getElementById("groupSearch").value = "";
+          document.querySelectorAll("#groupFilters .chip").forEach((c) => c.classList.toggle("active", c.dataset.f === "upcoming"));
+          render();
+        });
+      }
     }
 
     document.getElementById("groupFilters").addEventListener("click", (e) => {
@@ -257,6 +274,7 @@
 
     const panel = document.getElementById("createPanel");
     document.getElementById("btnCreate").addEventListener("click", () => {
+      if (!TW.requireLogin({ messageKey: "login_to_organize" })) return;
       panel.style.display = panel.style.display === "none" ? "block" : "none";
       fillRouteSelect();
       renderInviteFriends();

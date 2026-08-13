@@ -17,10 +17,24 @@
       <h1 class="page-title" data-i18n="gallery_title"></h1>
       <p class="page-sub" data-i18n="gallery_sub"></p>
 
-      <div class="gallery-toolbar">
+      <div class="tw-toolbar gallery-toolbar">
         <div class="search-bar gallery-search">
           <input type="search" id="gallerySearch" data-i18n-placeholder="gallery_search_ph" />
         </div>
+        <div class="chip-row" id="galleryCatFilter" role="toolbar"></div>
+        <div class="gallery-filters" style="margin:0">
+          <div class="gallery-filter-field">
+            <label for="gallerySort" data-i18n="gallery_sort_label"></label>
+            <select class="form-select" id="gallerySort">
+              <option value="newest" data-i18n="gallery_sort_newest"></option>
+              <option value="oldest" data-i18n="gallery_sort_oldest"></option>
+              <option value="category" data-i18n="gallery_sort_category"></option>
+            </select>
+          </div>
+        </div>
+        <details class="tw-advanced" id="galleryAdvanced">
+          <summary data-i18n="gallery_advanced"></summary>
+          <div class="tw-advanced-body">
         <div class="gallery-filters">
           <div class="gallery-filter-field">
             <label for="galleryDateFrom" data-i18n="gallery_date_from"></label>
@@ -29,14 +43,6 @@
           <div class="gallery-filter-field">
             <label for="galleryDateTo" data-i18n="gallery_date_to"></label>
             <input class="form-input" type="date" id="galleryDateTo" />
-          </div>
-          <div class="gallery-filter-field">
-            <label for="gallerySort" data-i18n="gallery_sort_label"></label>
-            <select class="form-select" id="gallerySort">
-              <option value="newest" data-i18n="gallery_sort_newest"></option>
-              <option value="oldest" data-i18n="gallery_sort_oldest"></option>
-              <option value="category" data-i18n="gallery_sort_category"></option>
-            </select>
           </div>
         </div>
         <div class="gallery-gps-panel">
@@ -60,7 +66,8 @@
           </div>
           <div class="gallery-map" id="galleryMap" aria-label="GPS filter map"></div>
         </div>
-        <div class="chip-row" id="galleryCatFilter" role="toolbar"></div>
+          </div>
+        </details>
       </div>
 
       <section class="gallery-section" aria-labelledby="galleryFeaturedHeading">
@@ -85,7 +92,7 @@
           <span class="meta" id="galleryCount"></span>
         </div>
         <div class="gallery-card-grid" id="galleryGrid"></div>
-        <p class="gallery-empty" id="galleryEmpty" hidden data-i18n="gallery_empty"></p>
+        <div class="gallery-empty" id="galleryEmpty" hidden></div>
       </section>
     </div>
   </main>
@@ -213,12 +220,33 @@
       const rest = TW.getGalleryPhotos(filterOpts({ excludeFeatured: true }));
       document.getElementById("galleryGrid").innerHTML = rest.map((p) => renderPhotoCard(p)).join("");
       document.getElementById("galleryCount").textContent = rest.length + " " + TW.t("gallery_photos_count");
-      document.getElementById("galleryEmpty").hidden = rest.length > 0;
-
-      const gpsOn =
+      const empty = document.getElementById("galleryEmpty");
+      const gpsActive =
         document.getElementById("galleryGpsLat").value &&
         document.getElementById("galleryGpsLng").value &&
         document.getElementById("galleryGpsRadius").value;
+      if (!rest.length && !featuredFiltered.length) {
+        empty.hidden = false;
+        empty.innerHTML = gpsActive
+          ? TW.emptyStateHtml(TW.t("gallery_empty_gps"), TW.t("gallery_gps_clear"), 'id="galleryEmptyClear"')
+          : TW.emptyStateHtml(TW.t("gallery_empty"), TW.t("feed_clear_filters"), 'id="galleryEmptyClear"');
+        const clearBtn = document.getElementById("galleryEmptyClear");
+        if (clearBtn) {
+          clearBtn.addEventListener("click", () => {
+            document.getElementById("gallerySearch").value = "";
+            document.getElementById("galleryDateFrom").value = "";
+            document.getElementById("galleryDateTo").value = "";
+            document.getElementById("galleryGpsClear").click();
+            category = "all";
+            refresh();
+          });
+        }
+      } else {
+        empty.hidden = true;
+        empty.innerHTML = "";
+      }
+
+      const gpsOn = gpsActive;
       const timelineSec = document.getElementById("galleryTimelineSection");
       if (gpsOn) {
         const timeline = TW.getGalleryPhotos(filterOpts({ sort: "oldest", excludeFeatured: false }));

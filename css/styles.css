@@ -180,6 +180,66 @@ ul {
   font-weight: 600;
 }
 
+.nav-community {
+  position: relative;
+}
+.nav-community-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.45rem 0.55rem;
+  border-radius: 999px;
+  border: none;
+  background: transparent;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+.nav-community-trigger:hover,
+.nav-community-trigger.active,
+.nav-community.has-active .nav-community-trigger,
+.nav-community.open .nav-community-trigger {
+  background: var(--green-50);
+  color: var(--green-900);
+}
+.nav-community.has-active .nav-community-trigger,
+.nav-community-trigger.active {
+  font-weight: 600;
+}
+.nav-caret {
+  font-size: 0.65rem;
+  opacity: 0.7;
+}
+.nav-community-menu {
+  position: absolute;
+  top: calc(100% + 0.4rem);
+  left: 0;
+  min-width: 11.5rem;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  padding: 0.4rem;
+  z-index: 80;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+.nav-community-menu[hidden] {
+  display: none;
+}
+.nav-community-menu a {
+  display: block;
+  width: 100%;
+  border-radius: 8px;
+  padding: 0.55rem 0.7rem;
+  font-size: 0.85rem;
+}
+
 .nav-account {
   position: relative;
   margin-left: 0.15rem;
@@ -2219,6 +2279,91 @@ a.record-item {
   color: #fff !important;
 }
 
+.tw-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1.15rem;
+}
+.tw-advanced {
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 12px;
+  background: #fff;
+  padding: 0.15rem 0.85rem 0.15rem;
+}
+.tw-advanced > summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.88rem;
+  color: var(--green-900);
+  padding: 0.65rem 0;
+  list-style: none;
+}
+.tw-advanced > summary::-webkit-details-marker { display: none; }
+.tw-advanced > summary::after {
+  content: "▾";
+  float: right;
+  opacity: 0.6;
+}
+.tw-advanced[open] > summary::after { content: "▴"; }
+.tw-advanced-body {
+  padding: 0 0 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.empty-state {
+  padding: 1.5rem 0.25rem 2rem;
+  color: var(--text-muted);
+  font-size: 0.95rem;
+}
+.empty-state-action { margin-top: 0.65rem; }
+.empty-state-action .link-more,
+.empty-state-action button.link-more {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+  color: var(--green-800);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.activity-type-filters--quiet .chip:not(.active) {
+  background: transparent;
+  border-color: transparent;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+.activity-type-filters--quiet .chip.active {
+  font-weight: 700;
+}
+.feed-card--official {
+  border-color: rgba(47, 107, 79, 0.28);
+  background: linear-gradient(180deg, #f4faf6 0%, #fff 55%);
+}
+.feed-card--ad {
+  border-style: dashed;
+  border-color: #d1d5db;
+}
+.feed-card--friends {
+  border-color: var(--border);
+}
+.feed-pin {
+  display: inline-block;
+  margin-left: 0.4rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--green-800);
+  background: #e8f5ee;
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  vertical-align: middle;
+}
+.feed-section { margin-bottom: 1.5rem; }
+.detail-next-steps .btn { font-size: 0.85rem; }
+
 .home-figures {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -2823,6 +2968,33 @@ a.record-item {
 
 /* —— Mobile —— */
 @media (max-width: 768px) {
+  .donate-fab.hide-mobile-fab,
+  .donate-fab {
+    display: none !important;
+  }
+
+  .nav-community {
+    width: 100%;
+  }
+  .nav-community-trigger {
+    width: 100%;
+    justify-content: space-between;
+    padding: 0.75rem 1rem;
+  }
+  .nav-community-menu {
+    position: static;
+    box-shadow: none;
+    border: none;
+    padding: 0 0 0.35rem 0.75rem;
+    min-width: 0;
+  }
+  .nav-community-menu[hidden] {
+    display: none;
+  }
+  .nav-community.open .nav-community-menu {
+    display: flex;
+  }
+
   .nav-links {
     display: none;
     position: absolute;
