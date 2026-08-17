@@ -7,6 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="css/styles.css" />
   <style>
     .vis-toggle {
@@ -28,7 +29,9 @@
       color: var(--green-900);
       background: #fff;
     }
-    .vis-toggle input { accent-color: var(--green-800); }
+    .vis-toggle input:disabled + span {
+      opacity: 0.45;
+    }
     .friend-invite-list {
       display: grid;
       gap: 0.45rem;
@@ -56,6 +59,83 @@
     .gh-public { background: #ecfdf5; color: #047857; }
     .gh-private { background: #eff6ff; color: #1d4ed8; }
     .gh-invited { background: #fef3c7; color: #92400e; }
+    #ghRouteMap {
+      height: 300px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      background: var(--green-50);
+    }
+    .gh-route-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+      align-items: center;
+      margin: 0.5rem 0 0.65rem;
+    }
+    .gh-route-toolbar .chip.active {
+      background: var(--green-900);
+      color: #fff;
+      border-color: var(--green-900);
+    }
+    .gh-route-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: center;
+      margin-top: 0.65rem;
+    }
+    .gh-route-row .form-select { flex: 1; min-width: 160px; }
+    .plan-ctx {
+      position: absolute;
+      z-index: 1000;
+      min-width: 210px;
+      background: #fff;
+      border-radius: 12px;
+      padding: 0.75rem 0.9rem 0.65rem;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.25);
+      display: none;
+    }
+    .plan-ctx button {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      width: 100%;
+      border: 0;
+      background: transparent;
+      text-align: left;
+      padding: 0.4rem 0.1rem;
+      font-weight: 700;
+      font-size: 0.88rem;
+      color: #3f3f46;
+      cursor: pointer;
+    }
+    .plan-ctx button:hover { color: var(--green-900); }
+    .plan-ctx button[hidden] { display: none; }
+    .plan-ctx hr { border: 0; border-top: 1px solid #f4f4f5; margin: 0.45rem 0; }
+    .plan-ctx .cancel { font-weight: 500; color: var(--text-muted); }
+    .plan-dot {
+      width: 14px; height: 14px; border-radius: 50%;
+      border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,0.2);
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 8px; font-weight: 800; color: #fff; line-height: 1;
+    }
+    .plan-dot.start { background: #2d8a45; }
+    .plan-dot.end { background: #d64545; border-radius: 3px; }
+    .plan-dot.via { background: #003229; box-shadow: 0 0 0 2px #33897a; }
+    .marker-label { background: transparent !important; border: 0 !important; }
+    .mk {
+      border: 2px solid #fff;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.35);
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; color: #fff; line-height: 1;
+    }
+    .mk-start { width: 24px; height: 24px; border-radius: 50%; background: #2d8a45; font-size: 11px; }
+    .mk-end { width: 24px; height: 24px; border-radius: 4px; background: #d64545; font-size: 11px; }
+    .mk-via {
+      width: 22px; height: 22px; border-radius: 50%;
+      background: #003229; box-shadow: 0 0 0 2px #33897a, 0 1px 4px rgba(0,0,0,0.35);
+      font-size: 10px;
+    }
   </style>
 </head>
 <body>
@@ -70,8 +150,15 @@
         <button type="button" class="btn btn-primary" id="btnCreate" data-i18n="groups_create"></button>
       </div>
 
+      <div class="card" id="createGate" style="padding:1.25rem;margin-bottom:1.5rem;display:none">
+        <h2 style="font-size:1.1rem;margin:0 0 0.5rem;color:var(--green-900)" data-i18n="groups_premium_gate_title"></h2>
+        <p class="page-sub" style="margin-bottom:1rem" data-i18n="groups_premium_gate_body"></p>
+        <a class="btn btn-primary" href="get-app.html#premium" data-i18n="home_premium_cta"></a>
+      </div>
+
       <div class="card" id="createPanel" style="padding:1.25rem;margin-bottom:1.5rem;display:none">
         <h2 style="font-size:1.1rem;margin:0 0 0.85rem;color:var(--green-900)" data-i18n="groups_create_title"></h2>
+        <p class="meta" id="createPremiumNote" style="margin:0 0 1rem"></p>
         <div class="form-group">
           <label for="ghName" data-i18n="groups_name"></label>
           <input class="form-input" id="ghName" type="text" required />
@@ -87,18 +174,40 @@
         <div class="form-group">
           <label data-i18n="groups_visibility"></label>
           <div class="vis-toggle">
-            <label><input type="radio" name="ghVis" value="public" checked /> <span data-i18n="groups_public"></span></label>
-            <label><input type="radio" name="ghVis" value="private" /> <span data-i18n="groups_private"></span></label>
+            <label><input type="radio" name="ghVis" value="private" checked /> <span data-i18n="groups_private"></span></label>
+            <label id="ghPublicLabel"><input type="radio" name="ghVis" value="public" id="ghVisPublic" /> <span data-i18n="groups_public"></span></label>
           </div>
+          <p class="meta" id="ghPublicHint" style="margin:0.45rem 0 0"></p>
         </div>
-        <div id="inviteBlock" style="display:none">
+        <div id="inviteBlock">
           <label style="font-weight:700;color:var(--green-900);font-size:0.85rem" data-i18n="groups_invite_friends"></label>
           <p style="font-size:0.78rem;color:var(--text-muted);margin:0.25rem 0 0.5rem" data-i18n="groups_invite_hint"></p>
           <div class="friend-invite-list" id="friendInviteList"></div>
         </div>
-        <div class="form-group">
-          <label for="ghRouteDraft" data-i18n="groups_route"></label>
-          <select class="form-select" id="ghRouteDraft"></select>
+        <div class="form-group" id="ghRouteBlock">
+          <label data-i18n="groups_route"></label>
+          <p class="meta" style="margin:0.25rem 0 0" data-i18n="groups_route_edit_hint"></p>
+          <div class="gh-route-toolbar" id="ghRouteToolbar">
+            <button type="button" class="chip active" data-draw="menu" data-i18n="plan_mode_menu"></button>
+            <button type="button" class="chip" data-draw="click" data-i18n="plan_mode_click"></button>
+            <button type="button" class="btn btn-secondary" style="padding:0.35rem 0.75rem;font-size:0.8rem" data-route-undo data-i18n="plan_undo"></button>
+            <button type="button" class="btn btn-secondary" style="padding:0.35rem 0.75rem;font-size:0.8rem" data-route-clear data-i18n="plan_clear"></button>
+            <span class="meta" id="ghRouteStats"></span>
+          </div>
+          <div style="position:relative">
+            <div id="ghRouteMap"></div>
+            <div class="plan-ctx" id="ghRouteCtx" role="menu">
+              <button type="button" data-type="start"><span class="plan-dot start">A</span><span data-i18n="plan_ctx_start"></span></button>
+              <button type="button" data-type="end"><span class="plan-dot end">B</span><span data-i18n="plan_ctx_end"></span></button>
+              <button type="button" data-type="via"><span class="plan-dot via">V</span><span data-i18n="plan_ctx_via"></span></button>
+              <hr />
+              <button type="button" class="cancel" data-type="cancel" data-i18n="plan_ctx_cancel"></button>
+            </div>
+          </div>
+          <div class="gh-route-row">
+            <select class="form-select" id="ghRouteDraft" aria-label="Saved routes"></select>
+            <button type="button" class="btn btn-primary" id="btnGhSaveRoute" data-i18n="groups_save_route"></button>
+          </div>
         </div>
         <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
           <button type="button" class="btn btn-primary" id="submitCreate" data-i18n="groups_create_submit"></button>
@@ -123,9 +232,12 @@
     </div>
   </main>
   <div id="app-footer"></div>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="js/i18n.js"></script>
   <script src="js/data.js"></script>
+  <script src="js/cms-store.js"></script>
   <script src="js/app.js"></script>
+  <script src="js/route-map.js"></script>
   <script>
     document.documentElement.lang = TW.getLang() === "zh" ? "zh-Hant" : "en";
     if (new URLSearchParams(location.search).get("mine") === "1") {
@@ -135,6 +247,29 @@
 
     let filter = "upcoming";
     let q = "";
+    let routeEditor = null;
+
+    function updateRouteStats(info) {
+      const el = document.getElementById("ghRouteStats");
+      if (!el) return;
+      if (!info || !info.hasRoute) {
+        el.textContent = TW.t("groups_route_stats_empty");
+        return;
+      }
+      el.textContent =
+        TW.t("plan_est_distance") + ": " + info.distanceKm + " km · " + info.path.length + " " + TW.t("plan_points");
+    }
+
+    function ensureRouteEditor() {
+      if (routeEditor) return routeEditor;
+      routeEditor = TW.createRouteMapEditor({
+        mapId: "ghRouteMap",
+        ctxId: "ghRouteCtx",
+        toolbarEl: document.getElementById("ghRouteToolbar"),
+        onChange: updateRouteStats,
+      });
+      return routeEditor;
+    }
 
     function seedDemoPath() {
       return TW.demoPathAround(22.35, 114.25);
@@ -189,10 +324,11 @@
         .join("");
     }
 
-    function fillRouteSelect() {
+    function fillRouteSelect(selectedId) {
       const sel = document.getElementById("ghRouteDraft");
       const drafts = TW.getRouteDrafts();
       const zh = TW.getLang() === "zh";
+      const keep = selectedId || sel.value || "";
       sel.innerHTML =
         `<option value="">${TW.t("groups_no_route")}</option>` +
         drafts
@@ -201,11 +337,61 @@
             return `<option value="${d.id}">${twEsc(label)} (${(d.path || []).length})</option>`;
           })
           .join("");
+      if (keep && drafts.some((d) => d.id === keep)) sel.value = keep;
     }
 
     function syncVisibilityUI() {
-      const vis = (document.querySelector('input[name="ghVis"]:checked') || {}).value || "public";
+      const canPublic = TW.canOrganizePublicGroup();
+      const publicRadio = document.getElementById("ghVisPublic");
+      const hint = document.getElementById("ghPublicHint");
+      const status = TW.getPublicGroupOrganizeStatus();
+      publicRadio.disabled = !canPublic;
+      if (!canPublic) {
+        publicRadio.checked = false;
+        const priv = document.querySelector('input[name="ghVis"][value="private"]');
+        if (priv) priv.checked = true;
+        hint.textContent = TW.t("groups_public_phase2_hint")
+          .replace("{n}", String(status.minHosted))
+          .replace("{have}", String(status.hosted));
+      } else {
+        hint.textContent = TW.t("groups_public_unlocked");
+      }
+      const vis = (document.querySelector('input[name="ghVis"]:checked') || {}).value || "private";
       document.getElementById("inviteBlock").style.display = vis === "private" ? "block" : "none";
+    }
+
+    function openCreatePanel() {
+      if (!TW.requireLogin({ messageKey: "login_to_organize" })) return;
+      if (!TW.canOrganizePrivateGroup()) {
+        document.getElementById("createPanel").style.display = "none";
+        document.getElementById("createGate").style.display = "block";
+        const prem = TW.getMemberPremiumInfo();
+        const gateBody = document.querySelector("#createGate .page-sub");
+        if (gateBody && prem.expired) gateBody.textContent = TW.t("groups_premium_expired");
+        showToast(prem.expired ? TW.t("groups_premium_expired") : TW.t("groups_premium_required"));
+        return;
+      }
+      document.getElementById("createGate").style.display = "none";
+      const panel = document.getElementById("createPanel");
+      panel.style.display = panel.style.display === "none" ? "block" : "none";
+      if (panel.style.display === "block") {
+        document.getElementById("createPremiumNote").textContent = TW.t("groups_premium_private_note");
+        fillRouteSelect();
+        renderInviteFriends();
+        syncVisibilityUI();
+        const editor = ensureRouteEditor();
+        if (editor) {
+          const selId = document.getElementById("ghRouteDraft").value;
+          if (selId) editor.loadDraft(selId);
+          else editor.reset();
+          editor.invalidateSize();
+          updateRouteStats({
+            hasRoute: editor.hasRoute(),
+            path: editor.getPath(),
+            distanceKm: TW.pathDistanceKm(editor.getPath()),
+          });
+        }
+      }
     }
 
     function render() {
@@ -273,34 +459,75 @@
     });
 
     const panel = document.getElementById("createPanel");
-    document.getElementById("btnCreate").addEventListener("click", () => {
-      if (!TW.requireLogin({ messageKey: "login_to_organize" })) return;
-      panel.style.display = panel.style.display === "none" ? "block" : "none";
-      fillRouteSelect();
-      renderInviteFriends();
-      syncVisibilityUI();
-    });
+    document.getElementById("btnCreate").addEventListener("click", openCreatePanel);
     document.getElementById("cancelCreate").addEventListener("click", () => {
       panel.style.display = "none";
+      document.getElementById("createGate").style.display = "none";
     });
     document.querySelectorAll('input[name="ghVis"]').forEach((r) => {
       r.addEventListener("change", syncVisibilityUI);
     });
 
+    document.getElementById("ghRouteDraft").addEventListener("change", (e) => {
+      const editor = ensureRouteEditor();
+      if (!editor) return;
+      const id = e.target.value;
+      if (id) editor.loadDraft(id);
+      else editor.reset();
+    });
+
+    document.getElementById("btnGhSaveRoute").addEventListener("click", () => {
+      const editor = ensureRouteEditor();
+      if (!editor) return;
+      const hikeName = document.getElementById("ghName").value.trim();
+      const draft = editor.saveDraft(hikeName || undefined);
+      if (!draft) {
+        showToast(TW.t("groups_route_need_ab"));
+        return;
+      }
+      fillRouteSelect(draft.id);
+      showToast(TW.t("groups_route_saved"));
+    });
+
     document.getElementById("submitCreate").addEventListener("click", () => {
+      if (!TW.canOrganizePrivateGroup()) {
+        showToast(TW.t("groups_premium_required"));
+        return;
+      }
       const name = document.getElementById("ghName").value.trim();
       if (!name) {
         showToast(TW.t("groups_name"));
         return;
       }
-      const vis = (document.querySelector('input[name="ghVis"]:checked') || {}).value || "public";
+      let vis = (document.querySelector('input[name="ghVis"]:checked') || {}).value || "private";
+      if (vis === "public" && !TW.canOrganizePublicGroup()) {
+        showToast(TW.t("groups_public_locked"));
+        vis = "private";
+      }
       const invited = [];
       if (vis === "private") {
         document.querySelectorAll('input[name="invite"]:checked').forEach((c) => invited.push(c.value));
       }
-      const draftId = document.getElementById("ghRouteDraft").value;
-      const draft = draftId ? TW.getRouteDraft(draftId) : null;
-      const path = draft && draft.path && draft.path.length >= 2 ? draft.path : seedDemoPath();
+      const editor = ensureRouteEditor();
+      let draftId = document.getElementById("ghRouteDraft").value;
+      let path = [];
+      if (editor && editor.hasRoute()) {
+        const saved = editor.saveDraft(name);
+        if (saved) {
+          draftId = saved.id;
+          path = saved.path;
+        } else {
+          path = editor.getPath();
+        }
+      }
+      if (path.length < 2) {
+        const draft = draftId ? TW.getRouteDraft(draftId) : null;
+        path = draft && draft.path && draft.path.length >= 2 ? draft.path : [];
+      }
+      if (path.length < 2) {
+        showToast(TW.t("groups_route_need_ab"));
+        return;
+      }
       const auth = TW.getMemberAuth();
       const hike = {
         id: "gh_" + Date.now(),
@@ -328,6 +555,11 @@
       showToast(TW.t("groups_created"));
       panel.style.display = "none";
       document.getElementById("ghName").value = "";
+      document.getElementById("ghPlace").value = "";
+      document.getElementById("ghDate").value = "";
+      document.getElementById("ghRouteDraft").value = "";
+      if (routeEditor) routeEditor.reset();
+      fillRouteSelect();
       render();
       setTimeout(() => {
         location.href = "group-hike-detail.html?id=" + encodeURIComponent(hike.id);

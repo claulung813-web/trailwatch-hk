@@ -248,12 +248,25 @@ TW.memberDisplayName = function () {
 
 TW.loginMember = function (data) {
   const name = ((data && (data.name || data.displayName)) || "").trim();
+  const email = ((data && data.email) || "").trim().toLowerCase();
+  let premium = !!(data && data.premium);
+  if (typeof CMS !== "undefined" && CMS.getStore && email) {
+    try {
+      const u = (CMS.getStore().users || []).find((x) => String(x.email || "").trim().toLowerCase() === email);
+      if (u && CMS.isUserPremiumNow) premium = !!CMS.isUserPremiumNow(u);
+      else if (u) premium = !!u.premium;
+    } catch (e) {}
+  }
+  if (!premium && TW.user && TW.user.premium && TW.user.email && String(TW.user.email).toLowerCase() === email) {
+    premium = true;
+  }
   localStorage.setItem(
     TW.MEMBER_AUTH_KEY,
     JSON.stringify({
       name: name,
       displayName: name,
-      email: ((data && data.email) || "").trim().toLowerCase(),
+      email: email,
+      premium: premium,
       at: Date.now(),
     })
   );
@@ -266,6 +279,105 @@ TW.logoutMember = function () {
 TW.memberEmail = function () {
   const a = TW.getMemberAuth();
   return a && a.email ? String(a.email).trim().toLowerCase() : "";
+};
+
+TW.PUBLIC_GROUP_MIN_PRIVATE_HOSTED = 2;
+
+TW.getMemberCmsUser = function () {
+  const email = TW.memberEmail();
+  if (!email || typeof CMS === "undefined" || !CMS.getStore) return null;
+  try {
+    return (CMS.getStore().users || []).find((u) => String(u.email || "").trim().toLowerCase() === email) || null;
+  } catch (e) {
+    return null;
+  }
+};
+
+TW.parseDateValue = function (value) {
+  if (!value) return null;
+  const s = String(value).trim();
+  const iso = Date.parse(s);
+  if (Number.isFinite(iso)) return iso;
+  const m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(s);
+  if (m) return Date.parse(m[3] + "-" + m[2].padStart(2, "0") + "-" + m[1].padStart(2, "0"));
+  return null;
+};
+
+TW.getMemberPremiumInfo = function () {
+  const info = { active: false, expired: false, end: "", source: "" };
+  if (!TW.isLoggedIn()) return info;
+  const cmsUser = TW.getMemberCmsUser();
+  if (cmsUser) {
+    info.source = "cms";
+    info.end = cmsUser.premiumEnd || "";
+    const now = typeof CMS !== "undefined" && CMS.isUserPremiumNow ? CMS.isUserPremiumNow(cmsUser) : !!cmsUser.premium;
+    info.active = !!now;
+    info.expired = !!(cmsUser.premium && !now);
+    return info;
+  }
+  const email = TW.memberEmail();
+  if (TW.user && TW.user.email && String(TW.user.email).toLowerCase() === email) {
+    info.source = "profile";
+    info.end = TW.user.premiumEnds || "";
+    const endTs = TW.parseDateValue(TW.user.premiumEnds);
+    const still = !!TW.user.premium && (!endTs || endTs + 24 * 60 * 60 * 1000 - 1 >= Date.now());
+    info.active = still;
+    info.expired = !!(TW.user.premium && !still);
+    return info;
+  }
+  const auth = TW.getMemberAuth();
+  info.source = "session";
+  info.active = !!(auth && auth.premium);
+  return info;
+};
+
+TW.isMemberPremium = function () {
+  return TW.getMemberPremiumInfo().active;
+};
+
+TW.hostedPrivateGroupCount = function () {
+  const email = TW.memberEmail();
+  if (!email || typeof TW.getGroupHikes !== "function") return 0;
+  return TW.getGroupHikes().filter((g) => g.visibility === "private" && g.organizerEmail && g.organizerEmail === email).length;
+};
+
+TW.getPublicGroupOrganizeStatus = function () {
+  const premium = TW.isMemberPremium();
+  const hosted = TW.hostedPrivateGroupCount();
+  const minHosted = TW.PUBLIC_GROUP_MIN_PRIVATE_HOSTED;
+  const cmsUser = TW.getMemberCmsUser();
+  const staffApproved = !!(cmsUser && cmsUser.canHostPublicGroups);
+  return {
+    premium: premium,
+    hosted: hosted,
+    minHosted: minHosted,
+    staffApproved: staffApproved,
+    ok: !!(premium && (staffApproved || hosted >= minHosted)),
+  };
+};
+
+TW.canOrganizePrivateGroup = function () {
+  return TW.isLoggedIn() && TW.isMemberPremium();
+};
+
+TW.canOrganizePublicGroup = function () {
+  return TW.getPublicGroupOrganizeStatus().ok;
+};
+
+TW.requirePremium = function (opts) {
+  opts = opts || {};
+  if (!TW.requireLogin({ messageKey: opts.loginKey || "login_to_organize", redirect: opts.loginRedirect, delay: opts.delay })) {
+    return false;
+  }
+  if (TW.isMemberPremium()) return true;
+  showToast(TW.t(opts.messageKey || "groups_premium_required"));
+  if (opts.redirect) {
+    clearTimeout(window._premiumRedirect);
+    window._premiumRedirect = setTimeout(() => {
+      location.href = opts.redirect;
+    }, opts.delay != null ? opts.delay : 900);
+  }
+  return false;
 };
 
 /** Rough demo path around a point (Leaflet [lat,lng]) */

@@ -111,6 +111,7 @@ CMS.seedUsers = function () {
       premiumEnd: "2026-12-31",
       hasGps: true,
       trailFeedEditor: false,
+      canHostPublicGroups: false,
       note: "",
       createdAt: "2025-11-02T10:00:00.000Z",
     },
@@ -139,7 +140,8 @@ CMS.seedUsers = function () {
       premiumEnd: "2026-08-31",
       hasGps: true,
       trailFeedEditor: true,
-      note: "Trail feed editor",
+      canHostPublicGroups: true,
+      note: "Trail feed editor · Phase II public group host",
       createdAt: "2025-08-20T12:00:00.000Z",
     },
     {
@@ -212,7 +214,66 @@ CMS.seedUsers = function () {
       note: "Likely duplicate of usr_1007",
       createdAt: "2025-03-22T14:10:00.000Z",
     },
+    {
+      id: "usr_clau",
+      name: "clau",
+      email: "clau@example.com",
+      facebookId: "",
+      loginMethod: "email",
+      premium: true,
+      premiumStart: "2026-01-01",
+      premiumEnd: "2027-12-31",
+      hasGps: true,
+      trailFeedEditor: false,
+      canHostPublicGroups: false,
+      note: "Demo tester account — Premium for private group hikes",
+      createdAt: "2026-08-01T00:00:00.000Z",
+    },
+    {
+      id: "usr_alex_wong",
+      name: "Alex Wong",
+      email: "alex.wong@email.com",
+      facebookId: "",
+      loginMethod: "email",
+      premium: true,
+      premiumStart: "2026-01-01",
+      premiumEnd: "2027-12-31",
+      hasGps: true,
+      trailFeedEditor: false,
+      canHostPublicGroups: false,
+      note: "Website demo profile — Premium through Dec 2027",
+      createdAt: "2017-01-01T00:00:00.000Z",
+    },
   ];
+};
+
+CMS.addUser = function (data) {
+  const store = CMS.getStore();
+  const email = String((data && data.email) || "").trim().toLowerCase();
+  if (!email) return null;
+  const existing = (store.users || []).find((u) => String(u.email || "").toLowerCase() === email);
+  if (existing) return existing;
+  const id = "usr_" + Date.now();
+  const premium = !!(data && data.premium);
+  const user = {
+    id: id,
+    name: ((data && data.name) || email.split("@")[0] || "Member").trim(),
+    email: email,
+    facebookId: (data && data.facebookId) || "",
+    loginMethod: (data && data.loginMethod) || "email",
+    premium: premium,
+    premiumStart: (data && data.premiumStart) || (premium ? new Date().toISOString().slice(0, 10) : ""),
+    premiumEnd: (data && data.premiumEnd) || (premium ? "2027-12-31" : ""),
+    hasGps: data && "hasGps" in data ? !!data.hasGps : true,
+    trailFeedEditor: !!(data && data.trailFeedEditor),
+    canHostPublicGroups: !!(data && data.canHostPublicGroups),
+    note: (data && data.note) || "",
+    createdAt: new Date().toISOString(),
+  };
+  store.users = store.users || [];
+  store.users.push(user);
+  CMS.setStore(store);
+  return user;
 };
 
 CMS.isUserPremiumNow = function (u, onDate) {
@@ -317,6 +378,7 @@ CMS.mergeUsers = function (sourceId, targetId) {
     premiumEnd: tgt.premiumEnd || src.premiumEnd,
     hasGps: !!(tgt.hasGps || src.hasGps),
     trailFeedEditor: !!(tgt.trailFeedEditor || src.trailFeedEditor),
+    canHostPublicGroups: !!(tgt.canHostPublicGroups || src.canHostPublicGroups),
     note: [tgt.note, src.note ? "Merged from " + src.id + ": " + src.note : "Merged from " + src.id]
       .filter(Boolean)
       .join(" · "),
@@ -426,6 +488,39 @@ CMS.getStore = function () {
       store.users = CMS.seedUsers();
       migrated = true;
     } else store.users = parsed.users || [];
+    (store.users || []).forEach((u) => {
+      if (typeof u.canHostPublicGroups !== "boolean") {
+        u.canHostPublicGroups = u.id === "usr_1003";
+        migrated = true;
+      }
+    });
+    if (!(store.users || []).some((u) => u.id === "usr_clau" || String(u.email || "").toLowerCase() === "clau@example.com")) {
+      const clau = (CMS.seedUsers() || []).find((u) => u.id === "usr_clau");
+      if (clau) {
+        store.users.push(clau);
+        migrated = true;
+      }
+    }
+    if (!(store.users || []).some((u) => u.id === "usr_alex_wong" || String(u.email || "").toLowerCase() === "alex.wong@email.com")) {
+      const alex = (CMS.seedUsers() || []).find((u) => u.id === "usr_alex_wong");
+      if (alex) {
+        store.users.push(alex);
+        migrated = true;
+      }
+    }
+    const todayISO = new Date().toISOString().slice(0, 10);
+    const testerEmails = ["clau@example.com", "alex.wong@email.com", "alex@example.com"];
+    (store.users || []).forEach((u) => {
+      const email = String(u.email || "").toLowerCase();
+      const isTester = testerEmails.indexOf(email) >= 0 || u.id === "usr_clau" || u.id === "usr_alex_wong";
+      if (!isTester) return;
+      if (!u.premium || !u.premiumEnd || u.premiumEnd < todayISO) {
+        u.premium = true;
+        u.premiumStart = u.premiumStart || "2026-01-01";
+        u.premiumEnd = "2027-12-31";
+        migrated = true;
+      }
+    });
     if (!("donations" in parsed)) {
       store.donations = CMS.seedDonations();
       migrated = true;

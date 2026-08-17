@@ -379,6 +379,7 @@
 
   <script src="js/i18n.js"></script>
   <script src="js/data.js"></script>
+  <script src="js/cms-store.js"></script>
   <script src="js/env-badge.js"></script>
   <script src="js/hikes.js"></script>
   <script src="js/app.js"></script>
@@ -794,11 +795,22 @@
       .join("");
 
     /* Settings */
-    document.getElementById("settingsName").value = TW.user.name;
-    document.getElementById("settingsEmail").value = TW.user.email;
+    const member = TW.getMemberAuth && TW.getMemberAuth();
+    document.getElementById("settingsName").value = (member && (member.name || member.displayName)) || TW.user.name;
+    document.getElementById("settingsEmail").value = (member && member.email) || TW.user.email;
     document.getElementById("settingsNickname").value = TW.user.nickname;
-    document.getElementById("premiumEnds").textContent =
-      (TW.getLang() === "zh" ? "到期日 " : "Ends on ") + TW.user.premiumEnds;
+    const prem = typeof TW.getMemberPremiumInfo === "function" ? TW.getMemberPremiumInfo() : { active: !!TW.user.premium, end: TW.user.premiumEnds };
+    const endLabel = prem.end || TW.user.premiumEnds || "";
+    const premEl = document.getElementById("premiumEnds");
+    if (!TW.isLoggedIn || !TW.isLoggedIn()) {
+      premEl.textContent = TW.t("profile_premium_login");
+    } else if (prem.active) {
+      premEl.textContent = TW.t("profile_premium_ends").replace("{d}", endLabel || "—");
+    } else if (prem.expired) {
+      premEl.textContent = TW.t("profile_premium_expired").replace("{d}", endLabel || "—");
+    } else {
+      premEl.textContent = TW.t("profile_premium_none");
+    }
     const level = TW.getEnvLevel();
     const wrap = document.getElementById("highestBadge");
     if (level >= 1) {

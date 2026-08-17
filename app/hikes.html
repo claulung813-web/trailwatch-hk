@@ -85,6 +85,12 @@
       </div>
       <label style="font-size:0.75rem;font-weight:700;color:var(--green-900)" id="lblOrgName"></label>
       <input class="form-input" id="orgName" style="margin:0.25rem 0 0.65rem;width:100%" />
+      <p style="font-size:0.75rem;font-weight:700;color:var(--green-900);margin:0 0 0.35rem" id="lblVis"></p>
+      <div style="display:flex;gap:0.4rem;flex-wrap:wrap;margin-bottom:0.5rem">
+        <label style="font-size:0.78rem"><input type="radio" name="appVis" value="private" checked /> <span id="lblPriv"></span></label>
+        <label style="font-size:0.78rem"><input type="radio" name="appVis" value="public" id="appVisPublic" disabled /> <span id="lblPub"></span></label>
+      </div>
+      <p style="font-size:0.68rem;color:var(--text-muted);margin:0 0 0.55rem" id="visHint"></p>
       <button type="button" class="btn btn-secondary btn-block" style="margin-bottom:0.45rem;padding:0.45rem" id="btnPickRoute"></button>
       <button type="button" class="btn btn-secondary btn-block" style="margin-bottom:0.45rem;padding:0.45rem" id="btnInvite"></button>
       <p style="font-size:0.72rem;margin:0 0 0.55rem"><span class="app-premium-pill" id="orgPremium"></span></p>
@@ -95,6 +101,7 @@
 
   <script src="../js/i18n.js"></script>
   <script src="../js/data.js"></script>
+  <script src="../js/cms-store.js"></script>
   <script src="../js/app.js"></script>
   <script>
     document.documentElement.lang = TW.getLang() === "zh" ? "zh-Hant" : "en";
@@ -113,12 +120,33 @@
     document.getElementById("btnAdd").textContent = "+ " + t("app_group_add");
     document.getElementById("orgTitle").textContent = t("app_group_add");
     document.getElementById("lblOrgName").textContent = t("app_hike_title");
+    document.getElementById("lblVis").textContent = t("groups_visibility");
+    document.getElementById("lblPriv").textContent = t("groups_private");
+    document.getElementById("lblPub").textContent = t("groups_public");
     document.getElementById("btnPickRoute").textContent = t("app_pick_route");
     document.getElementById("btnInvite").textContent = t("app_invite_friends");
     document.getElementById("orgPremium").textContent = t("app_group_organize_premium");
-    document.getElementById("approveNote").textContent = t("app_group_approve_tbd");
+    document.getElementById("approveNote").textContent = t("groups_premium_private_note");
     document.getElementById("submitOrg").textContent = t("confirm");
     twMountAppNav("home");
+
+    function syncAppVis() {
+      const canPublic = typeof TW.canOrganizePublicGroup === "function" && TW.canOrganizePublicGroup();
+      const pub = document.getElementById("appVisPublic");
+      const status = typeof TW.getPublicGroupOrganizeStatus === "function" ? TW.getPublicGroupOrganizeStatus() : { minHosted: 2, hosted: 0 };
+      pub.disabled = !canPublic;
+      if (!canPublic) {
+        pub.checked = false;
+        const priv = document.querySelector('input[name="appVis"][value="private"]');
+        if (priv) priv.checked = true;
+        document.getElementById("visHint").textContent = t("groups_public_phase2_hint")
+          .replace("{n}", String(status.minHosted))
+          .replace("{have}", String(status.hosted));
+      } else {
+        document.getElementById("visHint").textContent = t("groups_public_unlocked");
+      }
+    }
+    syncAppVis();
 
     const demo = (TW.meetups || []).map((m, i) => ({
       ...m,
@@ -187,6 +215,17 @@
 
     const modal = document.getElementById("orgModal");
     document.getElementById("btnAdd").addEventListener("click", () => {
+      if (typeof TW.isLoggedIn === "function" && !TW.isLoggedIn()) {
+        showToast(t("login_to_organize"));
+        setTimeout(() => { location.href = "../login.html?next=" + encodeURIComponent("app/hikes.html"); }, 900);
+        return;
+      }
+      if (typeof TW.canOrganizePrivateGroup === "function" && !TW.canOrganizePrivateGroup()) {
+        showToast(t("groups_premium_required"));
+        setTimeout(() => { location.href = "../get-app.html#premium"; }, 900);
+        return;
+      }
+      syncAppVis();
       modal.style.display = "flex";
     });
     document.getElementById("closeOrg").addEventListener("click", () => { modal.style.display = "none"; });
@@ -196,10 +235,21 @@
     });
     document.getElementById("btnInvite").addEventListener("click", () => showToast(t("app_invite_friends")));
     document.getElementById("submitOrg").addEventListener("click", () => {
+      if (typeof TW.canOrganizePrivateGroup === "function" && !TW.canOrganizePrivateGroup()) {
+        showToast(t("groups_premium_required"));
+        return;
+      }
+      let vis = (document.querySelector('input[name="appVis"]:checked') || {}).value || "private";
+      if (vis === "public" && typeof TW.canOrganizePublicGroup === "function" && !TW.canOrganizePublicGroup()) {
+        showToast(t("groups_public_locked"));
+        vis = "private";
+      }
       modal.style.display = "none";
-      showToast(t("toast_saved") + " · " + t("app_group_private_mvp"));
+      showToast(t("groups_created") + " · " + (vis === "public" ? t("groups_badge_public") : t("app_group_private_mvp")));
     });
-    document.getElementById("orgPremium").addEventListener("click", () => showToast(t("app_upgrade")));
+    document.getElementById("orgPremium").addEventListener("click", () => {
+      location.href = "../get-app.html#premium";
+    });
 
     render();
   </script>

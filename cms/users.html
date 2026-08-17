@@ -48,6 +48,7 @@
       <span class="cms-muted" id="selCount">0 selected</span>
       <button type="button" class="cms-btn cms-btn-secondary cms-btn-sm" id="btnExportJson">Export GPS (JSON)</button>
       <button type="button" class="cms-btn cms-btn-secondary cms-btn-sm" id="btnExportCsv">Export GPS (CSV)</button>
+      <button type="button" class="cms-btn cms-btn-primary cms-btn-sm" id="btnAddUser">Add user</button>
       <button type="button" class="cms-btn cms-btn-secondary cms-btn-sm" id="btnSelectAll">Select all visible</button>
       <button type="button" class="cms-btn cms-btn-secondary cms-btn-sm" id="btnSelectNone">Clear selection</button>
     </div>
@@ -74,6 +75,8 @@
         <p class="cms-muted" id="dMeta"></p>
         <form class="cms-form" id="userForm">
           <input type="hidden" id="userId" />
+          <label>Name</label>
+          <input type="text" id="userName" />
           <label>Premium status</label>
           <select id="premium">
             <option value="true">Premium (paid)</option>
@@ -97,6 +100,9 @@
           <input type="text" id="facebookId" placeholder="Optional" />
           <label class="cms-checks" style="margin-top:0.75rem">
             <input type="checkbox" id="trailFeedEditor" /> Trail feed editor
+          </label>
+          <label class="cms-checks">
+            <input type="checkbox" id="canHostPublicGroups" /> Phase II: can organize public group hikes
           </label>
           <label class="cms-checks">
             <input type="checkbox" id="hasGps" /> GPS exportable
@@ -258,10 +264,12 @@
       document.getElementById("premium").value = u.premium ? "true" : "false";
       document.getElementById("premiumStart").value = u.premiumStart || "";
       document.getElementById("premiumEnd").value = u.premiumEnd || "";
+      document.getElementById("userName").value = u.name || "";
       document.getElementById("email").value = u.email || "";
       document.getElementById("loginMethod").value = u.loginMethod || "email";
       document.getElementById("facebookId").value = u.facebookId || "";
       document.getElementById("trailFeedEditor").checked = !!u.trailFeedEditor;
+      document.getElementById("canHostPublicGroups").checked = !!u.canHostPublicGroups;
       document.getElementById("hasGps").checked = !!u.hasGps;
       document.getElementById("note").value = u.note || "";
     }
@@ -272,14 +280,23 @@
       const idx = (store.users || []).findIndex((x) => x.id === id);
       if (idx < 0) return;
       const premium = document.getElementById("premium").value === "true";
+      let premiumStart = document.getElementById("premiumStart").value || "";
+      let premiumEnd = document.getElementById("premiumEnd").value || "";
+      if (premium) {
+        const today = todayISO();
+        if (!premiumStart) premiumStart = today;
+        if (!premiumEnd || premiumEnd < today) premiumEnd = addDays(today, 365);
+      }
       store.users[idx] = Object.assign({}, store.users[idx], {
+        name: document.getElementById("userName").value.trim() || store.users[idx].name,
         premium: premium,
-        premiumStart: document.getElementById("premiumStart").value || "",
-        premiumEnd: document.getElementById("premiumEnd").value || "",
+        premiumStart: premiumStart,
+        premiumEnd: premiumEnd,
         email: document.getElementById("email").value.trim().toLowerCase(),
         loginMethod: document.getElementById("loginMethod").value,
         facebookId: document.getElementById("facebookId").value.trim(),
         trailFeedEditor: document.getElementById("trailFeedEditor").checked,
+        canHostPublicGroups: document.getElementById("canHostPublicGroups").checked,
         hasGps: document.getElementById("hasGps").checked,
         note: document.getElementById("note").value.trim(),
       });
@@ -368,6 +385,30 @@
 
     document.getElementById("btnExportJson").addEventListener("click", () => downloadExport("json"));
     document.getElementById("btnExportCsv").addEventListener("click", () => downloadExport("csv"));
+
+    document.getElementById("btnAddUser").addEventListener("click", () => {
+      const email = prompt("New user email");
+      if (!email) return;
+      const name = prompt("Display name", email.split("@")[0]) || email.split("@")[0];
+      const user = CMS.addUser({
+        name: name,
+        email: email,
+        premium: true,
+        premiumStart: todayISO(),
+        premiumEnd: "2027-12-31",
+        note: "Added from CMS · Premium",
+      });
+      if (!user) {
+        cmsToast("Could not add user");
+        return;
+      }
+      renderStats();
+      renderList();
+      openDetail(user.id);
+      cmsToast(user.email === email.trim().toLowerCase() && user.note.indexOf("Added from CMS") >= 0
+        ? "User added as Premium"
+        : "Email already exists — opened that account");
+    });
 
     document.getElementById("btnSelectAll").addEventListener("click", () => {
       filteredUsers().forEach((u) => selected.add(u.id));
