@@ -10,6 +10,7 @@ TW.user = {
   rankZh: "稀有行山者 等級 4",
   memberSince: 2017,
   premium: true,
+  premiumSince: "01/03/2019",
   premiumEnds: "30/06/2027",
 };
 

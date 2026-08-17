@@ -108,7 +108,7 @@
             <div id="avatarWrap" style="width:52px;height:52px;border-radius:50%;background:var(--green-100);overflow:hidden;flex-shrink:0"></div>
             <div>
               <h1 id="userName"></h1>
-              <div class="rank" id="userRank"></div>
+              <div class="rank" id="membershipStatus"></div>
             </div>
             <div class="head-actions">
               <button type="button" class="icon-round" id="btnNotif" aria-label="Notifications">
@@ -120,6 +120,7 @@
         </div>
 
         <div class="phone-body" id="mainBody">
+          <div id="dashMembershipCard" style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:0.75rem 0.85rem;margin-bottom:0.75rem"></div>
           <div class="section-label" id="lblLifetime"></div>
           <div class="life-grid">
             <div class="life-box"><div class="val" id="lifeKm">—</div><div class="lbl" id="lblKm"></div></div>
@@ -128,13 +129,15 @@
           </div>
 
           <div class="badge-card">
-            <span style="font-size:1.4rem">🌿</span>
+            <span id="selBadgeIco" style="font-size:1.4rem">🌿</span>
             <div style="flex:1">
               <div style="font-size:0.65rem;font-weight:700;color:var(--text-muted);text-transform:uppercase" id="lblSelBadge"></div>
               <strong id="selBadge" style="color:var(--green-900);font-size:0.9rem"></strong>
             </div>
             <a href="#badges" style="font-size:0.72rem;font-weight:700;color:var(--green-800)" id="linkBadges"></a>
           </div>
+
+          <div id="dashMoreGate"></div>
 
           <div class="menu-list" id="mainMenu"></div>
 
@@ -143,6 +146,7 @@
 
           <div class="section-label" id="lblBadgesSec"></div>
           <p style="font-size:0.68rem;color:var(--text-muted);margin:0 0 0.4rem" id="badgeHint"></p>
+          <div id="badgePicker" style="margin-bottom:0.75rem"></div>
           <div class="badge-grid" id="badgeGrid"></div>
 
           <div class="section-label" id="lblPremium"></div>
@@ -189,8 +193,10 @@
 
   <script src="../js/i18n.js"></script>
   <script src="../js/data.js"></script>
+  <script src="../js/cms-store.js"></script>
   <script src="../js/env-badge.js"></script>
   <script src="../js/hikes.js"></script>
+  <script src="../js/dashboard.js"></script>
   <script src="../js/app.js"></script>
   <script>
     document.documentElement.lang = TW.getLang() === "zh" ? "zh-Hant" : "en";
@@ -207,7 +213,19 @@
     document.getElementById("avatarWrap").innerHTML = TW.avatarHtml(u.avatar, "", 'style="width:52px;height:52px;object-fit:cover"')
       || `<div style="width:52px;height:52px;display:grid;place-items:center;font-weight:800;color:var(--green-900)">${(u.name || "H")[0]}</div>`;
     document.getElementById("userName").textContent = u.name;
-    document.getElementById("userRank").textContent = lang === "zh" ? (u.rankZh || u.rank) : u.rank;
+    TW.renderMembershipHeader(document.getElementById("membershipStatus"));
+    TW.renderMembershipCard(document.getElementById("dashMembershipCard"));
+    TW.applyPremiumMoreGate();
+    TW.renderSelectedBadgeCard(null, document.getElementById("selBadge"));
+    const selBadge = TW.resolveDashboardBadge(TW.getSelectedBadgeId());
+    if (selBadge) document.getElementById("selBadgeIco").textContent = selBadge.emoji;
+    TW.renderBadgePicker(document.getElementById("badgePicker"), () => {
+      const b = TW.resolveDashboardBadge(TW.getSelectedBadgeId());
+      if (b) {
+        document.getElementById("selBadgeIco").textContent = b.emoji;
+        TW.renderSelectedBadgeCard(null, document.getElementById("selBadge"));
+      }
+    });
     document.getElementById("bellIcon").innerHTML = twIcon("bell");
 
     TW.ensureDemoHike();
@@ -219,10 +237,20 @@
     document.getElementById("lblHrs").textContent = t("app_duration");
     document.getElementById("lblRec").textContent = t("app_my_records");
     document.getElementById("lblSelBadge").textContent = t("dash_selected_badge");
-    document.getElementById("selBadge").textContent = lang === "zh" ? (u.rankZh || "環保徽章") : (u.rank || "Environmental Badge");
     document.getElementById("linkBadges").textContent = t("app_my_badges");
     document.getElementById("lblMore").textContent = t("app_more");
-    document.getElementById("lblBadgesSec").textContent = t("app_my_badges");
+    const isPrem = typeof TW.isMemberPremium === "function" && TW.isMemberPremium();
+    document.getElementById("moreMenu").innerHTML = `
+      <a href="milestones.html" ${isPrem ? "" : 'data-premium-lock="1"'}><span>${t("app_milestones")}</span><span class="chev">›</span></a>
+      <a href="insights.html" ${isPrem ? "" : 'data-premium-lock="1"'}><span>${t("app_insights")}</span><span class="chev">›</span>${isPrem ? "" : `<span class="prem"><span class="app-premium-pill">${t("app_detailed_insights")}</span></span>`}</a>`;
+    document.querySelectorAll("#moreMenu [data-premium-lock]").forEach((a) => {
+      a.addEventListener("click", (e) => {
+        e.preventDefault();
+        showToast(t("dash_more_premium_body"));
+        setTimeout(() => { location.href = "../get-app.html#premium"; }, 800);
+      });
+    });
+    document.getElementById("lblBadgesSec").textContent = t("dash_set_badge");
     document.getElementById("badgeHint").textContent = t("app_badge_criteria");
     document.getElementById("lblPremium").textContent = t("app_premium");
 
@@ -235,33 +263,8 @@
       { href: "friends.html", label: t("app_my_friends") },
     ].map((item) => `<a href="${item.href}"><span>${item.label}</span><span class="chev">›</span></a>`).join("");
 
-    document.getElementById("moreMenu").innerHTML = `
-      <a href="milestones.html"><span>${t("app_milestones")}</span><span class="chev">›</span></a>
-      <a href="insights.html"><span>${t("app_insights")}</span><span class="prem"><span class="app-premium-pill">${t("app_detailed_insights")}</span></span></a>`;
-
-    const badges = [
-      { ico: "🥾", label: lang === "zh" ? "首 10 km" : "First 10 km", locked: false, cat: "hike" },
-      { ico: "⛰", label: lang === "zh" ? "高峰挑戰" : "Peak challenge", locked: false, cat: "hike" },
-      { ico: "🧭", label: lang === "zh" ? "夜行" : "Night hike", locked: true, cat: "hike" },
-      { ico: "🌿", label: lang === "zh" ? "生態打卡" : "Nature check-in", locked: false, cat: "env" },
-      { ico: "🧹", label: lang === "zh" ? "清潔行動" : "Cleanup", locked: true, cat: "env" },
-      { ico: "🌳", label: lang === "zh" ? "植樹" : "Tree planting", locked: true, cat: "env" },
-    ];
-    document.getElementById("badgeGrid").innerHTML =
-      `<p style="grid-column:1/-1;font-size:0.68rem;font-weight:700;color:var(--green-800);margin:0">${t("app_badge_hiking")}</p>` +
-      badges.filter((b) => b.cat === "hike").map((b) =>
-        `<button type="button" class="badge-item ${b.locked ? "locked" : ""}" data-label="${b.label}"><span class="ico">${b.ico}</span>${b.label}</button>`
-      ).join("") +
-      `<p style="grid-column:1/-1;font-size:0.68rem;font-weight:700;color:var(--green-800);margin:0.35rem 0 0">${t("app_badge_env")}</p>` +
-      badges.filter((b) => b.cat === "env").map((b) =>
-        `<button type="button" class="badge-item ${b.locked ? "locked" : ""}" data-label="${b.label}"><span class="ico">${b.ico}</span>${b.label}</button>`
-      ).join("");
-
-    document.getElementById("badgeGrid").addEventListener("click", (e) => {
-      const btn = e.target.closest(".badge-item");
-      if (!btn) return;
-      showToast(btn.dataset.label + " — " + t("app_badge_criteria"));
-    });
+    /* Legacy badge grid removed — picker above uses dashboard badges */
+    document.getElementById("badgeGrid") && (document.getElementById("badgeGrid").style.display = "none");
 
     document.getElementById("premiumList").innerHTML = [
       { label: t("app_live_share"), note: t("app_live_share_premium") },

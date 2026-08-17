@@ -1685,6 +1685,137 @@ img.profile-avatar[hidden] {
   flex-shrink: 0;
 }
 
+.dash-premium-pill {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #f1a637, #e8941a);
+  color: #fff;
+}
+
+.dash-membership-link {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--green-800);
+  text-decoration: none;
+}
+
+.dash-membership-link:hover { text-decoration: underline; }
+
+.dash-plan-list {
+  margin: 0;
+  padding-left: 1.1rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  line-height: 1.55;
+}
+
+.dash-badge-cat {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: var(--green-800);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin: 0.85rem 0 0.45rem;
+}
+
+.dash-badge-cat:first-child { margin-top: 0; }
+
+.dash-badge-pick {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  width: 100%;
+  padding: 0.55rem 0.7rem;
+  margin-bottom: 0.4rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: #fff;
+  cursor: pointer;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--green-900);
+  text-align: left;
+}
+
+.dash-badge-pick .ico {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.dash-badge-pick.selected { border-color: var(--green-700); background: var(--green-50); }
+.dash-badge-pick.locked { opacity: 0.45; cursor: not-allowed; }
+.dash-badge-pick .sel-tag {
+  margin-left: auto;
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: var(--green-700);
+  text-transform: uppercase;
+}
+
+.dash-physical-awards {
+  margin-top: 1rem;
+  padding: 0.85rem;
+  border-radius: var(--radius);
+  background: var(--green-50);
+  border: 1px solid var(--border);
+  font-size: 0.85rem;
+}
+
+.dash-physical-awards strong { color: var(--green-900); display: block; margin-bottom: 0.25rem; }
+.dash-physical-awards p { margin: 0; color: var(--text-muted); font-size: 0.8rem; }
+
+.dash-locked { opacity: 0.55; pointer-events: none; }
+
+.region-pie-wrap {
+  display: flex;
+  gap: 1.25rem;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 0.5rem;
+}
+
+.region-pie {
+  width: 120px;
+  height: 120px;
+  flex-shrink: 0;
+}
+
+.region-legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  flex: 1;
+  min-width: 160px;
+  font-size: 0.82rem;
+}
+
+.region-legend li {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-bottom: 0.35rem;
+  color: var(--text-muted);
+}
+
+.region-legend strong { margin-left: auto; color: var(--green-900); }
+
+.pie-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
 /* —— Map layouts —— */
 .map-page {
   padding-top: var(--nav-h);
