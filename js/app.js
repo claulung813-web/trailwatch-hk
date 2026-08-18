@@ -667,6 +667,105 @@ TW.canViewGroupHike = function (hike, token) {
   });
 };
 
+TW.groupHikeMe = function () {
+  return {
+    email: (TW.memberEmail && TW.memberEmail()) || "",
+    name: (TW.memberDisplayName && TW.memberDisplayName()) || (TW.user && TW.user.name) || "Hiker",
+    avatar: (TW.user && TW.user.avatar) || "",
+  };
+};
+
+TW.isGroupHikeHost = function (hike) {
+  if (!hike || !TW.isLoggedIn()) return false;
+  const email = TW.memberEmail();
+  if (hike.organizerEmail && email && hike.organizerEmail === email) return true;
+  if (hike.local && (!hike.organizerEmail || hike.organizerEmail === email)) return true;
+  return false;
+};
+
+TW.ensureGroupHikeRoster = function (hike) {
+  if (!hike) return hike;
+  hike.members = Array.isArray(hike.members) ? hike.members : [];
+  hike.discussion = Array.isArray(hike.discussion) ? hike.discussion : [];
+  const hostEmail = (hike.organizerEmail || "").toLowerCase();
+  if (hostEmail && !hike.members.some((m) => String(m.email || "").toLowerCase() === hostEmail)) {
+    hike.members.unshift({
+      email: hike.organizerEmail,
+      name: hike.organizerName || "Host",
+      avatar: hike.organizerAvatar || "",
+      host: true,
+      joinedAt: hike.createdAt || Date.now(),
+    });
+  }
+  return hike;
+};
+
+TW.isGroupHikeParticipant = function (hike) {
+  if (!hike || !TW.isLoggedIn()) return false;
+  if (TW.isGroupHikeHost(hike)) return true;
+  const email = (TW.memberEmail() || "").toLowerCase();
+  if (!email) return false;
+  return (hike.members || []).some((m) => String(m.email || "").toLowerCase() === email);
+};
+
+TW.joinGroupHike = function (hike) {
+  if (!hike || !TW.isLoggedIn()) return false;
+  TW.ensureGroupHikeRoster(hike);
+  const me = TW.groupHikeMe();
+  if (!me.email) return false;
+  if (hike.members.some((m) => String(m.email || "").toLowerCase() === me.email.toLowerCase())) {
+    hike.joined = true;
+    TW.saveGroupHike(hike);
+    return true;
+  }
+  hike.members.push({
+    email: me.email,
+    name: me.name,
+    avatar: me.avatar,
+    joinedAt: Date.now(),
+  });
+  hike.joined = true;
+  TW.saveGroupHike(hike);
+  return true;
+};
+
+TW.leaveGroupHike = function (hike) {
+  if (!hike || TW.isGroupHikeHost(hike)) return false;
+  const email = (TW.memberEmail() || "").toLowerCase();
+  hike.members = (hike.members || []).filter((m) => String(m.email || "").toLowerCase() !== email);
+  hike.joined = false;
+  TW.saveGroupHike(hike);
+  return true;
+};
+
+TW.kickGroupHikeMember = function (hike, email) {
+  if (!hike || !TW.isGroupHikeHost(hike) || !email) return false;
+  const host = (hike.organizerEmail || "").toLowerCase();
+  if (String(email).toLowerCase() === host) return false;
+  const target = String(email).toLowerCase();
+  hike.members = (hike.members || []).filter((m) => String(m.email || "").toLowerCase() !== target);
+  hike.invitedEmails = (hike.invitedEmails || []).filter((e) => String(e).toLowerCase() !== target);
+  TW.saveGroupHike(hike);
+  return true;
+};
+
+TW.postGroupDiscussion = function (hike, text) {
+  const body = String(text || "").trim();
+  if (!hike || !body || !TW.isGroupHikeParticipant(hike)) return false;
+  TW.ensureGroupHikeRoster(hike);
+  const me = TW.groupHikeMe();
+  hike.discussion.push({
+    id: "msg_" + Date.now(),
+    email: me.email,
+    name: me.name,
+    text: body.slice(0, 500),
+    at: Date.now(),
+  });
+  if (hike.discussion.length > 80) hike.discussion = hike.discussion.slice(-80);
+  TW.saveGroupHike(hike);
+  return true;
+};
+
 TW.authNextUrl = function (fallback) {
   try {
     const next = new URLSearchParams(location.search).get("next");

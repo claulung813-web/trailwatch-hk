@@ -666,6 +666,16 @@
         spots: "12",
         past: false,
         joined: true,
+        members: [
+          {
+            email: (auth && auth.email) || "",
+            name: TW.memberDisplayName() || (TW.getLang() === "zh" ? "主辦人" : "Organizer"),
+            avatar: (TW.user && TW.user.avatar) || "",
+            host: true,
+            joinedAt: Date.now(),
+          },
+        ],
+        discussion: [],
       };
       TW.saveGroupHike(hike);
       showToast(TW.t("groups_created"));

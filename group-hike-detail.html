@@ -11,12 +11,45 @@
   <link rel="stylesheet" href="css/styles.css" />
   <style>
     #ghMap { height: 380px; border-radius: var(--radius); border: 1px solid var(--border); }
-    .gh-badge {
-      display: inline-block; font-size: 0.72rem; font-weight: 700;
-      padding: 0.18rem 0.5rem; border-radius: 4px; margin-right: 0.35rem;
-    }
-    .gh-public { background: #ecfdf5; color: #047857; }
-    .gh-private { background: #eff6ff; color: #1d4ed8; }
+.gh-badge {
+  display: inline-block; font-size: 0.72rem; font-weight: 700;
+  padding: 0.18rem 0.5rem; border-radius: 4px; margin-right: 0.35rem;
+}
+.gh-public { background: #ecfdf5; color: #047857; }
+.gh-private { background: #eff6ff; color: #1d4ed8; }
+.gh-host { background: #fef3c7; color: #92400e; }
+.gh-member-row {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.55rem 0;
+  border-bottom: 1px solid var(--border);
+}
+.gh-member-row:last-child { border-bottom: none; }
+.gh-member-row .gh-kick {
+  margin-left: auto;
+  padding: 0.28rem 0.65rem;
+  font-size: 0.75rem;
+}
+.gh-msg {
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.88rem;
+}
+.gh-msg:last-child { border-bottom: none; }
+.gh-msg strong { color: var(--green-900); }
+.gh-msg time {
+  display: block;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin-top: 0.15rem;
+}
+.gh-discuss-form {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+.gh-discuss-form .form-input { flex: 1; min-width: 0; }
   </style>
 </head>
 <body>
@@ -43,6 +76,26 @@
       <div id="routeBox" style="display:none">
         <div class="section-head"><h2 data-i18n="groups_route"></h2></div>
         <div id="ghMap"></div>
+      </div>
+
+      <div id="peopleBox" class="card" style="padding:1.1rem 1.15rem;margin-top:1.25rem;display:none">
+        <div class="section-head" style="margin-bottom:0.35rem">
+          <h2 data-i18n="groups_who_joined"></h2>
+        </div>
+        <div id="joinActions" style="margin-bottom:0.75rem"></div>
+        <div id="memberList"></div>
+      </div>
+
+      <div id="discussBox" class="card" style="padding:1.1rem 1.15rem;margin-top:1.25rem;display:none">
+        <div class="section-head" style="margin-bottom:0.35rem">
+          <h2 data-i18n="groups_discussion"></h2>
+        </div>
+        <div id="discussList"></div>
+        <form id="discussForm" class="gh-discuss-form" hidden>
+          <input class="form-input" id="discussInput" maxlength="500" data-i18n-placeholder="groups_discussion_ph" />
+          <button type="submit" class="btn btn-primary" data-i18n="groups_discussion_post"></button>
+        </form>
+        <p id="discussLock" class="page-sub" style="margin:0.75rem 0 0" hidden></p>
       </div>
     </div>
   </main>
@@ -79,6 +132,30 @@
           visibility: "public",
           path: TW.demoPathAround(22.35 + i * 0.01, 114.25),
           invited: [],
+          organizerName: "TrailWatch",
+          organizerEmail: "hello@trailwatch.hk",
+          members: (TW.demoFriends || []).slice(0, 3).map((f, fi) => ({
+            email: f.email,
+            name: f.name,
+            avatar: f.avatar,
+            joinedAt: Date.now() - (fi + 1) * 86400000,
+          })),
+          discussion: [
+            {
+              id: "d0",
+              email: "elena@example.com",
+              name: "Elena Green",
+              text: TW.getLang() === "zh" ? "集合時間還是 05:30？" : "Still meeting at 05:30?",
+              at: Date.now() - 7200000,
+            },
+            {
+              id: "d1",
+              email: "marcus@example.com",
+              name: "Marcus Lee",
+              text: TW.getLang() === "zh" ? "好，我會帶頭燈。" : "Yes — I’ll bring a headlamp.",
+              at: Date.now() - 5400000,
+            },
+          ],
         };
       }
       return null;
@@ -176,7 +253,140 @@
           }).addTo(map);
         }
         setTimeout(() => map.invalidateSize(), 200);
+        renderCommunity();
       }
+    }
+
+    function fmtMsgTime(ts) {
+      try {
+        return new Date(ts).toLocaleString(TW.getLang() === "zh" ? "zh-HK" : "en-HK", {
+          month: "short",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+      } catch (e) {
+        return "";
+      }
+    }
+
+    function renderCommunity() {
+      if (!hike) return;
+      TW.ensureGroupHikeRoster(hike);
+      const peopleBox = document.getElementById("peopleBox");
+      const discussBox = document.getElementById("discussBox");
+      const canSeeNow = TW.canViewGroupHike(hike, token);
+      if (!canSeeNow) {
+        peopleBox.style.display = "none";
+        discussBox.style.display = "none";
+        return;
+      }
+      peopleBox.style.display = "block";
+      discussBox.style.display = "block";
+
+      const host = TW.isGroupHikeHost(hike);
+      const inGroup = TW.isGroupHikeParticipant(hike);
+      const actions = document.getElementById("joinActions");
+      if (!TW.isLoggedIn()) {
+        const nextPath =
+          "group-hike-detail.html?id=" + encodeURIComponent(id) + (token ? "&token=" + encodeURIComponent(token) : "");
+        actions.innerHTML = `<a class="btn btn-primary" href="login.html?next=${encodeURIComponent(nextPath)}">${TW.t("groups_login_join")}</a>`;
+      } else if (host) {
+        actions.innerHTML = `<span class="gh-badge gh-host">${TW.t("groups_host")}</span>`;
+      } else if (inGroup) {
+        actions.innerHTML = `<span class="gh-badge gh-public">${TW.t("groups_already")}</span>
+          <button type="button" class="btn btn-secondary" id="btnLeave" style="margin-left:0.5rem;padding:0.35rem 0.75rem;font-size:0.8rem">${TW.t("groups_leave")}</button>`;
+      } else {
+        actions.innerHTML = `<button type="button" class="btn btn-primary" id="btnJoin">${TW.t("groups_join_cta")}</button>`;
+      }
+      const btnJoin = document.getElementById("btnJoin");
+      if (btnJoin) {
+        btnJoin.addEventListener("click", () => {
+          if (TW.joinGroupHike(hike)) {
+            showToast(TW.t("toast_joined"));
+            renderCommunity();
+          }
+        });
+      }
+      const btnLeave = document.getElementById("btnLeave");
+      if (btnLeave) {
+        btnLeave.addEventListener("click", () => {
+          if (TW.leaveGroupHike(hike)) {
+            showToast(TW.t("groups_left"));
+            renderCommunity();
+          }
+        });
+      }
+
+      const hostEmail = (hike.organizerEmail || "").toLowerCase();
+      document.getElementById("memberList").innerHTML = (hike.members || [])
+        .map((m) => {
+          const isHostRow = String(m.email || "").toLowerCase() === hostEmail || m.host;
+          const kick =
+            host && !isHostRow
+              ? `<button type="button" class="btn btn-secondary gh-kick" data-kick="${twEsc(m.email)}">${TW.t("groups_kick")}</button>`
+              : isHostRow
+                ? `<span class="gh-badge gh-host">${TW.t("groups_host")}</span>`
+                : "";
+          return `<div class="gh-member-row">
+            ${TW.avatarHtml ? TW.avatarHtml(m.avatar, "avatar-sm") : ""}
+            <div>
+              <strong>${twEsc(m.name || m.email)}</strong>
+              ${m.email ? `<div style="font-size:0.78rem;color:var(--text-muted)">${twEsc(m.email)}</div>` : ""}
+            </div>
+            ${kick}
+          </div>`;
+        })
+        .join("") || `<p class="page-sub" style="margin:0">${TW.t("groups_discussion_empty")}</p>`;
+
+      peopleBox.querySelectorAll("[data-kick]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const email = btn.getAttribute("data-kick");
+          const member = (hike.members || []).find((x) => x.email === email);
+          const label = (member && member.name) || email;
+          if (!confirm(TW.t("groups_kick_confirm").replace("{name}", label))) return;
+          if (TW.kickGroupHikeMember(hike, email)) {
+            showToast(TW.t("groups_kicked"));
+            renderCommunity();
+          }
+        });
+      });
+
+      const msgs = hike.discussion || [];
+      document.getElementById("discussList").innerHTML = msgs.length
+        ? msgs
+            .map(
+              (msg) => `<div class="gh-msg">
+            <strong>${twEsc(msg.name || "Hiker")}</strong>
+            <div>${twEsc(msg.text)}</div>
+            <time>${fmtMsgTime(msg.at)}</time>
+          </div>`
+            )
+            .join("")
+        : `<p class="page-sub" style="margin:0">${TW.t("groups_discussion_empty")}</p>`;
+
+      const form = document.getElementById("discussForm");
+      const lock = document.getElementById("discussLock");
+      if (inGroup) {
+        form.hidden = false;
+        lock.hidden = true;
+      } else {
+        form.hidden = true;
+        lock.hidden = false;
+        lock.textContent = TW.isLoggedIn() ? TW.t("groups_discussion_locked") : TW.t("groups_login_join");
+      }
+    }
+
+    const discussForm = document.getElementById("discussForm");
+    if (discussForm) {
+      discussForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const input = document.getElementById("discussInput");
+        if (TW.postGroupDiscussion(hike, input.value)) {
+          input.value = "";
+          renderCommunity();
+        }
+      });
     }
   </script>
 </body>
