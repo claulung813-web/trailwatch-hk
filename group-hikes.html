@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Group Hike — TrailWatch HK</title>
+    <title>Join — TrailWatch HK</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -217,14 +217,28 @@
 
       <div class="tw-toolbar">
       <div class="search-bar">
-        <input type="search" id="groupSearch" data-i18n-placeholder="search_placeholder" />
+        <input type="search" id="groupSearch" data-i18n-placeholder="groups_search_ph" />
       </div>
       <div class="chip-row filters" id="groupFilters">
-        <button type="button" class="chip active" data-f="upcoming" data-i18n="groups_upcoming"></button>
-        <button type="button" class="chip" data-f="past" data-i18n="groups_past"></button>
+        <button type="button" class="chip active" data-f="all" data-i18n="groups_filter_all"></button>
         <button type="button" class="chip" data-f="joined" data-i18n="groups_joined"></button>
+        <button type="button" class="chip" data-f="upcoming" data-i18n="groups_upcoming"></button>
+        <button type="button" class="chip" data-f="past" data-i18n="groups_past"></button>
+        <button type="button" class="chip" data-f="friend" data-i18n="groups_filter_friend"></button>
+        <button type="button" class="chip" data-f="invited" data-i18n="groups_filter_invited"></button>
+      </div>
+      <div class="tw-advanced-body feed-dates">
+        <div class="gallery-filter-field">
+          <label for="groupDateFrom" data-i18n="gallery_date_from"></label>
+          <input class="form-input" type="date" id="groupDateFrom" />
+        </div>
+        <div class="gallery-filter-field">
+          <label for="groupDateTo" data-i18n="gallery_date_to"></label>
+          <input class="form-input" type="date" id="groupDateTo" />
+        </div>
       </div>
       </div>
+      <p class="meta" id="groupInviteHint" style="margin:-0.35rem 0 0.85rem;display:none"></p>
       <div class="explore-toolbar">
         <h2 class="explore-count" id="groupCount"></h2>
       </div>
@@ -243,9 +257,9 @@
     if (new URLSearchParams(location.search).get("mine") === "1") {
       location.replace("profile.html#activity&type=groups");
     } else {
-    initShell("group-hikes");
+    initShell("join");
 
-    let filter = "upcoming";
+    let filter = "all";
     let q = "";
     let routeEditor = null;
 
@@ -276,12 +290,49 @@
     }
 
     function builtInMeetups() {
-      return (TW.meetups || []).map((m, i) => ({
+      const extra = [
+        {
+          id: "meetup_private_invite",
+          title: "Quiet morning on High Junk Peak",
+          titleZh: "釣魚翁清晨行",
+          date: "Sat, Sep 5 · 07:00",
+          dateZh: "9 月 5 日（六）· 07:00",
+          dateISO: "2026-09-05",
+          place: "Clear Water Bay",
+          placeZh: "清水灣",
+          spots: "3",
+          image: "https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?w=600&q=80",
+          visibility: "private",
+          demoInvited: true,
+          organizerFriendId: "friend_elena",
+          past: false,
+          joined: false,
+        },
+        {
+          id: "meetup_private_past",
+          title: "Friends’ night hike — Kowloon Peak",
+          titleZh: "好友夜行 — 飛鵝山",
+          date: "Fri, May 8 · 19:00",
+          dateZh: "5 月 8 日（五）· 19:00",
+          dateISO: "2026-05-08",
+          place: "Kowloon",
+          placeZh: "九龍",
+          spots: "0",
+          image: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&q=80",
+          visibility: "private",
+          demoInvited: true,
+          organizerFriendId: "friend_marcus",
+          past: true,
+          joined: true,
+        },
+      ];
+      const mapped = (TW.meetups || []).map((m, i) => ({
         id: "meetup_" + i,
         title: m.title,
         titleZh: m.titleZh,
         date: m.date,
         dateZh: m.dateZh,
+        dateISO: ["2026-09-06", "2026-09-07", "2026-05-21"][i] || "2026-08-01",
         place: m.place,
         placeZh: m.placeZh,
         spots: m.spots,
@@ -290,9 +341,11 @@
         invited: [],
         path: seedDemoPath(),
         builtIn: true,
-        past: i >= Math.ceil((TW.meetups || []).length / 2),
-        joined: i % 2 === 0,
+        past: i === 2,
+        joined: i !== 1,
+        organizerFriendId: i === 0 ? "friend_sarah" : i === 2 ? "friend_marcus" : null,
       }));
+      return mapped.concat(extra.map((g) => Object.assign({ path: seedDemoPath(), builtIn: true, invited: [] }, g)));
     }
 
     function visibleHikes() {
@@ -303,12 +356,34 @@
         if (g.organizerEmail && g.organizerEmail === email) return true;
         return TW.canViewGroupHike(g);
       });
-      return builtInMeetups().concat(custom);
+      return builtInMeetups()
+        .filter((g) => {
+          if (g.visibility !== "private") return true;
+          if (g.demoInvited) return TW.isLoggedIn();
+          return TW.canViewGroupHike(g);
+        })
+        .concat(custom);
     }
 
     function isInvited(g) {
+      if (g.demoInvited && TW.isLoggedIn()) return true;
       if (!TW.isLoggedIn() || !g.invited || !g.invited.length) return false;
       return TW.canViewGroupHike(g) && !(g.organizerEmail && g.organizerEmail === TW.memberEmail());
+    }
+
+    function isFriendOrg(g) {
+      if (g.organizerFriendId) return true;
+      const friends = TW.demoFriends || [];
+      const org = (g.organizerEmail || "").toLowerCase();
+      return friends.some((f) => org && String(f.email || "").toLowerCase() === org);
+    }
+
+    function hikeDate(g) {
+      if (g.dateISO) {
+        const t = Date.parse(g.dateISO);
+        if (Number.isFinite(t)) return t;
+      }
+      return 0;
     }
 
     function renderInviteFriends() {
@@ -394,16 +469,46 @@
       }
     }
 
+    function matchesDate(m) {
+      const fromEl = document.getElementById("groupDateFrom");
+      const toEl = document.getElementById("groupDateTo");
+      const from = fromEl && fromEl.value;
+      const to = toEl && toEl.value;
+      const ts = hikeDate(m);
+      if (from && ts && ts < Date.parse(from)) return false;
+      if (to && ts && ts > Date.parse(to) + 86400000 - 1) return false;
+      if ((from || to) && !ts) return false;
+      return true;
+    }
+
     function render() {
+      const hint = document.getElementById("groupInviteHint");
+      if (hint) {
+        hint.style.display = TW.isLoggedIn() ? "none" : "block";
+        hint.textContent = TW.t("groups_login_invites");
+      }
       const list = visibleHikes().filter((m) => {
-        const title = (TW.tt(m, "title") || m.title || "").toLowerCase();
+        const title = ((TW.tt(m, "title") || m.title || "") + " " + (m.place || "") + " " + (m.placeZh || "")).toLowerCase();
         const okQ = !q || title.includes(q);
-        if (filter === "past") return okQ && m.past;
-        if (filter === "joined") return okQ && (m.joined || isInvited(m) || (m.organizerEmail && m.organizerEmail === TW.memberEmail()));
-        return okQ && !m.past;
+        if (!okQ || !matchesDate(m)) return false;
+        if (filter === "past") return !!m.past;
+        if (filter === "upcoming") return !m.past;
+        if (filter === "joined") return !!(m.joined || isInvited(m) || (m.organizerEmail && m.organizerEmail === TW.memberEmail()));
+        if (filter === "friend") return isFriendOrg(m);
+        if (filter === "invited") return isInvited(m);
+        return true;
       });
       const countEl = document.getElementById("groupCount");
-      if (countEl) countEl.textContent = list.length + " · " + TW.t(filter === "past" ? "groups_past" : filter === "joined" ? "groups_joined" : "groups_upcoming");
+      if (countEl) {
+        const filterKey = {
+          past: "groups_past",
+          upcoming: "groups_upcoming",
+          joined: "groups_joined",
+          friend: "groups_filter_friend",
+          invited: "groups_filter_invited",
+        }[filter];
+        countEl.textContent = list.length + " · " + TW.t(filterKey || "groups_title");
+      }
       document.getElementById("groupGrid").innerHTML = list.length
         ? list
             .map((m) => {
@@ -412,9 +517,12 @@
               const date = TW.tt(m, "date") || m.date || "";
               const img = m.image || "https://images.unsplash.com/photo-1551632811-561732d1e5ec?w=600&q=60";
               const vis = m.visibility === "private" ? "private" : "public";
+              const friend = (TW.demoFriends || []).find((f) => f.id === m.organizerFriendId);
               const badges =
                 `<span class="gh-badge ${vis === "private" ? "gh-private" : "gh-public"}">${TW.t(vis === "private" ? "groups_badge_private" : "groups_badge_public")}</span>` +
+                (m.past ? `<span class="gh-badge gh-invited">${TW.t("groups_past")}</span>` : `<span class="gh-badge gh-public">${TW.t("groups_upcoming")}</span>`) +
                 (isInvited(m) ? `<span class="gh-badge gh-invited">${TW.t("groups_badge_invited")}</span>` : "") +
+                (isFriendOrg(m) ? `<span class="gh-badge gh-invited">${TW.t("groups_filter_friend")}</span>` : "") +
                 (m.organizerEmail && m.organizerEmail === TW.memberEmail()
                   ? `<span class="gh-badge gh-public">${TW.t("groups_mine")}</span>`
                   : "");
@@ -424,7 +532,7 @@
               <div class="trail-card-body">
                 <div style="margin-bottom:0.35rem">${badges}</div>
                 <strong>${twEsc(title)}</strong>
-                <p class="meta">${twEsc(date)} · ${twEsc(place)}</p>
+                <p class="meta">${twEsc(date)} · ${twEsc(place)}${friend ? " · " + twEsc(friend.name) : ""}</p>
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-top:0.5rem;gap:0.5rem">
                   <span style="font-size:0.8rem;color:var(--text-muted)">${m.spots != null ? m.spots + " " + TW.t("spots_left") : ""}</span>
                   <a class="btn btn-primary" style="padding:0.35rem 0.85rem;font-size:0.8rem" href="${href}">${TW.t("groups_view")}</a>
@@ -438,9 +546,13 @@
       if (clear) {
         clear.addEventListener("click", () => {
           q = "";
-          filter = "upcoming";
+          filter = "all";
           document.getElementById("groupSearch").value = "";
-          document.querySelectorAll("#groupFilters .chip").forEach((c) => c.classList.toggle("active", c.dataset.f === "upcoming"));
+          const df = document.getElementById("groupDateFrom");
+          const dt = document.getElementById("groupDateTo");
+          if (df) df.value = "";
+          if (dt) dt.value = "";
+          document.querySelectorAll("#groupFilters .chip").forEach((c) => c.classList.toggle("active", c.dataset.f === "all"));
           render();
         });
       }
@@ -457,6 +569,10 @@
       q = e.target.value.trim().toLowerCase();
       render();
     });
+    const gFrom = document.getElementById("groupDateFrom");
+    const gTo = document.getElementById("groupDateTo");
+    if (gFrom) gFrom.addEventListener("change", render);
+    if (gTo) gTo.addEventListener("change", render);
 
     const panel = document.getElementById("createPanel");
     document.getElementById("btnCreate").addEventListener("click", openCreatePanel);

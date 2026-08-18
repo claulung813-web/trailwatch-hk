@@ -16,30 +16,13 @@
 
   <main class="page">
     <div class="container">
-      <section class="hero hero--app">
-        <div class="hero-bg"></div>
-        <div class="hero-content">
-          <div class="hero-badge" data-i18n="hero_badge"></div>
-          <p class="hero-seo-kws" data-i18n="home_seo_keywords"></p>
-          <h1 data-i18n="hero_title"></h1>
-          <p data-i18n="hero_desc"></p>
-          <div class="store-row hero-stores">
-            <a href="https://itunes.apple.com/hk/app/trailwatch/id791098937" target="_blank" rel="noopener noreferrer" aria-label="Download on the App Store">
-              <img src="assets/brand/badge-app-store.webp" alt="Download on the App Store" />
-            </a>
-            <a href="https://play.google.com/store/apps/details?id=com.computancy.countrypark" target="_blank" rel="noopener noreferrer" aria-label="Get it on Google Play">
-              <img src="assets/brand/badge-google-play.webp" alt="GET IT ON Google Play" />
-            </a>
-          </div>
-          <div class="hero-actions">
-            <a class="btn btn-ghost" href="get-app.html" data-i18n="home_app_cta"></a>
-            <a class="btn btn-ghost" href="explore.html" data-i18n="hero_cta_explore"></a>
-            <a class="btn btn-ghost" href="plan.html" data-i18n="hero_cta_plan"></a>
-          </div>
+      <section class="home-slider" id="homeSlider" aria-roledescription="carousel" aria-label="TrailWatch highlights">
+        <div class="home-slider-viewport">
+          <div class="home-slider-track" id="homeSliderTrack"></div>
         </div>
-        <div class="hero-device">
-          <img src="assets/brand/device.webp" alt="TrailWatch app on iPhone" />
-        </div>
+        <button type="button" class="home-slider-arrow prev" id="homeSliderPrev" aria-label="Previous banner"></button>
+        <button type="button" class="home-slider-arrow next" id="homeSliderNext" aria-label="Next banner"></button>
+        <div class="home-slider-dots" id="homeSliderDots" role="tablist"></div>
       </section>
 
       <section>
@@ -113,7 +96,125 @@
     document.documentElement.lang = TW.getLang() === "zh" ? "zh-Hant" : "en";
     initShell("home");
 
-    const figs = TW.homeFigures || {};
+    const APP_STORE = "https://itunes.apple.com/hk/app/trailwatch/id791098937";
+    const PLAY_STORE = "https://play.google.com/store/apps/details?id=com.computancy.countrypark";
+    const zh = TW.getLang() === "zh";
+
+    function pick(obj, enKey, zhKey) {
+      return (zh ? obj[zhKey] || obj[enKey] : obj[enKey] || obj[zhKey]) || "";
+    }
+
+    function esc(s) {
+      return String(s || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function renderBannerSlide(b, i) {
+      const title = pick(b, "title", "titleZh");
+      const body = pick(b, "body", "bodyZh");
+      const badge = pick(b, "badge", "badgeZh");
+      const seo = pick(b, "seo", "seoZh");
+      const cta = pick(b, "ctaLabel", "ctaLabelZh");
+      const cta2 = pick(b, "cta2Label", "cta2LabelZh");
+      const img = b.image || "assets/brand/homepage-hero.jpeg";
+      const device = b.deviceImage || "assets/brand/device.webp";
+      const stores =
+        b.showStores
+          ? `<div class="store-row hero-stores">
+              <a href="${esc(b.appStoreUrl || APP_STORE)}" target="_blank" rel="noopener noreferrer" aria-label="Download on the App Store">
+                <img src="assets/brand/badge-app-store.webp" alt="Download on the App Store" />
+              </a>
+              <a href="${esc(b.playStoreUrl || PLAY_STORE)}" target="_blank" rel="noopener noreferrer" aria-label="Get it on Google Play">
+                <img src="assets/brand/badge-google-play.webp" alt="GET IT ON Google Play" />
+              </a>
+            </div>`
+          : "";
+      const deviceHtml = b.showDevice
+        ? `<div class="hero-device"><img src="${esc(device)}" alt="TrailWatch app on iPhone" /></div>`
+        : "";
+      return `<article class="hero ${b.showDevice ? "hero--app" : ""} home-slide" data-slide="${i}" ${i === 0 ? "" : "hidden"}>
+        <div class="hero-bg" style="background-image:linear-gradient(to top, rgba(11, 66, 26, 0.78) 0%, rgba(11, 66, 26, 0.28) 45%, rgba(11, 66, 26, 0.12) 100%), url('${esc(img)}')"></div>
+        <div class="hero-content">
+          ${badge ? `<div class="hero-badge">${esc(badge)}</div>` : ""}
+          ${seo ? `<p class="hero-seo-kws">${esc(seo)}</p>` : ""}
+          <h1>${esc(title)}</h1>
+          ${body ? `<p>${esc(body)}</p>` : ""}
+          ${stores}
+          <div class="hero-actions">
+            ${cta ? `<a class="btn btn-ghost" href="${esc(b.ctaHref || "get-app.html")}">${esc(cta)}</a>` : ""}
+            ${cta2 ? `<a class="btn btn-ghost" href="${esc(b.cta2Href || "explore.html")}">${esc(cta2)}</a>` : ""}
+          </div>
+        </div>
+        ${deviceHtml}
+      </article>`;
+    }
+
+    function initHomeSlider() {
+      const banners = typeof TW.getHomeBanners === "function" ? TW.getHomeBanners() : [];
+      const track = document.getElementById("homeSliderTrack");
+      const dots = document.getElementById("homeSliderDots");
+      const prev = document.getElementById("homeSliderPrev");
+      const next = document.getElementById("homeSliderNext");
+      if (!track || !banners.length) return;
+      track.innerHTML = banners.map(renderBannerSlide).join("");
+      dots.innerHTML = banners
+        .map(
+          (_, i) =>
+            `<button type="button" class="home-slider-dot${i === 0 ? " active" : ""}" data-i="${i}" aria-label="${TW.t("home_banner_goto")} ${i + 1}"></button>`
+        )
+        .join("");
+      prev.setAttribute("aria-label", TW.t("home_banner_prev"));
+      next.setAttribute("aria-label", TW.t("home_banner_next"));
+      let idx = 0;
+      let timer = null;
+      const slides = () => Array.from(track.querySelectorAll(".home-slide"));
+      function go(n) {
+        const list = slides();
+        if (!list.length) return;
+        idx = (n + list.length) % list.length;
+        list.forEach((el, i) => {
+          el.hidden = i !== idx;
+        });
+        dots.querySelectorAll(".home-slider-dot").forEach((d, i) => d.classList.toggle("active", i === idx));
+      }
+      function start() {
+        stop();
+        if (slides().length < 2) return;
+        timer = setInterval(() => go(idx + 1), 7000);
+      }
+      function stop() {
+        if (timer) clearInterval(timer);
+        timer = null;
+      }
+      prev.addEventListener("click", () => {
+        go(idx - 1);
+        start();
+      });
+      next.addEventListener("click", () => {
+        go(idx + 1);
+        start();
+      });
+      dots.addEventListener("click", (e) => {
+        const btn = e.target.closest("[data-i]");
+        if (!btn) return;
+        go(Number(btn.dataset.i));
+        start();
+      });
+      const root = document.getElementById("homeSlider");
+      root.addEventListener("mouseenter", stop);
+      root.addEventListener("mouseleave", start);
+      if (slides().length < 2) {
+        prev.hidden = true;
+        next.hidden = true;
+        dots.hidden = true;
+      }
+      start();
+    }
+    initHomeSlider();
+
+    const figs = typeof TW.getHomeFigures === "function" ? TW.getHomeFigures() : TW.homeFigures || {};
     const cmsIncidents = typeof TW.getPublicIncidents === "function" ? TW.getPublicIncidents() : [];
     document.getElementById("figRoutes").textContent = (figs.routes || 18420).toLocaleString();
     document.getElementById("figKm").textContent = (figs.distanceKm || 3256780).toLocaleString() + " km";

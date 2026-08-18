@@ -126,6 +126,19 @@ TW.createRouteMapEditor = function (opts) {
     const m = L.marker(latlng, { icon: iconFor(type, index), draggable: true }).addTo(map);
     m._twType = type;
     m._twIndex = index;
+    m.on("drag", () => {
+      const ll = m.getLatLng();
+      const pt = [ll.lat, ll.lng];
+      if (type === "start") start = pt;
+      else if (type === "end") end = pt;
+      else if (type === "via") vias[index] = pt;
+      const path = spinePoints();
+      if (path.length >= 2) {
+        if (line) line.setLatLngs(path);
+        else line = L.polyline(path, { color: "#2563eb", weight: 5, opacity: 0.9 }).addTo(map);
+      }
+      notifyChange();
+    });
     m.on("dragend", () => {
       const ll = m.getLatLng();
       const pt = [ll.lat, ll.lng];

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Trail Feed — TrailWatch HK</title>
+    <title>Community Feed — TrailWatch HK</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -16,30 +16,39 @@
       <h1 class="page-title" data-i18n="feed_title"></h1>
       <p class="page-sub" data-i18n="feed_sub"></p>
 
+      <div class="app-cta-banner feed-support">
+        <div>
+          <h3 data-i18n="feed_support_title"></h3>
+          <p data-i18n="feed_support_body"></p>
+        </div>
+        <div class="actions">
+          <a class="btn" style="background:white;color:var(--green-900)" href="donate.html" data-i18n="feed_support_cta"></a>
+        </div>
+      </div>
+
       <div class="tw-toolbar">
         <div class="search-bar">
           <input type="search" id="feedSearch" data-i18n-placeholder="feed_search_ph" />
         </div>
         <div class="chip-row filters" id="feedFilters" role="toolbar">
           <button type="button" class="chip active" data-f="all" data-i18n="feed_filter_all"></button>
-          <button type="button" class="chip" data-f="friends" data-i18n="feed_filter_friends"></button>
-          <button type="button" class="chip" data-f="official" data-i18n="feed_filter_official"></button>
-          <button type="button" class="chip" data-f="Record" data-i18n="feed_filter_records"></button>
-          <button type="button" class="chip" data-f="Group Hike" data-i18n="feed_filter_groups"></button>
+          <button type="button" class="chip" data-f="record" data-i18n="feed_filter_records"></button>
+          <button type="button" class="chip" data-f="route" data-i18n="feed_filter_routes"></button>
+          <button type="button" class="chip" data-f="incident" data-i18n="feed_filter_incidents"></button>
+          <button type="button" class="chip" data-f="group" data-i18n="feed_filter_groups"></button>
+          <button type="button" class="chip" data-f="announcement" data-i18n="feed_filter_announce"></button>
+          <button type="button" class="chip" data-f="promo" data-i18n="feed_filter_promo"></button>
         </div>
-        <details class="tw-advanced">
-          <summary data-i18n="toolbar_advanced"></summary>
-          <div class="tw-advanced-body">
-            <div class="gallery-filter-field">
-              <label for="feedDateFrom" data-i18n="gallery_date_from"></label>
-              <input class="form-input" type="date" id="feedDateFrom" />
-            </div>
-            <div class="gallery-filter-field">
-              <label for="feedDateTo" data-i18n="gallery_date_to"></label>
-              <input class="form-input" type="date" id="feedDateTo" />
-            </div>
+        <div class="tw-advanced-body feed-dates">
+          <div class="gallery-filter-field">
+            <label for="feedDateFrom" data-i18n="gallery_date_from"></label>
+            <input class="form-input" type="date" id="feedDateFrom" />
           </div>
-        </details>
+          <div class="gallery-filter-field">
+            <label for="feedDateTo" data-i18n="gallery_date_to"></label>
+            <input class="form-input" type="date" id="feedDateTo" />
+          </div>
+        </div>
       </div>
 
       <div class="explore-toolbar">
@@ -85,14 +94,24 @@
       return "friends";
     }
 
-    function matches(p) {
+    function typeOf(p) {
+      if (p.type) return p.type;
       const tag = p.tag || "";
-      const ch = channelOf(p);
+      if (/Record/i.test(tag)) return "record";
+      if (/Route/i.test(tag)) return "route";
+      if (/Incident/i.test(tag)) return "incident";
+      if (/Group/i.test(tag)) return "group";
+      if (/Announcement/i.test(tag)) return "announcement";
+      if (/Sponsored|Promo|Ad|PnT/i.test(tag)) return "promo";
+      return "community";
+    }
+
+    function matches(p) {
+      const typ = typeOf(p);
       let okF = true;
-      if (filter === "friends") okF = ch === "friends";
-      else if (filter === "official") okF = ch === "official" || ch === "ad" || p.pinned;
-      else if (filter !== "all") okF = tag === filter || (filter === "Community" && /Community|Story|Sponsored|Announcement/i.test(tag));
-      const text = ((p.title || "") + " " + (p.body || "") + " " + (p.user || "") + " " + tag).toLowerCase();
+      if (filter === "promo") okF = typ === "promo" || typ === "ad" || p.channel === "ad";
+      else if (filter !== "all") okF = typ === filter;
+      const text = ((p.title || "") + " " + (p.titleZh || "") + " " + (p.body || "") + " " + (p.bodyZh || "") + " " + (p.user || "") + " " + (p.tag || "")).toLowerCase();
       const okQ = !q || text.includes(q);
       const from = document.getElementById("feedDateFrom").value;
       const to = document.getElementById("feedDateTo").value;
@@ -109,11 +128,19 @@
       const pinned = items.filter((p) => p.pinned);
       const rest = items.filter((p) => !p.pinned);
       const pinWrap = document.getElementById("feedPinnedSection");
-      pinWrap.hidden = !pinned.length || filter === "friends";
+      pinWrap.hidden = !pinned.length;
       document.getElementById("feedPinned").innerHTML = pinned.map(renderFeedCard).join("");
       document.getElementById("feedList").innerHTML = rest.map(renderFeedCard).join("");
+      const filterKey = {
+        record: "feed_filter_records",
+        route: "feed_filter_routes",
+        incident: "feed_filter_incidents",
+        group: "feed_filter_groups",
+        announcement: "feed_filter_announce",
+        promo: "feed_filter_promo",
+      }[filter];
       document.getElementById("feedCount").textContent =
-        items.length + " · " + TW.t(filter === "friends" ? "feed_friends_heading" : filter === "official" ? "feed_official_heading" : "feed_title");
+        items.length + " · " + TW.t(filterKey || "feed_title");
       const empty = document.getElementById("feedEmpty");
       if (!items.length) {
         empty.hidden = false;

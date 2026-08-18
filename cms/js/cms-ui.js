@@ -25,6 +25,7 @@ function cmsSidebar(active) {
     <a href="donations.html" class="${active === "donations" ? "active" : ""}">Donations</a>
     <a href="feedback.html" class="${active === "feedback" ? "active" : ""}">Feedback</a>
     <a href="challenges.html" class="${active === "challenges" ? "active" : ""}">Challenges</a>
+    <a href="banners.html" class="${active === "banners" ? "active" : ""}">Homepage banners</a>
     <a href="content.html" class="${active === "content" ? "active" : ""}">Site Content</a>
     <a href="gallery.html" class="${active === "gallery" ? "active" : ""}">Gallery featured</a>
     <div class="side-foot">

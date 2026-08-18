@@ -46,6 +46,17 @@
         <input id="footer_zh" />
       </div>
 
+      <div class="cms-card">
+        <h3 style="margin-top:0">Homepage figures</h3>
+        <p style="font-size:0.85rem;color:#6b7280">Shown on the public landing page.</p>
+        <label>Total Routes Created</label>
+        <input id="figRoutes" type="number" min="0" />
+        <label>Total Distance Logged (km)</label>
+        <input id="figKm" type="number" min="0" />
+        <label>Total Incidents Reported</label>
+        <input id="figIncidents" type="number" min="0" />
+      </div>
+
       <button type="submit" class="cms-btn cms-btn-primary">Save content</button>
       <a class="cms-btn cms-btn-secondary" href="../about.html" target="_blank" style="margin-left:0.5rem">Preview About ↗</a>
     </form>
@@ -68,6 +79,10 @@
     document.getElementById("hero_zh").value = tr.hero_tagline_zh || "";
     document.getElementById("footer_en").value = tr.footer_extra_en || "";
     document.getElementById("footer_zh").value = tr.footer_extra_zh || "";
+    const figs = c.figures || {};
+    document.getElementById("figRoutes").value = figs.routes != null ? figs.routes : 18420;
+    document.getElementById("figKm").value = figs.distanceKm != null ? figs.distanceKm : 3256780;
+    document.getElementById("figIncidents").value = figs.incidents != null ? figs.incidents : 2146;
 
     document.getElementById("contentForm").addEventListener("submit", (e) => {
       e.preventDefault();
@@ -84,6 +99,11 @@
           hero_tagline_zh: document.getElementById("hero_zh").value,
           footer_extra_en: document.getElementById("footer_en").value,
           footer_extra_zh: document.getElementById("footer_zh").value,
+        },
+        figures: {
+          routes: Number(document.getElementById("figRoutes").value) || 0,
+          distanceKm: Number(document.getElementById("figKm").value) || 0,
+          incidents: Number(document.getElementById("figIncidents").value) || 0,
         },
       };
       CMS.setStore(store);

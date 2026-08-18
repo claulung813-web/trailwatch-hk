@@ -131,6 +131,8 @@
       transform: rotate(45deg);
       display: block;
     }
+    .leaflet-marker-draggable { cursor: grab; }
+    .leaflet-marker-draggable:active { cursor: grabbing; }
     .mk-poi-tip {
       background: #fff;
       color: var(--green-900);
@@ -154,6 +156,90 @@
     }
     .draft-list-item strong { color: var(--green-900); }
     .draft-list-item .meta { font-size: 0.78rem; color: var(--text-muted); }
+    .plan-stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.55rem;
+      margin: 0 0 0.85rem;
+    }
+    .plan-stat {
+      background: var(--green-50);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.55rem 0.7rem;
+    }
+    .plan-stat .lbl {
+      display: block;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      margin-bottom: 0.15rem;
+    }
+    .plan-stat strong {
+      font-size: 0.95rem;
+      color: var(--green-900);
+    }
+    .plan-via-panel {
+      margin-top: 0.9rem;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 0.75rem 0.9rem 0.55rem;
+      background: #fff;
+    }
+    .plan-via-panel h3 {
+      font-size: 0.88rem;
+      margin: 0 0 0.25rem;
+      color: var(--green-900);
+    }
+    .plan-via-seq {
+      list-style: none;
+      margin: 0.5rem 0 0;
+      padding: 0;
+    }
+    .plan-via-seq li {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.4rem 0.15rem;
+      border-bottom: 1px solid #f4f4f5;
+      font-size: 0.85rem;
+    }
+    .plan-via-seq li:last-child { border-bottom: 0; }
+    .plan-via-seq li.empty {
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      border: 0;
+    }
+    .plan-via-seq li.locked { color: var(--text-muted); }
+    .plan-via-seq .via-label { font-weight: 700; color: var(--green-900); }
+    .plan-via-seq .via-coord {
+      margin-left: auto;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      font-variant-numeric: tabular-nums;
+    }
+    .plan-via-seq .via-actions {
+      display: flex;
+      gap: 0.2rem;
+      flex-shrink: 0;
+    }
+    .plan-via-seq .via-actions button {
+      width: 28px;
+      height: 28px;
+      border: 1px solid var(--border);
+      background: #fff;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 700;
+      color: var(--green-900);
+    }
+    .plan-via-seq .via-actions button:disabled {
+      opacity: 0.35;
+      cursor: default;
+    }
+    @media (max-width: 720px) {
+      .plan-stats { grid-template-columns: 1fr 1fr; }
+      .plan-via-seq .via-coord { display: none; }
+    }
   </style>
 </head>
 <body>
@@ -209,8 +295,26 @@
           <button type="button" class="btn btn-secondary" style="padding:0.35rem 0.75rem;font-size:0.8rem" id="btnUndo" data-i18n="plan_undo"></button>
           <button type="button" class="btn btn-secondary" style="padding:0.35rem 0.75rem;font-size:0.8rem" id="btnClear" data-i18n="plan_clear"></button>
           <span class="meta" id="pointCount"></span>
-          <span class="meta" id="distEst"></span>
           <button type="button" class="btn btn-primary" style="margin-left:auto;padding:0.4rem 0.9rem;font-size:0.85rem" id="btnSaveDraft" data-i18n="plan_save_draft"></button>
+        </div>
+
+        <div class="plan-stats" id="planStats">
+          <div class="plan-stat">
+            <span class="lbl" data-i18n="plan_est_distance"></span>
+            <strong id="statDist">—</strong>
+          </div>
+          <div class="plan-stat">
+            <span class="lbl" data-i18n="plan_est_duration"></span>
+            <strong id="statDur">—</strong>
+          </div>
+          <div class="plan-stat">
+            <span class="lbl" data-i18n="plan_est_gain"></span>
+            <strong id="statGain">—</strong>
+          </div>
+          <div class="plan-stat">
+            <span class="lbl" data-i18n="plan_est_loss"></span>
+            <strong id="statLoss">—</strong>
+          </div>
         </div>
 
         <div style="position:relative">
@@ -218,11 +322,17 @@
           <div class="plan-ctx" id="planCtx" role="menu">
             <button type="button" data-type="start"><span class="plan-dot start">A</span><span data-i18n="plan_ctx_start"></span></button>
             <button type="button" data-type="end"><span class="plan-dot end">B</span><span data-i18n="plan_ctx_end"></span></button>
-            <button type="button" data-type="poi"><span class="plan-dot poi">★</span><span data-i18n="plan_ctx_poi"></span></button>
             <button type="button" data-type="via"><span class="plan-dot via">V</span><span data-i18n="plan_ctx_via"></span></button>
+            <button type="button" data-type="poi"><span class="plan-dot poi">★</span><span data-i18n="plan_ctx_poi"></span></button>
             <hr />
             <button type="button" class="cancel" data-type="cancel" data-i18n="plan_ctx_cancel"></button>
           </div>
+        </div>
+
+        <div class="plan-via-panel">
+          <h3 data-i18n="plan_via_order"></h3>
+          <p class="meta" style="margin:0 0 0.25rem;font-size:0.75rem" data-i18n="plan_via_hint"></p>
+          <ol class="plan-via-seq" id="viaOrderList"></ol>
         </div>
       </section>
 
@@ -255,10 +365,8 @@
     initShell("plan");
 
     /**
-     * Map actions match live trailwatch.hk/plan-route:
-     * click / right-click / long-press → menu with Start, End, POI, Via.
-     * Drawing order: start → vias → end; POIs are off-route labeled markers.
-     * Freehand + click-points modes keep editable route drawing.
+     * Click / right-click / long-press → Start here, End here, Via here, Add POI.
+     * Drawing order: start → numbered vias → end. Drag waypoints to reshape.
      */
     let draftId = new URLSearchParams(location.search).get("edit") || TW.getActiveDraftId() || "";
     let start = null; // [lat,lng]
@@ -273,6 +381,9 @@
     let longPressTimer = null;
     let longPressMoved = false;
     let suppressClick = false;
+    let lastElev = { gain: 0, loss: 0 };
+    let elevTimer = null;
+    let elevFetchId = 0;
 
     const mapEl = document.getElementById("planMap");
     const ctx = document.getElementById("planCtx");
@@ -345,17 +456,8 @@
       pendingLatLng = null;
     }
 
-    function refreshCtxOptions() {
-      // Match live: Start/End only offered if not already set; Via + POI always available.
-      const startBtn = ctx.querySelector('[data-type="start"]');
-      const endBtn = ctx.querySelector('[data-type="end"]');
-      if (startBtn) startBtn.hidden = !!start;
-      if (endBtn) endBtn.hidden = !!end;
-    }
-
     function showCtx(latlng, containerPoint) {
       pendingLatLng = [latlng.lat, latlng.lng];
-      refreshCtxOptions();
       let x = containerPoint.x + 12;
       let y = containerPoint.y + 12;
       ctx.style.display = "block";
@@ -368,7 +470,120 @@
       ctx.style.top = Math.max(8, y) + "px";
     }
 
-    function updateStats() {
+    function distPointToSeg(p, a, b) {
+      const ax = a[1];
+      const ay = a[0];
+      const bx = b[1];
+      const by = b[0];
+      const px = p[1];
+      const py = p[0];
+      const dx = bx - ax;
+      const dy = by - ay;
+      const len2 = dx * dx + dy * dy;
+      let t = len2 ? ((px - ax) * dx + (py - ay) * dy) / len2 : 0;
+      t = Math.max(0, Math.min(1, t));
+      const qx = ax + t * dx;
+      const qy = ay + t * dy;
+      return (py - qy) * (py - qy) + (px - qx) * (px - qx);
+    }
+
+    function insertVia(pt) {
+      if (!start || !end || !vias.length) {
+        vias.push(pt);
+        return;
+      }
+      const spine = [start].concat(vias, [end]);
+      let bestI = 1;
+      let bestD = Infinity;
+      for (let i = 0; i < spine.length - 1; i++) {
+        const d = distPointToSeg(pt, spine[i], spine[i + 1]);
+        if (d < bestD) {
+          bestD = d;
+          bestI = i + 1;
+        }
+      }
+      vias.splice(bestI - 1, 0, pt);
+    }
+
+    function applyElevDisplay(km, elev) {
+      const gain = elev && elev.gain ? elev.gain : 0;
+      const loss = elev && elev.loss ? elev.loss : 0;
+      const hours = TW.estimateDurationHours(km, gain);
+      document.getElementById("statDist").textContent = km ? km.toFixed(2) + " km" : "—";
+      document.getElementById("statDur").textContent = TW.formatHours(hours);
+      document.getElementById("statGain").textContent = gain ? "+" + gain + " m" : "—";
+      document.getElementById("statLoss").textContent = loss ? "−" + loss + " m" : "—";
+    }
+
+    function renderViaOrder() {
+      const el = document.getElementById("viaOrderList");
+      if (!el) return;
+      const rows = [];
+      if (start) {
+        rows.push(
+          '<li class="locked"><span class="plan-dot start">A</span><span class="via-label">' +
+            TW.t("plan_legend_start") +
+            '</span><span class="via-coord">' +
+            Number(start[0]).toFixed(4) +
+            ", " +
+            Number(start[1]).toFixed(4) +
+            "</span></li>"
+        );
+      }
+      if (!vias.length && !start && !end) {
+        el.innerHTML = '<li class="empty">' + TW.t("plan_via_empty") + "</li>";
+        return;
+      }
+      vias.forEach((v, i) => {
+        rows.push(
+          '<li data-via-i="' +
+            i +
+            '"><span class="plan-dot via">' +
+            (i + 1) +
+            '</span><span class="via-label">' +
+            TW.t("plan_via_n").replace("{n}", String(i + 1)) +
+            '</span><span class="via-coord">' +
+            Number(v[0]).toFixed(4) +
+            ", " +
+            Number(v[1]).toFixed(4) +
+            '</span><span class="via-actions">' +
+            '<button type="button" data-via-up="' +
+            i +
+            '"' +
+            (i === 0 ? " disabled" : "") +
+            ' title="' +
+            TW.t("plan_via_up") +
+            '">↑</button>' +
+            '<button type="button" data-via-down="' +
+            i +
+            '"' +
+            (i === vias.length - 1 ? " disabled" : "") +
+            ' title="' +
+            TW.t("plan_via_down") +
+            '">↓</button>' +
+            '<button type="button" data-via-del="' +
+            i +
+            '" title="' +
+            TW.t("plan_ctx_remove") +
+            '">×</button></span></li>'
+        );
+      });
+      if (end) {
+        rows.push(
+          '<li class="locked"><span class="plan-dot end">B</span><span class="via-label">' +
+            TW.t("plan_legend_end") +
+            '</span><span class="via-coord">' +
+            Number(end[0]).toFixed(4) +
+            ", " +
+            Number(end[1]).toFixed(4) +
+            "</span></li>"
+        );
+      }
+      el.innerHTML = rows.join("");
+    }
+
+    function updateStats(opts) {
+      opts = opts || {};
       const path = spinePoints();
       document.getElementById("pointCount").textContent =
         TW.t("plan_points") +
@@ -380,9 +595,32 @@
         vias.length +
         " · poi " +
         pois.length;
+      renderViaOrder();
+      if (path.length < 2) {
+        lastElev = { gain: 0, loss: 0 };
+        document.getElementById("statDist").textContent = "—";
+        document.getElementById("statDur").textContent = "—";
+        document.getElementById("statGain").textContent = "—";
+        document.getElementById("statLoss").textContent = "—";
+        return;
+      }
       const km = TW.pathDistanceKm(path);
-      document.getElementById("distEst").textContent =
-        path.length >= 2 ? TW.t("plan_est_distance") + ": " + km + " km" : TW.t("plan_est_distance") + ": —";
+      const fallback = TW.estimateElevFallback(km);
+      const elev =
+        lastElev.gain || lastElev.loss ? lastElev : fallback;
+      applyElevDisplay(km, elev);
+      if (opts.skipElev) return;
+      if (elevTimer) clearTimeout(elevTimer);
+      elevTimer = setTimeout(() => {
+        const id = ++elevFetchId;
+        const snap = spinePoints().slice();
+        TW.fetchPathElevation(snap, (res) => {
+          if (id !== elevFetchId) return;
+          lastElev = res || TW.estimateElevFallback(TW.pathDistanceKm(snap));
+          applyElevDisplay(TW.pathDistanceKm(snap), lastElev);
+          persistSoft();
+        });
+      }, 350);
     }
 
     function clearLayers() {
@@ -394,19 +632,34 @@
       markers = [];
     }
 
+    function applyMarkerPos(m) {
+      const ll = m.getLatLng();
+      const pt = [ll.lat, ll.lng];
+      const type = m._twType;
+      const index = m._twIndex;
+      if (type === "start") start = pt;
+      else if (type === "end") end = pt;
+      else if (type === "via") vias[index] = pt;
+      else if (type === "poi") {
+        pois[index] = Object.assign({}, pois[index], { lat: pt[0], lng: pt[1] });
+      }
+    }
+
     function addDraggable(latlng, type, index) {
       const m = L.marker(latlng, { icon: iconFor(type, index), draggable: true }).addTo(map);
       m._twType = type;
       m._twIndex = index;
-      m.on("dragend", () => {
-        const ll = m.getLatLng();
-        const pt = [ll.lat, ll.lng];
-        if (type === "start") start = pt;
-        else if (type === "end") end = pt;
-        else if (type === "via") vias[index] = pt;
-        else if (type === "poi") {
-          pois[index] = Object.assign({}, pois[index], { lat: pt[0], lng: pt[1] });
+      m.on("drag", () => {
+        applyMarkerPos(m);
+        const path = spinePoints();
+        if (path.length >= 2) {
+          if (line) line.setLatLngs(path);
+          else line = L.polyline(path, { color: "#2563eb", weight: 5, opacity: 0.9 }).addTo(map);
         }
+        if (type !== "poi") updateStats({ skipElev: true });
+      });
+      m.on("dragend", () => {
+        applyMarkerPos(m);
         redraw();
         persistSoft();
       });
@@ -419,6 +672,9 @@
         L.DomEvent.stop(e);
         showCtx(e.latlng, map.latLngToContainerPoint(e.latlng));
       });
+      if (type === "via") {
+        m.bindTooltip(TW.t("plan_via_n").replace("{n}", String(index + 1)), { direction: "top" });
+      }
       if (type === "via" || type === "poi") {
         m.on("dblclick", (e) => {
           L.DomEvent.stop(e);
@@ -427,7 +683,7 @@
           redraw();
           persistSoft();
         });
-        m.bindTooltip(TW.t("plan_ctx_remove"), { direction: "top" });
+        if (type === "poi") m.bindTooltip(TW.t("plan_ctx_remove"), { direction: "top" });
       }
       if (type === "poi") {
         const label = (pois[index] && pois[index].label) || TW.t("plan_legend_poi") + " " + (index + 1);
@@ -460,6 +716,7 @@
       const notesEl = document.getElementById("routeNotes");
       if (!draftId) draftId = "draft_" + Date.now();
       const path = spinePoints();
+      const km = TW.pathDistanceKm(path);
       TW.saveRouteDraft({
         id: draftId,
         name: nameEl.value.trim() || (TW.getLang() === "zh" ? "未命名路線" : "Untitled route"),
@@ -470,6 +727,10 @@
         end: end,
         vias: vias,
         pois: pois,
+        distanceKm: km,
+        elevGain: lastElev.gain || 0,
+        elevLoss: lastElev.loss || 0,
+        durationHours: TW.estimateDurationHours(km, lastElev.gain || 0),
         privacy: "private",
       });
       TW.setActiveDraftId(draftId);
@@ -503,6 +764,10 @@
       end = d.end ? [Number(d.end[0]), Number(d.end[1])] : null;
       vias = Array.isArray(d.vias) ? d.vias.map((p) => [Number(p[0]), Number(p[1])]) : [];
       pois = normalizePois(d.pois);
+      lastElev = {
+        gain: Number(d.elevGain) || 0,
+        loss: Number(d.elevLoss) || 0,
+      };
       if (!start && !end && Array.isArray(d.path) && d.path.length >= 1) {
         syncFromPath(d.path);
       }
@@ -529,7 +794,7 @@
       const pt = [latlng.lat, latlng.lng];
       if (!start) start = pt;
       else if (!end) end = pt;
-      else vias.push(pt);
+      else insertVia(pt);
       redraw();
       persistSoft();
     }
@@ -542,7 +807,7 @@
       const pt = pendingLatLng.slice();
       if (type === "start") start = pt;
       else if (type === "end") end = pt;
-      else if (type === "via") vias.push(pt);
+      else if (type === "via") insertVia(pt);
       else if (type === "poi") {
         pois.push({
           lat: pt[0],
@@ -637,7 +902,7 @@
       syncFromPath(path);
       if (line) line.setLatLngs(path);
       else redraw();
-      updateStats();
+      updateStats({ skipElev: true });
     });
     map.on("mouseup", () => {
       if (!freehand) return;
@@ -661,6 +926,44 @@
       if (!ctx.contains(e.target) && !mapEl.contains(e.target)) hideCtx();
     });
 
+    document.getElementById("viaOrderList").addEventListener("click", (e) => {
+      const up = e.target.closest("[data-via-up]");
+      const down = e.target.closest("[data-via-down]");
+      const del = e.target.closest("[data-via-del]");
+      const row = e.target.closest("[data-via-i]");
+      if (up) {
+        const i = Number(up.dataset.viaUp);
+        if (i > 0) {
+          const tmp = vias[i];
+          vias[i] = vias[i - 1];
+          vias[i - 1] = tmp;
+          redraw();
+          persistSoft();
+        }
+        return;
+      }
+      if (down) {
+        const i = Number(down.dataset.viaDown);
+        if (i < vias.length - 1) {
+          const tmp = vias[i];
+          vias[i] = vias[i + 1];
+          vias[i + 1] = tmp;
+          redraw();
+          persistSoft();
+        }
+        return;
+      }
+      if (del) {
+        vias.splice(Number(del.dataset.viaDel), 1);
+        redraw();
+        persistSoft();
+        return;
+      }
+      if (row && vias[Number(row.dataset.viaI)]) {
+        map.panTo(vias[Number(row.dataset.viaI)]);
+      }
+    });
+
     document.querySelectorAll("[data-draw]").forEach((btn) => {
       btn.addEventListener("click", () => setDrawMode(btn.dataset.draw));
     });
@@ -679,6 +982,7 @@
       start = end = null;
       vias = [];
       pois = [];
+      lastElev = { gain: 0, loss: 0 };
       hideCtx();
       redraw();
       persistSoft();
@@ -700,6 +1004,7 @@
       start = end = null;
       vias = [];
       pois = [];
+      lastElev = { gain: 0, loss: 0 };
       document.getElementById("routeName").value = "";
       document.getElementById("routeNotes").value = "";
       document.getElementById("planLoadHint").style.display = "none";

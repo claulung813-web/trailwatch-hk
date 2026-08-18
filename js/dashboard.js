@@ -17,6 +17,7 @@ TW.getDashboardBadges = function () {
     emoji: b.emoji,
     color: b.color || "#2d8a45",
     locked: !!b.locked,
+    criteria: zh ? b.criteriaZh || b.criteria || "" : b.criteria || b.criteriaZh || "",
   }));
   const env = [];
   const lvl = typeof TW.getEnvLevel === "function" ? TW.getEnvLevel() : 0;
@@ -30,6 +31,9 @@ TW.getDashboardBadges = function () {
       emoji: meta.emoji,
       color: meta.color,
       locked: L > lvl,
+      criteria: zh
+        ? "完成環保行動以解鎖第 " + L + " 級徽章。"
+        : "Complete environmental actions to unlock Level " + L + ".",
     });
   }
   return { hiking, env };
@@ -253,7 +257,8 @@ TW.bindInsightToggle = function (toggleEl, barsEl, dataKey) {
   function render(mode) {
     TW.renderInsightBars(barsEl, data[dataKey + (mode === "yearly" ? "Yearly" : "Monthly")]);
   }
-  render("monthly");
+  const initial = (toggleEl.querySelector("button.active") && toggleEl.querySelector("button.active").dataset.mode) || "yearly";
+  render(initial);
   toggleEl.querySelectorAll("button").forEach((btn) => {
     btn.addEventListener("click", () => {
       toggleEl.querySelectorAll("button").forEach((b) => b.classList.remove("active"));
@@ -263,38 +268,76 @@ TW.bindInsightToggle = function (toggleEl, barsEl, dataKey) {
   });
 };
 
-TW.applyPremiumMoreGate = function () {
-  const prem = TW.isMemberPremium && TW.isMemberPremium();
-  document.querySelectorAll("[data-premium-more]").forEach((el) => {
-    if (prem) {
-      el.classList.remove("dash-locked");
-      el.removeAttribute("aria-disabled");
-    } else {
-      el.classList.add("dash-locked");
-      el.setAttribute("aria-disabled", "true");
-    }
-  });
-  const gate = document.getElementById("dashMoreGate");
-  if (gate && !prem) {
-    gate.innerHTML = `<div class="dash-premium-gate card" style="padding:1.25rem;margin-bottom:1.25rem">
-      <span class="app-premium-pill">PREMIUM</span>
-      <p style="margin:0.65rem 0 1rem;color:var(--text-muted);font-size:0.9rem">${TW.t("dash_more_premium_body")}</p>
-      <a class="btn btn-primary" href="${TW.dashBase()}get-app.html#premium">${TW.t("dash_subscribe_premium")}</a>
-    </div>`;
-  } else if (gate) {
-    gate.innerHTML = "";
+TW.renderProfileBadgeGrid = function (el, onSelect) {
+  if (!el) return;
+  const groups = TW.getDashboardBadges();
+  const sel = TW.getSelectedBadgeId();
+  const isPrem = TW.isMemberPremium && TW.isMemberPremium();
+  function cards(items) {
+    return `<div class="profile-badge-grid">` +
+      items
+        .map((b) => {
+          const tip = b.criteria || TW.t("app_badge_criteria");
+          return `<button type="button" class="profile-badge-card ${b.locked ? "locked" : ""} ${sel === b.id ? "selected" : ""}" data-id="${b.id}" title="${tip.replace(/"/g, "&quot;")}" ${b.locked ? "" : ""}>
+            <span class="ico" style="background:${b.locked ? "#d1d5db" : b.color}">${b.emoji}</span>
+            <span class="name">${b.name}</span>
+            <span class="crit">${tip}</span>
+            ${sel === b.id ? `<span class="sel-tag">${TW.t("dash_selected")}</span>` : ""}
+          </button>`;
+        })
+        .join("") +
+      `</div>`;
   }
-  document.querySelectorAll("[data-me-jump='insights'], [data-me-jump='milestones'], #meHubNavMore a").forEach((a) => {
-    if (a._premBound) return;
-    a._premBound = true;
-    a.addEventListener("click", (e) => {
-      if (TW.isMemberPremium && TW.isMemberPremium()) return;
-      const jump = a.getAttribute("data-me-jump") || (a.getAttribute("href") || "").replace(/^#/, "");
-      if (jump === "insights" || jump === "milestones") {
-        e.preventDefault();
-        e.stopPropagation();
-        if (typeof showToast === "function") showToast(TW.t("dash_more_premium_body"));
+  el.innerHTML =
+    `<p class="dash-badge-cat">${TW.t("app_badge_hiking")}</p>` +
+    cards(groups.hiking) +
+    `<p class="dash-badge-cat">${TW.t("app_badge_env")}</p>` +
+    cards(groups.env) +
+    (isPrem
+      ? `<div class="dash-physical-awards"><strong>${TW.t("dash_physical_awards")}</strong><p>${TW.t("dash_physical_awards_body")}</p></div>`
+      : `<p class="meta" style="margin-top:0.75rem">${TW.t("dash_physical_awards_premium")}</p>`);
+  el.querySelectorAll(".profile-badge-card").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      el.querySelectorAll(".profile-badge-card").forEach((b) => b.classList.remove("is-open"));
+      btn.classList.add("is-open");
+      const id = btn.dataset.id;
+      const groupsNow = TW.getDashboardBadges();
+      const badge = groupsNow.hiking.concat(groupsNow.env).find((b) => b.id === id);
+      if (!badge) return;
+      if (badge.locked) {
+        if (typeof showToast === "function") showToast(badge.criteria || TW.t("app_badge_criteria"));
+        return;
       }
+      TW.setSelectedBadgeId(id);
+      if (typeof onSelect === "function") onSelect(id);
+      TW.renderProfileBadgeGrid(el, onSelect);
+      TW.renderSelectedBadgeCard(null, document.getElementById("selectedBadge"));
     });
   });
+};
+
+TW.applyPremiumMoreGate = function () {
+  const prem = TW.isMemberPremium && TW.isMemberPremium();
+  const gate = document.getElementById("dashMoreGate");
+  const moreBtn = document.getElementById("dashMoreBtn");
+  const morePanel = document.getElementById("dashPremiumMore");
+  if (gate) {
+    if (!prem) {
+      gate.hidden = false;
+      gate.innerHTML = `<div class="dash-premium-gate card" style="padding:1.25rem">
+        <span class="app-premium-pill">PREMIUM</span>
+        <h3 style="margin:0.55rem 0 0.35rem;font-size:1rem;color:var(--green-900)">${TW.t("dash_premium_locked_title")}</h3>
+        <p style="margin:0 0 1rem;color:var(--text-muted);font-size:0.9rem">${TW.t("dash_more_premium_body")}</p>
+        <a class="btn btn-primary" href="${TW.dashBase()}get-app.html#premium">${TW.t("dash_unlock")}</a>
+      </div>`;
+    } else {
+      gate.hidden = true;
+      gate.innerHTML = "";
+    }
+  }
+  if (moreBtn) moreBtn.hidden = !prem;
+  if (morePanel && !prem) {
+    morePanel.hidden = true;
+    morePanel.classList.remove("is-open");
+  }
 };

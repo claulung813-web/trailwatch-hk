@@ -22,6 +22,7 @@
         <a class="cms-btn cms-btn-secondary" href="donations.html">Donations</a>
         <a class="cms-btn cms-btn-secondary" href="feedback.html">Feedback</a>
         <a class="cms-btn cms-btn-secondary" href="challenges.html">Edit challenges</a>
+        <a class="cms-btn cms-btn-secondary" href="banners.html">Homepage banners</a>
         <a class="cms-btn cms-btn-secondary" href="content.html">About / Contact / i18n</a>
       </div>
       <p style="font-size:0.85rem;color:#6b7280;margin:0.75rem 0 0">
@@ -46,7 +47,9 @@
     const premiumNow = users.filter((u) => CMS.isUserPremiumNow(u)).length;
     const fbNew = fb.filter((f) => f.status === "new").length;
     const donTotal = don.reduce((n, d) => n + (+d.amount || 0), 0);
+    const liveBanners = (s.banners || []).filter((b) => b.published !== false).length;
     document.getElementById("stats").innerHTML = `
+      <div class="cms-stat"><div class="v">${liveBanners}</div><div class="l">Live homepage banners</div></div>
       <div class="cms-stat"><div class="v">${rec.filter((r) => r.published).length}</div><div class="l">Published recommendations</div></div>
       <div class="cms-stat"><div class="v">${pending}</div><div class="l">Incidents awaiting action</div></div>
       <div class="cms-stat"><div class="v">${memPending}</div><div class="l">Member registrations pending</div></div>

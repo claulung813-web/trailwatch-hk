@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CMS — Homepage banners</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/cms.css" />
+</head>
+<body class="cms-body">
+  <div id="cmsShell">
+    <h1>Homepage banners</h1>
+    <p class="sub">Sliding homepage banners. The first published slide should highlight the TrailWatch app (store badges + SEO keywords). Published slides appear in order.</p>
+
+    <div class="cms-row">
+      <div class="cms-card">
+        <h3 style="margin-top:0" id="formTitle">Add banner</h3>
+        <form class="cms-form" id="bannerForm">
+          <input type="hidden" id="editId" />
+          <label>Badge (EN)</label>
+          <input id="badge" placeholder="Hong Kong hiking app" />
+          <label>Badge (繁)</label>
+          <input id="badgeZh" />
+          <label>SEO keywords (EN)</label>
+          <input id="seo" placeholder="Hong Kong hiking · GPS tracking · trail planning" />
+          <label>SEO keywords (繁)</label>
+          <input id="seoZh" />
+          <label>Title (EN)</label>
+          <input id="title" required />
+          <label>Title (繁)</label>
+          <input id="titleZh" />
+          <label>Body (EN)</label>
+          <textarea id="body" rows="3"></textarea>
+          <label>Body (繁)</label>
+          <textarea id="bodyZh" rows="3"></textarea>
+          <label>Background image URL</label>
+          <input id="image" placeholder="assets/brand/homepage-hero.jpeg or https://…" />
+          <label>Device image URL (optional)</label>
+          <input id="deviceImage" placeholder="assets/brand/device.webp" />
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem">
+            <div>
+              <label>Primary CTA label (EN)</label>
+              <input id="ctaLabel" />
+            </div>
+            <div>
+              <label>Primary CTA (繁)</label>
+              <input id="ctaLabelZh" />
+            </div>
+          </div>
+          <label>Primary CTA link</label>
+          <input id="ctaHref" placeholder="get-app.html" />
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem">
+            <div>
+              <label>Secondary CTA (EN)</label>
+              <input id="cta2Label" />
+            </div>
+            <div>
+              <label>Secondary CTA (繁)</label>
+              <input id="cta2LabelZh" />
+            </div>
+          </div>
+          <label>Secondary CTA link</label>
+          <input id="cta2Href" placeholder="explore.html" />
+          <label>Order (0 = first)</label>
+          <input id="order" type="number" min="0" value="0" />
+          <div class="cms-checks" style="margin-top:0.75rem">
+            <label><input type="checkbox" id="published" checked /> Published</label>
+            <label><input type="checkbox" id="showStores" /> Show App Store / Google Play badges</label>
+            <label><input type="checkbox" id="showDevice" /> Show phone device image</label>
+          </div>
+          <label>App Store URL (if badges on)</label>
+          <input id="appStoreUrl" />
+          <label>Google Play URL (if badges on)</label>
+          <input id="playStoreUrl" />
+          <div class="cms-toolbar" style="margin-top:0.75rem">
+            <button type="submit" class="cms-btn cms-btn-primary">Save banner</button>
+            <button type="button" class="cms-btn cms-btn-secondary" id="resetForm">New</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="cms-card">
+        <h3 style="margin-top:0">Slides</h3>
+        <table class="cms-table">
+          <thead>
+            <tr><th>Order</th><th>Banner</th><th>Status</th><th></th></tr>
+          </thead>
+          <tbody id="list"></tbody>
+        </table>
+        <p style="margin-top:0.85rem">
+          <a class="cms-btn cms-btn-secondary" href="../index.html" target="_blank">Preview homepage ↗</a>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <script src="../js/data.js"></script>
+  <script src="../js/cms-store.js"></script>
+  <script src="js/cms-ui.js"></script>
+  <script>
+    cmsInitShell("banners");
+    const DEFAULT_APP = "https://itunes.apple.com/hk/app/trailwatch/id791098937";
+    const DEFAULT_PLAY = "https://play.google.com/store/apps/details?id=com.computancy.countrypark";
+
+    function banners() {
+      return (CMS.getStore().banners || []).slice().sort((a, b) => (a.order || 0) - (b.order || 0));
+    }
+
+    function resetForm() {
+      document.getElementById("editId").value = "";
+      document.getElementById("formTitle").textContent = "Add banner";
+      document.getElementById("bannerForm").reset();
+      document.getElementById("published").checked = true;
+      document.getElementById("showStores").checked = false;
+      document.getElementById("showDevice").checked = false;
+      document.getElementById("order").value = String(banners().length);
+      document.getElementById("appStoreUrl").value = DEFAULT_APP;
+      document.getElementById("playStoreUrl").value = DEFAULT_PLAY;
+    }
+
+    function fillForm(b) {
+      document.getElementById("editId").value = b.id;
+      document.getElementById("formTitle").textContent = "Edit banner";
+      document.getElementById("badge").value = b.badge || "";
+      document.getElementById("badgeZh").value = b.badgeZh || "";
+      document.getElementById("seo").value = b.seo || "";
+      document.getElementById("seoZh").value = b.seoZh || "";
+      document.getElementById("title").value = b.title || "";
+      document.getElementById("titleZh").value = b.titleZh || "";
+      document.getElementById("body").value = b.body || "";
+      document.getElementById("bodyZh").value = b.bodyZh || "";
+      document.getElementById("image").value = b.image || "";
+      document.getElementById("deviceImage").value = b.deviceImage || "";
+      document.getElementById("ctaLabel").value = b.ctaLabel || "";
+      document.getElementById("ctaLabelZh").value = b.ctaLabelZh || "";
+      document.getElementById("ctaHref").value = b.ctaHref || "";
+      document.getElementById("cta2Label").value = b.cta2Label || "";
+      document.getElementById("cta2LabelZh").value = b.cta2LabelZh || "";
+      document.getElementById("cta2Href").value = b.cta2Href || "";
+      document.getElementById("order").value = b.order != null ? b.order : 0;
+      document.getElementById("published").checked = b.published !== false;
+      document.getElementById("showStores").checked = !!b.showStores;
+      document.getElementById("showDevice").checked = !!b.showDevice;
+      document.getElementById("appStoreUrl").value = b.appStoreUrl || DEFAULT_APP;
+      document.getElementById("playStoreUrl").value = b.playStoreUrl || DEFAULT_PLAY;
+    }
+
+    function renderList() {
+      document.getElementById("list").innerHTML = banners()
+        .map((b) => {
+          const stores = b.showStores ? " · stores" : "";
+          return `<tr>
+            <td>${b.order != null ? b.order : "—"}</td>
+            <td>
+              <strong>${(b.title || "").replace(/</g, "&lt;")}</strong><br/>
+              <span style="font-size:0.78rem;color:#6b7280">${(b.badge || "")}${stores}</span>
+            </td>
+            <td>${b.published !== false ? '<span class="cms-badge pub">Live</span>' : '<span class="cms-badge draft">Draft</span>'}</td>
+            <td style="white-space:nowrap">
+              <button type="button" class="cms-btn cms-btn-secondary cms-btn-sm" data-edit="${b.id}">Edit</button>
+              <button type="button" class="cms-btn cms-btn-danger cms-btn-sm" data-del="${b.id}">Delete</button>
+            </td>
+          </tr>`;
+        })
+        .join("") || `<tr><td colspan="4" style="color:#6b7280">No banners yet</td></tr>`;
+    }
+
+    document.getElementById("bannerForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const store = CMS.getStore();
+      const id = document.getElementById("editId").value || "bn_" + Date.now();
+      const entry = {
+        id: id,
+        published: document.getElementById("published").checked,
+        order: Number(document.getElementById("order").value) || 0,
+        showStores: document.getElementById("showStores").checked,
+        showDevice: document.getElementById("showDevice").checked,
+        badge: document.getElementById("badge").value.trim(),
+        badgeZh: document.getElementById("badgeZh").value.trim(),
+        seo: document.getElementById("seo").value.trim(),
+        seoZh: document.getElementById("seoZh").value.trim(),
+        title: document.getElementById("title").value.trim(),
+        titleZh: document.getElementById("titleZh").value.trim(),
+        body: document.getElementById("body").value.trim(),
+        bodyZh: document.getElementById("bodyZh").value.trim(),
+        image: document.getElementById("image").value.trim(),
+        deviceImage: document.getElementById("deviceImage").value.trim(),
+        ctaLabel: document.getElementById("ctaLabel").value.trim(),
+        ctaLabelZh: document.getElementById("ctaLabelZh").value.trim(),
+        ctaHref: document.getElementById("ctaHref").value.trim(),
+        cta2Label: document.getElementById("cta2Label").value.trim(),
+        cta2LabelZh: document.getElementById("cta2LabelZh").value.trim(),
+        cta2Href: document.getElementById("cta2Href").value.trim(),
+        appStoreUrl: document.getElementById("appStoreUrl").value.trim() || DEFAULT_APP,
+        playStoreUrl: document.getElementById("playStoreUrl").value.trim() || DEFAULT_PLAY,
+      };
+      const list = store.banners || [];
+      const idx = list.findIndex((x) => x.id === id);
+      if (idx >= 0) list[idx] = Object.assign({}, list[idx], entry);
+      else list.push(entry);
+      store.banners = list;
+      CMS.setStore(store);
+      cmsToast("Banner saved");
+      resetForm();
+      renderList();
+    });
+
+    document.getElementById("resetForm").addEventListener("click", resetForm);
+
+    document.getElementById("list").addEventListener("click", (e) => {
+      const edit = e.target.closest("[data-edit]");
+      const del = e.target.closest("[data-del]");
+      if (edit) {
+        const b = banners().find((x) => x.id === edit.dataset.edit);
+        if (b) fillForm(b);
+      }
+      if (del) {
+        if (!confirm("Delete this banner?")) return;
+        const store = CMS.getStore();
+        store.banners = (store.banners || []).filter((x) => x.id !== del.dataset.del);
+        CMS.setStore(store);
+        cmsToast("Banner deleted");
+        resetForm();
+        renderList();
+      }
+    });
+
+    resetForm();
+    renderList();
+  </script>
+</body>
+</html>

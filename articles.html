@@ -35,18 +35,24 @@
               aria-labelledby="articleFilterLabel"
             ></div>
           </div>
-          <details class="tw-advanced">
-            <summary data-i18n="toolbar_advanced"></summary>
-            <div class="tw-advanced-body">
-              <div class="articles-sort">
-                <label for="articleSort" data-i18n="article_sort_label"></label>
-                <select id="articleSort" class="form-select">
-                  <option value="newest" data-i18n="article_sort_newest"></option>
-                  <option value="oldest" data-i18n="article_sort_oldest"></option>
-                </select>
-              </div>
+          <div class="articles-extra-filters">
+            <div class="gallery-filter-field">
+              <label for="articleArea" data-i18n="article_filter_area"></label>
+              <select class="form-select" id="articleArea"></select>
             </div>
-          </details>
+            <div class="gallery-filter-field">
+              <label for="articleRoute" data-i18n="article_filter_route"></label>
+              <select class="form-select" id="articleRoute"></select>
+            </div>
+            <div class="gallery-filter-field">
+              <label for="articleDateFrom" data-i18n="gallery_date_from"></label>
+              <input class="form-input" type="date" id="articleDateFrom" />
+            </div>
+            <div class="gallery-filter-field">
+              <label for="articleDateTo" data-i18n="gallery_date_to"></label>
+              <input class="form-input" type="date" id="articleDateTo" />
+            </div>
+          </div>
         </div>
         <h2 id="articlesAllHeading" class="articles-section-title articles-section-title--sm" data-i18n="articles_all_heading"></h2>
         <div id="articleList"></div>
@@ -62,7 +68,6 @@
     initShell("articles");
 
     let activeCategory = "all";
-    let activeSort = "newest";
 
     function escapeHtml(s) {
       return String(s == null ? "" : s)
@@ -70,6 +75,26 @@
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;");
+    }
+
+    function fillSelects() {
+      const area = document.getElementById("articleArea");
+      const route = document.getElementById("articleRoute");
+      const zh = TW.getLang() === "zh";
+      area.innerHTML =
+        `<option value="all">${escapeHtml(TW.t("article_filter_all_areas"))}</option>` +
+        (TW.districts || [])
+          .map((d) => `<option value="${escapeHtml(d.id)}">${escapeHtml(zh ? d.nameZh : d.name)}</option>`)
+          .join("");
+      const routes = TW.getArticleFilterRoutes ? TW.getArticleFilterRoutes() : (TW.trails || []).filter((t) => t.editorChoice);
+      route.innerHTML =
+        `<option value="all">${escapeHtml(TW.t("article_filter_all_routes"))}</option>` +
+        routes
+          .map((t) => {
+            const label = zh ? t.titleZh || t.title : t.title;
+            return `<option value="${escapeHtml(t.id)}">${escapeHtml(label)}</option>`;
+          })
+          .join("");
     }
 
     function renderCategoryChips() {
@@ -109,14 +134,22 @@
       const excerptHtml = opts.compact
         ? `<p class="article-excerpt article-excerpt--short">${escapeHtml(excerpt)}</p>`
         : `<p class="article-excerpt">${escapeHtml(excerpt)}</p>`;
+      const trail = a.routeId ? (TW.trails || []).find((t) => t.id === a.routeId) : null;
+      const areaName = a.district ? TW.districtName(a.district) : "";
+      const routeHtml = trail
+        ? `<a class="article-route" href="rec-trail.html?id=${encodeURIComponent(trail.id)}">${escapeHtml(zh ? trail.titleZh || trail.title : trail.title)}</a>`
+        : "";
       return `<article class="article-card article-card--rich${compact}">
         ${img}
         <div class="article-card-body">
-          <div class="meta">${escapeHtml(cat)} · ${escapeHtml(a.date)}${author ? " · " + author : ""}</div>
+          <div class="meta">${escapeHtml(cat)}${areaName ? " · " + escapeHtml(areaName) : ""} · ${escapeHtml(a.date)}${author ? " · " + author : ""}</div>
           <strong><a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(title)}</a></strong>
           ${excerptHtml}
           ${opts.compact ? "" : `<div class="article-tags">${tags}</div>`}
-          <a class="article-more" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(TW.t("article_read_more"))}</a>
+          <div class="article-card-links">
+            <a class="article-more" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(TW.t("article_read_more"))}</a>
+            ${routeHtml}
+          </div>
         </div>
       </article>`;
     }
@@ -136,7 +169,10 @@
       const list = TW.getArticles({
         category: activeCategory,
         query: q,
-        sort: activeSort,
+        district: document.getElementById("articleArea").value,
+        routeId: document.getElementById("articleRoute").value,
+        dateFrom: document.getElementById("articleDateFrom").value,
+        dateTo: document.getElementById("articleDateTo").value,
       });
       const el = document.getElementById("articleList");
       if (!list.length) {
@@ -146,21 +182,14 @@
       el.innerHTML = list.map((a) => renderArticleCard(a)).join("");
     }
 
-    function applySortI18n() {
-      const sel = document.getElementById("articleSort");
-      sel.querySelectorAll("option[data-i18n]").forEach((opt) => {
-        opt.textContent = TW.t(opt.getAttribute("data-i18n"));
-      });
-    }
-
+    fillSelects();
     renderFeatured();
     renderCategoryChips();
-    applySortI18n();
     document.getElementById("articleSearch").addEventListener("input", renderList);
-    document.getElementById("articleSort").addEventListener("change", (e) => {
-      activeSort = e.target.value === "oldest" ? "oldest" : "newest";
-      renderList();
-    });
+    document.getElementById("articleArea").addEventListener("change", renderList);
+    document.getElementById("articleRoute").addEventListener("change", renderList);
+    document.getElementById("articleDateFrom").addEventListener("change", renderList);
+    document.getElementById("articleDateTo").addEventListener("change", renderList);
     renderList();
   </script>
 </body>

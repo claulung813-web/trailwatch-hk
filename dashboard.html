@@ -9,15 +9,18 @@
       var h = (location.hash || "#overview").replace(/^#/, "") || "overview";
       var map = {
         dashboard: "overview",
-        hikes: "activity&type=records",
-        records: "activity&type=records",
-        plans: "activity&type=plans",
-        groups: "activity&type=groups",
-        reports: "activity&type=reports",
-        gallery: "activity&type=gallery",
-        bookmarks: "overview",
-        milestones: "badges",
-        profile: "settings"
+        hikes: "profile&type=records",
+        records: "profile&type=records",
+        plans: "profile&type=plans",
+        groups: "profile&type=groups",
+        reports: "profile&type=reports",
+        gallery: "profile",
+        bookmarks: "bookmarks",
+        milestones: "overview",
+        insights: "overview",
+        activity: "profile",
+        badges: "profile&type=badges",
+        profile: "profile"
       };
       location.replace("profile.html#" + (map[h] || h));
     })();

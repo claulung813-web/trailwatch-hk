@@ -646,6 +646,80 @@ TW.feed = [
     likes: 42,
     comments: 5,
   },
+  {
+    type: "route",
+    channel: "friends",
+    dateISO: "2026-08-14",
+    user: "Sarah Chen",
+    avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop",
+    time: "1 hour ago",
+    timeZh: "1 小時前",
+    tag: "Route",
+    tagZh: "路線",
+    title: "Shared a plan: Dragon’s Back loop",
+    titleZh: "分享路線：龍脊環線",
+    body: "Easy ridge walk from To Tei Wan — great for sunset. Saved to My Plans.",
+    bodyZh: "由土地灣起步的輕鬆山脊，適合日落。已存到我的計劃。",
+    image: "https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=800&q=80",
+    distance: "8.5 km",
+    duration: "3:00",
+    likes: 22,
+    comments: 4,
+  },
+  {
+    type: "incident",
+    channel: "friends",
+    dateISO: "2026-08-12",
+    user: "Elena Green",
+    avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop",
+    time: "Yesterday",
+    timeZh: "昨天",
+    tag: "Incident",
+    tagZh: "事故",
+    title: "Fallen tree on MacLehose 4",
+    titleZh: "麥理浩徑第四段倒樹",
+    body: "Large tree blocking the path after storms. Reported so others can reroute.",
+    bodyZh: "風暴後大樹阻塞路徑，已舉報方便其他人改道。",
+    image: "https://images.unsplash.com/photo-1511497584788-876760111969?w=800&q=80",
+    likes: 19,
+    comments: 6,
+  },
+  {
+    type: "promo",
+    channel: "official",
+    dateISO: "2026-08-11",
+    user: "Parks and Trails",
+    avatar: null,
+    time: "4 days ago",
+    timeZh: "四天前",
+    tag: "PnT Event",
+    tagZh: "活動",
+    title: "Backyard Trails evening walk — 23 Aug",
+    titleZh: "後花園徑黃昏行 — 8 月 23 日",
+    body: "Free guided walk in an urban fringe park. Register via Parks and Trails.",
+    bodyZh: "免費市區邊緣公園導賞。請到 Parks and Trails 報名。",
+    image: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800&q=80",
+    likes: 64,
+    comments: 8,
+  },
+  {
+    type: "ad",
+    channel: "ad",
+    dateISO: "2026-08-09",
+    user: "TrailGear HK",
+    avatar: null,
+    time: "Sponsored",
+    timeZh: "贊助",
+    tag: "Ad",
+    tagZh: "廣告",
+    title: "Lightweight rain shells for typhoon season",
+    titleZh: "颱風季輕量雨褸",
+    body: "Paid placement. Members get 15% off with code TRAILWATCH.",
+    bodyZh: "付費廣告。會員輸入 TRAILWATCH 享 85 折。",
+    image: "https://images.unsplash.com/photo-1523987355523-c7b5b0dd90a7?w=800&q=80",
+    likes: 12,
+    comments: 1,
+  },
 ];
 
 TW.records = [
@@ -1026,12 +1100,14 @@ TW.reports = [
 ];
 
 TW.badges = [
-  { name: "First Hike", nameZh: "首次行山", emoji: "🥾", color: "#2d8a45" },
-  { name: "Be Friends", nameZh: "交友", emoji: "🤝", color: "#3da855" },
-  { name: "To The Peak", nameZh: "登頂", emoji: "🏔️", color: "#7c3aed" },
-  { name: "Trail Runner", nameZh: "越野跑", emoji: "🏃", color: "#2563eb" },
-  { name: "Trail Blazer", nameZh: "開路先鋒", emoji: "🔥", color: "#dc2626" },
-  { name: "Group Leader", nameZh: "隊伍領袖", emoji: "👥", color: "#9ca3af", locked: true },
+  { name: "First Hike", nameZh: "首次行山", emoji: "🥾", color: "#2d8a45", criteria: "Save your first tracked hike.", criteriaZh: "儲存第一次追蹤行程。" },
+  { name: "Be Friends", nameZh: "交友", emoji: "🤝", color: "#3da855", criteria: "Add a friend on TrailWatch.", criteriaZh: "在 TrailWatch 新增一位好友。" },
+  { name: "To The Peak", nameZh: "登頂", emoji: "🏔️", color: "#7c3aed", criteria: "Reach a summit above 500 m.", criteriaZh: "登上海拔 500 米以上的山頂。" },
+  { name: "Trail Runner", nameZh: "越野跑", emoji: "🏃", color: "#2563eb", criteria: "Finish a hike averaging under 12 min/km.", criteriaZh: "完成平均配速快於 12 分鐘／公里的行程。" },
+  { name: "Trail Blazer", nameZh: "開路先鋒", emoji: "🔥", color: "#dc2626", criteria: "Log 100 km in a calendar year.", criteriaZh: "一年內累積 100 公里。" },
+  { name: "Night Owl", nameZh: "夜行者", emoji: "🌙", color: "#1e3a5f", locked: true, criteria: "Complete a hike that starts after sunset.", criteriaZh: "完成一次日落後出發的行程。" },
+  { name: "Group Leader", nameZh: "隊伍領袖", emoji: "👥", color: "#9ca3af", locked: true, criteria: "Organize a group hike.", criteriaZh: "舉辦一次聯誼。" },
+  { name: "Century Club", nameZh: "百公里會", emoji: "💯", color: "#b45309", locked: true, criteria: "Record 100 lifetime hikes.", criteriaZh: "累積 100 次行程記錄。" },
 ];
 
 TW.treeGame = {
@@ -1403,6 +1479,33 @@ TW.articles = [
   },
 ];
 
+(function tagArticlePlaces() {
+  const map = {
+    "blog-8780": { district: "hk-island" },
+    "blog-8773": { district: "sai-kung" },
+    "blog-8763": { district: "lantau", routeId: "lantau-trail-sections-1-12" },
+    "blog-1529": { district: "hk-island", routeId: "dragons-back" },
+    "blog-1496": { district: "sai-kung" },
+    "blog-8081": { district: "sai-kung" },
+    "blog-8070": { district: "sha-tin" },
+    "blog-1569": { district: "sha-tin", routeId: "lui-kung-tin-to-ho-pui" },
+    "blog-2188": { district: "hk-island" },
+    "blog-2174": { district: "hk-island" },
+    "blog-7238": { district: "hk-island", routeId: "harbourfront-coastal-trail-yue-yi-ching-sha" },
+    "blog-7211": { district: "sai-kung", routeId: "tai-long-sai-wan-ham-tin-chek-keng" },
+    "blog-7185": { district: "kowloon" },
+    "blog-7171": { district: "sai-kung", routeId: "maclehose-trail-section-1" },
+    "blog-7137": { district: "kowloon" },
+    "blog-7123": { district: "kowloon", routeId: "sau-mau-ping-loop" },
+    "blog-7089": { district: "hk-island", routeId: "dragons-back" },
+    "blog-7062": { district: "kowloon" },
+  };
+  (TW.articles || []).forEach((a) => {
+    const extra = map[a.id];
+    if (extra) Object.assign(a, extra);
+  });
+})();
+
 TW.articleCategoryLabel = function (categoryId) {
   const key = ({
     all: "article_cat_all",
@@ -1427,14 +1530,27 @@ TW.getArticles = function (opts) {
   const q = (opts.query || "").trim().toLowerCase();
   const sort = opts.sort === "oldest" ? "oldest" : "newest";
   const zh = TW.getLang && TW.getLang() === "zh";
+  const district = opts.district || "all";
+  const routeId = opts.routeId || "all";
+  const dateFrom = opts.dateFrom ? Date.parse(opts.dateFrom) : null;
+  const dateTo = opts.dateTo ? Date.parse(opts.dateTo) : null;
   let list = (TW.articles || []).filter((a) => {
     if (opts.featured && !a.featured) return false;
     if (cat && cat !== "all" && a.category !== cat) return false;
+    if (district && district !== "all") {
+      const trail = a.routeId ? (TW.trails || []).find((t) => t.id === a.routeId) : null;
+      const area = a.district || (trail && trail.district);
+      if (area !== district) return false;
+    }
+    if (routeId && routeId !== "all" && a.routeId !== routeId) return false;
+    const ts = TW.articleDateValue(a);
+    if (dateFrom != null && Number.isFinite(dateFrom) && ts < dateFrom) return false;
+    if (dateTo != null && Number.isFinite(dateTo) && ts > dateTo + 86400000 - 1) return false;
     if (!q) return true;
     const title = zh ? a.titleZh : a.title;
     const excerpt = zh ? a.excerptZh : a.excerpt;
     const tags = (a.tags || []).map((t) => (zh ? t.nameZh : t.name)).join(" ");
-    const blob = [title, excerpt, tags, a.author, a.category].join(" ").toLowerCase();
+    const blob = [title, excerpt, tags, a.author, a.category, a.district, a.routeId].join(" ").toLowerCase();
     return blob.includes(q);
   });
   list = list.slice().sort((a, b) => {
@@ -1443,6 +1559,14 @@ TW.getArticles = function (opts) {
     return sort === "oldest" ? da - db : db - da;
   });
   return list;
+};
+
+TW.getArticleFilterRoutes = function () {
+  const used = {};
+  (TW.articles || []).forEach((a) => {
+    if (a.routeId) used[a.routeId] = true;
+  });
+  return (TW.trails || []).filter((t) => t.editorChoice || used[t.id]);
 };
 
 TW.getFeaturedArticles = function () {
@@ -1484,6 +1608,12 @@ TW.getPlans = function () {
   }
 };
 
+TW.ensureDemoPlans = function () {
+  if (TW.getPlans().length) return;
+  const ids = (TW.trails || []).slice(2, 5).map((t) => t.id).filter(Boolean);
+  if (ids.length) TW.setPlans(ids);
+};
+
 TW.setPlans = function (ids) {
   localStorage.setItem("tw_plans", JSON.stringify(ids));
 };
@@ -1517,6 +1647,83 @@ TW.getBookmarks = function () {
 
 TW.setBookmarks = function (ids) {
   localStorage.setItem(TW.BOOKMARK_KEY, JSON.stringify(ids || []));
+};
+
+TW.ensureDemoBookmarks = function () {
+  if (TW.getBookmarks().length) return;
+  const ids = (TW.trails || []).slice(0, 3).map((t) => t.id).filter(Boolean);
+  if (ids.length) TW.setBookmarks(ids);
+};
+
+TW.guessDistrict = function (item) {
+  if (!item) return "";
+  if (item.district) return item.district;
+  const s = [item.id, item.title, item.titleZh, item.place, item.placeZh, item.snippet, item.snippetZh]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+  if (/lantau|鳳|大嶼|mui wo|tung chung|fan lau/.test(s)) return "lantau";
+  if (/sai kung|sai wan|ham tin|chek keng|tai long|sharp peak|蚺蛇|西貢|大浪/.test(s)) return "sai-kung";
+  if (/wilson|pat sin|tai po|kadoorie|八仙|衛奕信|大埔/.test(s)) return "tai-po";
+  if (/kam shan|kwai|金山|葵涌/.test(s)) return "tsuen-wan";
+  if (/maclehose|麥理浩|needle|荃灣|tsuen/.test(s)) return "tsuen-wan";
+  if (/harbour|peak|aberdeen|dragon|港島|龍脊|太平|香港島/.test(s)) return "hk-island";
+  if (/kowloon|sau mau|prince edward|kwun tong|九龍/.test(s)) return "kowloon";
+  if (/sha tin|沙田/.test(s)) return "sha-tin";
+  if (/tuen mun|屯門/.test(s)) return "tuen-mun";
+  if (/north|北區/.test(s)) return "north";
+  return "";
+};
+
+TW.itemTimestamp = function (item) {
+  if (!item) return null;
+  const raw = item.startedAt || item.endedAt || item.iso || item.date || item.when || "";
+  if (!raw) return null;
+  if (typeof TW.parseDateValue === "function") {
+    const ts = TW.parseDateValue(raw);
+    if (ts) return ts;
+  }
+  const t = Date.parse(raw);
+  if (Number.isFinite(t)) return t;
+  const zh = /(\d{4})年(\d{1,2})月(\d{1,2})/.exec(String(raw));
+  if (zh) return Date.parse(zh[1] + "-" + String(zh[2]).padStart(2, "0") + "-" + String(zh[3]).padStart(2, "0"));
+  return null;
+};
+
+TW.matchesProfileFilters = function (item, opts) {
+  opts = opts || {};
+  const q = String(opts.q || "").trim().toLowerCase();
+  if (q) {
+    const hay = [item.id, item.title, item.titleZh, item.place, item.placeZh, item.snippet, item.snippetZh, item.desc, item.descZh, item.name]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+    if (hay.indexOf(q) < 0) return false;
+  }
+  if (opts.district) {
+    const d = TW.guessDistrict(item);
+    if (d !== opts.district) return false;
+  }
+  if (opts.from || opts.to) {
+    const ts = TW.itemTimestamp(item);
+    if (ts != null) {
+      if (opts.from) {
+        const fromTs = Date.parse(opts.from);
+        if (Number.isFinite(fromTs) && ts < fromTs) return false;
+      }
+      if (opts.to) {
+        const toTs = Date.parse(opts.to + "T23:59:59");
+        if (Number.isFinite(toTs) && ts > toTs) return false;
+      }
+    }
+  }
+  return true;
+};
+
+TW.districtSelectHtml = function (id) {
+  const opts = [`<option value="">${TW.t("all_districts")}</option>`]
+    .concat((TW.districts || []).map((d) => `<option value="${d.id}">${TW.districtName(d.id)}</option>`));
+  return `<select class="form-select" id="${id}">${opts.join("")}</select>`;
 };
 
 TW.isBookmarked = function (trailId) {
@@ -1833,6 +2040,8 @@ TW.getGalleryPhotos = function (opts) {
       const featured = TW.getFeaturedGalleryIds();
       if (featured.indexOf(p.id) >= 0) return false;
     }
+    if (opts.source && p.source && p.source !== opts.source) return false;
+    if (opts.twOnly && p.source !== "tw") return false;
     if (cat && cat !== "all" && p.category !== cat) return false;
     const ts = TW.galleryDateValue(p);
     if (dateFrom != null && Number.isFinite(dateFrom) && ts < dateFrom) return false;

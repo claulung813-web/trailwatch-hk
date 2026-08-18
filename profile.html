@@ -7,6 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body>
@@ -20,41 +21,28 @@
           <h1 id="name"></h1>
           <div class="rank" id="membershipStatus"></div>
         </div>
-        <div style="margin-left:auto;display:flex;gap:0.5rem;flex-wrap:wrap" data-premium-more>
-          <a class="btn btn-secondary" href="#insights" data-me-jump="insights" data-i18n="dash_insights"></a>
-          <a class="btn btn-primary" href="#milestones" data-me-jump="milestones" data-i18n="dash_milestones"></a>
-        </div>
       </div>
-
-      <div class="card" id="dashMembershipCard" style="padding:1rem 1.15rem;margin-bottom:1.25rem"></div>
 
       <nav class="me-hub-nav" id="meHubNav" aria-label="Profile sections">
         <a href="#overview" data-me-jump="overview" data-i18n="nav_dashboard"></a>
-        <a href="#activity" data-me-jump="activity" data-i18n="nav_my_activity"></a>
-        <a href="#badges" data-me-jump="badges" data-i18n="nav_badges"></a>
+        <a href="#profile" data-me-jump="profile" data-i18n="nav_my_profile"></a>
         <a href="#friends" data-me-jump="friends" data-i18n="nav_friends"></a>
+        <a href="#bookmarks" data-me-jump="bookmarks" data-i18n="nav_bookmarks"></a>
         <a href="#settings" data-me-jump="settings" data-i18n="nav_settings"></a>
       </nav>
-      <p class="profile-more-label" data-i18n="app_more"></p>
-      <div id="dashMoreGate"></div>
-      <nav class="me-hub-nav me-hub-nav-more" id="meHubNavMore" aria-label="More" data-premium-more>
-        <a href="#insights" data-me-jump="insights" data-i18n="footer_insights"></a>
-        <a href="#milestones" data-me-jump="milestones" data-i18n="footer_milestones"></a>
-      </nav>
 
-      <!-- Overview -->
+      <!-- Dashboard -->
       <section class="me-panel" id="overview" data-me-panel="overview">
+        <div class="card" id="dashMembershipCard" style="padding:1rem 1.15rem;margin-bottom:1.25rem"></div>
+
         <div class="section-head">
           <h2 data-i18n="dash_lifetime"></h2>
         </div>
+        <p class="page-sub" data-i18n="dash_lifetime_hint"></p>
         <div class="home-figures" style="margin-top:0">
           <div class="stat-box">
             <div class="value" id="lifeKm">—</div>
             <div class="label" data-i18n="km_hiked"></div>
-          </div>
-          <div class="stat-box">
-            <div class="value" id="lifeHours">—</div>
-            <div class="label" data-i18n="app_duration"></div>
           </div>
           <div class="stat-box">
             <div class="value" id="lifeRecords">—</div>
@@ -62,79 +50,177 @@
           </div>
         </div>
 
-        <div class="card" style="padding:1rem 1.15rem;margin-bottom:1.5rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
+        <div class="card" style="padding:1rem 1.15rem;margin-bottom:1.25rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
           <div>
             <div style="font-size:0.75rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.04em" data-i18n="dash_selected_badge"></div>
             <strong id="selectedBadge" style="color:var(--green-900);display:flex;align-items:center"></strong>
           </div>
-          <a class="btn btn-secondary" style="margin-left:auto;padding:0.4rem 0.85rem;font-size:0.8rem" href="#badges" data-me-jump="badges" data-i18n="nav_badges"></a>
+          <a class="btn btn-secondary" style="margin-left:auto;padding:0.4rem 0.85rem;font-size:0.8rem" href="#profile&type=badges" data-me-jump="profile&type=badges" data-i18n="dash_change_badge"></a>
         </div>
 
-        <div id="dashMoreOverview" data-premium-more hidden>
+        <div id="dashMoreGate" style="margin-bottom:1.25rem"></div>
+        <button type="button" class="btn btn-primary dash-more-btn" id="dashMoreBtn" hidden data-i18n="dash_more"></button>
+
+        <div id="dashPremiumMore" hidden>
           <div class="section-head">
-            <h2 data-i18n="app_more"></h2>
+            <h2 data-i18n="mil_top_records"></h2>
           </div>
-          <div class="portfolio-grid" style="margin-bottom:1.5rem" id="dashMoreTiles"></div>
-        </div>
+          <div class="top-records" id="dashTopRecords"></div>
+          <div class="section-head">
+            <h2 data-i18n="mil_highlights"></h2>
+          </div>
+          <ul class="highlight-list" id="milHighlights"></ul>
 
-        <h2 class="page-title" style="font-size:1.2rem;margin-bottom:1rem" data-i18n="dash_portfolio"></h2>
-        <div class="portfolio-grid" id="portfolio"></div>
-
-        <div class="section-head mt-2">
-          <h2 data-i18n="dash_my_hikes"></h2>
-          <a class="link-more" href="#activity&type=records" data-me-jump="activity&type=records" data-i18n="view_all"></a>
+          <div class="section-head mt-2">
+            <h2 data-i18n="dash_insights"></h2>
+          </div>
+          <div class="chart-card">
+            <h3 data-i18n="insights_pace"></h3>
+            <svg class="pace-chart" viewBox="0 0 480 160" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="paceFill" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#3da855" stop-opacity="0.4"/>
+                  <stop offset="100%" stop-color="#3da855" stop-opacity="0.05"/>
+                </linearGradient>
+              </defs>
+              <g stroke="#e5e7eb" stroke-width="1">
+                <line x1="40" y1="20" x2="460" y2="20"/>
+                <line x1="40" y1="50" x2="460" y2="50"/>
+                <line x1="40" y1="80" x2="460" y2="80"/>
+                <line x1="40" y1="110" x2="460" y2="110"/>
+                <line x1="40" y1="140" x2="460" y2="140"/>
+              </g>
+              <text x="8" y="24" font-size="10" fill="#9ca3af">5</text>
+              <text x="4" y="84" font-size="10" fill="#9ca3af">15</text>
+              <text x="4" y="144" font-size="10" fill="#9ca3af">30</text>
+              <path fill="url(#paceFill)" d="M40,90 L110,85 L180,95 L250,80 L320,88 L390,75 L460,78 L460,140 L40,140 Z"/>
+              <path fill="none" stroke="#3da855" stroke-width="2.5" d="M40,90 L110,85 L180,95 L250,80 L320,88 L390,75 L460,78"/>
+              <path fill="none" stroke="#4a90c8" stroke-width="2.5" d="M40,110 L110,100 L180,105 L250,70 L320,85 L390,55 L460,60"/>
+              <circle cx="250" cy="70" r="4" fill="#4a90c8"/>
+              <circle cx="390" cy="55" r="4" fill="#4a90c8"/>
+              <circle cx="460" cy="60" r="4" fill="#4a90c8"/>
+              <text x="40" y="156" font-size="9" fill="#9ca3af">2020</text>
+              <text x="250" y="156" font-size="9" fill="#9ca3af">2023</text>
+              <text x="430" y="156" font-size="9" fill="#9ca3af">2026</text>
+            </svg>
+            <div style="display:flex;gap:1rem;font-size:0.75rem;margin-top:0.5rem;color:var(--text-muted)">
+              <span><span style="color:#3da855">●</span> <span data-i18n="insights_avg"></span></span>
+              <span><span style="color:#4a90c8">●</span> <span data-i18n="insights_best"></span></span>
+              <span style="margin-left:auto">min/km</span>
+            </div>
+            <div class="chart-summary">
+              <div class="box">
+                <div class="k" data-i18n="insights_overall"></div>
+                <div class="v" id="avgPace">15.3 min/km</div>
+              </div>
+              <div class="box">
+                <div class="k" data-i18n="insights_alltime"></div>
+                <div class="v" id="bestPace">10.1 min/km</div>
+              </div>
+            </div>
+          </div>
+          <div class="chart-card">
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem">
+              <h3 style="margin:0" data-i18n="insights_activity"></h3>
+              <div class="toggle-pills" id="activityToggle" style="margin:0">
+                <button class="active" data-mode="yearly" data-i18n="insights_yearly"></button>
+                <button data-mode="monthly" data-i18n="insights_monthly"></button>
+              </div>
+            </div>
+            <div class="chart-bars" id="activityBars" style="margin-top:1rem"></div>
+          </div>
+          <div class="chart-card">
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem">
+              <h3 style="margin:0" data-i18n="insights_distance"></h3>
+              <div class="toggle-pills" id="distToggle" style="margin:0">
+                <button class="active" data-mode="yearly" data-i18n="insights_yearly"></button>
+                <button data-mode="monthly" data-i18n="insights_monthly"></button>
+              </div>
+            </div>
+            <div class="chart-bars" id="distBars" style="margin-top:1rem"></div>
+          </div>
+          <div class="chart-card">
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem">
+              <h3 style="margin:0" data-i18n="insights_elevation"></h3>
+              <div class="toggle-pills" id="elevToggle" style="margin:0">
+                <button class="active" data-mode="yearly" data-i18n="insights_yearly"></button>
+                <button data-mode="monthly" data-i18n="insights_monthly"></button>
+              </div>
+            </div>
+            <div class="chart-bars" id="elevBars" style="margin-top:1rem"></div>
+          </div>
+          <div class="chart-card">
+            <h3 data-i18n="insights_region"></h3>
+            <div id="regionPie"></div>
+          </div>
         </div>
-        <div class="record-list" id="trackedListPreview"></div>
-
-        <div class="section-head mt-2">
-          <h2 data-i18n="dash_recent"></h2>
-          <a class="link-more" href="explore.html?tab=records" data-i18n="view_all"></a>
-        </div>
-        <div class="record-list" id="recentPreview"></div>
       </section>
 
-      <!-- My activity (Records / Plans / Groups / Reports / Gallery) -->
-      <section class="me-panel" id="activity" data-me-panel="activity" hidden>
-        <h2 class="page-title" style="font-size:1.25rem;margin-bottom:0.35rem" data-i18n="nav_my_activity"></h2>
+      <!-- My profile -->
+      <section class="me-panel" id="profile" data-me-panel="profile" hidden>
+        <h2 class="page-title" style="font-size:1.25rem;margin-bottom:0.35rem" data-i18n="nav_my_profile"></h2>
         <p class="page-sub" data-i18n="activity_sub"></p>
-        <div class="chip-row filters activity-type-filters activity-type-filters--quiet" id="activityFilters" role="tablist" aria-label="Activity type">
-          <button type="button" class="chip active" data-activity="records" data-i18n="nav_my_records"></button>
-          <button type="button" class="chip" data-activity="plans" data-i18n="nav_my_plans"></button>
-          <button type="button" class="chip" data-activity="groups" data-i18n="nav_my_groups"></button>
-          <button type="button" class="chip" data-activity="reports" data-i18n="nav_my_reports"></button>
-          <button type="button" class="chip" data-activity="gallery" data-i18n="nav_my_gallery"></button>
+        <div class="chip-row filters activity-type-filters" id="profileFilters" role="tablist">
+          <button type="button" class="chip active" data-profile="badges" data-i18n="nav_badges"></button>
+          <button type="button" class="chip" data-profile="records" data-i18n="nav_my_records"></button>
+          <button type="button" class="chip" data-profile="plans" data-i18n="nav_my_plans"></button>
+          <button type="button" class="chip" data-profile="groups" data-i18n="nav_my_groups"></button>
+          <button type="button" class="chip" data-profile="reports" data-i18n="nav_my_reports"></button>
         </div>
 
-        <div class="activity-pane" data-activity-pane="records" role="tabpanel">
-          <h3 class="activity-pane-title" data-i18n="hikes_title"></h3>
-          <p class="page-sub" data-i18n="hikes_sub"></p>
-          <div class="app-cta-banner" style="margin-bottom:1.25rem">
+        <div class="activity-pane" data-profile-pane="badges" role="tabpanel">
+          <h3 class="activity-pane-title" data-i18n="nav_badges"></h3>
+          <p class="page-sub" data-i18n="app_badge_criteria"></p>
+          <div id="badgePicker"></div>
+        </div>
+
+        <div class="activity-pane" data-profile-pane="records" role="tabpanel" hidden>
+          <h3 class="activity-pane-title" data-i18n="nav_my_records"></h3>
+          <p class="page-sub" data-i18n="footprint_sub"></p>
+          <div class="footprint-wrap">
+            <div id="footprintMap" class="footprint-map"></div>
+            <div class="footprint-gate" id="footprintGate" hidden></div>
+          </div>
+          <div class="me-filter-bar">
             <div>
-              <h3 data-i18n="plan_banner_title"></h3>
-              <p data-i18n="hikes_sub"></p>
+              <label for="recSearch" data-i18n="me_search"></label>
+              <input class="form-input" type="search" id="recSearch" data-i18n-placeholder="me_search" />
             </div>
-            <div class="actions">
-              <a class="btn btn-ghost" href="app/index.html" data-i18n="hikes_open_app"></a>
+            <div>
+              <label for="recDistrict" data-i18n="filter_district"></label>
+              <div id="recDistrictWrap"></div>
+            </div>
+            <div>
+              <label for="recFrom" data-i18n="gallery_date_from"></label>
+              <input class="form-input" type="date" id="recFrom" />
+            </div>
+            <div>
+              <label for="recTo" data-i18n="gallery_date_to"></label>
+              <input class="form-input" type="date" id="recTo" />
             </div>
           </div>
           <div class="record-list" id="hikeList"></div>
-          <div class="section-head mt-2">
-            <h2 data-i18n="dash_recent"></h2>
-          </div>
-          <div class="record-list" id="recentFull"></div>
         </div>
 
-        <div class="activity-pane" data-activity-pane="plans" role="tabpanel" hidden>
-          <h3 class="activity-pane-title" data-i18n="plan_title"></h3>
+        <div class="activity-pane" data-profile-pane="plans" role="tabpanel" hidden>
+          <h3 class="activity-pane-title" data-i18n="nav_my_plans"></h3>
           <p class="page-sub" data-i18n="plan_sub"></p>
-          <div class="app-cta-banner" style="margin-bottom:1.25rem">
+          <div class="me-filter-bar">
             <div>
-              <h3 data-i18n="plan_banner_title"></h3>
-              <p data-i18n="plan_banner_body"></p>
+              <label for="planSearch" data-i18n="me_search"></label>
+              <input class="form-input" type="search" id="planSearch" data-i18n-placeholder="me_search" />
             </div>
-            <div class="actions">
-              <a class="btn btn-ghost" href="app/index.html" data-i18n="plan_open_app"></a>
-              <a class="btn" style="background:white;color:var(--green-900)" href="explore.html" data-i18n="plan_go_explore"></a>
+            <div>
+              <label for="planDistrict" data-i18n="filter_district"></label>
+              <div id="planDistrictWrap"></div>
+            </div>
+            <div>
+              <label for="planFrom" data-i18n="gallery_date_from"></label>
+              <input class="form-input" type="date" id="planFrom" />
+            </div>
+            <div>
+              <label for="planTo" data-i18n="gallery_date_to"></label>
+              <input class="form-input" type="date" id="planTo" />
             </div>
           </div>
           <div id="planEmpty" class="card" style="padding:2rem;text-align:center;display:none">
@@ -144,82 +230,38 @@
           <div class="trail-grid" id="planGrid"></div>
         </div>
 
-        <div class="activity-pane" data-activity-pane="groups" role="tabpanel" hidden>
+        <div class="activity-pane" data-profile-pane="groups" role="tabpanel" hidden>
           <h3 class="activity-pane-title" data-i18n="nav_my_groups"></h3>
           <p class="page-sub" data-i18n="groups_sub"></p>
           <div class="chip-row filters" id="groupFilters">
-            <button type="button" class="chip active" data-f="joined" data-i18n="groups_joined"></button>
+            <button type="button" class="chip active" data-f="all" data-i18n="groups_all_when"></button>
             <button type="button" class="chip" data-f="upcoming" data-i18n="groups_upcoming"></button>
             <button type="button" class="chip" data-f="past" data-i18n="groups_past"></button>
+          </div>
+          <div class="me-filter-bar">
+            <div>
+              <label for="groupSearch" data-i18n="me_search"></label>
+              <input class="form-input" type="search" id="groupSearch" data-i18n-placeholder="me_search" />
+            </div>
+            <div>
+              <label for="groupFrom" data-i18n="gallery_date_from"></label>
+              <input class="form-input" type="date" id="groupFrom" />
+            </div>
+            <div>
+              <label for="groupTo" data-i18n="gallery_date_to"></label>
+              <input class="form-input" type="date" id="groupTo" />
+            </div>
           </div>
           <div class="trail-grid" id="groupGrid"></div>
           <p style="margin-top:1rem"><a class="link-more" href="group-hikes.html" data-i18n="nav_groups"></a></p>
         </div>
 
-        <div class="activity-pane" data-activity-pane="reports" role="tabpanel" hidden>
+        <div class="activity-pane" data-profile-pane="reports" role="tabpanel" hidden>
           <h3 class="activity-pane-title" data-i18n="nav_my_reports"></h3>
           <p class="page-sub" data-i18n="reports_my_sub"></p>
           <div id="myReports"></div>
           <p style="margin-top:1rem"><a class="link-more" href="reports.html" data-i18n="nav_incidents"></a></p>
         </div>
-
-        <div class="activity-pane" data-activity-pane="gallery" role="tabpanel" hidden>
-          <h3 class="activity-pane-title" data-i18n="nav_my_gallery"></h3>
-          <p class="page-sub" data-i18n="gallery_sub"></p>
-          <div class="gallery-grid" id="galleryGrid"></div>
-          <p style="margin-top:1rem"><a class="link-more" href="gallery.html" data-i18n="nav_gallery"></a></p>
-        </div>
-      </section>
-
-      <!-- Badges / Milestones -->
-      <section class="me-panel" id="badges" data-me-panel="badges" hidden>
-        <h2 class="page-title" style="font-size:1.25rem;margin-bottom:1rem" data-i18n="mil_title"></h2>
-        <div class="section-head">
-          <h2 data-i18n="mil_top_mileages"></h2>
-        </div>
-        <div class="hex-grid mb-2" id="hexStats"></div>
-        <div class="section-head">
-          <h2 data-i18n="mil_top_records"></h2>
-        </div>
-        <div class="top-records">
-          <div class="top-record-card">
-            <div class="inner">
-              <div class="trophy">🏆</div>
-              <div class="name">TransLantau '21</div>
-              <div class="val">74.1 km</div>
-            </div>
-            <div class="foot" data-i18n="mil_longest"></div>
-          </div>
-          <div class="top-record-card">
-            <div class="inner">
-              <div class="trophy">🏆</div>
-              <div class="name">玉山主峰</div>
-              <div class="val">3972 m</div>
-            </div>
-            <div class="foot" data-i18n="mil_highest"></div>
-          </div>
-          <div class="top-record-card">
-            <div class="inner">
-              <div class="trophy">🏆</div>
-              <div class="name">大雪山縱走</div>
-              <div class="val">1800 m</div>
-            </div>
-            <div class="foot" data-i18n="mil_max_elev"></div>
-          </div>
-        </div>
-        <div class="section-head">
-          <h2 data-i18n="mil_highlights"></h2>
-        </div>
-        <ul class="highlight-list" id="milHighlights"></ul>
-        <div class="section-head">
-          <h2 data-i18n="dash_set_badge"></h2>
-        </div>
-        <div id="badgePicker"></div>
-        <div class="section-head mt-2">
-          <h2 data-i18n="mil_badges"></h2>
-        </div>
-        <div class="badge-scroll" id="badgesList"></div>
-        <div id="envBadgeSection" class="mt-2"></div>
       </section>
 
       <!-- Friends -->
@@ -232,117 +274,11 @@
         <div class="record-list" id="pendingList"></div>
       </section>
 
-      <!-- Insights -->
-      <section class="me-panel" id="insights" data-me-panel="insights" hidden>
-        <h2 class="page-title" style="font-size:1.25rem;margin-bottom:1rem" data-i18n="insights_title"></h2>
-        <div class="chart-card">
-          <h3 data-i18n="insights_pace"></h3>
-          <svg class="pace-chart" viewBox="0 0 480 160" preserveAspectRatio="none">
-            <defs>
-              <linearGradient id="paceFill" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stop-color="#3da855" stop-opacity="0.4"/>
-                <stop offset="100%" stop-color="#3da855" stop-opacity="0.05"/>
-              </linearGradient>
-            </defs>
-            <g stroke="#e5e7eb" stroke-width="1">
-              <line x1="40" y1="20" x2="460" y2="20"/>
-              <line x1="40" y1="50" x2="460" y2="50"/>
-              <line x1="40" y1="80" x2="460" y2="80"/>
-              <line x1="40" y1="110" x2="460" y2="110"/>
-              <line x1="40" y1="140" x2="460" y2="140"/>
-            </g>
-            <text x="8" y="24" font-size="10" fill="#9ca3af">5</text>
-            <text x="4" y="84" font-size="10" fill="#9ca3af">15</text>
-            <text x="4" y="144" font-size="10" fill="#9ca3af">30</text>
-            <path fill="url(#paceFill)" d="M40,90 L110,85 L180,95 L250,80 L320,88 L390,75 L460,78 L460,140 L40,140 Z"/>
-            <path fill="none" stroke="#3da855" stroke-width="2.5" d="M40,90 L110,85 L180,95 L250,80 L320,88 L390,75 L460,78"/>
-            <path fill="none" stroke="#4a90c8" stroke-width="2.5" d="M40,110 L110,100 L180,105 L250,70 L320,85 L390,55 L460,60"/>
-            <circle cx="250" cy="70" r="4" fill="#4a90c8"/>
-            <circle cx="390" cy="55" r="4" fill="#4a90c8"/>
-            <circle cx="460" cy="60" r="4" fill="#4a90c8"/>
-            <text x="40" y="156" font-size="9" fill="#9ca3af">2020</text>
-            <text x="250" y="156" font-size="9" fill="#9ca3af">2023</text>
-            <text x="430" y="156" font-size="9" fill="#9ca3af">2026</text>
-          </svg>
-          <div style="display:flex;gap:1rem;font-size:0.75rem;margin-top:0.5rem;color:var(--text-muted)">
-            <span><span style="color:#3da855">●</span> <span data-i18n="insights_avg"></span></span>
-            <span><span style="color:#4a90c8">●</span> <span data-i18n="insights_best"></span></span>
-            <span style="margin-left:auto">min/km</span>
-          </div>
-          <div class="chart-summary">
-            <div class="box">
-              <div class="k" data-i18n="insights_overall"></div>
-              <div class="v" id="avgPace">15.3 min/km</div>
-            </div>
-            <div class="box">
-              <div class="k" data-i18n="insights_alltime"></div>
-              <div class="v" id="bestPace">10.1 min/km</div>
-            </div>
-          </div>
-        </div>
-        <div class="chart-card">
-          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem">
-            <h3 style="margin:0" data-i18n="insights_activity"></h3>
-            <div class="toggle-pills" id="activityToggle" style="margin:0">
-              <button class="active" data-mode="monthly" data-i18n="insights_monthly"></button>
-              <button data-mode="yearly" data-i18n="insights_yearly"></button>
-            </div>
-          </div>
-          <div class="chart-bars" id="activityBars" style="margin-top:1rem"></div>
-          <div class="insight-callout">
-            <span data-i18n="insights_consistency"></span>
-            <small data-i18n="insights_vs_year"></small>
-          </div>
-        </div>
-        <div class="chart-card">
-          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem">
-            <h3 style="margin:0" data-i18n="insights_distance"></h3>
-            <div class="toggle-pills" id="distToggle" style="margin:0">
-              <button class="active" data-mode="monthly" data-i18n="insights_monthly"></button>
-              <button data-mode="yearly" data-i18n="insights_yearly"></button>
-            </div>
-          </div>
-          <div class="chart-bars" id="distBars" style="margin-top:1rem"></div>
-        </div>
-        <div class="chart-card">
-          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem">
-            <h3 style="margin:0" data-i18n="insights_elevation"></h3>
-            <div class="toggle-pills" id="elevToggle" style="margin:0">
-              <button class="active" data-mode="monthly" data-i18n="insights_monthly"></button>
-              <button data-mode="yearly" data-i18n="insights_yearly"></button>
-            </div>
-          </div>
-          <div class="chart-bars" id="elevBars" style="margin-top:1rem"></div>
-        </div>
-        <div class="chart-card">
-          <h3 data-i18n="insights_region"></h3>
-          <div id="regionPie"></div>
-        </div>
-      </section>
-
-      <!-- Trees -->
-      <section class="me-panel" id="trees" data-me-panel="trees" hidden>
-        <h2 class="page-title" style="font-size:1.25rem;margin-bottom:0.35rem" data-i18n="trees_title"></h2>
-        <p class="page-sub" data-i18n="trees_sub"></p>
-        <div class="xp-bar-wrap">
-          <div style="display:flex;justify-content:space-between;font-weight:700;color:var(--green-900)">
-            <span><span data-i18n="trees_xp"></span>: <span id="xpNow"></span></span>
-            <span id="xpNext" style="color:var(--text-muted);font-weight:500"></span>
-          </div>
-          <div class="xp-bar"><span id="xpFill"></span></div>
-          <div style="display:flex;justify-content:space-between;font-size:0.8rem;color:var(--text-muted)">
-            <span>🔥 <span data-i18n="trees_streak"></span>: <span id="streak"></span> <span data-i18n="trees_days"></span></span>
-            <span data-i18n="trees_level"></span> <span id="treeLevel"></span>
-          </div>
-        </div>
-        <div class="section-head">
-          <h2 data-i18n="trees_challenges"></h2>
-        </div>
-        <div id="challenges"></div>
-        <div class="section-head mt-2">
-          <h2 data-i18n="trees_rewards"></h2>
-        </div>
-        <div class="badge-scroll" id="treeRewards"></div>
+      <!-- Bookmarks -->
+      <section class="me-panel" id="bookmarks" data-me-panel="bookmarks" hidden>
+        <h2 class="page-title" style="font-size:1.25rem;margin-bottom:0.35rem" data-i18n="bookmarks_title"></h2>
+        <p class="page-sub" data-i18n="bookmarks_sub"></p>
+        <div class="trail-grid" id="bookmarkGrid"></div>
       </section>
 
       <!-- Settings -->
@@ -353,7 +289,7 @@
             <img class="profile-avatar" id="settingsAvatar" alt="" style="margin:0 auto 0.75rem;width:112px;height:112px" />
             <div id="highestBadge" style="margin-top:0.75rem"></div>
           </div>
-          <a class="premium-card" href="#" data-toast="Premium">
+          <a class="premium-card" href="get-app.html#premium">
             <div class="premium-badge">PREMIUM</div>
             <div class="info">
               <strong data-i18n="profile_premium"></strong>
@@ -390,6 +326,7 @@
 
   <div id="app-footer"></div>
 
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="js/i18n.js"></script>
   <script src="js/data.js"></script>
   <script src="js/cms-store.js"></script>
@@ -407,142 +344,100 @@
     TW.renderMembershipCard(document.getElementById("dashMembershipCard"));
     TW.renderSelectedBadgeCard(null, document.getElementById("selectedBadge"));
     TW.applyPremiumMoreGate();
-    if (TW.isMemberPremium && TW.isMemberPremium()) {
-      const moreOverview = document.getElementById("dashMoreOverview");
-      if (moreOverview) moreOverview.hidden = false;
-      const moreTiles = document.getElementById("dashMoreTiles");
-      if (moreTiles) {
-        moreTiles.innerHTML = [
-          { icon: "milestones", labelKey: "dash_milestones", jump: "milestones" },
-          { icon: "insights", labelKey: "dash_insights", jump: "insights" },
-        ]
-          .map(
-            (t) => `<a class="portfolio-tile" href="#${t.jump}" data-me-jump="${t.jump}">
-          <div class="portfolio-tile-body">${twPortfolioIcon(t.icon)}<div class="value">→</div></div>
-          <div class="portfolio-tile-foot">${TW.t(t.labelKey)}</div>
-        </a>`
-          )
-          .join("");
-      }
-    }
 
+    const recCount = (TW.records || []).length + (TW.getHikes ? TW.getHikes().length : 0);
     document.getElementById("lifeKm").textContent = (TW.stats.distanceKm || 0).toLocaleString() + " km";
-    document.getElementById("lifeHours").textContent = (TW.stats.movingHrs || 48.5) + " h";
-    document.getElementById("lifeRecords").textContent = TW.stats.records || 0;
+    document.getElementById("lifeRecords").textContent = TW.stats.records || recCount;
 
-    const ACTIVITY_TYPES = ["records", "plans", "groups", "reports", "gallery"];
-    const ME_PANELS = [
-      "overview", "activity", "badges", "friends", "insights", "trees", "settings",
-    ];
+    const PROFILE_TYPES = ["badges", "records", "plans", "groups", "reports"];
+    const ME_PANELS = ["overview", "profile", "friends", "bookmarks", "settings"];
 
     function parseMeHash(raw) {
       let h = String(raw || "overview").replace(/^#/, "") || "overview";
-      if (h === "dashboard") return { panel: "overview", type: "records", highlight: "overview", hashOut: "overview" };
-      if (h === "profile") return { panel: "settings", type: "records", highlight: "settings", hashOut: "settings" };
-      if (h === "milestones") return { panel: "badges", type: "records", highlight: "milestones", hashOut: "milestones" };
-      if (h === "bookmarks") return { panel: "overview", type: "records", highlight: "overview", hashOut: "overview" };
+      if (h === "dashboard") return { panel: "overview", type: "badges", hashOut: "overview", openMore: false };
+      if (h === "insights" || h === "milestones") return { panel: "overview", type: "badges", hashOut: "overview", openMore: true };
       if (h === "hikes") h = "records";
+      if (h === "gallery" || h === "trees") h = "badges";
+
+      function typeFrom(str, prefix) {
+        const m = str.match(/[?&\/]type=([a-z]+)/) || str.match(new RegExp("^" + prefix + "\\/([a-z]+)"));
+        let type = prefix === "profile" ? "badges" : "records";
+        if (m && PROFILE_TYPES.includes(m[1])) type = m[1];
+        if (m && m[1] === "gallery") type = "records";
+        return type;
+      }
 
       if (h === "activity" || h.startsWith("activity&") || h.startsWith("activity?") || h.startsWith("activity/")) {
-        let type = "records";
-        const m = h.match(/[?&\/]type=([a-z]+)/) || h.match(/^activity\/([a-z]+)/);
-        if (m && ACTIVITY_TYPES.includes(m[1])) type = m[1];
-        const hashOut = type === "records" ? "activity" : "activity&type=" + type;
-        return { panel: "activity", type, highlight: "activity", hashOut };
+        const type = typeFrom(h, "activity");
+        return { panel: "profile", type, hashOut: "profile&type=" + type, openMore: false };
       }
-
-      if (ACTIVITY_TYPES.includes(h)) {
-        return {
-          panel: "activity",
-          type: h,
-          highlight: "activity",
-          hashOut: "activity&type=" + h,
-        };
+      if (h === "profile" || h.startsWith("profile&") || h.startsWith("profile?") || h.startsWith("profile/")) {
+        const type = typeFrom(h, "profile");
+        const hashOut = type === "badges" ? "profile" : "profile&type=" + type;
+        return { panel: "profile", type, hashOut, openMore: false };
       }
-
+      if (PROFILE_TYPES.includes(h)) {
+        return { panel: "profile", type: h, hashOut: h === "badges" ? "profile" : "profile&type=" + h, openMore: false };
+      }
       if (ME_PANELS.indexOf(h) >= 0) {
-        return { panel: h, type: "records", highlight: h, hashOut: h };
+        return { panel: h, type: "badges", hashOut: h, openMore: false };
       }
-      return { panel: "overview", type: "records", highlight: "overview", hashOut: "overview" };
+      return { panel: "overview", type: "badges", hashOut: "overview", openMore: false };
     }
 
     function currentMeRaw() {
       return (location.hash || "#overview").replace(/^#/, "") || "overview";
     }
 
-    function setActivityType(type, pushHash) {
-      const t = ACTIVITY_TYPES.includes(type) ? type : "records";
-      document.querySelectorAll("#activityFilters [data-activity]").forEach((btn) => {
-        btn.classList.toggle("active", btn.getAttribute("data-activity") === t);
+    function setProfileType(type, pushHash) {
+      const t = PROFILE_TYPES.includes(type) ? type : "badges";
+      document.querySelectorAll("#profileFilters [data-profile]").forEach((btn) => {
+        btn.classList.toggle("active", btn.getAttribute("data-profile") === t);
       });
-      document.querySelectorAll("[data-activity-pane]").forEach((pane) => {
-        pane.hidden = pane.getAttribute("data-activity-pane") !== t;
+      document.querySelectorAll("[data-profile-pane]").forEach((pane) => {
+        pane.hidden = pane.getAttribute("data-profile-pane") !== t;
       });
+      if (t === "records") initFootprintMap();
       if (pushHash) {
-        const next = "#" + (t === "records" ? "activity" : "activity&type=" + t);
+        const next = "#" + (t === "badges" ? "profile" : "profile&type=" + t);
         if (location.hash !== next) history.replaceState(null, "", next);
       }
     }
 
+    function setDashMore(open) {
+      const prem = TW.isMemberPremium && TW.isMemberPremium();
+      const panel = document.getElementById("dashPremiumMore");
+      const btn = document.getElementById("dashMoreBtn");
+      if (!panel || !btn) return;
+      const show = !!(prem && open);
+      panel.hidden = !show;
+      btn.textContent = show ? TW.t("dash_more_hide") : TW.t("dash_more");
+      btn.setAttribute("aria-expanded", show ? "true" : "false");
+    }
+
     function showMePanel(id, pushHash) {
-      const raw = String(id || "overview").replace(/^#/, "") || "overview";
-      const parsed = parseMeHash(raw);
-      const premOnly = parsed.panel === "insights" || parsed.highlight === "milestones";
-      if (premOnly && typeof TW.isMemberPremium === "function" && !TW.isMemberPremium()) {
-        TW.applyPremiumMoreGate();
-        if (typeof showToast === "function") showToast(TW.t("dash_more_premium_body"));
-        id = "overview";
-      }
-      const raw2 = String(id || "overview").replace(/^#/, "") || "overview";
-      const parsed2 = parseMeHash(raw2);
-      const panel = parsed2.panel;
-      const highlight = parsed2.highlight;
-
+      const parsed = parseMeHash(id);
       document.querySelectorAll("[data-me-panel]").forEach((el) => {
-        el.hidden = el.getAttribute("data-me-panel") !== panel;
+        el.hidden = el.getAttribute("data-me-panel") !== parsed.panel;
       });
+      if (parsed.panel === "profile") setProfileType(parsed.type, false);
+      if (parsed.panel === "overview" && parsed.openMore) setDashMore(true);
 
-      if (panel === "activity") setActivityType(parsed2.type, false);
-
-      document.querySelectorAll("#meHubNav a, #meHubNavMore a").forEach((a) => {
-        const jump = a.getAttribute("data-me-jump") || (a.getAttribute("href") || "").replace(/^#/, "");
-        a.classList.toggle("active", jump === highlight);
-      });
-      document.querySelectorAll("[data-me-jump]").forEach((a) => {
-        if (a.closest("#meHubNav, #meHubNavMore")) return;
+      document.querySelectorAll("#meHubNav a").forEach((a) => {
         const jump = a.getAttribute("data-me-jump") || "";
-        const jumpParsed = parseMeHash(jump);
-        const on =
-          jumpParsed.panel === panel &&
-          (panel !== "activity" || jumpParsed.type === parsed2.type) &&
-          (highlight !== "milestones" || jump === "milestones" || jump === "badges");
-        if (jump === "milestones" || jump === "badges") {
-          a.classList.toggle("active", highlight === "milestones" ? jump === "milestones" : jump === "badges" && highlight === "badges");
-        } else {
-          a.classList.toggle("active", on && jumpParsed.highlight === highlight);
-        }
+        a.classList.toggle("active", jump === parsed.panel || (parsed.panel === "overview" && jump === "overview"));
       });
       document.querySelectorAll("#accountMenu a[href*='profile.html']").forEach((a) => {
-        const hash = ((a.getAttribute("href") || "").split("#")[1] || "overview");
+        const hash = (a.getAttribute("href") || "").split("#")[1] || "overview";
         const linkParsed = parseMeHash(hash);
-        let active = false;
-        if (ACTIVITY_TYPES.includes(hash) || hash.startsWith("activity")) {
-          active = panel === "activity" && linkParsed.type === parsed2.type;
-        } else if (hash === "milestones") {
-          active = highlight === "milestones";
-        } else {
-          active = linkParsed.panel === panel && panel !== "activity" && linkParsed.highlight === highlight;
-        }
-        a.classList.toggle("active", active);
+        a.classList.toggle("active", linkParsed.panel === parsed.panel);
       });
 
       if (pushHash !== false) {
-        const next = "#" + (raw2 === "milestones" ? "milestones" : parsed2.hashOut);
+        const next = "#" + parsed.hashOut;
         if (location.hash !== next) history.replaceState(null, "", next);
       }
-      const activeTab =
-        document.querySelector("#meHubNav a.active") ||
-        document.querySelector("#meHubNavMore a.active");
+      const activeTab = document.querySelector("#meHubNav a.active");
       if (activeTab && activeTab.scrollIntoView) {
         activeTab.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" });
       }
@@ -554,89 +449,151 @@
         if (!id) return;
         e.preventDefault();
         const parsed = parseMeHash(id);
-        const hash = id === "milestones" ? "milestones" : parsed.hashOut;
-        history.pushState(null, "", "#" + hash);
-        showMePanel(id, false);
-        window.scrollTo({ top: 0, behavior: "smooth" });
-      });
-    });
-
-    document.getElementById("activityFilters").addEventListener("click", (e) => {
-      const btn = e.target.closest("button[data-activity]");
-      if (!btn) return;
-      const type = btn.getAttribute("data-activity");
-      setActivityType(type, true);
-      document.querySelectorAll("#accountMenu a[href*='profile.html']").forEach((a) => {
-        const hash = ((a.getAttribute("href") || "").split("#")[1] || "");
-        const linkParsed = parseMeHash(hash);
-        a.classList.toggle("active", linkParsed.panel === "activity" && linkParsed.type === type);
-      });
-    });
-
-    window.addEventListener("hashchange", () => showMePanel(currentMeRaw(), false));
-    if (!location.hash) history.replaceState(null, "", "#overview");
-    showMePanel(currentMeRaw(), true);
-
-    /* Portfolio tiles → in-page sections */
-    TW.ensureDemoHike();
-    const hikeCount = TW.getHikes().length;
-    const tiles = [
-      { key: "records", labelKey: "tile_records", icon: "records", href: "#activity&type=records", jump: "activity&type=records" },
-      { key: "hikes", labelKey: "tile_hikes", icon: "hikes", href: "#activity&type=records", jump: "activity&type=records", custom: true },
-      { key: "routes", labelKey: "tile_routes", icon: "routes", href: "#activity&type=plans", jump: "activity&type=plans" },
-      { key: "reports", labelKey: "tile_reports", icon: "reports", href: "#activity&type=reports", jump: "activity&type=reports" },
-      { key: "badges", labelKey: "tile_badges", icon: "badges", href: "#badges", jump: "badges" },
-      { key: "env", labelKey: "tile_env", icon: "env", href: "#badges", jump: "badges", custom: true },
-      { key: "groupHikes", labelKey: "tile_group", icon: "groupHikes", href: "#activity&type=groups", jump: "activity&type=groups" },
-    ];
-    document.getElementById("portfolio").innerHTML = tiles
-      .map((t) => {
-        let val = TW.stats[t.key];
-        if (t.key === "env") val = "L" + TW.getEnvLevel();
-        if (t.key === "hikes") val = hikeCount;
-        return `
-        <a class="portfolio-tile" href="${t.href}" data-me-jump="${t.jump}">
-          <div class="portfolio-tile-body">
-            ${twPortfolioIcon(t.icon)}
-            <div class="value">${val}</div>
-          </div>
-          <div class="portfolio-tile-foot">${TW.t(t.labelKey)}</div>
-        </a>`;
-      })
-      .join("");
-    document.querySelectorAll("#portfolio [data-me-jump]").forEach((a) => {
-      a.addEventListener("click", (e) => {
-        const id = a.getAttribute("data-me-jump");
-        e.preventDefault();
-        const parsed = parseMeHash(id);
         history.pushState(null, "", "#" + parsed.hashOut);
         showMePanel(id, false);
         window.scrollTo({ top: 0, behavior: "smooth" });
       });
     });
 
-    /* Records */
-    const hikes = TW.getHikes();
-    const hikeHtml = hikes.length
-      ? hikes.map((h) => TW.renderHikeListItem(h, "hike-detail.html?id=" + encodeURIComponent(h.id))).join("")
-      : `<div class="card" style="padding:2rem;text-align:center"><p style="margin-bottom:1rem;color:var(--text-muted)">${TW.t("hikes_empty")}</p><a class="btn btn-primary" href="app/index.html">${TW.t("hikes_open_app")}</a></div>`;
-    document.getElementById("hikeList").innerHTML = hikeHtml;
-    document.getElementById("trackedListPreview").innerHTML = hikes.length
-      ? hikes.slice(0, 3).map((h) => TW.renderHikeListItem(h, "hike-detail.html?id=" + encodeURIComponent(h.id))).join("")
-      : `<p style="color:var(--text-muted)">${TW.t("hikes_empty")}</p>`;
-    const recentHtml = TW.records.map(renderRecordItem).join("");
-    document.getElementById("recentPreview").innerHTML = recentHtml;
-    document.getElementById("recentFull").innerHTML = recentHtml;
+    document.getElementById("profileFilters").addEventListener("click", (e) => {
+      const btn = e.target.closest("button[data-profile]");
+      if (!btn) return;
+      setProfileType(btn.getAttribute("data-profile"), true);
+    });
+
+    const moreBtn = document.getElementById("dashMoreBtn");
+    if (moreBtn) {
+      moreBtn.addEventListener("click", () => {
+        const panel = document.getElementById("dashPremiumMore");
+        setDashMore(panel && panel.hidden);
+      });
+    }
+
+    window.addEventListener("hashchange", () => showMePanel(currentMeRaw(), false));
+    if (!location.hash) history.replaceState(null, "", "#overview");
+    showMePanel(currentMeRaw(), true);
+
+    /* Dashboard more: top records + highlights + insights */
+    const mil = TW.getMilestonesDemo();
+    document.getElementById("dashTopRecords").innerHTML = mil.topRecords
+      .map(
+        (r) => `<div class="top-record-card">
+          <div class="inner"><div class="trophy">🏆</div><div class="name">${r.title}</div><div class="val">${r.val}</div></div>
+          <div class="foot">${TW.t(r.key)}</div>
+        </div>`
+      )
+      .join("");
+    document.getElementById("milHighlights").innerHTML = mil.highlights
+      .map(
+        (h) =>
+          `<li><span class="hl-icon">${h.icon}</span><span class="hl-label">${TW.t(h.labelKey)}</span><span class="hl-val">${h.val}</span></li>`
+      )
+      .join("");
+    document.getElementById("avgPace").textContent = TW.stats.avgPace + " min/km";
+    document.getElementById("bestPace").textContent = TW.stats.bestPace + " min/km";
+    TW.bindInsightToggle(document.getElementById("activityToggle"), document.getElementById("activityBars"), "activity");
+    TW.bindInsightToggle(document.getElementById("distToggle"), document.getElementById("distBars"), "distance");
+    TW.bindInsightToggle(document.getElementById("elevToggle"), document.getElementById("elevBars"), "elevation");
+    TW.renderRegionPie(document.getElementById("regionPie"));
+
+    /* Badges */
+    TW.renderProfileBadgeGrid(document.getElementById("badgePicker"));
+
+    /* Records + footprint */
+    document.getElementById("recDistrictWrap").innerHTML = TW.districtSelectHtml("recDistrict");
+    document.getElementById("planDistrictWrap").innerHTML = TW.districtSelectHtml("planDistrict");
+    TW.ensureDemoHike();
+    if (TW.ensureDemoPlans) TW.ensureDemoPlans();
+
+    function recFilters() {
+      return {
+        q: document.getElementById("recSearch").value,
+        district: document.getElementById("recDistrict").value,
+        from: document.getElementById("recFrom").value,
+        to: document.getElementById("recTo").value,
+      };
+    }
+    function allMyRecords() {
+      const hikes = (TW.getHikes() || []).map((h) => Object.assign({}, h, { _kind: "hike" }));
+      const recs = (TW.records || []).map((r) => Object.assign({}, r, { _kind: "record" }));
+      return hikes.concat(recs);
+    }
+    function renderRecords() {
+      const opts = recFilters();
+      const list = allMyRecords().filter((item) => TW.matchesProfileFilters(item, opts));
+      document.getElementById("hikeList").innerHTML = list.length
+        ? list
+            .map((item) =>
+              item._kind === "hike"
+                ? TW.renderHikeListItem(item, "hike-detail.html?id=" + encodeURIComponent(item.id))
+                : renderRecordItem(item)
+            )
+            .join("")
+        : `<p style="color:var(--text-muted);padding:1.5rem 0">${TW.t("hikes_empty")}</p>`;
+    }
+    ["recSearch", "recDistrict", "recFrom", "recTo"].forEach((id) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.addEventListener("input", renderRecords);
+      el.addEventListener("change", renderRecords);
+    });
+    renderRecords();
+
+    let footprintMap;
+    function initFootprintMap() {
+      const mapEl = document.getElementById("footprintMap");
+      const gate = document.getElementById("footprintGate");
+      const prem = TW.isMemberPremium && TW.isMemberPremium();
+      if (gate) {
+        gate.hidden = !!prem;
+        if (!prem) {
+          gate.innerHTML = `<span class="app-premium-pill">PREMIUM</span>
+            <p style="margin:0.65rem 0 1rem;max-width:22rem">${TW.t("footprint_locked")}</p>
+            <a class="btn btn-primary" href="get-app.html#premium">${TW.t("dash_unlock")}</a>`;
+        }
+      }
+      if (!mapEl || typeof L === "undefined" || footprintMap) {
+        if (footprintMap) setTimeout(() => footprintMap.invalidateSize(), 120);
+        return;
+      }
+      footprintMap = L.map(mapEl, { scrollWheelZoom: false, attributionControl: false }).setView([22.35, 114.15], 10);
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 18 }).addTo(footprintMap);
+      const bounds = [];
+      allMyRecords().forEach((item) => {
+        const path = item.path;
+        if (!path || path.length < 2) return;
+        const line = L.polyline(path, { color: "#1a6b32", weight: 3, opacity: 0.75 }).addTo(footprintMap);
+        bounds.push(line.getBounds());
+      });
+      if (bounds.length) {
+        const b = bounds[0];
+        bounds.slice(1).forEach((x) => b.extend(x));
+        footprintMap.fitBounds(b, { padding: [24, 24] });
+      }
+      setTimeout(() => footprintMap.invalidateSize(), 150);
+    }
 
     /* Plans */
+    function planFilters() {
+      return {
+        q: document.getElementById("planSearch").value,
+        district: document.getElementById("planDistrict").value,
+        from: document.getElementById("planFrom").value,
+        to: document.getElementById("planTo").value,
+      };
+    }
     function renderPlans() {
       const ids = TW.getPlans();
-      const trails = ids.map((id) => TW.trails.find((t) => t.id === id)).filter(Boolean);
+      let trails = ids.map((id) => TW.trails.find((t) => t.id === id)).filter(Boolean);
+      trails = trails.filter((t) => TW.matchesProfileFilters(t, planFilters()));
       const empty = document.getElementById("planEmpty");
       const grid = document.getElementById("planGrid");
       if (!trails.length) {
-        empty.style.display = "block";
-        grid.innerHTML = "";
+        empty.style.display = ids.length ? "none" : "block";
+        grid.innerHTML = ids.length
+          ? `<p style="color:var(--text-muted);padding:1.25rem 0">${TW.t("hikes_empty")}</p>`
+          : "";
+        if (!ids.length) empty.style.display = "block";
         return;
       }
       empty.style.display = "none";
@@ -647,7 +604,7 @@
           ${renderTrailCard(t, { hidePlan: true })}
           <div style="display:flex;gap:0.5rem;margin-top:0.5rem">
             <button class="btn btn-secondary" style="flex:1;font-size:0.8rem" data-remove="${t.id}">${TW.t("plan_remove")}</button>
-            <a class="btn btn-primary" style="flex:1;font-size:0.8rem" href="app/index.html?trail=${t.id}">${TW.t("plan_open_app")}</a>
+            <a class="btn btn-primary" style="flex:1;font-size:0.8rem" href="plan.html">${TW.t("nav_plan")}</a>
           </div>
         </div>`
         )
@@ -660,54 +617,66 @@
         });
       });
     }
+    ["planSearch", "planDistrict", "planFrom", "planTo"].forEach((id) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.addEventListener("input", renderPlans);
+      el.addEventListener("change", renderPlans);
+    });
     renderPlans();
 
     /* Groups */
-    let groupFilter = "joined";
-    function renderGroups() {
+    let groupFilter = "all";
+    function allJoinedGroups() {
       const email = TW.memberEmail();
       const custom = (TW.getGroupHikes ? TW.getGroupHikes() : []).filter((g) => {
-        if (groupFilter === "past") return !!g.past;
-        if (groupFilter === "upcoming") return !g.past;
         return (
           (g.organizerEmail && g.organizerEmail === email) ||
           (TW.canViewGroupHike && TW.canViewGroupHike(g)) ||
           g.joined
         );
       });
-      const demo = (TW.meetups || [])
-        .map((m, i) => ({
-          ...m,
-          id: "meetup_" + i,
-          visibility: "public",
-          past: i >= Math.ceil((TW.meetups || []).length / 2),
-          joined: i % 2 === 0,
-        }))
-        .filter((m) => {
-          if (groupFilter === "past") return m.past;
-          if (groupFilter === "upcoming") return !m.past;
-          return m.joined;
-        });
-      const list = custom.concat(demo);
+      const demo = (TW.meetups || []).map((m, i) => ({
+        ...m,
+        id: "meetup_" + i,
+        visibility: "public",
+        past: i >= Math.ceil((TW.meetups || []).length / 2),
+        joined: true,
+        iso: i >= Math.ceil((TW.meetups || []).length / 2) ? "2026-03-0" + (i + 1) : "2026-09-1" + i,
+      }));
+      return custom.concat(demo);
+    }
+    function renderGroups() {
+      const q = document.getElementById("groupSearch").value;
+      const from = document.getElementById("groupFrom").value;
+      const to = document.getElementById("groupTo").value;
+      let list = allJoinedGroups().filter((g) => {
+        if (groupFilter === "past") return !!g.past;
+        if (groupFilter === "upcoming") return !g.past;
+        return true;
+      });
+      list = list.filter((g) => TW.matchesProfileFilters(g, { q, from, to }));
       document.getElementById("groupGrid").innerHTML = list.length
-        ? list.map((m) => {
-            const title = TW.tt(m, "title") || m.title;
-            const place = TW.tt(m, "place") || m.place || "";
-            const date = TW.tt(m, "date") || m.date || "";
-            const img = m.image || "https://images.unsplash.com/photo-1551632811-561732d1e5ec?w=600&q=60";
-            const href = "group-hike-detail.html?id=" + encodeURIComponent(m.id);
-            return `<article class="trail-card">
+        ? list
+            .map((m) => {
+              const title = TW.tt(m, "title") || m.title;
+              const place = TW.tt(m, "place") || m.place || "";
+              const date = TW.tt(m, "date") || m.date || "";
+              const img = m.image || "https://images.unsplash.com/photo-1551632811-561732d1e5ec?w=600&q=60";
+              const href = "group-hike-detail.html?id=" + encodeURIComponent(m.id);
+              return `<article class="trail-card">
               <img src="${img}" alt="" loading="lazy" />
               <div class="trail-card-body">
                 <strong>${title}</strong>
                 <p class="meta">${date} · ${place}</p>
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-top:0.5rem">
-                  <span style="font-size:0.8rem;color:var(--text-muted)">${m.visibility === "private" ? TW.t("groups_badge_private") : m.spots != null ? m.spots + " " + TW.t("spots_left") : ""}</span>
+                  <span style="font-size:0.8rem;color:var(--text-muted)">${m.past ? TW.t("groups_past") : TW.t("groups_upcoming")}</span>
                   <a class="btn btn-primary" style="padding:0.35rem 0.85rem;font-size:0.8rem" href="${href}">${TW.t("groups_view")}</a>
                 </div>
               </div>
             </article>`;
-          }).join("")
+            })
+            .join("")
         : `<p style="color:var(--text-muted);padding:2rem 0">${TW.t("hikes_empty")}</p>`;
     }
     document.getElementById("groupFilters").addEventListener("click", (e) => {
@@ -717,58 +686,16 @@
       document.querySelectorAll("#groupFilters .chip").forEach((c) => c.classList.toggle("active", c === btn));
       renderGroups();
     });
+    ["groupSearch", "groupFrom", "groupTo"].forEach((id) => {
+      document.getElementById(id).addEventListener("input", renderGroups);
+      document.getElementById(id).addEventListener("change", renderGroups);
+    });
     renderGroups();
 
-    /* Reports — first few as “mine” */
-    document.getElementById("myReports").innerHTML = (TW.reports || []).slice(0, 4).map(renderReportItem).join("")
-      || `<p style="color:var(--text-muted)">${TW.t("hikes_empty")}</p>`;
-
-    /* Gallery */
-    const photos = [
-      "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=400&q=60",
-      "https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=400&q=60",
-      "https://images.unsplash.com/photo-1551632811-561732d1e5ec?w=400&q=60",
-      "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=400&q=60",
-    ];
-    document.getElementById("galleryGrid").innerHTML = photos.map((src, i) =>
-      `<a href="explore.html" title="Route photo ${i + 1}"><img src="${src}" alt="" loading="lazy" onerror="this.parentElement.remove()" /></a>`
-    ).join("");
-
-    /* Badges & milestones */
-    const mil = TW.getMilestonesDemo();
-    document.getElementById("milHighlights").innerHTML = mil.highlights
-      .map(
-        (h) =>
-          `<li><span class="hl-icon">${h.icon}</span><span class="hl-label">${TW.t(h.labelKey)}</span><span class="hl-val">${h.val}</span></li>`
-      )
-      .join("");
-    TW.renderBadgePicker(document.getElementById("badgePicker"));
-    const hex = [
-      { icon: "🥾", labelKey: "mil_hikes", value: TW.stats.hikes.toLocaleString() },
-      { icon: "📏", labelKey: "mil_distance", value: TW.stats.distanceKm.toLocaleString() + " km" },
-      { icon: "⬆", labelKey: "mil_elev", value: TW.stats.elevGain.toLocaleString() + " m" },
-      { icon: "⏱", labelKey: "mil_moving", value: TW.stats.movingHrs + " hrs" },
-      { icon: "🔥", labelKey: "mil_calories", value: TW.stats.caloriesMcal + " mcal" },
-      { icon: "⬇", labelKey: "mil_descent", value: TW.stats.descent.toLocaleString() + " m" },
-    ];
-    document.getElementById("hexStats").innerHTML = hex
-      .map((h) => `
-      <div class="hex-card">
-        <div class="icon">${h.icon}</div>
-        <div class="value">${h.value}</div>
-        <div class="label">${TW.t(h.labelKey)}</div>
-      </div>`)
-      .join("");
-    document.getElementById("badgesList").innerHTML = TW.badges
-      .map((b) => `
-      <div class="badge-item">
-        <div class="badge-shield ${b.locked ? "locked" : ""}" style="background:${b.color}">${b.emoji}</div>
-        <div class="name">${TW.tt(b, "name")}</div>
-      </div>`)
-      .join("");
-    if (typeof TW.renderEnvBadgeSection === "function") {
-      TW.renderEnvBadgeSection(document.getElementById("envBadgeSection"));
-    }
+    /* Reports */
+    document.getElementById("myReports").innerHTML =
+      (TW.reports || []).slice(0, 4).map(renderReportItem).join("") ||
+      `<p style="color:var(--text-muted)">${TW.t("hikes_empty")}</p>`;
 
     /* Friends */
     const friends = [
@@ -783,40 +710,27 @@
       return `<div class="card" style="padding:0.85rem;margin-bottom:0.65rem;display:flex;align-items:center;gap:0.75rem">
         ${TW.avatarHtml(f.avatar, "avatar-sm")}
         <div><strong>${f.name}</strong><div style="font-size:0.8rem;color:var(--text-muted)">${f.rank}</div></div>
-        <a class="btn btn-secondary" style="margin-left:auto;padding:0.35rem 0.75rem;font-size:0.8rem" href="public-profile.html">Profile</a>
+        <a class="btn btn-secondary" style="margin-left:auto;padding:0.35rem 0.75rem;font-size:0.8rem" href="public-profile.html">${TW.t("nav_profile")}</a>
       </div>`;
     }
     document.getElementById("friendList").innerHTML = friends.map(friendRow).join("");
     document.getElementById("pendingList").innerHTML = pending.map(friendRow).join("");
 
-    /* Insights */
-    document.getElementById("avgPace").textContent = TW.stats.avgPace + " min/km";
-    document.getElementById("bestPace").textContent = TW.stats.bestPace + " min/km";
-    TW.bindInsightToggle(document.getElementById("activityToggle"), document.getElementById("activityBars"), "activity");
-    TW.bindInsightToggle(document.getElementById("distToggle"), document.getElementById("distBars"), "distance");
-    TW.bindInsightToggle(document.getElementById("elevToggle"), document.getElementById("elevBars"), "elevation");
-    TW.renderRegionPie(document.getElementById("regionPie"));
-
-    /* Trees */
-    const g = TW.treeGame;
-    document.getElementById("treeLevel").textContent = g.level;
-    document.getElementById("xpNow").textContent = g.xp;
-    document.getElementById("xpNext").textContent = g.xp + " / " + g.xpNext;
-    document.getElementById("streak").textContent = g.streak;
-    document.getElementById("xpFill").style.width = Math.round((g.xp / g.xpNext) * 100) + "%";
-    document.getElementById("challenges").innerHTML = (g.challenges || [])
-      .map((c) => {
-        const pct = Math.round((c.progress / c.total) * 100);
-        return `<div class="challenge-card">
-          <div class="row"><span>${TW.tt(c, "title")}</span><span style="color:var(--green-700)">+${c.xp} XP</span></div>
-          <div class="progress-mini"><span style="width:${pct}%"></span></div>
-          <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.35rem">${c.progress} / ${c.total}</div>
-        </div>`;
-      })
-      .join("");
-    document.getElementById("treeRewards").innerHTML = (g.rewards || [])
-      .map((b) => `<div class="badge-item"><div class="badge-shield" style="background:var(--green-700)">${b.emoji}</div><div class="name">${TW.tt(b, "name")}</div></div>`)
-      .join("");
+    /* Bookmarks */
+    TW.ensureDemoBookmarks();
+    function renderBookmarks() {
+      const trails = TW.getBookmarks()
+        .map((id) => (TW.trails || []).find((t) => t.id === id))
+        .filter(Boolean);
+      const grid = document.getElementById("bookmarkGrid");
+      if (!trails.length) {
+        grid.innerHTML = `<p style="color:var(--text-muted);padding:1.5rem 0">${TW.t("bookmarks_empty")}</p>
+          <a class="btn btn-primary" href="explore.html">${TW.t("nav_explore")}</a>`;
+        return;
+      }
+      grid.innerHTML = trails.map((t) => renderTrailCard(t)).join("");
+    }
+    renderBookmarks();
 
     /* Settings */
     const member = TW.getMemberAuth && TW.getMemberAuth();
@@ -839,8 +753,8 @@
     const wrap = document.getElementById("highestBadge");
     if (level >= 1) {
       const meta = TW.ENV_BADGE_META[level];
-      const name = TW.getLang() === "zh" ? meta.nameZh : meta.name;
-      wrap.innerHTML = `<span class="env-mini-pill" style="font-size:0.85rem;padding:0.4rem 0.85rem">${meta.emoji} ${name} · L${level}</span>`;
+      const badgeName = TW.getLang() === "zh" ? meta.nameZh : meta.name;
+      wrap.innerHTML = `<span class="env-mini-pill" style="font-size:0.85rem;padding:0.4rem 0.85rem">${meta.emoji} ${badgeName} · L${level}</span>`;
     } else {
       wrap.innerHTML = `<span class="env-mini-pill">${TW.t("env_title")} · L0</span>`;
     }

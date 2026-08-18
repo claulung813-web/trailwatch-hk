@@ -16,22 +16,41 @@
       <h1 class="page-title" data-i18n="about_title">About Us</h1>
       <p class="page-sub" id="aboutBody"></p>
 
-      <p style="margin:1rem 0 0">
-        <a class="btn btn-primary" href="register.html" data-i18n="register_cta"></a>
+      <div class="about-progs">
+        <article class="card" style="padding:1.1rem">
+          <h2 style="font-size:1.05rem;color:var(--green-900);margin:0 0 0.4rem" data-i18n="footer_ctc_title"></h2>
+          <p class="page-sub" style="margin:0" data-i18n="footer_ctc_body"></p>
+        </article>
+        <article class="card" style="padding:1.1rem">
+          <h2 style="font-size:1.05rem;color:var(--green-900);margin:0 0 0.4rem" data-i18n="footer_mytree_title"></h2>
+          <p class="page-sub" style="margin:0" data-i18n="footer_mytree_body"></p>
+        </article>
+        <article class="card" style="padding:1.1rem">
+          <h2 style="font-size:1.05rem;color:var(--green-900);margin:0 0 0.4rem" data-i18n="footer_backyard_title"></h2>
+          <p class="page-sub" style="margin:0" data-i18n="footer_backyard_body"></p>
+        </article>
+      </div>
+
+      <div class="card" style="padding:1.25rem;margin-top:1.5rem;scroll-margin-top:calc(var(--nav-h) + 1rem)" id="premium">
+        <h2 style="font-size:1.1rem;color:var(--green-900);margin-bottom:0.5rem" data-i18n="footer_premium"></h2>
+        <p class="page-sub" style="margin-bottom:0.85rem" data-i18n="footer_premium_body"></p>
+        <a class="btn btn-primary" href="get-app.html#premium" data-i18n="footer_premium_link"></a>
+      </div>
+
+      <p style="margin:1.25rem 0 0">
+        <a class="btn btn-secondary" href="register.html" data-i18n="register_cta"></a>
       </p>
 
-      <div class="card" style="padding:1.25rem;margin-top:1.5rem" id="contact">
+      <div class="card" style="padding:1.25rem;margin-top:1.5rem;scroll-margin-top:calc(var(--nav-h) + 1rem)" id="contact">
         <h2 style="font-size:1.1rem;color:var(--green-900);margin-bottom:0.75rem" data-i18n="contact_title">Contact</h2>
         <p style="margin-bottom:0.4rem"><strong data-i18n="contact_email_label">Email</strong>: <a id="cEmail" href="#"></a></p>
         <p style="margin-bottom:0.4rem"><strong data-i18n="contact_phone_label">Phone</strong>: <span id="cPhone"></span></p>
         <p><strong data-i18n="contact_address_label">Address</strong>: <span id="cAddr"></span></p>
       </div>
 
-      <div class="card" style="padding:1.25rem;margin-top:1.5rem" id="faq">
+      <div class="card" style="padding:1.25rem;margin-top:1.5rem;scroll-margin-top:calc(var(--nav-h) + 1rem)" id="faq">
         <h2 style="font-size:1.1rem;color:var(--green-900);margin-bottom:0.75rem" data-i18n="footer_faq"></h2>
-        <p style="font-size:0.9rem;color:var(--text-muted);margin-bottom:0.65rem"><strong>Q.</strong> Is TrailWatch free? — Yes. Premium unlocks offline maps and extras.</p>
-        <p style="font-size:0.9rem;color:var(--text-muted);margin-bottom:0.65rem"><strong>Q.</strong> Plan on web or app? — Plan on the website; track GPS in the app.</p>
-        <p style="font-size:0.9rem;color:var(--text-muted)"><strong>Q.</strong> What are CTC / MyTree / Backyard Trails? — Related Parks &amp; Trails programmes for conservation and local nature access.</p>
+        <div id="faqList"></div>
       </div>
 
       <div class="card" style="padding:1.25rem;margin-top:1.5rem" id="newsletter">
@@ -84,6 +103,12 @@
     document.getElementById("cPhone").textContent = c.contactPhone;
     document.getElementById("cAddr").textContent =
       TW.getLang() === "zh" ? c.contactAddressZh : c.contactAddress;
+    document.getElementById("faqList").innerHTML = [1, 2, 3, 4]
+      .map(
+        (i) =>
+          `<p class="faq-item"><strong>${TW.t("faq_" + i + "_q")}</strong><br/>${TW.t("faq_" + i + "_a")}</p>`
+      )
+      .join("");
 
     document.getElementById("feedbackForm").addEventListener("submit", (e) => {
       e.preventDefault();

@@ -458,6 +458,77 @@ TW.pathDistanceKm = function (path) {
   return Math.round(sum * 100) / 100;
 };
 
+TW.formatHours = function (hours) {
+  if (!hours || hours <= 0) return "—";
+  const totalMin = Math.max(1, Math.round(hours * 60));
+  const h = Math.floor(totalMin / 60);
+  const m = totalMin % 60;
+  const zh = TW.getLang() === "zh";
+  if (zh) {
+    if (!h) return m + " 分鐘";
+    if (!m) return h + " 小時";
+    return h + " 小時 " + m + " 分";
+  }
+  if (!h) return m + " min";
+  if (!m) return h + " h";
+  return h + " h " + m + " min";
+};
+
+/** Naismith: 5 km/h + 600 m ascent per hour */
+TW.estimateDurationHours = function (km, gainM) {
+  const d = Number(km) || 0;
+  const g = Number(gainM) || 0;
+  if (d <= 0) return 0;
+  return d / 5 + g / 600;
+};
+
+TW.estimateElevFallback = function (km) {
+  const d = Number(km) || 0;
+  return { gain: Math.round(d * 85), loss: Math.round(d * 80) };
+};
+
+TW.samplePathForElevation = function (path, maxPts) {
+  if (!path || path.length < 2) return path || [];
+  const n = Math.min(maxPts || 20, path.length);
+  if (path.length <= n) return path;
+  const out = [];
+  for (let i = 0; i < n; i++) {
+    const idx = Math.round((i * (path.length - 1)) / (n - 1));
+    out.push(path[idx]);
+  }
+  return out;
+};
+
+TW.fetchPathElevation = function (path, cb) {
+  const pts = TW.samplePathForElevation(path, 20);
+  if (!pts.length) {
+    cb(null);
+    return;
+  }
+  const lats = pts.map((p) => Number(p[0]).toFixed(5)).join(",");
+  const lngs = pts.map((p) => Number(p[1]).toFixed(5)).join(",");
+  const url = "https://api.open-meteo.com/v1/elevation?latitude=" + lats + "&longitude=" + lngs;
+  fetch(url)
+    .then((r) => r.json())
+    .then((data) => {
+      const elev = data && data.elevation;
+      if (!Array.isArray(elev) || elev.length < 2) {
+        cb(null);
+        return;
+      }
+      let gain = 0;
+      let loss = 0;
+      for (let i = 1; i < elev.length; i++) {
+        const d = Number(elev[i]) - Number(elev[i - 1]);
+        if (!isFinite(d)) continue;
+        if (d > 0) gain += d;
+        else loss += -d;
+      }
+      cb({ gain: Math.round(gain), loss: Math.round(loss) });
+    })
+    .catch(() => cb(null));
+};
+
 TW.newRouteDraft = function (opts) {
   opts = opts || {};
   const id = "draft_" + Date.now();
@@ -624,21 +695,44 @@ function twMeHubHash() {
     const page = (location.pathname.split("/").pop() || "").toLowerCase();
     if (page !== "profile.html") return "";
     const h = (location.hash || "#overview").replace(/^#/, "") || "overview";
-    const activityTypes = ["records", "plans", "groups", "reports", "gallery"];
-    if (h === "dashboard") return "overview";
-    if (h === "profile") return "settings";
-    if (h === "hikes") return "records";
-    if (h === "bookmarks") return "overview";
-    if (h === "activity" || h.startsWith("activity&") || h.startsWith("activity?") || h.startsWith("activity/")) {
-      const m = h.match(/[?&]type=([a-z]+)/) || h.match(/^activity\/([a-z]+)/);
-      if (m && activityTypes.includes(m[1])) return m[1];
-      return "activity";
-    }
+    const profileTypes = ["records", "plans", "groups", "reports", "gallery", "badges"];
+    if (h === "dashboard" || h === "insights" || h === "milestones") return "overview";
+    if (h === "profile" || h.startsWith("profile&") || h.startsWith("profile?") || h.startsWith("profile/")) return "profile";
+    if (h === "activity" || h.startsWith("activity&") || h.startsWith("activity?") || h.startsWith("activity/")) return "profile";
+    if (profileTypes.includes(h) || h === "hikes" || h === "trees") return "profile";
+    if (h === "bookmarks") return "bookmarks";
     return h;
   } catch (e) {
     return "";
   }
 }
+
+TW.demoNotifications = function () {
+  const t = TW.t;
+  const zh = TW.getLang() === "zh";
+  return [
+    {
+      title: t("notif_invite").replace("{name}", "Sarah Chen").replace("{hike}", zh ? "蚺蛇尖日出" : "Sunrise on Sharp Peak"),
+      time: zh ? "2 小時前" : "2h ago",
+      href: "group-hikes.html",
+    },
+    {
+      title: t("notif_announce").replace("{title}", zh ? "App 離線地圖小提示" : "Offline maps tip"),
+      time: zh ? "昨天" : "Yesterday",
+      href: "feed.html",
+    },
+    {
+      title: t("notif_incident"),
+      time: zh ? "3 天前" : "3d ago",
+      href: "reports.html",
+    },
+    {
+      title: t("notif_group").replace("{hike}", zh ? "親子大潭行" : "Family-Friendly Tai Tam"),
+      time: zh ? "本週" : "This week",
+      href: "group-hikes.html",
+    },
+  ];
+};
 
 function renderHeader(active) {
   const u = TW.user;
@@ -648,32 +742,46 @@ function renderHeader(active) {
   const memberName = loggedIn ? TW.memberDisplayName() : "";
   const meHash = twMeHubHash();
   const onMeHub = active === "profile" || !!meHash;
-  const activityTypes = ["records", "plans", "groups", "reports", "gallery"];
-  const communityActive = ["reports", "feed", "group-hikes", "articles", "gallery"].indexOf(active) >= 0;
+  const profileTypes = ["records", "plans", "groups", "reports", "gallery", "badges", "activity"];
+  const joinActive = active === "join" || active === "group-hikes";
+  const resourcesActive = active === "articles" || active === "gallery";
   const meActive = (section) => {
     if (!onMeHub) return false;
     const cur = meHash || "overview";
-    if (section === "activity") return cur === "activity" || activityTypes.includes(cur);
+    if (section === "profile") return cur === "profile" || profileTypes.includes(cur);
+    if (section === "overview") return cur === "overview" || cur === "dashboard" || cur === "insights" || cur === "milestones";
     return cur === section;
   };
   const accountActive = loggedIn && onMeHub;
   const accountNav = loggedIn
     ? `<div class="nav-account ${accountActive ? "has-active" : ""}" id="navAccount">
-          <button type="button" class="nav-account-trigger" id="accountToggle" aria-expanded="false" aria-haspopup="true">
+          <button type="button" class="nav-account-trigger" id="accountToggle" aria-expanded="false" aria-haspopup="true" aria-label="${t("nav_profile")}">
             ${twAvatarHtml(u && u.avatar, "avatar-sm", "", u && u.name)}
-            <span class="nav-account-trigger-name">${twEsc(memberName || t("nav_me"))}</span>
+            <span class="nav-account-trigger-name">${twEsc(memberName || t("nav_profile"))}</span>
           </button>
           <div class="nav-account-menu" id="accountMenu" hidden>
             <p class="nav-account-heading">${twEsc(memberName)}</p>
             <a href="profile.html#overview" class="${meActive("overview") ? "active" : ""}">${t("nav_dashboard")}</a>
-            <a href="profile.html#activity" class="${meActive("activity") ? "active" : ""}">${t("nav_my_activity")}</a>
-            <a href="profile.html#badges" class="${meActive("badges") ? "active" : ""}">${t("nav_badges")}</a>
+            <a href="profile.html#profile" class="${meActive("profile") ? "active" : ""}">${t("nav_my_profile")}</a>
             <a href="profile.html#friends" class="${meActive("friends") ? "active" : ""}">${t("nav_friends")}</a>
+            <a href="profile.html#bookmarks" class="${meActive("bookmarks") ? "active" : ""}">${t("nav_bookmarks")}</a>
             <a href="profile.html#settings" class="${meActive("settings") ? "active" : ""}">${t("nav_settings")}</a>
             <button type="button" class="nav-account-logout" id="accountLogout">${t("nav_logout")}</button>
           </div>
         </div>`
-    : `<a href="login.html" class="${active === "login" ? "active" : ""}" id="navLogin">${t("nav_login")}</a>`;
+    : `<a href="login.html" class="nav-login-btn ${active === "login" ? "active" : ""}" id="navLogin">${t("nav_login")}</a>`;
+  const notifs = TW.demoNotifications ? TW.demoNotifications() : [];
+  const notifItems = notifs.length
+    ? notifs
+        .map(
+          (n) =>
+            `<a class="nav-notif-item" href="${twEsc(n.href || "#")}">
+              <strong>${twEsc(n.title)}</strong>
+              <span>${twEsc(n.time || "")}</span>
+            </a>`
+        )
+        .join("")
+    : `<p class="nav-notif-empty">${t("notif_empty")}</p>`;
   return `
   <header class="site-header">
     <div class="container">
@@ -683,28 +791,35 @@ function renderHeader(active) {
       <nav class="nav-links" id="navLinks">
         <a href="explore.html" class="${active === "explore" ? "active" : ""}">${t("nav_explore")}</a>
         <a href="plan.html" class="${active === "plan" ? "active" : ""}">${t("nav_plan")}</a>
-        <div class="nav-community ${communityActive ? "has-active" : ""}" id="navCommunity">
-          <button type="button" class="nav-community-trigger ${communityActive ? "active" : ""}" id="communityToggle" aria-expanded="false" aria-haspopup="true">
-            ${t("nav_community")}
+        <a href="feed.html" class="${active === "feed" ? "active" : ""}">${t("nav_feed")}</a>
+        <a href="group-hikes.html" class="${joinActive ? "active" : ""}">${t("nav_join")}</a>
+        <div class="nav-community ${resourcesActive ? "has-active" : ""}" id="navResources">
+          <button type="button" class="nav-community-trigger ${resourcesActive ? "active" : ""}" id="resourcesToggle" aria-expanded="false" aria-haspopup="true">
+            ${t("nav_resources")}
             <span class="nav-caret" aria-hidden="true">▾</span>
           </button>
-          <div class="nav-community-menu" id="communityMenu" hidden>
-            <a href="reports.html" class="${active === "reports" ? "active" : ""}">${t("nav_incidents")}</a>
-            <a href="feed.html" class="${active === "feed" ? "active" : ""}">${t("nav_feed")}</a>
-            <a href="group-hikes.html" class="${active === "group-hikes" ? "active" : ""}">${t("nav_groups")}</a>
+          <div class="nav-community-menu" id="resourcesMenu" hidden>
             <a href="articles.html" class="${active === "articles" ? "active" : ""}">${t("nav_articles")}</a>
             <a href="gallery.html" class="${active === "gallery" ? "active" : ""}">${t("nav_gallery")}</a>
           </div>
         </div>
-        ${accountNav}
-        <a href="get-app.html" class="nav-app ${active === "app" ? "active" : ""}">${t("nav_app")}</a>
       </nav>
       <div class="header-actions">
         <div class="lang-switch" role="group" aria-label="Language">
           <button type="button" class="${lang === "en" ? "active" : ""}" data-lang="en">EN</button>
-          <button type="button" class="${lang === "zh" ? "active" : ""}" data-lang="zh">繁</button>
+          <button type="button" class="${lang === "zh" ? "active" : ""}" data-lang="zh">CH</button>
         </div>
-        <button class="icon-btn hide-sm" aria-label="${t("notifications")}">${twIcon("bell")}</button>
+        <div class="nav-notif" id="navNotif">
+          <button type="button" class="icon-btn" id="notifToggle" aria-expanded="false" aria-haspopup="true" aria-label="${t("notifications")}">
+            ${twIcon("bell")}
+            ${notifs.length ? `<span class="nav-bell-dot" aria-hidden="true"></span>` : ""}
+          </button>
+          <div class="nav-notif-menu" id="notifMenu" hidden>
+            <p class="nav-account-heading">${t("notifications")}</p>
+            ${notifItems}
+          </div>
+        </div>
+        ${accountNav}
         <button class="menu-toggle" id="menuToggle" aria-label="${t("menu")}">${twIcon("menu")}</button>
       </div>
     </div>
@@ -738,47 +853,49 @@ function renderFooter() {
             <img class="logo-img footer" src="assets/brand/footer-logo.webp" alt="TrailWatch Footer Logo" />
           </a>
           <p class="footer-org">${t("footer_org")}</p>
-          <p class="footer-about-bits"><a href="about.html">${t("footer_about_bits")}</a></p>
+          <h4>${t("footer_about_heading")}</h4>
+          <div class="footer-prog">
+            <strong>${t("footer_ctc_title")}</strong>
+            <p>${t("footer_ctc_body")}</p>
+          </div>
+          <div class="footer-prog">
+            <strong>${t("footer_mytree_title")}</strong>
+            <p>${t("footer_mytree_body")}</p>
+          </div>
+          <div class="footer-prog">
+            <strong>${t("footer_backyard_title")}</strong>
+            <p>${t("footer_backyard_body")}</p>
+          </div>
+          <a href="about.html">${t("footer_about_more")}</a>
         </div>
         <div>
-          <h4>${t("footer_discover")}</h4>
-          <a href="explore.html">${t("footer_routes")}</a>
-          <a href="explore.html?tab=records">${t("tab_records")}</a>
-          <a href="reports.html">${t("footer_incidents")}</a>
-          <a href="feed.html">${t("footer_feed")}</a>
-          <a href="plan.html">${t("footer_plan")}</a>
-          <a href="group-hikes.html">${t("nav_groups")}</a>
-          <a href="articles.html">${t("nav_articles")}</a>
-          <a href="gallery.html">${t("nav_gallery")}</a>
+          <h4>${t("footer_premium")}</h4>
+          <p class="footer-blurb">${t("footer_premium_body")}</p>
+          <a href="get-app.html#premium">${t("footer_premium_link")}</a>
+          <h4><a href="about.html#contact">${t("footer_contact")}</a></h4>
+          <h4><a href="about.html#faq">${t("footer_faq")}</a></h4>
+          <h4>${t("footer_legal")}</h4>
+          <a href="legal.html#terms">${t("footer_terms")}</a>
+          <a href="legal.html#privacy">${t("footer_privacy")}</a>
         </div>
         <div>
-          <h4>${t("footer_you")}</h4>
-          <a href="profile.html#overview">${t("nav_dashboard")}</a>
-          <a href="profile.html#activity">${t("nav_my_activity")}</a>
-          <a href="profile.html#friends">${t("nav_friends")}</a>
-          <a href="profile.html#badges">${t("nav_badges")}</a>
-          <a href="profile.html#insights">${t("footer_insights")}</a>
-          <a href="profile.html#milestones">${t("footer_milestones")}</a>
-          <a href="profile.html#settings">${t("nav_settings")}</a>
-          <a href="get-app.html">${t("nav_app")}</a>
-        </div>
-        <div>
-          <h4>${t("footer_help")}</h4>
-          <a href="about.html">${t("nav_about")}</a>
-          <a href="about.html#contact">${t("footer_contact")}</a>
-          <a href="about.html#faq">${t("footer_faq")}</a>
-          <a href="donate.html">${t("nav_donate")}</a>
+          <h4>${t("footer_social")}</h4>
           <div class="footer-social" aria-label="Social">
-            <a href="https://www.facebook.com/" target="_blank" rel="noopener">Facebook</a>
-            <a href="https://www.instagram.com/" target="_blank" rel="noopener">Instagram</a>
-            <a href="https://www.youtube.com/" target="_blank" rel="noopener">YouTube</a>
+            <a href="https://www.facebook.com/trailwatchhk" target="_blank" rel="noopener">Facebook</a>
+            <a href="https://www.instagram.com/trailwatchhk" target="_blank" rel="noopener">Instagram</a>
+            <a href="https://www.youtube.com/@parksandtrails" target="_blank" rel="noopener">YouTube</a>
           </div>
         </div>
       </div>
+      <div class="footer-bottom">
+        <span>${t("footer_copy")}</span>
+        <span class="footer-bottom-links">
+          <a href="legal.html#terms">${t("footer_terms")}</a>
+          <a href="legal.html#privacy">${t("footer_privacy")}</a>
+        </span>
+      </div>
     </div>
-    <div class="footer-bottom">${t("footer_copy")}</div>
   </footer>
-  <a class="donate-fab hide-mobile-fab" href="donate.html" title="${t("nav_donate")}">${t("nav_donate")}</a>
   <div class="toast" id="toast"></div>`;
 }
 
@@ -864,33 +981,53 @@ function initShell(active) {
         if (btn) btn.setAttribute("aria-expanded", "false");
         if (menu) menu.hidden = true;
       }
-      const community = document.getElementById("navCommunity");
-      if (community && !links.classList.contains("open")) {
-        community.classList.remove("open");
-        const cBtn = document.getElementById("communityToggle");
-        const cMenu = document.getElementById("communityMenu");
-        if (cBtn) cBtn.setAttribute("aria-expanded", "false");
-        if (cMenu) cMenu.hidden = true;
+      const resources = document.getElementById("navResources");
+      if (resources && !links.classList.contains("open")) {
+        resources.classList.remove("open");
+        const rBtn = document.getElementById("resourcesToggle");
+        const rMenu = document.getElementById("resourcesMenu");
+        if (rBtn) rBtn.setAttribute("aria-expanded", "false");
+        if (rMenu) rMenu.hidden = true;
       }
     });
   }
 
-  const communityToggle = document.getElementById("communityToggle");
-  const communityMenu = document.getElementById("communityMenu");
-  const navCommunity = document.getElementById("navCommunity");
-  if (communityToggle && communityMenu && navCommunity) {
-    communityToggle.addEventListener("click", (e) => {
+  const resourcesToggle = document.getElementById("resourcesToggle");
+  const resourcesMenu = document.getElementById("resourcesMenu");
+  const navResources = document.getElementById("navResources");
+  if (resourcesToggle && resourcesMenu && navResources) {
+    resourcesToggle.addEventListener("click", (e) => {
       e.stopPropagation();
-      const open = !navCommunity.classList.contains("open");
-      navCommunity.classList.toggle("open", open);
-      communityToggle.setAttribute("aria-expanded", open ? "true" : "false");
-      communityMenu.hidden = !open;
+      const open = !navResources.classList.contains("open");
+      navResources.classList.toggle("open", open);
+      resourcesToggle.setAttribute("aria-expanded", open ? "true" : "false");
+      resourcesMenu.hidden = !open;
     });
     document.addEventListener("click", (e) => {
-      if (!navCommunity.contains(e.target)) {
-        navCommunity.classList.remove("open");
-        communityToggle.setAttribute("aria-expanded", "false");
-        communityMenu.hidden = true;
+      if (!navResources.contains(e.target)) {
+        navResources.classList.remove("open");
+        resourcesToggle.setAttribute("aria-expanded", "false");
+        resourcesMenu.hidden = true;
+      }
+    });
+  }
+
+  const notifToggle = document.getElementById("notifToggle");
+  const notifMenu = document.getElementById("notifMenu");
+  const navNotif = document.getElementById("navNotif");
+  if (notifToggle && notifMenu && navNotif) {
+    notifToggle.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const open = !navNotif.classList.contains("open");
+      navNotif.classList.toggle("open", open);
+      notifToggle.setAttribute("aria-expanded", open ? "true" : "false");
+      notifMenu.hidden = !open;
+    });
+    document.addEventListener("click", (e) => {
+      if (!navNotif.contains(e.target)) {
+        navNotif.classList.remove("open");
+        notifToggle.setAttribute("aria-expanded", "false");
+        notifMenu.hidden = true;
       }
     });
   }
@@ -958,9 +1095,16 @@ function tagClass(tag) {
     Record: "tag-record",
     記錄: "tag-record",
     Route: "tag-route",
-    Announcement: "tag-community",
-    公告: "tag-community",
-    Sponsored: "tag-sponsored",
+    Incident: "tag-record",
+    事故: "tag-record",
+    Route: "tag-story",
+    路線: "tag-story",
+    Ad: "tag-sponsored",
+    廣告: "tag-sponsored",
+    Promo: "tag-sponsored",
+    推廣: "tag-sponsored",
+    "PnT Event": "tag-community",
+    活動: "tag-community",
   };
   return map[tag] || "tag-community";
 }
@@ -989,8 +1133,14 @@ function renderFeedCard(post) {
   const inApp = /\/app(?:\/|$)/.test((location.pathname || "").replace(/\\/g, "/"));
   const recHref =
     post.type === "record" && post.recordId
-      ? (inApp ? "record-detail.html" : "record-detail.html") + "?id=" + encodeURIComponent(post.recordId)
-      : "";
+      ? "record-detail.html?id=" + encodeURIComponent(post.recordId)
+      : post.type === "incident"
+        ? "reports.html"
+        : post.type === "route"
+          ? "explore.html"
+          : post.type === "promo" || post.type === "ad" || post.type === "announcement"
+            ? "feed.html"
+            : "";
   const openAttr = recHref
     ? ` role="link" tabindex="0" data-record-href="${recHref}" style="cursor:pointer"`
     : "";

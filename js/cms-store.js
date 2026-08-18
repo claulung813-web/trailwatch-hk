@@ -66,10 +66,96 @@ CMS.defaultStore = function () {
         footer_extra_en: "Protect Hong Kong's countryside together.",
         footer_extra_zh: "一起守護香港郊野。",
       },
+      figures: {
+        routes: 18420,
+        distanceKm: 3256780,
+        incidents: 2146,
+      },
     },
     featuredGalleryIds: [],
+    banners: CMS.seedBanners(),
     updatedAt: null,
   };
+};
+
+CMS.seedBanners = function () {
+  return [
+    {
+      id: "bn_app",
+      published: true,
+      order: 0,
+      showStores: true,
+      showDevice: true,
+      badge: "Hong Kong hiking app",
+      badgeZh: "香港行山 App",
+      seo: "Hong Kong hiking · GPS tracking · trail planning · incident report · offline maps · group hike",
+      seoZh: "香港行山 · GPS 追蹤 · 路線規劃 · 事故舉報 · 離線地圖 · 聯誼行山",
+      title: "Empower hikers for easy nature access and stewardship",
+      titleZh: "賦能行山友，輕鬆走進自然並守護郊野",
+      body: "GPS route tracking, trail planning, incident reports, offline maps, group hikes, and country-park stewardship. Plan on the web. Track on the TrailWatch app.",
+      bodyZh: "GPS 路線追蹤、路線規劃、事故舉報、離線地圖、聯誼行山，守護郊野公園。網頁規劃，TrailWatch App 追蹤。",
+      image: "assets/brand/homepage-hero.jpeg",
+      deviceImage: "assets/brand/device.webp",
+      ctaLabel: "Get the app",
+      ctaLabelZh: "下載 App",
+      ctaHref: "get-app.html",
+      cta2Label: "Explore Trails",
+      cta2LabelZh: "探索路線",
+      cta2Href: "explore.html",
+      appStoreUrl: "https://itunes.apple.com/hk/app/trailwatch/id791098937",
+      playStoreUrl: "https://play.google.com/store/apps/details?id=com.computancy.countrypark",
+    },
+    {
+      id: "bn_routes",
+      published: true,
+      order: 1,
+      showStores: false,
+      showDevice: false,
+      badge: "Recommended routes",
+      badgeZh: "推薦路線",
+      seo: "Hong Kong country parks · trail exploration · Dragon's Back · Sai Kung · Lantau",
+      seoZh: "香港郊野公園 · 路線探索 · 龍脊 · 西貢 · 大嶼山",
+      title: "Discover staff-picked trails across Hong Kong",
+      titleZh: "探索職員精選的香港路線",
+      body: "Browse recommended routes by district, difficulty, and season — then plan your next hike on the web or in the app.",
+      bodyZh: "按地區、難度與季節瀏覽推薦路線，然後在網頁或 App 規劃下一次行山。",
+      image: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1400&q=80",
+      deviceImage: "",
+      ctaLabel: "Recommended routes",
+      ctaLabelZh: "推薦路線",
+      ctaHref: "explore.html",
+      cta2Label: "Plan a route",
+      cta2LabelZh: "規劃路線",
+      cta2Href: "plan.html",
+      appStoreUrl: "",
+      playStoreUrl: "",
+    },
+    {
+      id: "bn_community",
+      published: true,
+      order: 2,
+      showStores: false,
+      showDevice: false,
+      badge: "Care for Nature",
+      badgeZh: "關懷自然",
+      seo: "Incident report · photo gallery · group hike · hiking insights · TrailWatch Premium",
+      seoZh: "事故舉報 · 相片相簿 · 聯誼行山 · 行山洞察 · TrailWatch Premium",
+      title: "Report incidents, share photos, hike together",
+      titleZh: "舉報事故、分享相片、一起行山",
+      body: "Help keep country parks safe. Log incidents, join group hikes, and unlock insights with TrailWatch Premium.",
+      bodyZh: "協助守護郊野公園安全。舉報事故、參加聯誼，並以 TrailWatch Premium 解鎖洞察。",
+      image: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=1400&q=80",
+      deviceImage: "",
+      ctaLabel: "Report an incident",
+      ctaLabelZh: "舉報事故",
+      ctaHref: "reports.html",
+      cta2Label: "Upgrade to Premium",
+      cta2LabelZh: "升級 Premium",
+      cta2Href: "get-app.html#premium",
+      appStoreUrl: "",
+      playStoreUrl: "",
+    },
+  ];
 };
 
 CMS.seedMembers = function () {
@@ -469,6 +555,11 @@ CMS.getStore = function () {
       base.content.translations,
       (parsed.content && parsed.content.translations) || {}
     );
+    store.content.figures = Object.assign(
+      {},
+      base.content.figures,
+      (parsed.content && parsed.content.figures) || {}
+    );
     // migrate older stores that pre-date these collections
     let migrated = false;
     const tr = store.content.translations;
@@ -531,6 +622,10 @@ CMS.getStore = function () {
     } else store.feedback = parsed.feedback || [];
     if (!Array.isArray(store.featuredGalleryIds)) {
       store.featuredGalleryIds = [];
+      migrated = true;
+    }
+    if (!Array.isArray(store.banners) || !store.banners.length) {
+      store.banners = CMS.seedBanners();
       migrated = true;
     }
     // Refresh community incident seed when demo data grew (keep user-submitted ids)
@@ -936,6 +1031,24 @@ TW.getCommunityReports = function (opts) {
 
 TW.getSiteContent = function () {
   return CMS.getStore().content;
+};
+
+TW.getHomeFigures = function () {
+  const c = typeof CMS !== "undefined" && CMS.getStore ? CMS.getStore().content : null;
+  const figs = (c && c.figures) || TW.homeFigures || {};
+  return {
+    routes: Number(figs.routes) || 18420,
+    distanceKm: Number(figs.distanceKm) || 3256780,
+    incidents: Number(figs.incidents) || 2146,
+  };
+};
+
+TW.getHomeBanners = function () {
+  const store = typeof CMS !== "undefined" && CMS.getStore ? CMS.getStore() : null;
+  const list = (store && store.banners) || [];
+  const published = list.filter((b) => b && b.published !== false);
+  const source = published.length ? published : CMS.seedBanners();
+  return source.slice().sort((a, b) => (a.order || 0) - (b.order || 0));
 };
 
 TW.getChallenges = function () {
