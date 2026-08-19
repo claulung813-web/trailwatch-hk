@@ -28,6 +28,7 @@ function cmsSidebar(active) {
     <a href="banners.html" class="${active === "banners" ? "active" : ""}">Homepage banners</a>
     <a href="content.html" class="${active === "content" ? "active" : ""}">Site Content</a>
     <a href="gallery.html" class="${active === "gallery" ? "active" : ""}">Gallery featured</a>
+    <a href="activity-tags.html" class="${active === "activity-tags" ? "active" : ""}">Activity tags</a>
     <div class="side-foot">
       <div style="opacity:.7;margin-bottom:.5rem">Logged in as staff</div>
       <a href="../index.html" target="_blank">View website ↗</a><br/>

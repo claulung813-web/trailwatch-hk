@@ -82,6 +82,7 @@
           <div class="rec-rating" id="ratingWrap"><span class="star">★</span> <span id="recRating">—</span></div>
         </div>
         <div class="rec-stats-grid" id="recStats"></div>
+        <div id="hikeTags"></div>
       </div>
       <section class="rec-photos">
         <h2 id="photosHeading">Photos</h2>
@@ -97,6 +98,7 @@
   <script src="js/i18n.js"></script>
   <script src="js/data.js"></script>
   <script src="js/hikes.js"></script>
+  <script src="js/cms-store.js"></script>
   <script src="js/app.js"></script>
   <script>
     document.documentElement.lang = TW.getLang() === "zh" ? "zh-Hant" : "en";
@@ -135,6 +137,7 @@
       document.getElementById("recStats").innerHTML = stats.map((s) =>
         `<div class="rec-stat"><div class="ico">${s.ico}</div><div class="val">${s.val}</div><div class="lbl">${s.lbl}</div></div>`
       ).join("");
+      document.getElementById("hikeTags").innerHTML = TW.activityTagsHtml(hike.activityTags) || "";
 
       const photos = hike.photos || [];
       if (photos.length) {

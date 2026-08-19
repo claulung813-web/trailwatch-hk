@@ -72,6 +72,7 @@ TW.saveHike = function (hike) {
     privacy: hike.privacy || "public",
     photoPrivacy: hike.photoPrivacy || "public",
     district: hike.district || "",
+    activityTags: Array.isArray(hike.activityTags) ? hike.activityTags.slice() : [],
     user: hike.user || (TW.user && TW.user.name) || "Hiker",
     avatar: hike.avatar != null ? hike.avatar : (TW.user && TW.user.avatar) || null,
     startedAt: hike.startedAt || new Date().toISOString(),
@@ -119,6 +120,7 @@ TW.ensureDemoHike = function () {
       title: "Wilson Trail Section 4",
       titleZh: "衛奕信徑第四段",
       district: "tai-po",
+      activityTags: ["mountain", "woodland", "heritage"],
       seconds: 9360,
       distanceKm: 7.2,
       elevGain: 682,
@@ -174,6 +176,10 @@ TW.ensureDemoHike = function () {
       next.avatar = (TW.user && TW.user.avatar) || null;
       changed = true;
     }
+    if (next.id === "demo_wilson_s4" && (!Array.isArray(next.activityTags) || !next.activityTags.length)) {
+      next.activityTags = ["mountain", "woodland", "heritage"];
+      changed = true;
+    }
     return next;
   });
   if (changed) TW.setHikes(list);
@@ -182,6 +188,7 @@ TW.ensureDemoHike = function () {
 
 TW.renderHikeListItem = function (h, detailHref) {
   const title = TW.getLang() === "zh" ? h.titleZh || h.title : h.title;
+  const tags = typeof TW.activityTagsHtml === "function" ? TW.activityTagsHtml(h.activityTags) : "";
   return `
   <a class="record-item" href="${detailHref}" style="text-decoration:none;color:inherit">
     <div style="width:96px;height:96px;border-radius:10px;background:linear-gradient(135deg,#c8e6c9,#81c784);display:grid;place-items:center;flex-shrink:0;font-size:1.75rem">🗺</div>
@@ -193,6 +200,48 @@ TW.renderHikeListItem = function (h, detailHref) {
         <span>📏 ${h.distanceKm} km</span>
         <span>⬆ ${h.elevGain} m</span>
       </div>
+      ${tags}
     </div>
   </a>`;
 };
+
+TW.DEFAULT_ACTIVITY_TAGS = [
+  { id: "sunrise", label: "Sunrise", labelZh: "日出" },
+  { id: "sunset", label: "Sunset", labelZh: "日落" },
+  { id: "woodland", label: "Woodland shade", labelZh: "林蔭" },
+  { id: "heritage", label: "Heritage", labelZh: "古蹟" },
+  { id: "ecology", label: "Ecology", labelZh: "生態" },
+  { id: "mountain", label: "Mountain views", labelZh: "山景" },
+  { id: "sea", label: "Sea views", labelZh: "海景" },
+  { id: "stream", label: "Streams", labelZh: "河溪" },
+  { id: "reservoir", label: "Reservoir", labelZh: "水塘" },
+];
+
+TW.getActivityTags = function () {
+  try {
+    if (typeof CMS !== "undefined" && CMS.getStore) {
+      const list = CMS.getStore().activityTags;
+      if (Array.isArray(list) && list.length) return list;
+    }
+  } catch (e) { /* ignore */ }
+  return TW.DEFAULT_ACTIVITY_TAGS;
+};
+
+TW.activityTagLabel = function (id) {
+  const tag = (TW.getActivityTags() || []).find((t) => t.id === id);
+  if (!tag) return id;
+  return TW.getLang() === "zh" ? tag.labelZh || tag.label : tag.label || tag.labelZh;
+};
+
+TW.activityTagsHtml = function (ids) {
+  if (!ids || !ids.length) return "";
+  const esc = (s) =>
+    String(s || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/"/g, "&quot;");
+  return `<div class="activity-tag-row">${ids
+    .map((id) => `<span class="activity-tag">${esc(TW.activityTagLabel(id))}</span>`)
+    .join("")}</div>`;
+};
+

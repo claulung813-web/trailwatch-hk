@@ -28,6 +28,7 @@ function twIcon(name) {
     groupHikes: `<svg viewBox="0 0 24 24" ${stroke}><path d="m3 20 6-10 4 5 2-3 6 8"/><path d="M14 8a2 2 0 1 0 0-4 2 2 0 0 0 0 4"/><path d="M7 12a2 2 0 1 0 0-4 2 2 0 0 0 0 4"/></svg>`,
     download: `<svg viewBox="0 0 24 24" ${stroke}><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>`,
     live: `<svg viewBox="0 0 24 24" ${stroke}><path d="M12 21s7-4.5 7-11a7 7 0 1 0-14 0c0 6.5 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/><circle cx="12" cy="10" r="6" opacity=".35"/></svg>`,
+    speaker: `<svg viewBox="0 0 24 24" ${stroke}><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>`,
     insights: `<svg viewBox="0 0 24 24" ${stroke}><path d="M4 19V9"/><path d="M10 19V5"/><path d="M16 19v-8"/><path d="M22 19V3"/></svg>`,
     milestones: `<svg viewBox="0 0 24 24" ${stroke}><path d="M8 21h8"/><path d="M12 17V3"/><path d="m7 7 5-4 5 4"/><path d="M5 21h14"/></svg>`,
   };
@@ -181,13 +182,13 @@ function twMountPhoneShell() {
   });
 }
 
-/** App bottom nav: Explore · Community · Map · Profile */
+/** App bottom nav: Community · Explore · Plan & Track · Profile */
 function twAppBottomNav(active) {
   const t = (typeof TW !== "undefined" && TW.t) ? TW.t : (k) => k;
   const items = [
+    { id: "home", href: "home.html", label: t("app_community"), icon: "friends" },
     { id: "explore", href: "explore.html", label: t("nav_explore"), icon: "explore", cls: "nav-explore" },
-    { id: "home", href: "home.html", label: t("app_community"), icon: "home" },
-    { id: "track", href: "index.html", label: t("app_map"), icon: "track" },
+    { id: "track", href: "index.html", label: t("app_plan_track"), icon: "track" },
     { id: "profile", href: "profile.html", label: t("app_profile"), icon: "dashboard", cls: "nav-profile" },
   ];
   return `<nav class="app-bottom-nav" aria-label="App">${items.map((it) => {
@@ -199,6 +200,14 @@ function twAppBottomNav(active) {
   }).join("")}</nav>`;
 }
 
+function twAppCommunityTabs(active) {
+  const t = (typeof TW !== "undefined" && TW.t) ? TW.t : (k) => k;
+  return `<div class="app-subtabs" role="tablist">
+    <a href="home.html" class="${active === "feed" ? "active" : ""}">${t("feed_title")}</a>
+    <a href="hikes.html" class="${active === "groups" ? "active" : ""}">${t("home_feat_groups")}</a>
+  </div>`;
+}
+
 function twMountAppNav(active, selector) {
   twMountPhoneShell();
   const el = document.querySelector(selector || "[data-app-nav]");
@@ -208,6 +217,7 @@ function twMountAppNav(active, selector) {
 window.twAppBrandSrc = twAppBrandSrc;
 window.twAppLogoHtml = twAppLogoHtml;
 window.twMountPhoneShell = twMountPhoneShell;
+window.twAppCommunityTabs = twAppCommunityTabs;
 
 function difficultyPips(level) {
   let html = '<span class="diff-pips" title="L' + level + '">';
@@ -1208,6 +1218,140 @@ function tagClass(tag) {
   return map[tag] || "tag-community";
 }
 
+TW.FEED_USER_KEY = "tw_user_feed";
+TW.FEED_SOCIAL_KEY = "tw_feed_social";
+
+TW.feedPostKey = function (p) {
+  if (p && p.id) return String(p.id);
+  return ["fp", (p && p.user) || "", (p && p.dateISO) || "", (p && p.title) || (p && p.body) || ""].join("_").slice(0, 90);
+};
+
+TW.getUserFeedPosts = function () {
+  try {
+    return JSON.parse(localStorage.getItem(TW.FEED_USER_KEY) || "[]");
+  } catch (e) {
+    return [];
+  }
+};
+
+TW.addUserFeedPost = function (post) {
+  const list = TW.getUserFeedPosts();
+  const zh = TW.getLang && TW.getLang() === "zh";
+  const entry = Object.assign(
+    {
+      id: "ufp_" + Date.now(),
+      dateISO: new Date().toISOString().slice(0, 10),
+      time: zh ? "剛剛" : "Just now",
+      timeZh: "剛剛",
+      likes: 0,
+      comments: 0,
+      channel: "friends",
+      user: (TW.user && TW.user.name) || (typeof TW.memberDisplayName === "function" && TW.memberDisplayName()) || "You",
+      avatar: (TW.user && TW.user.avatar) || null,
+    },
+    post
+  );
+  list.unshift(entry);
+  localStorage.setItem(TW.FEED_USER_KEY, JSON.stringify(list.slice(0, 40)));
+  return entry;
+};
+
+TW.demoShareToFeed = function (kind, text) {
+  const note = String(text || "").trim();
+  if (kind === "story") {
+    if (!note) return null;
+    return TW.addUserFeedPost({
+      type: "story",
+      tag: "Story",
+      tagZh: "故事",
+      body: note,
+      bodyZh: note,
+    });
+  }
+  if (kind === "record") {
+    const h = (typeof TW.getHikes === "function" && TW.getHikes()[0]) || (TW.records || [])[0] || {};
+    return TW.addUserFeedPost({
+      type: "record",
+      tag: "Record",
+      tagZh: "記錄",
+      title: h.title || "My hike",
+      titleZh: h.titleZh || h.title || "我的行程",
+      body: note || h.snippet || h.body || "",
+      bodyZh: note || h.snippetZh || "",
+      recordId: h.id,
+      distance: h.distance || (h.distanceKm != null ? h.distanceKm + " km" : ""),
+      duration: h.duration || "",
+      mapStyle: true,
+    });
+  }
+  if (kind === "plan") {
+    const tr = (TW.trails || [])[0] || {};
+    return TW.addUserFeedPost({
+      type: "route",
+      tag: "Route",
+      tagZh: "路線",
+      title: (TW.getLang() === "zh" ? "分享計劃：" : "Shared a plan: ") + (TW.tt(tr, "title") || tr.title || ""),
+      titleZh: "分享計劃：" + (tr.titleZh || tr.title || ""),
+      body: note || tr.desc || "",
+      bodyZh: note || tr.descZh || "",
+      image: tr.image,
+      distance: tr.distance,
+      duration: tr.duration,
+    });
+  }
+  if (kind === "incident") {
+    const r = (TW.reports || [])[0] || {};
+    return TW.addUserFeedPost({
+      type: "incident",
+      tag: "Incident",
+      tagZh: "事故",
+      title: TW.tt(r, "title") || r.title || (TW.getLang() === "zh" ? "事故舉報" : "Incident report"),
+      titleZh: r.titleZh || r.title || "事故舉報",
+      body: note || r.desc || "",
+      bodyZh: note || r.descZh || "",
+    });
+  }
+  return null;
+};
+
+TW.allFeedPosts = function () {
+  return TW.getUserFeedPosts().concat(TW.feed || []);
+};
+
+TW.getFeedSocial = function () {
+  try {
+    return JSON.parse(localStorage.getItem(TW.FEED_SOCIAL_KEY) || "{}");
+  } catch (e) {
+    return {};
+  }
+};
+
+TW.setFeedSocial = function (s) {
+  localStorage.setItem(TW.FEED_SOCIAL_KEY, JSON.stringify(s));
+};
+
+TW.toggleFeedLike = function (key, baseLikes) {
+  const s = TW.getFeedSocial();
+  const row = s[key] || { liked: false, extraComments: [] };
+  row.liked = !row.liked;
+  s[key] = row;
+  TW.setFeedSocial(s);
+  return (baseLikes || 0) + (row.liked ? 1 : 0);
+};
+
+TW.addFeedComment = function (key, text) {
+  const msg = String(text || "").trim();
+  if (!msg) return null;
+  const s = TW.getFeedSocial();
+  const row = s[key] || { liked: false, extraComments: [] };
+  const name = (TW.user && TW.user.name) || (typeof TW.memberDisplayName === "function" && TW.memberDisplayName()) || "You";
+  const c = { name: name, text: msg, at: Date.now() };
+  row.extraComments = (row.extraComments || []).concat([c]);
+  s[key] = row;
+  TW.setFeedSocial(s);
+  return c;
+};
+
 function renderFeedCard(post) {
   let media = "";
   if (post.image) {
@@ -1227,50 +1371,70 @@ function renderFeedCard(post) {
 
   const title = TW.tt(post, "title");
   const body = TW.tt(post, "body");
+  const more = TW.tt(post, "more") || post.more;
   const tag = TW.tt(post, "tag") || post.tag;
   const time = TW.tt(post, "time") || post.time;
   const inApp = /\/app(?:\/|$)/.test((location.pathname || "").replace(/\\/g, "/"));
   const recHref =
     post.type === "record" && post.recordId
-      ? "record-detail.html?id=" + encodeURIComponent(post.recordId)
+      ? (inApp ? "record-detail.html" : "record-detail.html") + "?id=" + encodeURIComponent(post.recordId)
       : post.type === "incident"
-        ? "reports.html"
+        ? inApp ? "../reports.html" : "reports.html"
         : post.type === "route"
-          ? "explore.html"
-          : post.type === "promo" || post.type === "ad" || post.type === "announcement"
-            ? "feed.html"
+          ? inApp ? "explore.html" : "explore.html"
+          : post.type === "group"
+            ? inApp ? "hikes.html" : "group-hikes.html"
             : "";
-  const openAttr = recHref
-    ? ` role="link" tabindex="0" data-record-href="${recHref}" style="cursor:pointer"`
-    : "";
+  const key = TW.feedPostKey(post);
+  const social = (TW.getFeedSocial() || {})[key] || {};
+  const liked = !!social.liked;
+  const likeN = (post.likes || 0) + (liked ? 1 : 0);
+  const extras = social.extraComments || [];
+  const commentN = (post.comments || 0) + extras.length;
+  const url = post.url || "";
+  const urlLabel = TW.tt(post, "urlLabel") || post.urlLabel || TW.t("feed_external");
+  const expandable = !!(more || url || extras.length || post.image);
 
-  const channel = post.channel || (post.pinned || post.user === "TrailWatch" || /Sponsored|Promo|Ad/i.test(post.tag || "") ? ( /Sponsored|Promo|Ad/i.test(post.tag || "") ? "official" : "official") : "friends");
+  const channel = post.channel || (post.pinned || post.user === "TrailWatch" || /Sponsored|Promo|Ad/i.test(post.tag || "") ? "official" : "friends");
   const channelClass =
     channel === "official" || post.pinned ? " feed-card--official" : channel === "ad" ? " feed-card--ad" : " feed-card--friends";
   const pinBadge = post.pinned ? `<span class="feed-pin">${TW.t("feed_pinned")}</span>` : "";
+  const extraHtml = extras
+    .map((c) => `<div class="feed-comment"><strong>${TW.escapeHtml(c.name)}</strong> ${TW.escapeHtml(c.text)}</div>`)
+    .join("");
 
   return `
-  <article class="card feed-card${channelClass}"${openAttr}>
+  <article class="card feed-card${channelClass}" data-feed-key="${TW.escapeHtml(key)}">
     <div class="feed-card-header">
       ${twAvatarHtml(post.avatar, "avatar-sm", "", post.user)}
       <div class="user-info">
-        <div class="name">${post.user}${pinBadge}</div>
-        <div class="time">${time}</div>
+        <div class="name">${TW.escapeHtml(post.user || "")}${pinBadge}</div>
+        <div class="time">${TW.escapeHtml(time || "")}</div>
       </div>
-      <span class="tag ${tagClass(tag)}">${tag}</span>
+      <span class="tag ${tagClass(tag)}">${TW.escapeHtml(tag || "")}</span>
     </div>
     <div class="feed-card-body">
-      ${title ? `<strong style="display:block;margin-bottom:0.35rem">${title}</strong>` : ""}
-      ${body ? `<p>${body}</p>` : ""}
+      ${title ? `<strong style="display:block;margin-bottom:0.35rem">${TW.escapeHtml(title)}</strong>` : ""}
+      ${body ? `<p>${TW.escapeHtml(body)}</p>` : ""}
       ${media}
       ${stats}
+      <div class="feed-expand-body">
+        ${more ? `<p>${TW.escapeHtml(more)}</p>` : ""}
+        ${url ? `<p><a href="${TW.escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${TW.escapeHtml(urlLabel)} →</a></p>` : ""}
+        ${extraHtml}
+        <form class="feed-comment-form">
+          <input class="form-input" name="comment" maxlength="280" placeholder="${TW.escapeHtml(TW.t("feed_comment_ph"))}" />
+          <button type="submit" class="btn btn-secondary" style="padding:0.35rem 0.65rem;font-size:0.75rem">${TW.t("feed_comment_send")}</button>
+        </form>
+      </div>
     </div>
     <div class="feed-actions">
-      <button type="button" class="like-btn" data-likes="${post.likes}">♥ ${post.likes}</button>
-      <button type="button">💬 ${post.comments}</button>
+      <button type="button" class="like-btn${liked ? " liked" : ""}" data-likes="${post.likes || 0}" data-feed-like="${TW.escapeHtml(key)}">♥ ${likeN}</button>
+      <button type="button" data-feed-toggle="${TW.escapeHtml(key)}">💬 ${commentN}</button>
+      ${expandable ? `<button type="button" class="feed-expand-btn" data-feed-toggle="${TW.escapeHtml(key)}">${TW.t("feed_expand")}</button>` : ""}
       ${
         post.type === "group"
-          ? `<button type="button" class="btn btn-primary join-group-btn" style="margin-left:auto;padding:0.4rem 0.9rem;font-size:0.8rem">${TW.t("join")}</button>`
+          ? `<a class="btn btn-primary" style="margin-left:auto;padding:0.4rem 0.9rem;font-size:0.8rem" href="${inApp ? "group-detail.html?id=0&stage=recruiting" : "group-hikes.html"}">${TW.t("join")}</a>`
           : recHref
             ? `<a class="btn btn-secondary" style="margin-left:auto;padding:0.4rem 0.9rem;font-size:0.8rem" href="${recHref}">${TW.t("rec_detail")}</a>`
             : ""
@@ -1446,13 +1610,59 @@ document.addEventListener("keydown", (e) => {
 });
 
 function bindLikes() {
-  document.querySelectorAll(".like-btn").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const liked = btn.classList.toggle("liked");
-      let n = parseInt(btn.dataset.likes, 10);
-      n = liked ? n + 1 : Math.max(0, n - 1);
-      btn.dataset.likes = n;
-      btn.textContent = `♥ ${n}`;
+  document.querySelectorAll(".like-btn[data-feed-like]").forEach((btn) => {
+    if (btn.dataset.bound === "1") return;
+    btn.dataset.bound = "1";
+    btn.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const key = btn.getAttribute("data-feed-like");
+      const base = parseInt(btn.dataset.likes, 10) || 0;
+      const n = TW.toggleFeedLike(key, base);
+      const liked = ((TW.getFeedSocial() || {})[key] || {}).liked;
+      btn.classList.toggle("liked", !!liked);
+      btn.textContent = "♥ " + n;
+    });
+  });
+  document.querySelectorAll("[data-feed-toggle]").forEach((btn) => {
+    if (btn.dataset.bound === "1") return;
+    btn.dataset.bound = "1";
+    btn.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const card = btn.closest(".feed-card");
+      if (!card) return;
+      const on = card.classList.toggle("expanded");
+      card.querySelectorAll(".feed-expand-btn").forEach((b) => {
+        b.textContent = TW.t(on ? "feed_collapse" : "feed_expand");
+      });
+    });
+  });
+  document.querySelectorAll(".feed-comment-form").forEach((form) => {
+    if (form.dataset.bound === "1") return;
+    form.dataset.bound = "1";
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const card = form.closest(".feed-card");
+      const key = card && card.getAttribute("data-feed-key");
+      const input = form.querySelector("input[name='comment']");
+      if (!key || !input) return;
+      const c = TW.addFeedComment(key, input.value);
+      if (!c) return;
+      input.value = "";
+      const wrap = form.parentNode;
+      const row = document.createElement("div");
+      row.className = "feed-comment";
+      row.innerHTML = "<strong>" + TW.escapeHtml(c.name) + "</strong> " + TW.escapeHtml(c.text);
+      wrap.insertBefore(row, form);
+      const countBtn = card.querySelector("[data-feed-toggle]");
+      if (countBtn && /^💬/.test(countBtn.textContent)) {
+        const n = ((TW.getFeedSocial()[key] || {}).extraComments || []).length;
+        const base = parseInt((card.querySelector(".like-btn") || {}).dataset.comments, 10);
+        countBtn.textContent = "💬 " + ((parseInt(countBtn.textContent.replace(/\D/g, ""), 10) || 0) + 1);
+      }
+      showToast(TW.t("feed_comment_send"));
     });
   });
 }

@@ -74,8 +74,26 @@ CMS.defaultStore = function () {
     },
     featuredGalleryIds: [],
     banners: CMS.seedBanners(),
+    activityTags: CMS.defaultActivityTags(),
     updatedAt: null,
   };
+};
+
+CMS.defaultActivityTags = function () {
+  return (window.TW && TW.DEFAULT_ACTIVITY_TAGS
+    ? TW.DEFAULT_ACTIVITY_TAGS
+    : [
+        { id: "sunrise", label: "Sunrise", labelZh: "日出" },
+        { id: "sunset", label: "Sunset", labelZh: "日落" },
+        { id: "woodland", label: "Woodland shade", labelZh: "林蔭" },
+        { id: "heritage", label: "Heritage", labelZh: "古蹟" },
+        { id: "ecology", label: "Ecology", labelZh: "生態" },
+        { id: "mountain", label: "Mountain views", labelZh: "山景" },
+        { id: "sea", label: "Sea views", labelZh: "海景" },
+        { id: "stream", label: "Streams", labelZh: "河溪" },
+        { id: "reservoir", label: "Reservoir", labelZh: "水塘" },
+      ]
+  ).map((t) => Object.assign({}, t));
 };
 
 CMS.seedBanners = function () {
@@ -622,6 +640,10 @@ CMS.getStore = function () {
     } else store.feedback = parsed.feedback || [];
     if (!Array.isArray(store.featuredGalleryIds)) {
       store.featuredGalleryIds = [];
+      migrated = true;
+    }
+    if (!Array.isArray(store.activityTags) || !store.activityTags.length) {
+      store.activityTags = CMS.defaultActivityTags();
       migrated = true;
     }
     if (!Array.isArray(store.banners) || !store.banners.length) {

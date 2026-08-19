@@ -61,11 +61,25 @@
         <div class="app-head">
           <span data-app-logo aria-hidden="true"></span>
           <h1 id="pageTitle">Trail Feed</h1>
-          <a class="head-link" href="hikes.html" id="linkGroups"></a>
+          <span style="width:30px"></span>
         </div>
+        <div id="communityTabs"></div>
         <div class="phone-body">
+          <div class="feed-compose">
+            <textarea id="storyText" maxlength="400"></textarea>
+            <div class="feed-compose-actions">
+              <button type="button" class="btn btn-primary" style="padding:0.35rem 0.7rem;font-size:0.72rem" id="btnStory"></button>
+              <button type="button" class="btn btn-secondary" style="padding:0.35rem 0.55rem;font-size:0.68rem" data-share="record"></button>
+              <button type="button" class="btn btn-secondary" style="padding:0.35rem 0.55rem;font-size:0.68rem" data-share="plan"></button>
+              <button type="button" class="btn btn-secondary" style="padding:0.35rem 0.55rem;font-size:0.68rem" data-share="incident"></button>
+            </div>
+          </div>
           <input class="search-mini" id="feedSearch" type="search" />
-          <div class="app-chip-row" id="feedFilters" style="margin-bottom:0.65rem"></div>
+          <div class="app-chip-row" id="feedFilters" style="margin-bottom:0.35rem;flex-wrap:wrap"></div>
+          <div class="app-date-row">
+            <input type="date" id="feedDateFrom" />
+            <input type="date" id="feedDateTo" />
+          </div>
           <div id="feed"></div>
         </div>
         <div data-app-nav></div>
@@ -76,6 +90,7 @@
 
   <script src="../js/i18n.js"></script>
   <script src="../js/data.js"></script>
+  <script src="../js/hikes.js"></script>
   <script src="../js/app.js"></script>
   <script>
     document.documentElement.lang = TW.getLang() === "zh" ? "zh-Hant" : "en";
@@ -86,61 +101,72 @@
       b.addEventListener("click", () => { TW.setLang(b.dataset.lang); location.reload(); });
     });
     document.getElementById("backWeb").textContent = t("app_back_web");
-    document.getElementById("pageTitle").textContent = t("feed_title");
-    document.getElementById("linkGroups").textContent = t("nav_groups");
-    document.getElementById("feedSearch").placeholder = t("app_filter_keyword") + "…";
+    document.getElementById("pageTitle").textContent = t("app_community");
+    document.getElementById("communityTabs").innerHTML = twAppCommunityTabs("feed");
+    document.getElementById("feedSearch").placeholder = t("feed_search_ph");
+    document.getElementById("storyText").placeholder = t("feed_compose_ph");
+    document.getElementById("btnStory").textContent = t("feed_post_story");
+    document.querySelector("[data-share='record']").textContent = t("feed_share_record");
+    document.querySelector("[data-share='plan']").textContent = t("feed_share_plan");
+    document.querySelector("[data-share='incident']").textContent = t("feed_share_incident");
     twMountAppNav("home");
 
     let filter = "all";
     let q = "";
     const filters = [
       { id: "all", key: "feed_filter_all" },
-      { id: "Record", key: "feed_filter_records" },
-      { id: "Route", key: "feed_filter_routes" },
-      { id: "Incident", key: "feed_filter_incidents" },
-      { id: "Group Hike", key: "feed_filter_groups" },
-      { id: "date", key: "app_filter_date" },
+      { id: "record", key: "feed_filter_records" },
+      { id: "route", key: "feed_filter_routes" },
+      { id: "incident", key: "feed_filter_incidents" },
+      { id: "group", key: "feed_filter_groups" },
+      { id: "announcement", key: "feed_filter_announce" },
+      { id: "promo", key: "feed_filter_promo" },
     ];
     document.getElementById("feedFilters").innerHTML = filters.map((f, i) =>
       `<button type="button" class="${i === 0 ? "active" : ""}" data-f="${f.id}">${t(f.key)}</button>`
     ).join("");
 
+    function typeOf(p) {
+      if (p.type) return p.type;
+      const tag = p.tag || "";
+      if (/Record/i.test(tag)) return "record";
+      if (/Route|Plan/i.test(tag)) return "route";
+      if (/Incident/i.test(tag)) return "incident";
+      if (/Group/i.test(tag)) return "group";
+      if (/Announcement/i.test(tag)) return "announcement";
+      if (/Sponsored|Promo|Ad|PnT/i.test(tag)) return "promo";
+      return "community";
+    }
+    function feedDate(p) {
+      if (p.dateISO) {
+        const ts = Date.parse(p.dateISO);
+        if (Number.isFinite(ts)) return ts;
+      }
+      return 0;
+    }
+    function matches(p) {
+      const typ = typeOf(p);
+      let okF = true;
+      if (filter === "promo") okF = typ === "promo" || typ === "ad" || p.channel === "ad";
+      else if (filter !== "all") okF = typ === filter;
+      const text = ((p.title || "") + " " + (p.titleZh || "") + " " + (p.body || "") + " " + (p.bodyZh || "") + " " + (p.user || "") + " " + (p.tag || "")).toLowerCase();
+      const okQ = !q || text.includes(q);
+      const from = document.getElementById("feedDateFrom").value;
+      const to = document.getElementById("feedDateTo").value;
+      const ts = feedDate(p);
+      let okD = true;
+      if (from && ts && ts < Date.parse(from)) okD = false;
+      if (to && ts && ts > Date.parse(to) + 86400000 - 1) okD = false;
+      if ((from || to) && !ts) okD = false;
+      return okF && okQ && okD;
+    }
+
     function render() {
-      const items = (TW.feed || []).filter((p) => {
-        const tag = p.tag || "";
-        let okF = filter === "all" || tag === filter
-          || (filter === "Incident" && /Community|Incident/i.test(tag))
-          || (filter === "date");
-        if (filter === "date") okF = true;
-        const text = ((p.title || "") + " " + (p.body || "") + " " + (p.user || "")).toLowerCase();
-        const okQ = !q || text.includes(q);
-        return okF && okQ;
-      });
-      document.getElementById("feed").innerHTML = items.map((p, i) => {
-        const title = TW.tt(p, "title");
-        const body = TW.tt(p, "body");
-        const tag = TW.tt(p, "tag") || p.tag;
-        const time = TW.tt(p, "time") || p.time;
-        const expandable = /Community|Sponsored|announcement/i.test(tag || "") || p.type === "community";
-        const recHref = (p.type === "record" || tag === "Record" || tag === "記錄") && p.recordId
-          ? "record-detail.html?id=" + encodeURIComponent(p.recordId)
-          : "";
-        const openAttr = recHref ? ` data-record-href="${recHref}" style="cursor:pointer"` : "";
-        return `<article class="feed-card"${openAttr} data-i="${i}">
-          <div class="top">
-            ${TW.avatarHtml(p.avatar, "avatar-sm", "", p.user)}
-            <div><div class="name">${p.user || "TrailWatch"}</div><div class="time">${time}</div></div>
-            <span class="tag">${tag}</span>
-          </div>
-          ${title ? `<strong>${title}</strong>` : ""}
-          <p>${body || ""}</p>
-          ${p.distance ? `<p style="font-size:0.72rem;color:var(--text-muted);margin:0.25rem 0 0">📏 ${p.distance}${p.duration ? " · ⏱ " + p.duration : ""}${p.rating != null ? " · ★ " + p.rating : ""}</p>` : ""}
-          ${expandable ? `<div class="expand-body">${lang === "zh" ? "完整公告詳情與活動連結（示範）。點擊展開查看更多。" : "Full announcement details and promo links (demo). Expand for more."}</div>
-            <button type="button" class="expand-btn" data-expand>${lang === "zh" ? "展開" : "Expand"}</button>` : ""}
-          ${p.tag === "Group Hike" ? `<a href="group-detail.html?id=${i}" style="display:inline-block;margin-top:0.45rem;font-size:0.72rem;font-weight:700;color:var(--green-800)">${t("nav_groups")} →</a>` : ""}
-          ${recHref ? `<a href="${recHref}" style="display:inline-block;margin-top:0.45rem;font-size:0.72rem;font-weight:700;color:var(--green-800)">${t("rec_detail")} →</a>` : ""}
-        </article>`;
-      }).join("") || `<p style="text-align:center;color:var(--text-muted);padding:2rem 0">${t("hikes_empty")}</p>`;
+      const items = (TW.allFeedPosts ? TW.allFeedPosts() : TW.feed || []).filter(matches);
+      document.getElementById("feed").innerHTML = items.length
+        ? items.map(renderFeedCard).join("")
+        : `<p style="text-align:center;color:var(--text-muted);padding:2rem 0">${t("feed_empty")}</p>`;
+      bindLikes();
     }
 
     document.getElementById("feedFilters").addEventListener("click", (e) => {
@@ -154,19 +180,22 @@
       q = e.target.value.trim().toLowerCase();
       render();
     });
-    document.getElementById("feed").addEventListener("click", (e) => {
-      const btn = e.target.closest("[data-expand]");
-      if (btn) {
-        const card = btn.closest(".feed-card");
-        card.classList.toggle("expanded");
-        btn.textContent = card.classList.contains("expanded")
-          ? (lang === "zh" ? "收起" : "Collapse")
-          : (lang === "zh" ? "展開" : "Expand");
+    document.getElementById("feedDateFrom").addEventListener("change", render);
+    document.getElementById("feedDateTo").addEventListener("change", render);
+
+    function share(kind) {
+      const posted = TW.demoShareToFeed(kind, document.getElementById("storyText").value);
+      if (!posted) {
+        showToast(t("feed_compose_ph"));
         return;
       }
-      const card = e.target.closest("[data-record-href]");
-      if (!card || e.target.closest("a, button")) return;
-      location.href = card.getAttribute("data-record-href");
+      document.getElementById("storyText").value = "";
+      showToast(t("feed_posted"));
+      render();
+    }
+    document.getElementById("btnStory").addEventListener("click", () => share("story"));
+    document.querySelectorAll("[data-share]").forEach((btn) => {
+      btn.addEventListener("click", () => share(btn.dataset.share));
     });
     render();
   </script>

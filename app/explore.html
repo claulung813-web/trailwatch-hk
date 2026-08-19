@@ -38,6 +38,9 @@
     .route-card .meta { padding: 0.5rem 0.5rem 0.5rem 0; min-width: 0; }
     .route-card strong { display: block; font-size: 0.85rem; color: var(--green-900); }
     .route-card p { font-size: 0.7rem; color: var(--text-muted); margin: 0.2rem 0 0; }
+    .route-card .follow-cta {
+      display: inline-block; margin-top: 0.35rem; font-size: 0.72rem; font-weight: 800; color: var(--green-800);
+    }
     .record-row {
       background: #fff; border: 1px solid var(--border); border-radius: 12px;
       padding: 0.7rem 0.8rem; margin-bottom: 0.55rem;
@@ -164,12 +167,13 @@
             const name = lang === "zh" ? (tr.nameZh || tr.titleZh || tr.name || tr.title) : (tr.name || tr.title);
             const dist = tr.distanceKm != null ? tr.distanceKm + " km" : (tr.distance || "");
             const img = tr.image || "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=200&q=60";
-            return `<a class="route-card" href="../rec-trail.html?id=${encodeURIComponent(tr.id || "")}">
+            const followHref = "index.html?follow=route&trail=" + encodeURIComponent(tr.id || "");
+            return `<a class="route-card" href="${followHref}">
               <img src="${img}" alt="" />
               <div class="meta">
                 <strong>${name || "Trail"}</strong>
                 <p>${dist}${tr.duration ? " · " + tr.duration : ""}</p>
-                <p><span class="app-tbd">${t("app_tbd_official")}</span></p>
+                <span class="follow-cta">${t("app_track_follow")} →</span>
               </div>
             </a>`;
           }).join("")

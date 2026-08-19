@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CMS — Activity tags</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/cms.css" />
+</head>
+<body class="cms-body">
+  <div id="cmsShell">
+    <h1>Activity tags</h1>
+    <p class="sub">Optional tags hikers can pick when saving a tracked activity (routes they walked). Shown in EN / 繁 on the app and website.</p>
+
+    <div class="cms-card">
+      <div class="cms-toolbar">
+        <button type="button" class="cms-btn cms-btn-primary" id="addTag">+ Add tag</button>
+        <button type="button" class="cms-btn cms-btn-secondary" id="resetTags">Reset to defaults</button>
+      </div>
+      <div id="tagList"></div>
+      <button type="button" class="cms-btn cms-btn-primary" id="saveAll" style="margin-top:1rem">Save tag list</button>
+    </div>
+  </div>
+
+  <script src="../js/data.js"></script>
+  <script src="../js/hikes.js"></script>
+  <script src="../js/cms-store.js"></script>
+  <script src="js/cms-ui.js"></script>
+  <script>
+    cmsInitShell("activity-tags");
+
+    function loadTags() {
+      const store = CMS.getStore();
+      if (store.activityTags && store.activityTags.length) {
+        return JSON.parse(JSON.stringify(store.activityTags));
+      }
+      return CMS.defaultActivityTags();
+    }
+
+    let tags = loadTags();
+
+    function esc(s) {
+      return String(s || "").replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+    }
+
+    function slugId(en, zh) {
+      const s = String(en || "")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "");
+      return s || "tag_" + Date.now().toString(36);
+    }
+
+    function render() {
+      document.getElementById("tagList").innerHTML = tags
+        .map(
+          (t, i) => `
+        <div class="cms-card" style="background:#f9fafb;margin-top:0.65rem" data-i="${i}">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:0.5rem;flex-wrap:wrap">
+            <strong>Tag ${i + 1}</strong>
+            <div style="display:flex;gap:0.35rem">
+              <button type="button" class="cms-btn cms-btn-secondary cms-btn-sm" data-up="${i}" ${i === 0 ? "disabled" : ""}>↑</button>
+              <button type="button" class="cms-btn cms-btn-secondary cms-btn-sm" data-down="${i}" ${i === tags.length - 1 ? "disabled" : ""}>↓</button>
+              <button type="button" class="cms-btn cms-btn-danger cms-btn-sm" data-del="${i}">Remove</button>
+            </div>
+          </div>
+          <div class="cms-form">
+            <label>Label (EN)</label>
+            <input data-f="label" data-i="${i}" value="${esc(t.label)}" />
+            <label>Label (繁)</label>
+            <input data-f="labelZh" data-i="${i}" value="${esc(t.labelZh)}" />
+          </div>
+        </div>`
+        )
+        .join("") || '<p style="color:#6b7280;margin-top:0.75rem">No tags. Add one or reset to defaults.</p>';
+
+      document.querySelectorAll("[data-f]").forEach((inp) => {
+        inp.addEventListener("change", () => {
+          const i = +inp.dataset.i;
+          if (!tags[i]) return;
+          tags[i][inp.dataset.f] = inp.value;
+        });
+      });
+      document.querySelectorAll("[data-del]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          tags.splice(+btn.dataset.del, 1);
+          render();
+        });
+      });
+      document.querySelectorAll("[data-up]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const i = +btn.dataset.up;
+          if (i < 1) return;
+          const row = tags.splice(i, 1)[0];
+          tags.splice(i - 1, 0, row);
+          render();
+        });
+      });
+      document.querySelectorAll("[data-down]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const i = +btn.dataset.down;
+          if (i >= tags.length - 1) return;
+          const row = tags.splice(i, 1)[0];
+          tags.splice(i + 1, 0, row);
+          render();
+        });
+      });
+    }
+
+    document.getElementById("addTag").addEventListener("click", () => {
+      tags.push({ id: "tag_" + Date.now().toString(36), label: "", labelZh: "" });
+      render();
+    });
+    document.getElementById("resetTags").addEventListener("click", () => {
+      if (!confirm("Reset activity tags to the default list (日出, 日落, 林蔭… )?")) return;
+      tags = CMS.defaultActivityTags();
+      const store = CMS.getStore();
+      store.activityTags = tags;
+      CMS.setStore(store);
+      render();
+      cmsToast("Reset to defaults");
+    });
+    document.getElementById("saveAll").addEventListener("click", () => {
+      document.querySelectorAll("[data-f]").forEach((inp) => {
+        const i = +inp.dataset.i;
+        if (tags[i]) tags[i][inp.dataset.f] = inp.value;
+      });
+      const used = {};
+      tags = tags
+        .map((t) => {
+          let id = (t.id || "").trim() || slugId(t.label, t.labelZh);
+          if (used[id]) id = id + "_" + Math.random().toString(36).slice(2, 5);
+          used[id] = true;
+          return {
+            id: id,
+            label: (t.label || t.labelZh || "").trim(),
+            labelZh: (t.labelZh || t.label || "").trim(),
+          };
+        })
+        .filter((t) => t.label || t.labelZh);
+      const store = CMS.getStore();
+      store.activityTags = tags;
+      CMS.setStore(store);
+      cmsToast("Activity tags saved");
+      render();
+    });
+    render();
+  </script>
+</body>
+</html>

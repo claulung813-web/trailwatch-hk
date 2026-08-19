@@ -65,9 +65,9 @@
 
     let tab = "list";
     const friends = [
-      { name: "Sarah Chen", status: "friend", routes: 12 },
-      { name: "James Wilson", status: "friend", routes: 8 },
-      { name: "Alex Ng", status: "pending", routes: 0 },
+      { name: "Sarah Chen", status: "friend", routes: 12, plans: [{ id: "dragons-back" }, { id: "maclehose-trail-sections-9-10" }] },
+      { name: "James Wilson", status: "friend", routes: 8, plans: [{ id: "lantau-trail-sections-1-12" }] },
+      { name: "Alex Ng", status: "pending", routes: 0, plans: [] },
     ];
     const strangers = [{ name: "Maya Liu", status: "none", routes: 3 }];
 
@@ -117,6 +117,16 @@
             ${isFriend
               ? `<p style="font-size:0.75rem;margin:0.35rem 0">${lang === "zh" ? "最近路線與記錄" : "Recent routes & records"}</p>
                  <a href="explore.html?tab=records" style="font-size:0.75rem;font-weight:700;color:var(--green-800)">${lang === "zh" ? "查看全部（可搜尋／篩選）" : "Full list with search / filter"} →</a>
+                 <p style="font-size:0.78rem;font-weight:800;color:var(--green-900);margin:0.85rem 0 0.4rem">${t("app_friend_plans")}</p>
+                 ${(isFriend.plans || []).map((p) => {
+                   const tr = (TW.trails || []).find((x) => x.id === p.id) || {};
+                   const pname = lang === "zh" ? (tr.titleZh || tr.title || p.id) : (tr.title || tr.titleZh || p.id);
+                   const href = "index.html?follow=plan&trail=" + encodeURIComponent(p.id) + "&friend=" + encodeURIComponent(name);
+                   return `<a href="${href}" style="display:flex;justify-content:space-between;align-items:center;gap:0.5rem;padding:0.45rem 0;border-top:1px solid #eee;text-decoration:none;color:inherit">
+                     <span style="font-size:0.78rem;font-weight:700;color:var(--green-900)">${pname}</span>
+                     <span style="font-size:0.7rem;font-weight:800;color:var(--green-800);white-space:nowrap">${t("app_track_follow")} →</span>
+                   </a>`;
+                 }).join("") || `<p style="font-size:0.72rem;color:var(--text-muted)">${lang === "zh" ? "暫無計劃" : "No plans yet"}</p>`}
                  <button type="button" class="btn btn-primary btn-block" style="margin-top:0.65rem" onclick="showToast(TW.t('app_friend_invite_hike'))">${t("app_friend_invite_hike")}</button>`
               : `<button type="button" class="btn btn-primary btn-block" style="margin-top:0.65rem" onclick="showToast(TW.t('app_friend_add'))">${t("app_friend_add")}</button>`}
           </div>`;

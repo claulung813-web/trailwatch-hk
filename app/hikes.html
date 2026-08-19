@@ -59,13 +59,14 @@
           <h1 id="pageTitle"></h1>
           <p id="pageSub"></p>
         </div>
+        <div id="communityTabs"></div>
         <div class="phone-body">
           <input class="search-mini" id="groupSearch" type="search" />
-          <div class="app-chip-row" id="groupFilters" style="margin-bottom:0.55rem;flex-wrap:wrap"></div>
-          <p style="font-size:0.68rem;margin:0 0 0.55rem;color:var(--text-muted)">
-            <span class="app-tbd" id="mvpNote"></span>
-            · <span class="app-tbd" id="publicSoon"></span>
-          </p>
+          <div class="app-chip-row" id="groupFilters" style="margin-bottom:0.45rem;flex-wrap:wrap"></div>
+          <div class="app-date-row">
+            <input type="date" id="groupDateFrom" />
+            <input type="date" id="groupDateTo" />
+          </div>
           <div id="groupList"></div>
         </div>
         <button type="button" class="fab-add" id="btnAdd"></button>
@@ -88,7 +89,7 @@
       <p style="font-size:0.75rem;font-weight:700;color:var(--green-900);margin:0 0 0.35rem" id="lblVis"></p>
       <div style="display:flex;gap:0.4rem;flex-wrap:wrap;margin-bottom:0.5rem">
         <label style="font-size:0.78rem"><input type="radio" name="appVis" value="private" checked /> <span id="lblPriv"></span></label>
-        <label style="font-size:0.78rem"><input type="radio" name="appVis" value="public" id="appVisPublic" disabled /> <span id="lblPub"></span></label>
+        <label style="font-size:0.78rem"><input type="radio" name="appVis" value="public" id="appVisPublic" /> <span id="lblPub"></span></label>
       </div>
       <p style="font-size:0.68rem;color:var(--text-muted);margin:0 0 0.55rem" id="visHint"></p>
       <button type="button" class="btn btn-secondary btn-block" style="margin-bottom:0.45rem;padding:0.45rem" id="btnPickRoute"></button>
@@ -111,12 +112,10 @@
       b.classList.toggle("active", b.dataset.lang === lang);
       b.addEventListener("click", () => { TW.setLang(b.dataset.lang); location.reload(); });
     });
-    document.getElementById("backWeb").textContent = "‹ " + t("feed_title");
-    document.getElementById("pageTitle").textContent = t("groups_title");
-    document.getElementById("pageSub").textContent = t("app_group_private_mvp");
-    document.getElementById("mvpNote").textContent = t("app_group_private_mvp");
-    document.getElementById("publicSoon").textContent = t("app_group_public_soon");
-    document.getElementById("groupSearch").placeholder = t("app_filter_keyword") + "…";
+    document.getElementById("backWeb").textContent = "‹ " + t("app_community");
+    document.getElementById("pageTitle").textContent = t("home_feat_groups");
+    document.getElementById("pageSub").textContent = t("groups_sub");
+    document.getElementById("groupSearch").placeholder = t("groups_search_ph");
     document.getElementById("btnAdd").textContent = "+ " + t("app_group_add");
     document.getElementById("orgTitle").textContent = t("app_group_add");
     document.getElementById("lblOrgName").textContent = t("app_hike_title");
@@ -129,6 +128,7 @@
     document.getElementById("approveNote").textContent = t("groups_premium_private_note");
     document.getElementById("submitOrg").textContent = t("confirm");
     twMountAppNav("home");
+    document.getElementById("communityTabs").innerHTML = twAppCommunityTabs("groups");
 
     function syncAppVis() {
       const canPublic = typeof TW.canOrganizePublicGroup === "function" && TW.canOrganizePublicGroup();
@@ -151,54 +151,74 @@
     const demo = (TW.meetups || []).map((m, i) => ({
       ...m,
       id: i,
-      visibility: "private",
+      visibility: i === 0 ? "public" : "private",
       org: i === 0 ? "tw" : "user",
       status: i === 2 ? "past" : (i === 1 ? "joined" : "upcoming"),
-      invited: i === 0,
+      invited: i !== 1,
+      friendOrg: i !== 1,
+      dateISO: ["2026-09-06", "2026-09-07", "2026-05-21"][i] || "2026-08-01",
       stage: i === 1 ? "joined" : (i === 2 ? "completed" : "recruiting"),
     }));
 
-    let filter = "upcoming";
+    let filter = "all";
     let q = "";
     const chips = [
+      { id: "all", key: "groups_filter_all" },
+      { id: "joined", key: "groups_joined" },
       { id: "upcoming", key: "groups_upcoming" },
       { id: "past", key: "groups_past" },
-      { id: "joined", key: "groups_joined" },
-      { id: "invited", key: "app_group_invited" },
-      { id: "date", key: "app_filter_date" },
+      { id: "friend", key: "groups_filter_friend" },
+      { id: "invited", key: "groups_filter_invited" },
     ];
     document.getElementById("groupFilters").innerHTML = chips.map((c, i) =>
       `<button type="button" class="${i === 0 ? "active" : ""}" data-f="${c.id}">${t(c.key)}</button>`
     ).join("");
 
+    function hikeDate(m) {
+      if (m.dateISO) {
+        const ts = Date.parse(m.dateISO);
+        if (Number.isFinite(ts)) return ts;
+      }
+      return 0;
+    }
+
     function render() {
+      const from = document.getElementById("groupDateFrom").value;
+      const to = document.getElementById("groupDateTo").value;
       const list = demo.filter((m) => {
-        const title = (TW.tt(m, "title") || "").toLowerCase();
+        const title = ((TW.tt(m, "title") || "") + " " + (TW.tt(m, "place") || "")).toLowerCase();
         const okQ = !q || title.includes(q);
-        if (filter === "past") return okQ && m.status === "past";
-        if (filter === "joined") return okQ && (m.status === "joined" || m.stage === "joined");
-        if (filter === "invited") return okQ && m.invited;
-        if (filter === "date") return okQ;
-        return okQ && m.status === "upcoming";
+        if (!okQ) return false;
+        if (filter === "past") return m.status === "past" || m.stage === "completed";
+        if (filter === "joined") return m.status === "joined" || m.stage === "joined" || m.stage === "completed";
+        if (filter === "invited") return m.invited && m.visibility === "private";
+        if (filter === "friend") return m.friendOrg;
+        if (filter === "upcoming") return m.status !== "past" && m.stage !== "completed";
+        const ts = hikeDate(m);
+        if (from && ts && ts < Date.parse(from)) return false;
+        if (to && ts && ts > Date.parse(to) + 86400000 - 1) return false;
+        if ((from || to) && !ts) return false;
+        return true;
       });
       document.getElementById("groupList").innerHTML = list.length
         ? list.map((m) => {
             const title = TW.tt(m, "title");
             const place = TW.tt(m, "place");
             const date = TW.tt(m, "date");
-            const orgLabel = m.org === "tw" ? t("app_org_tw") : t("app_org_user");
-            const orgCls = m.org === "tw" ? "org-tw" : "org-user";
+            const vis = m.visibility === "private" ? t("groups_badge_private") : t("groups_badge_public");
+            const visCls = m.visibility === "private" ? "org-user" : "org-tw";
+            const extra = m.invited && m.visibility === "private" ? t("groups_badge_invited") : (m.friendOrg ? t("groups_filter_friend") : "");
             return `<a class="hike-card" href="group-detail.html?id=${m.id}&stage=${m.stage}">
               <img src="${m.image}" alt="" />
               <div class="body">
                 <strong>${title}</strong>
                 <div class="meta">${date} · ${place}</div>
-                <span class="org-badge ${orgCls}">${orgLabel}</span>
-                <span class="app-tbd" style="margin-left:0.35rem">${t("app_group_private_mvp")}</span>
+                <span class="org-badge ${visCls}">${vis}</span>
+                ${extra ? `<span class="org-badge org-user" style="margin-left:0.3rem">${extra}</span>` : ""}
               </div>
             </a>`;
           }).join("")
-        : `<p style="text-align:center;color:var(--text-muted);padding:2rem 0">${t("hikes_empty")}</p>`;
+        : `<p style="text-align:center;color:var(--text-muted);padding:2rem 0">${t("groups_empty")}</p>`;
     }
 
     document.getElementById("groupFilters").addEventListener("click", (e) => {
@@ -212,6 +232,8 @@
       q = e.target.value.trim().toLowerCase();
       render();
     });
+    document.getElementById("groupDateFrom").addEventListener("change", render);
+    document.getElementById("groupDateTo").addEventListener("change", render);
 
     const modal = document.getElementById("orgModal");
     document.getElementById("btnAdd").addEventListener("click", () => {

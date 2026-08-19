@@ -61,6 +61,7 @@
       <h1 class="page-title" id="ghTitle"></h1>
       <p class="page-sub" id="ghMeta"></p>
       <p id="ghOrg" style="font-size:0.85rem;color:var(--text-muted);margin-bottom:1rem"></p>
+      <p id="ghDesc" class="page-sub" style="margin-bottom:1rem"></p>
 
       <div id="shareBox" class="card" style="padding:1rem;display:none;margin-bottom:1.25rem">
         <p style="margin:0 0 0.65rem;font-size:0.85rem;color:var(--text-muted)" data-i18n="groups_invite_hint"></p>
@@ -84,6 +85,33 @@
         </div>
         <div id="joinActions" style="margin-bottom:0.75rem"></div>
         <div id="memberList"></div>
+      </div>
+
+      <div id="detailBox" class="card" style="padding:1.1rem 1.15rem;margin-top:1.25rem;display:none">
+        <div class="section-head" style="margin-bottom:0.35rem">
+          <h2 data-i18n="groups_detail_links"></h2>
+        </div>
+        <p class="page-sub" id="ghDetailText" style="margin:0 0 0.5rem"></p>
+        <p style="margin:0"><a href="https://chat.whatsapp.com/" target="_blank" rel="noopener noreferrer" id="ghWhatsapp">chat.whatsapp.com/demo</a></p>
+      </div>
+
+      <div id="afterBox" style="display:none">
+        <div class="card" style="padding:1.1rem 1.15rem;margin-top:1.25rem">
+          <div class="section-head" style="margin-bottom:0.35rem">
+            <h2 data-i18n="groups_recorded"></h2>
+          </div>
+          <p class="page-sub" data-i18n="groups_recorded_privacy"></p>
+          <p style="margin:0.5rem 0 0"><a href="record-detail.html" id="ghRecordLink"></a></p>
+        </div>
+        <div class="card" style="padding:1.1rem 1.15rem;margin-top:1.25rem">
+          <div class="section-head" style="margin-bottom:0.35rem">
+            <h2 data-i18n="groups_photos"></h2>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem">
+            <div style="height:120px;border-radius:10px;background:url(https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=400&q=60) center/cover"></div>
+            <div style="height:120px;border-radius:10px;background:url(https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=400&q=60) center/cover"></div>
+          </div>
+        </div>
       </div>
 
       <div id="discussBox" class="card" style="padding:1.1rem 1.15rem;margin-top:1.25rem;display:none">
@@ -131,6 +159,8 @@
           image: src.image,
           visibility: "public",
           path: TW.demoPathAround(22.35 + i * 0.01, 114.25),
+          past: i === 2,
+          dateISO: ["2026-09-06", "2026-09-07", "2026-05-21"][i],
           invited: [],
           organizerName: "TrailWatch",
           organizerEmail: "hello@trailwatch.hk",
@@ -173,6 +203,10 @@
         document.getElementById("ghOrg").textContent =
           (TW.getLang() === "zh" ? "主辦：" : "Organizer: ") + hike.organizerName;
       }
+      document.getElementById("ghDesc").textContent =
+        TW.getLang() === "zh"
+          ? "中等步速聯誼。請自備水與頭燈。"
+          : "Moderate-pace group hike. Bring water and a headlamp.";
       const vis = hike.visibility === "private" ? "private" : "public";
       document.getElementById("badges").innerHTML =
         `<span class="gh-badge ${vis === "private" ? "gh-private" : "gh-public"}">${TW.t(
@@ -275,17 +309,31 @@
       TW.ensureGroupHikeRoster(hike);
       const peopleBox = document.getElementById("peopleBox");
       const discussBox = document.getElementById("discussBox");
+      const detailBox = document.getElementById("detailBox");
+      const afterBox = document.getElementById("afterBox");
       const canSeeNow = TW.canViewGroupHike(hike, token);
       if (!canSeeNow) {
         peopleBox.style.display = "none";
         discussBox.style.display = "none";
+        detailBox.style.display = "none";
+        afterBox.style.display = "none";
         return;
       }
       peopleBox.style.display = "block";
-      discussBox.style.display = "block";
 
       const host = TW.isGroupHikeHost(hike);
       const inGroup = TW.isGroupHikeParticipant(hike);
+      const completed = !!(hike.past || hike.stage === "completed" || (hike.dateISO && Date.parse(hike.dateISO) < Date.now() - 86400000));
+      const joinedView = host || inGroup;
+      detailBox.style.display = joinedView ? "block" : "none";
+      discussBox.style.display = joinedView ? "block" : "none";
+      afterBox.style.display = joinedView && completed ? "block" : "none";
+      document.getElementById("ghDetailText").textContent =
+        TW.getLang() === "zh"
+          ? "主辦可加入 WhatsApp 等外部連結。"
+          : "Organizer can add external URLs such as a WhatsApp group.";
+      const recLink = document.getElementById("ghRecordLink");
+      if (recLink) recLink.textContent = (TW.getLang() === "zh" ? "參加者路線 →" : "Participants’ recorded routes →");
       const actions = document.getElementById("joinActions");
       if (!TW.isLoggedIn()) {
         const nextPath =
@@ -369,7 +417,12 @@
       const lock = document.getElementById("discussLock");
       if (inGroup) {
         form.hidden = false;
-        lock.hidden = true;
+        lock.hidden = completed ? false : true;
+        if (completed) {
+          form.hidden = false;
+          lock.hidden = false;
+          lock.textContent = TW.t("app_discussion_days").replace("{n}", "7");
+        }
       } else {
         form.hidden = true;
         lock.hidden = false;
