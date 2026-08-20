@@ -10,20 +10,29 @@ TW.SELECTED_BADGE_KEY = "tw_dashboard_badge";
 
 TW.getDashboardBadges = function () {
   const zh = TW.getLang() === "zh";
-  const hiking = (TW.badges || []).map((b, i) => ({
-    id: "hike_" + i,
-    cat: "hike",
-    name: zh ? b.nameZh || b.name : b.name,
-    emoji: b.emoji,
-    color: b.color || "#2d8a45",
-    locked: !!b.locked,
-    criteria: zh ? b.criteriaZh || b.criteria || "" : b.criteria || b.criteriaZh || "",
-  }));
+  const hiking = (TW.badges || []).map((b, i) => {
+    const total = b.total != null ? Number(b.total) : 1;
+    const progress = b.locked ? (b.progress != null ? Number(b.progress) : 0) : total;
+    return {
+      id: "hike_" + i,
+      cat: "hike",
+      name: zh ? b.nameZh || b.name : b.name,
+      emoji: b.emoji,
+      color: b.color || "#2d8a45",
+      locked: !!b.locked,
+      progress: progress,
+      total: total,
+      criteria: zh ? b.criteriaZh || b.criteria || "" : b.criteria || b.criteriaZh || "",
+    };
+  });
   const env = [];
   const lvl = typeof TW.getEnvLevel === "function" ? TW.getEnvLevel() : 0;
+  const st = typeof TW.getEnvState === "function" ? TW.getEnvState() : {};
+  const envActs = (st.A || 0) + (st.B || 0) + (st.C || 0) + (st.D || 0) + (st.E || 0);
   for (let L = 1; L <= 5; L++) {
     const meta = TW.ENV_BADGE_META && TW.ENV_BADGE_META[L];
     if (!meta) continue;
+    const need = L * 5;
     env.push({
       id: "env_" + L,
       cat: "env",
@@ -31,12 +40,22 @@ TW.getDashboardBadges = function () {
       emoji: meta.emoji,
       color: meta.color,
       locked: L > lvl,
+      progress: Math.min(need, envActs),
+      total: need,
       criteria: zh
         ? "完成環保行動以解鎖第 " + L + " 級徽章。"
         : "Complete environmental actions to unlock Level " + L + ".",
     });
   }
   return { hiking, env };
+};
+
+TW.badgeProgressHtml = function (b) {
+  const total = Math.max(1, Number(b.total) || 1);
+  const progress = Math.max(0, Math.min(total, Number(b.progress) || 0));
+  const pct = Math.round((progress / total) * 100);
+  return `<div class="badge-progress" aria-hidden="true"><span style="width:${pct}%"></span></div>
+    <div class="badge-progress-lbl">${progress}/${total}</div>`;
 };
 
 TW.getSelectedBadgeId = function () {
@@ -282,6 +301,7 @@ TW.renderProfileBadgeGrid = function (el, onSelect) {
             <span class="ico" style="background:${b.locked ? "#d1d5db" : b.color}">${b.emoji}</span>
             <span class="name">${b.name}</span>
             <span class="crit">${tip}</span>
+            ${TW.badgeProgressHtml(b)}
             ${sel === b.id ? `<span class="sel-tag">${TW.t("dash_selected")}</span>` : ""}
           </button>`;
         })

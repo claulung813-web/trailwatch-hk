@@ -73,6 +73,7 @@ TW.saveHike = function (hike) {
     photoPrivacy: hike.photoPrivacy || "public",
     district: hike.district || "",
     activityTags: Array.isArray(hike.activityTags) ? hike.activityTags.slice() : [],
+    notes: hike.notes || "",
     user: hike.user || (TW.user && TW.user.name) || "Hiker",
     avatar: hike.avatar != null ? hike.avatar : (TW.user && TW.user.avatar) || null,
     startedAt: hike.startedAt || new Date().toISOString(),
@@ -218,13 +219,37 @@ TW.DEFAULT_ACTIVITY_TAGS = [
 ];
 
 TW.getActivityTags = function () {
-  try {
-    if (typeof CMS !== "undefined" && CMS.getStore) {
-      const list = CMS.getStore().activityTags;
-      if (Array.isArray(list) && list.length) return list;
-    }
-  } catch (e) { /* ignore */ }
   return TW.DEFAULT_ACTIVITY_TAGS;
+};
+
+TW.recordDurationMinutes = function (r) {
+  if (!r) return 0;
+  if (r.seconds) return Math.round(Number(r.seconds) / 60);
+  const raw = String(r.duration || "");
+  const hm = raw.match(/(\d+)\s*:\s*(\d+)/);
+  if (hm) return Number(hm[1]) * 60 + Number(hm[2]);
+  return 0;
+};
+
+TW.recordDateValue = function (r) {
+  if (!r) return null;
+  if (r.isoDate) {
+    const d = new Date(r.isoDate + "T12:00:00");
+    if (!isNaN(d.getTime())) return d;
+  }
+  if (r.startedAt) {
+    const d = new Date(r.startedAt);
+    if (!isNaN(d.getTime())) return d;
+  }
+  const d = Date.parse(r.date || "");
+  return isNaN(d) ? null : new Date(d);
+};
+
+TW.recordIsFriend = function (r) {
+  if (!r) return false;
+  if (r.fromFriend) return true;
+  const names = (TW.demoFriends || TW.friends || []).map((f) => String(f.name || "").toLowerCase());
+  return names.indexOf(String(r.user || "").toLowerCase()) >= 0;
 };
 
 TW.activityTagLabel = function (id) {

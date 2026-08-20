@@ -2,100 +2,11 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-  <title>TrailWatch App — My Records</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="../css/styles.css" />
-  <style>
-    body { margin: 0; }
-    .phone-body { flex: 1; overflow-y: auto; padding: 0.75rem 0.9rem 1rem; background: #f7faf7; }
-    .app-head { padding: 2.4rem 0.9rem 0.65rem; background: #fff; border-bottom: 1px solid var(--border); }
-    .app-head h1 { font-size: 1.05rem; color: var(--green-900); margin: 0; }
-    .search-mini {
-      width: 100%; border: 1px solid var(--border); border-radius: 10px;
-      padding: 0.45rem 0.7rem; font-size: 0.8rem; margin-bottom: 0.5rem; background: #fff;
-    }
-    .premium-row {
-      display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;
-      background: #fff; border: 1px solid var(--border); border-radius: 12px;
-      padding: 0.65rem 0.8rem; margin-bottom: 0.65rem; font-size: 0.78rem; font-weight: 600; color: var(--green-900);
-    }
-  </style>
+  <meta http-equiv="refresh" content="0;url=profile.html#info" />
+  <title>My Records — TrailWatch App</title>
+  <script>location.replace("profile.html#profile&type=records");</script>
 </head>
 <body>
-  <div class="app-page">
-    <div class="app-page-top">
-      <a href="profile.html" id="backWeb"></a>
-      <div class="lang-switch" style="margin:0.75rem auto 0;width:fit-content;background:rgba(255,255,255,0.15);border-color:rgba(255,255,255,0.25)">
-        <button type="button" data-lang="en" style="color:#fff">EN</button>
-        <button type="button" data-lang="zh" style="color:#fff">繁</button>
-      </div>
-    </div>
-    <div class="phone-frame">
-      <div class="phone-notch"></div>
-      <div class="phone-screen">
-        <div class="app-head"><h1 id="pageTitle"></h1></div>
-        <div class="phone-body">
-          <input class="search-mini" id="q" type="search" />
-          <div class="app-chip-row" id="filters" style="margin-bottom:0.55rem"></div>
-          <div class="premium-row">
-            <span id="footLabel"></span>
-            <span class="app-premium-pill" id="footPrem"></span>
-          </div>
-          <div class="record-list" id="hikeList"></div>
-        </div>
-        <div data-app-nav></div>
-      </div>
-    </div>
-  </div>
-  <div class="toast" id="toast"></div>
-  <script src="../js/i18n.js"></script>
-  <script src="../js/data.js"></script>
-  <script src="../js/hikes.js"></script>
-  <script src="../js/cms-store.js"></script>
-  <script src="../js/app.js"></script>
-  <script>
-    document.documentElement.lang = TW.getLang() === "zh" ? "zh-Hant" : "en";
-    const lang = TW.getLang();
-    const t = TW.t;
-    document.querySelectorAll(".lang-switch button").forEach((b) => {
-      b.classList.toggle("active", b.dataset.lang === lang);
-      b.addEventListener("click", () => { TW.setLang(b.dataset.lang); location.reload(); });
-    });
-    document.getElementById("backWeb").textContent = "‹ " + t("app_profile");
-    document.getElementById("pageTitle").textContent = t("app_my_records");
-    document.getElementById("q").placeholder = t("app_filter_keyword") + "…";
-    document.getElementById("footLabel").textContent = t("app_footprint_map");
-    document.getElementById("footPrem").textContent = t("app_premium");
-    document.getElementById("filters").innerHTML = `
-      <button type="button" class="active" data-f="all">${t("filter_all")}</button>
-      <button type="button" data-f="date">${t("app_filter_date")}</button>
-      <button type="button" data-f="district">${t("filter_district")}</button>`;
-    twMountAppNav("profile");
-    TW.ensureDemoHike();
-    let q = "", filter = "all";
-    function render() {
-      let list = TW.getHikes();
-      if (q) list = list.filter((h) => ((h.title || "") + " " + (h.titleZh || "")).toLowerCase().includes(q));
-      if (filter === "date") list = list.slice(0, 2);
-      document.getElementById("hikeList").innerHTML = list.length
-        ? list.map((h) => TW.renderHikeListItem(h, "hike-detail.html?id=" + encodeURIComponent(h.id))).join("")
-        : `<p style="text-align:center;color:var(--text-muted);padding:2rem 1rem">${t("hikes_empty")}</p>
-           <a class="btn btn-primary btn-block" href="index.html">${t("app_track")}</a>`;
-    }
-    document.getElementById("q").addEventListener("input", (e) => { q = e.target.value.trim().toLowerCase(); render(); });
-    document.getElementById("filters").addEventListener("click", (e) => {
-      const btn = e.target.closest("button[data-f]");
-      if (!btn) return;
-      filter = btn.dataset.f;
-      document.querySelectorAll("#filters button").forEach((c) => c.classList.toggle("active", c === btn));
-      if (filter === "district") showToast(t("filter_district") + " · TBD");
-      render();
-    });
-    document.querySelector(".premium-row").addEventListener("click", () => showToast(t("app_upgrade")));
-    render();
-  </script>
+  <p><a href="profile.html#profile&type=records">Continue</a></p>
 </body>
 </html>

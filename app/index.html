@@ -13,15 +13,15 @@
   <style>
     body { margin: 0; }
     .site-header, .site-footer { display: none !important; }
-    #appMap { width: 100%; height: 100%; }
+    #appMap { width: 100%; height: 100%; position: relative; z-index: 0; }
     .sr-only {
       position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
       overflow: hidden; clip: rect(0,0,0,0); border: 0;
     }
     .phone-topbar {
-      position: absolute; top: 0; left: 0; right: 0; z-index: 20;
+      position: absolute; top: 0; left: 0; right: 0; z-index: 1100;
       display: flex; justify-content: space-between; align-items: center;
-      padding: 2.4rem 0.75rem 0.5rem; pointer-events: none; gap: 0.4rem;
+      padding: 3.35rem 0.75rem 0.5rem; pointer-events: none; gap: 0.4rem;
     }
     .phone-topbar > * { pointer-events: auto; }
     .mode-toggle {
@@ -50,7 +50,7 @@
       box-shadow: 0 2px 10px rgba(0,0,0,.12); display: flex; align-items: center; gap: 0.3rem;
     }
     .gps-pill .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green-500); }
-    .figma-map-controls { top: auto !important; bottom: 10.5rem; right: 0.75rem; }
+    .figma-map-controls { top: auto !important; bottom: 10.5rem; right: 0.75rem; z-index: 1100; }
     .phone-screen.track-focus .app-bottom-nav { display: grid; }
     .figma-start-bar {
       padding: 0.75rem 1.1rem 1.1rem !important;
@@ -138,8 +138,8 @@
     .follow-banner {
       display: none; margin: 0 0.75rem; padding: 0.45rem 0.65rem; border-radius: 10px;
       background: rgba(255,255,255,0.95); box-shadow: 0 2px 10px rgba(0,0,0,.1);
-      font-size: 0.72rem; font-weight: 600; color: var(--green-900); z-index: 22;
-      position: absolute; left: 0; right: 0; top: 5.6rem;
+      font-size: 0.72rem; font-weight: 600; color: var(--green-900); z-index: 1100;
+      position: absolute; left: 0; right: 0; top: 6.4rem;
     }
     .follow-banner.show { display: block; }
     .ico-clock::before, .ico-pin::before, .ico-elev::before,
@@ -168,8 +168,26 @@
       cursor: pointer; color: var(--green-900);
     }
     .privacy-grid input { accent-color: var(--green-700); }
+    .figma-sheet:not(.expanded) #btnPause { display: none; }
+    .plan-tools {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 0.35rem; margin-bottom: 0.45rem;
+    }
+    .plan-tools button {
+      border: 1px solid #d5e6da; background: #f7faf7; border-radius: 10px;
+      padding: 0.4rem 0.35rem; font-size: 0.72rem; font-weight: 800; color: var(--green-900); cursor: pointer;
+    }
+    .plan-tools button.active { background: var(--green-900); color: #fff; border-color: var(--green-900); }
+    .plan-tools-row { display: flex; gap: 0.35rem; margin-bottom: 0.45rem; }
+    .mk {
+      width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center;
+      color: #fff; font-size: 0.58rem; font-weight: 800; box-shadow: 0 1px 4px rgba(0,0,0,.28);
+    }
+    .mk-start { background: #2d8a45; }
+    .mk-end { background: #d64545; }
+    .mk-via { background: #2563eb; }
+    .mk-poi { background: #f5a623; color: #1a1a1a; }
     .report-fab {
-      position: absolute; left: 0.75rem; bottom: 10.5rem; z-index: 28;
+      position: absolute; left: 0.75rem; bottom: 10.5rem; z-index: 1100;
       width: 48px; height: 48px; border-radius: 50%; border: none; cursor: pointer;
       background: #e84a3c; color: #fff; box-shadow: 0 4px 14px rgba(232,74,60,0.4);
       display: grid; place-items: center;
@@ -295,12 +313,7 @@
 
         <!-- Idle Track -->
         <div class="start-bar figma-start-bar" id="idleBar">
-          <button class="action-circle" type="button" id="idleReport">
-            <span class="circle red" aria-hidden="true">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
-            </span>
-            <span id="lblReport1"></span>
-          </button>
+          <span class="action-circle start-bar-spacer" aria-hidden="true"></span>
           <button class="btn-start figma-start" id="btnStart" type="button">
             <span class="figma-start-pill" aria-hidden="true">
               <svg width="28" height="28" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>
@@ -312,9 +325,19 @@
 
         <!-- Plan panel -->
         <div class="plan-panel" id="planPanel">
+          <div class="plan-tools" id="planTools">
+            <button type="button" class="active" data-tool="start" id="btnPlanStartHere"></button>
+            <button type="button" data-tool="end" id="btnPlanEndHere"></button>
+            <button type="button" data-tool="via" id="btnPlanViaHere"></button>
+            <button type="button" data-tool="poi" id="btnAddPoi"></button>
+          </div>
+          <div class="plan-tools-row">
+            <button type="button" class="btn btn-secondary" style="flex:1;padding:0.4rem;font-size:0.78rem" id="btnPlanUndo"></button>
+            <button type="button" class="btn btn-primary" style="flex:1;padding:0.4rem;font-size:0.78rem" id="btnPlanSave"></button>
+          </div>
           <div class="plan-row"><span id="lblPlanStart"></span><strong id="planStartVal">—</strong></div>
           <div class="plan-row"><span id="lblPlanEnd"></span><strong id="planEndVal">—</strong></div>
-          <button type="button" class="btn btn-secondary btn-block" style="margin-bottom:0.45rem;padding:0.45rem;font-size:0.8rem" id="btnAddPoi"></button>
+          <div class="plan-row"><span id="lblPlanVia"></span><strong id="planViaVal">—</strong></div>
           <div class="plan-stats">
             <div class="plan-stat"><div class="val" id="planDist">—</div><div class="lbl" id="planDistLbl"></div></div>
             <div class="plan-stat"><div class="val" id="planDur">—</div><div class="lbl" id="planDurLbl"></div></div>
@@ -328,12 +351,6 @@
         <div class="track-sheet figma-sheet hidden" id="activeSheet">
           <div class="sheet-handle" id="sheetHandle" aria-hidden="true"></div>
           <div class="track-actions figma-actions">
-            <button class="action-circle" type="button" id="activeReport">
-              <span class="circle red" aria-hidden="true">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
-              </span>
-              <span id="lblReport2"></span>
-            </button>
             <button class="action-circle" type="button" id="btnPause">
               <span class="circle amber" aria-hidden="true">❚❚</span>
               <span id="lblPause"></span>
@@ -345,24 +362,24 @@
               <span id="lblPhoto"></span>
             </button>
           </div>
-          <!-- Collapsed: Time · Distance · Elev gain -->
+          <!-- Collapsed: Duration · Distance · Current altitude -->
           <div class="figma-live-stats figma-live-stats-compact">
             <div class="live-stat"><span class="ico-clock"></span><span id="mTime">00:00:00</span></div>
             <div class="live-stat"><span class="ico-pin"></span><span id="mDist">0.00 km</span></div>
-            <div class="live-stat"><span class="ico-elev-up"></span><span id="mGainCompact">0 m</span></div>
+            <div class="live-stat"><span class="ico-alt"></span><span id="mAltCompact">142 m</span></div>
           </div>
-          <!-- Open drawer (Figma): full stats + elev/pace chart — no calories -->
+          <!-- Open drawer: duration, distance, altitude, pace, gain, loss + graph -->
           <div class="drawer-extra">
             <div class="figma-open-stats">
               <div class="stats-row">
                 <div class="live-stat"><span class="ico-clock"></span><span id="mTimeOpen">00:00:00</span></div>
                 <div class="live-stat"><span class="ico-pin"></span><span id="mDistOpen">0.00 km</span></div>
-                <div class="live-stat"><span class="ico-elev-up"></span><span id="mGain">0 m</span></div>
+                <div class="live-stat"><span class="ico-alt"></span><span id="mAltOpen">142 m</span></div>
               </div>
               <div class="stats-row cols-2">
                 <div class="live-stat"><span class="ico-pace"></span><span id="mPace">— /km</span></div>
+                <div class="live-stat"><span class="ico-elev-up"></span><span id="mGain">0 m</span></div>
                 <div class="live-stat"><span class="ico-elev-down"></span><span id="mLoss">0 m</span></div>
-                <div class="live-stat" aria-hidden="true"></div>
               </div>
             </div>
             <div class="elev-pace-chart" aria-hidden="true">
@@ -455,18 +472,7 @@
             <div class="privacy-grid" id="privacyGrid">
               <label><input type="radio" name="privacy" value="public" checked /> <span id="privPublic"></span></label>
               <label><input type="radio" name="privacy" value="private" /> <span id="privPrivate"></span></label>
-              <label><input type="radio" name="privacy" value="friends" /> <span id="privFriends"></span></label>
-              <label><input type="radio" name="privacy" value="participants" /> <span id="privParticipants"></span></label>
             </div>
-          </div>
-          <div class="form-group figma-field">
-            <label id="lblPhotoPrivacy" class="figma-field-label"></label>
-            <select class="form-select figma-input" id="photoPrivacy">
-              <option value="public"></option>
-              <option value="private"></option>
-              <option value="friends"></option>
-              <option value="participants"></option>
-            </select>
           </div>
           <div class="form-group figma-field">
             <label id="lblActivityTags" class="figma-field-label"></label>
@@ -527,7 +533,6 @@
               <label class="figma-field-label" id="lblPhotoPrivModal"></label>
               <select class="form-select figma-input" id="photoPrivModal">
                 <option value="public"></option>
-                <option value="friends"></option>
                 <option value="private"></option>
               </select>
             </div>
@@ -564,6 +569,7 @@
             <p style="font-size:0.8rem;color:var(--text-muted);margin:0.4rem 0" id="shareBody"></p>
             <span class="app-premium-pill" id="sharePremium"></span>
             <div class="share-url" id="shareUrl"></div>
+            <p style="font-size:0.72rem;color:var(--text-muted);margin:0 0 0.55rem" id="shareEmailHint"></p>
             <button type="button" class="btn btn-primary btn-block" id="copyShare"></button>
           </div>
         </div>
@@ -578,9 +584,23 @@
               <strong style="color:var(--green-900)" id="reportTitle"></strong>
               <button type="button" id="closeAppReport">✕</button>
             </div>
-            <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:0.75rem" id="reportLive"></p>
-            <div class="loc-preview" style="margin-bottom:0.75rem"><div id="liveCoords">📍 —</div></div>
-            <div class="form-group" style="margin-bottom:0.65rem">
+            <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:0.55rem" id="reportLive"></p>
+            <div class="form-group" style="margin-bottom:0.5rem">
+              <label id="lblReportPhotos"></label>
+              <p style="font-size:0.72rem;color:var(--text-muted);margin:0 0 0.35rem" id="hintReportPhotos"></p>
+              <button type="button" class="btn btn-amber btn-block" id="appAddPhotos"></button>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.45rem">
+              <div class="form-group" style="margin-bottom:0.5rem">
+                <label id="lblReportDate"></label>
+                <input class="form-input" type="text" id="appReportDate" />
+              </div>
+              <div class="form-group" style="margin-bottom:0.5rem">
+                <label id="lblReportTime"></label>
+                <input class="form-input" type="text" id="appReportTime" />
+              </div>
+            </div>
+            <div class="form-group" style="margin-bottom:0.5rem">
               <label id="lblCat"></label>
               <select class="form-select" id="appCat">
                 <option value="waste"></option>
@@ -589,7 +609,19 @@
                 <option value="obstruction"></option>
               </select>
             </div>
-            <button type="button" class="btn btn-amber btn-block" style="margin-bottom:0.65rem" id="appAddPhotos"></button>
+            <div class="loc-preview" style="margin-bottom:0.5rem">
+              <div id="liveAddress"></div>
+              <div id="liveCoords">📍 —</div>
+              <button type="button" id="appPickOnMap" style="margin-top:0.35rem"></button>
+            </div>
+            <div class="form-group" style="margin-bottom:0.5rem">
+              <label id="lblReportIncTitle"></label>
+              <input class="form-input" id="appReportTitle" />
+            </div>
+            <div class="form-group" style="margin-bottom:0.65rem">
+              <label id="lblReportDesc"></label>
+              <textarea class="form-textarea" id="appReportDesc" rows="2"></textarea>
+            </div>
             <button class="btn btn-primary btn-block" id="submitAppReport"></button>
           </div>
         </div>
@@ -617,6 +649,11 @@
     });
 
     const hikeId = "hike_" + Date.now();
+    const LIVE_EMAIL = "safety@trailwatch.hk";
+    function liveShareUrl() {
+      const base = location.href.replace(/[#?].*$/, "").replace(/index\.html$/, "");
+      return base + "live.html?id=" + encodeURIComponent(hikeId);
+    }
     let hikeStarted = false;
     let photoType = "landscape";
     let cleanupBefore = false;
@@ -625,7 +662,11 @@
     let mapMode = "track";
     let planStart = null;
     let planEnd = null;
+    let planVias = [];
     let planPois = [];
+    let planTool = "start";
+    let planHistory = [];
+    let planDraftId = "";
     let altitude = 142;
     let following = false;
     let followKind = "";
@@ -667,7 +708,7 @@
     function renderActivityTagPicker() {
       const wrap = document.getElementById("activityTagPicker");
       if (!wrap) return;
-      const tags = (typeof TW.getActivityTags === "function" && TW.getActivityTags()) || [];
+      const tags = TW.DEFAULT_ACTIVITY_TAGS || [];
       const esc = (s) =>
         String(s || "")
           .replace(/&/g, "&amp;")
@@ -698,8 +739,6 @@
       document.getElementById("modeTrack").textContent = t("app_mode_track");
       document.getElementById("modePlan").textContent = t("app_mode_plan");
       document.getElementById("lblStart").textContent = t("app_start");
-      document.getElementById("lblReport1").textContent = t("app_report");
-      document.getElementById("lblReport2").textContent = t("app_report");
       document.getElementById("fabReportLbl").textContent = t("app_report");
       document.getElementById("lblPause").textContent = t("app_pause");
       document.getElementById("lblPhoto").textContent = t("app_photo");
@@ -717,13 +756,9 @@
       document.getElementById("btnExpandDrawer").textContent = t("app_drawer_more");
       document.getElementById("lblTitle").textContent = t("app_hike_title");
       document.getElementById("lblPrivacy").textContent = t("app_privacy");
-      document.getElementById("lblPhotoPrivacy").textContent = t("app_photo_privacy");
       document.getElementById("lblPhotoPrivModal").textContent = t("app_photo_privacy");
       document.getElementById("privPublic").textContent = t("app_privacy_public");
       document.getElementById("privPrivate").textContent = t("app_privacy_private");
-      document.getElementById("privFriends").textContent = t("app_privacy_friends");
-      document.getElementById("privParticipants").textContent = t("app_privacy_participants");
-      fillPrivacyOptions(document.getElementById("photoPrivacy"));
       fillPrivacyOptions(document.getElementById("photoPrivModal"));
       document.getElementById("lblActivityTags").textContent = t("app_activity_tags");
       document.getElementById("hintActivityTags").textContent = t("app_activity_tags_hint");
@@ -731,9 +766,19 @@
       document.getElementById("lblDetails").textContent = t("app_hike_details");
       document.getElementById("hikeTitle").placeholder = t("app_title_ph");
       document.getElementById("hikeDetails").placeholder = t("app_details_ph");
-      document.getElementById("reportTitle").textContent = t("app_report_while");
+      document.getElementById("reportTitle").textContent = t("report_modal_title");
       document.getElementById("reportLive").textContent = t("app_report_live") + " · " + t("env_act_c_short");
       document.getElementById("reportMapHint").textContent = t("map_hint");
+      document.getElementById("lblReportPhotos").textContent = t("report_photos");
+      document.getElementById("hintReportPhotos").textContent = t("report_photos_hint");
+      document.getElementById("lblReportDate").textContent = t("date");
+      document.getElementById("lblReportTime").textContent = t("time");
+      document.getElementById("lblReportIncTitle").textContent = t("title_label");
+      document.getElementById("appReportTitle").placeholder = t("add_title");
+      document.getElementById("lblReportDesc").textContent = t("description");
+      document.getElementById("appReportDesc").placeholder = t("tell_more");
+      document.getElementById("appPickOnMap").textContent = t("pick_on_map");
+      document.getElementById("liveAddress").textContent = lang === "zh" ? "香港" : "Hong Kong";
       document.getElementById("lblCat").textContent = t("category");
       document.getElementById("appAddPhotos").textContent = t("add_photos");
       document.getElementById("submitAppReport").textContent = t("confirm");
@@ -744,7 +789,13 @@
       cat.options[3].text = t("cat_obstruction");
       document.getElementById("lblPlanStart").textContent = t("app_plan_start");
       document.getElementById("lblPlanEnd").textContent = t("app_plan_end");
-      document.getElementById("btnAddPoi").textContent = "+ " + t("app_plan_poi");
+      document.getElementById("lblPlanVia").textContent = t("app_plan_via_list");
+      document.getElementById("btnPlanStartHere").textContent = t("app_plan_start_here");
+      document.getElementById("btnPlanEndHere").textContent = t("app_plan_end_here");
+      document.getElementById("btnPlanViaHere").textContent = t("app_plan_via_here");
+      document.getElementById("btnAddPoi").textContent = t("app_plan_poi");
+      document.getElementById("btnPlanUndo").textContent = t("app_plan_undo");
+      document.getElementById("btnPlanSave").textContent = t("app_plan_save");
       document.getElementById("planDistLbl").textContent = t("app_distance");
       document.getElementById("planDurLbl").textContent = t("app_duration");
       document.getElementById("planGainLbl").textContent = t("app_elev_gain");
@@ -754,8 +805,9 @@
       document.getElementById("shareTitle").textContent = t("app_live_share_title");
       document.getElementById("shareBody").textContent = t("app_live_share_body");
       document.getElementById("sharePremium").textContent = t("app_live_share_premium");
-      document.getElementById("copyShare").textContent = t("app_live_share_copy");
-      document.getElementById("shareUrl").textContent = location.origin + "/app/index.html?live=" + hikeId;
+      document.getElementById("copyShare").textContent = t("app_live_share_send");
+      document.getElementById("shareEmailHint").textContent = t("app_live_share_email_hint").replace("{email}", t("app_live_share_email"));
+      document.getElementById("shareUrl").textContent = liveShareUrl();
       twMountAppNav("track");
 
       document.getElementById("aTitle").textContent = t("env_start_title");
@@ -884,7 +936,8 @@
       pauseSheet.classList.toggle("hidden", s !== "paused");
       document.getElementById("gpsText").textContent =
         s === "idle" ? TW.t("app_gps_ready") : s === "active" ? TW.t("app_gps_good") : TW.t("app_gps_paused");
-      document.getElementById("fabReport").style.display = (s === "idle" && mapMode === "track") ? "grid" : "none";
+      const reportOpen = document.getElementById("reportSheet").classList.contains("open");
+      document.getElementById("fabReport").style.display = reportOpen ? "none" : "grid";
     }
 
     function setDrawer(open) {
@@ -922,16 +975,18 @@
       }
       const tStr = fmtTime(seconds);
       const dStr = dist.toFixed(2) + " km";
+      const aStr = altitude + " m";
       const gStr = Math.round(gain) + " m";
       document.getElementById("mTime").textContent = tStr;
       document.getElementById("mDist").textContent = dStr;
-      document.getElementById("mGainCompact").textContent = gStr;
+      document.getElementById("mAltCompact").textContent = aStr;
       document.getElementById("mTimeOpen").textContent = tStr;
       document.getElementById("mDistOpen").textContent = dStr;
+      document.getElementById("mAltOpen").textContent = aStr;
       document.getElementById("mGain").textContent = gStr;
       document.getElementById("mLoss").textContent = Math.round(loss) + " m";
       document.getElementById("mPace").textContent = paceStr();
-      document.getElementById("mAlt").textContent = altitude + " m";
+      document.getElementById("mAlt").textContent = aStr;
     }
 
     function beginTracking() {
@@ -951,7 +1006,8 @@
       clearInterval(timer); timer = null;
       const titleInput = document.getElementById("hikeTitle").value.trim();
       const privacy = (document.querySelector('input[name="privacy"]:checked') || {}).value || "public";
-      const photoPriv = document.getElementById("photoPrivacy").value;
+      const photoPriv = document.getElementById("photoPrivModal").value;
+      const notes = document.getElementById("hikeDetails").value.trim();
       const saved = TW.saveHike({
         id: hikeId,
         title: titleInput || TW.t("hikes_untitled"),
@@ -964,6 +1020,7 @@
         pace: paceStr(),
         privacy,
         photoPrivacy: photoPriv,
+        notes,
         activityTags: Array.from(selectedActivityTags),
         path: recordedPath.length > 1 ? recordedPath : route.slice(0, Math.max(2, routeIdx + 1)),
         startedAt: hikeStartedAt || new Date().toISOString(),
@@ -981,7 +1038,7 @@
         idleBar.classList.add("hidden");
         activeSheet.classList.add("hidden");
         pauseSheet.classList.add("hidden");
-        document.getElementById("fabReport").style.display = "none";
+        document.getElementById("fabReport").style.display = "grid";
         document.getElementById("planHint").textContent = TW.t("app_plan_set_start");
       } else {
         showState(state === "active" || state === "paused" ? state : "idle");
@@ -998,47 +1055,224 @@
       setMapMode(btn.dataset.mode);
     });
 
-    map.on("click", (e) => {
-      if (mapMode !== "plan") return;
-      if (!planStart) {
-        planStart = e.latlng;
-        planMarkers.push(L.circleMarker(e.latlng, { radius: 7, color: "#fff", weight: 2, fillColor: "#2d8a45", fillOpacity: 1 }).addTo(map));
-        document.getElementById("planStartVal").textContent = e.latlng.lat.toFixed(4) + ", " + e.latlng.lng.toFixed(4);
-        document.getElementById("planHint").textContent = TW.t("app_plan_set_end");
-      } else if (!planEnd) {
-        planEnd = e.latlng;
-        planMarkers.push(L.circleMarker(e.latlng, { radius: 7, color: "#fff", weight: 2, fillColor: "#d64545", fillOpacity: 1 }).addTo(map));
-        document.getElementById("planEndVal").textContent = e.latlng.lat.toFixed(4) + ", " + e.latlng.lng.toFixed(4);
-        if (planLine) map.removeLayer(planLine);
-        planLine = L.polyline([planStart, ...planPois, planEnd], { color: "#2563eb", weight: 4 }).addTo(map);
-        document.getElementById("planDist").textContent = "6.2 km";
-        document.getElementById("planDur").textContent = "2h 10m";
-        document.getElementById("planGain").textContent = "380 m";
-        document.getElementById("planHint").textContent = TW.t("app_plan_done");
+    function planIcon(type, label) {
+      return L.divIcon({
+        className: "marker-label",
+        html: '<div class="mk mk-' + type + '">' + label + "</div>",
+        iconSize: [24, 24],
+        iconAnchor: [12, 12],
+      });
+    }
+
+    function planSpine() {
+      const pts = [];
+      if (planStart) pts.push(planStart);
+      planVias.forEach((v) => pts.push(v.latlng));
+      if (planEnd) pts.push(planEnd);
+      return pts;
+    }
+
+    function refreshPlanLine() {
+      const pts = planSpine();
+      if (planLine) {
+        map.removeLayer(planLine);
+        planLine = null;
       }
+      if (pts.length >= 2) {
+        planLine = L.polyline(pts, { color: "#2563eb", weight: 4 }).addTo(map);
+      }
+      const km = TW.pathDistanceKm(pts.map((ll) => [ll.lat, ll.lng]));
+      const gainEst = (TW.estimateElevFallback(km) || {}).gain || 0;
+      const hrs = TW.estimateDurationHours(km, gainEst);
+      document.getElementById("planDist").textContent = km ? km.toFixed(2) + " km" : "—";
+      document.getElementById("planDur").textContent = hrs ? TW.formatHours(hrs) : "—";
+      document.getElementById("planGain").textContent = km ? Math.round(gainEst) + " m" : "—";
+      document.getElementById("planStartVal").textContent = planStart
+        ? planStart.lat.toFixed(4) + ", " + planStart.lng.toFixed(4) : "—";
+      document.getElementById("planEndVal").textContent = planEnd
+        ? planEnd.lat.toFixed(4) + ", " + planEnd.lng.toFixed(4) : "—";
+      document.getElementById("planViaVal").textContent = planVias.length
+        ? planVias.map((_, i) => "v" + (i + 1)).join(" · ") : "—";
+    }
+
+    function setPlanTool(tool) {
+      planTool = tool;
+      document.querySelectorAll("#planTools button").forEach((b) => {
+        b.classList.toggle("active", b.dataset.tool === tool);
+      });
+      const hintKey = {
+        start: "app_plan_set_start",
+        end: "app_plan_set_end",
+        via: "app_plan_set_via",
+        poi: "app_plan_set_poi",
+      }[tool] || "app_plan_set_start";
+      document.getElementById("planHint").textContent = TW.t(hintKey);
+    }
+
+    function bindDrag(marker, onMove) {
+      marker.on("drag", () => {
+        onMove(marker.getLatLng());
+        refreshPlanLine();
+      });
+      marker.on("dragend", () => {
+        onMove(marker.getLatLng());
+        refreshPlanLine();
+      });
+    }
+
+    function placeStart(ll, fromUndo) {
+      if (planStart && planStart._marker) map.removeLayer(planStart._marker);
+      const marker = L.marker(ll, { icon: planIcon("start", "A"), draggable: true }).addTo(map);
+      planStart = ll;
+      planStart._marker = marker;
+      bindDrag(marker, (pos) => {
+        planStart = pos;
+        planStart._marker = marker;
+      });
+      if (!fromUndo) planHistory.push({ type: "start" });
+      if (!fromUndo && !planEnd) setPlanTool("end");
+      refreshPlanLine();
+    }
+
+    function placeEnd(ll, fromUndo) {
+      if (planEnd && planEnd._marker) map.removeLayer(planEnd._marker);
+      const marker = L.marker(ll, { icon: planIcon("end", "B"), draggable: true }).addTo(map);
+      planEnd = ll;
+      planEnd._marker = marker;
+      bindDrag(marker, (pos) => {
+        planEnd = pos;
+        planEnd._marker = marker;
+      });
+      if (!fromUndo) planHistory.push({ type: "end" });
+      if (!fromUndo) setPlanTool("via");
+      refreshPlanLine();
+    }
+
+    function placeVia(ll, fromUndo) {
+      const idx = planVias.length;
+      const marker = L.marker(ll, { icon: planIcon("via", "v" + (idx + 1)), draggable: true }).addTo(map);
+      const item = { latlng: ll, marker: marker };
+      planVias.push(item);
+      bindDrag(marker, (pos) => { item.latlng = pos; });
+      if (!fromUndo) planHistory.push({ type: "via" });
+      refreshPlanLine();
+    }
+
+    function placePoi(ll, fromUndo) {
+      const idx = planPois.length;
+      const marker = L.marker(ll, { icon: planIcon("poi", "P" + (idx + 1)), draggable: true }).addTo(map);
+      const item = { latlng: ll, marker: marker };
+      planPois.push(item);
+      bindDrag(marker, (pos) => { item.latlng = pos; });
+      if (!fromUndo) planHistory.push({ type: "poi" });
+      refreshPlanLine();
+    }
+
+    function relabelVias() {
+      planVias.forEach((v, i) => {
+        v.marker.setIcon(planIcon("via", "v" + (i + 1)));
+      });
+    }
+
+    document.getElementById("planTools").addEventListener("click", (e) => {
+      const btn = e.target.closest("button[data-tool]");
+      if (!btn) return;
+      setPlanTool(btn.dataset.tool);
     });
 
-    document.getElementById("btnAddPoi").addEventListener("click", () => {
-      if (!planStart || !planEnd) {
-        showToast(TW.t("app_plan_set_start"));
-        return;
+    map.on("click", (e) => {
+      if (mapMode !== "plan") return;
+      if (planTool === "start") placeStart(e.latlng);
+      else if (planTool === "end") placeEnd(e.latlng);
+      else if (planTool === "via") placeVia(e.latlng);
+      else if (planTool === "poi") placePoi(e.latlng);
+    });
+
+    document.getElementById("btnPlanUndo").addEventListener("click", () => {
+      const last = planHistory.pop();
+      if (!last) return;
+      if (last.type === "start" && planStart && planStart._marker) {
+        map.removeLayer(planStart._marker);
+        planStart = null;
+        setPlanTool("start");
+      } else if (last.type === "end" && planEnd && planEnd._marker) {
+        map.removeLayer(planEnd._marker);
+        planEnd = null;
+        setPlanTool("end");
+      } else if (last.type === "via" && planVias.length) {
+        const v = planVias.pop();
+        map.removeLayer(v.marker);
+        relabelVias();
+      } else if (last.type === "poi" && planPois.length) {
+        const p = planPois.pop();
+        map.removeLayer(p.marker);
       }
-      const mid = L.latLng(
-        (planStart.lat + planEnd.lat) / 2 + 0.004,
-        (planStart.lng + planEnd.lng) / 2
-      );
-      planPois.push(mid);
-      planMarkers.push(L.circleMarker(mid, { radius: 6, color: "#fff", weight: 2, fillColor: "#f5a623", fillOpacity: 1 }).addTo(map));
-      if (planLine) map.removeLayer(planLine);
-      planLine = L.polyline([planStart, ...planPois, planEnd], { color: "#2563eb", weight: 4 }).addTo(map);
-      document.getElementById("planDist").textContent = "6.8 km";
-      showToast("+ POI");
+      refreshPlanLine();
+    });
+
+    function currentPlanDraftPayload() {
+      const path = planSpine().map((ll) => [ll.lat, ll.lng]);
+      return {
+        id: planDraftId || ("draft_" + Date.now()),
+        name: lang === "zh" ? "我的規劃路線" : "My planned route",
+        nameZh: "我的規劃路線",
+        path: path,
+        start: planStart ? [planStart.lat, planStart.lng] : null,
+        end: planEnd ? [planEnd.lat, planEnd.lng] : null,
+        vias: planVias.map((v) => [v.latlng.lat, v.latlng.lng]),
+        pois: planPois.map((p) => [p.latlng.lat, p.latlng.lng]),
+        privacy: "private",
+      };
+    }
+
+    function persistPlanDraft() {
+      if (!planStart || !planEnd) {
+        showToast(TW.t("app_plan_need_ends"));
+        return null;
+      }
+      const draft = currentPlanDraftPayload();
+      planDraftId = draft.id;
+      TW.saveRouteDraft(draft);
+      TW.setActiveDraftId(draft.id);
+      return draft;
+    }
+
+    document.getElementById("btnPlanSave").addEventListener("click", () => {
+      const draft = persistPlanDraft();
+      if (!draft) return;
+      showToast(TW.t("app_plan_saved"));
+      document.getElementById("planHint").textContent = TW.t("app_plan_edit_hint");
     });
 
     document.getElementById("btnPlanTrack").addEventListener("click", () => {
+      if (planStart && planEnd) persistPlanDraft();
+      const pts = planSpine();
+      if (pts.length >= 2) {
+        route = pts.map((ll) => [ll.lat, ll.lng]);
+        marker.setLatLng(route[0]);
+        map.setView(route[0], 14);
+      }
       setMapMode("track");
       showToast(TW.t("app_start_tracking"));
     });
+
+    function loadPlanDraft(id) {
+      const d = TW.getRouteDraft(id);
+      if (!d) return;
+      planDraftId = d.id;
+      const path = d.path || [];
+      if (d.start) placeStart(L.latLng(d.start[0], d.start[1]), true);
+      else if (path[0]) placeStart(L.latLng(path[0][0], path[0][1]), true);
+      (d.vias || (path.length > 2 ? path.slice(1, -1) : [])).forEach((p) => {
+        placeVia(L.latLng(p[0], p[1]), true);
+      });
+      if (d.end) placeEnd(L.latLng(d.end[0], d.end[1]), true);
+      else if (path.length > 1) placeEnd(L.latLng(path[path.length - 1][0], path[path.length - 1][1]), true);
+      (d.pois || []).forEach((p) => placePoi(L.latLng(p[0], p[1]), true));
+      planHistory = [];
+      setPlanTool("via");
+      document.getElementById("planHint").textContent = TW.t("app_plan_edit_hint");
+    }
 
     function doPause() {
       clearInterval(timer); timer = null;
@@ -1152,6 +1386,21 @@
     });
 
     document.getElementById("btnLiveShare").addEventListener("click", () => {
+      const pos = marker.getLatLng();
+      const eta = new Date(Date.now() + 2.5 * 3600 * 1000);
+      const session = {
+        id: hikeId,
+        lat: pos.lat,
+        lng: pos.lng,
+        path: recordedPath.length > 1 ? recordedPath : (planSpine().length >= 2
+          ? planSpine().map((ll) => [ll.lat, ll.lng])
+          : route),
+        eta: eta.toISOString(),
+        title: document.getElementById("hikeTitle").value.trim() || (lang === "zh" ? "進行中的行程" : "Live hike"),
+        tracking: state === "active",
+      };
+      try { localStorage.setItem("tw_live_share", JSON.stringify(session)); } catch (e) {}
+      document.getElementById("shareUrl").textContent = liveShareUrl();
       document.getElementById("modalShare").classList.add("open");
     });
     document.getElementById("closeShare").addEventListener("click", () => document.getElementById("modalShare").classList.remove("open"));
@@ -1161,15 +1410,28 @@
         navigator.clipboard.writeText(url).catch(() => {});
       }
       document.getElementById("modalShare").classList.remove("open");
-      showToast(TW.t("app_live_share_copied"));
+      showToast(TW.t("app_live_share_sent").replace("{email}", TW.t("app_live_share_email")));
     });
+
+    function pad2(n) { return String(n).padStart(2, "0"); }
+    function nowDateStr() {
+      const d = new Date();
+      return pad2(d.getDate()) + "/" + pad2(d.getMonth() + 1) + "/" + d.getFullYear();
+    }
+    function nowTimeStr() {
+      const d = new Date();
+      return pad2(d.getHours()) + ":" + pad2(d.getMinutes()) + ":" + pad2(d.getSeconds());
+    }
 
     let reportMap, reportMarker;
     const reportSheet = document.getElementById("reportSheet");
     function openReport() {
       const pos = marker.getLatLng();
       document.getElementById("liveCoords").textContent = "📍 " + pos.lat.toFixed(6) + ", " + pos.lng.toFixed(6);
+      if (!document.getElementById("appReportDate").value) document.getElementById("appReportDate").value = nowDateStr();
+      if (!document.getElementById("appReportTime").value) document.getElementById("appReportTime").value = nowTimeStr();
       reportSheet.classList.add("open");
+      document.getElementById("fabReport").style.display = "none";
       setTimeout(() => {
         if (!reportMap) {
           reportMap = L.map("reportMiniMap", { zoomControl: false }).setView(pos, 15);
@@ -1191,12 +1453,33 @@
         reportMap.invalidateSize();
       }, 60);
     }
-    document.getElementById("idleReport").addEventListener("click", openReport);
-    document.getElementById("activeReport").addEventListener("click", openReport);
     document.getElementById("fabReport").addEventListener("click", openReport);
-    document.getElementById("closeAppReport").addEventListener("click", () => reportSheet.classList.remove("open"));
-    document.getElementById("submitAppReport").addEventListener("click", () => {
+    document.getElementById("appPickOnMap").addEventListener("click", () => {
+      const el = document.getElementById("reportMiniMap");
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+    document.getElementById("closeAppReport").addEventListener("click", () => {
       reportSheet.classList.remove("open");
+      document.getElementById("fabReport").style.display = "grid";
+    });
+    document.getElementById("submitAppReport").addEventListener("click", () => {
+      const pos = reportMarker ? reportMarker.getLatLng() : marker.getLatLng();
+      const title = document.getElementById("appReportTitle").value.trim();
+      const desc = document.getElementById("appReportDesc").value.trim();
+      if (typeof CMS !== "undefined" && CMS.submitIncident) {
+        CMS.submitIncident({
+          title: title || TW.t("report_modal_title"),
+          desc: desc,
+          category: document.getElementById("appCat").value,
+          date: document.getElementById("appReportDate").value + " " + document.getElementById("appReportTime").value,
+          lat: pos.lat,
+          lng: pos.lng,
+          coords: pos.lat.toFixed(6) + ", " + pos.lng.toFixed(6),
+          reporter: (TW.user && TW.user.name) || "",
+        });
+      }
+      reportSheet.classList.remove("open");
+      document.getElementById("fabReport").style.display = "grid";
       const result = TW.recordEnvAct("C", { hikeId, note: "incident" });
       if (result.ok) {
         showToast(TW.t("env_toast_c") + " · " + TW.t("toast_report"));
@@ -1220,6 +1503,13 @@
       : "";
     if (trail) document.getElementById("hikeTitle").value = TW.tt(trail, "title");
     if (params.get("mode") === "plan" && !followKindParam) setMapMode("plan");
+    if (params.get("draft")) {
+      setMapMode("plan");
+      loadPlanDraft(params.get("draft"));
+    }
+    if (followKindParam === "route" && trailId) {
+      document.getElementById("trackBack").href = "route-detail.html?id=" + encodeURIComponent(trailId);
+    }
     if (followKindParam) {
       const friendName = params.get("friend");
       let title = trail ? TW.tt(trail, "title") : "";

@@ -1505,6 +1505,27 @@ img.profile-avatar[hidden] {
   letter-spacing: 0.04em;
   color: var(--green-800);
 }
+.badge-progress {
+  width: 100%;
+  height: 4px;
+  background: #e5e7eb;
+  border-radius: 999px;
+  overflow: hidden;
+  margin-top: 0.35rem;
+}
+.badge-progress span {
+  display: block;
+  height: 100%;
+  background: var(--green-700);
+  border-radius: 999px;
+}
+.profile-badge-card.locked .badge-progress span { background: #9ca3af; }
+.badge-progress-lbl {
+  font-size: 0.58rem;
+  color: var(--text-muted);
+  font-weight: 700;
+  margin-top: 0.15rem;
+}
 .footprint-wrap {
   position: relative;
   margin-bottom: 1.15rem;
@@ -4338,6 +4359,11 @@ a.record-item {
 .phone-screen .map-shell {
   flex: 1;
   min-height: 0;
+  z-index: 0;
+}
+.phone-screen .map-shell #appMap,
+.phone-screen .map-shell .leaflet-container {
+  z-index: 0;
 }
 /* Status strip inside screen (time · brand · sys) */
 .phone-status {
@@ -4630,7 +4656,7 @@ a.record-item {
 .app-report-sheet {
   position: absolute;
   inset: 0;
-  z-index: 40;
+  z-index: 1300;
   display: none;
   flex-direction: column;
   background: rgba(0,0,0,0.25);
@@ -4649,7 +4675,7 @@ a.record-item {
   border-radius: 20px 20px 0 0;
   padding: 1rem 1.1rem 1.25rem;
   overflow-y: auto;
-  max-height: 55%;
+  max-height: 68%;
 }
 
 /* —— Environmental badges —— */

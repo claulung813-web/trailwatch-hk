@@ -46,7 +46,11 @@
       padding: 0.7rem 0.8rem; margin-bottom: 0.55rem;
     }
     .record-row strong { display: block; color: var(--green-900); font-size: 0.85rem; }
-    .record-row p { margin: 0.2rem 0 0; font-size: 0.72rem; color: var(--text-muted); }
+    .inc-form { background:#fff; border:1px solid var(--border); border-radius:12px; padding:0.75rem; margin-bottom:0.85rem; }
+    .inc-form .form-group { margin-bottom:0.5rem; }
+    .inc-form label { display:block; font-size:0.72rem; font-weight:700; color:var(--green-900); margin-bottom:0.2rem; }
+    .filter-grid { display:grid; grid-template-columns:1fr 1fr; gap:0.35rem; margin-top:0.4rem; }
+    .filter-grid label { font-size:0.62rem; font-weight:700; color:var(--text-muted); }
   </style>
 </head>
 <body>
@@ -81,6 +85,7 @@
   <script src="../js/i18n.js"></script>
   <script src="../js/data.js"></script>
   <script src="../js/cms-store.js"></script>
+  <script src="../js/hikes.js"></script>
   <script src="../js/app.js"></script>
   <script>
     document.documentElement.lang = TW.getLang() === "zh" ? "zh-Hant" : "en";
@@ -106,7 +111,10 @@
     let routeFilter = "editors"; // default Editor's Choice
     let recQ = "";
     let recFriends = false;
-    let recDate = "all";
+    let recDur = "all";
+    let recFrom = "";
+    let recTo = "";
+    let recTag = "";
 
     document.querySelectorAll(".tabs button").forEach((b) => b.classList.toggle("active", b.dataset.tab === tab));
 
@@ -130,30 +138,51 @@
           render();
         });
       } else if (tab === "records") {
+        const tags = TW.DEFAULT_ACTIVITY_TAGS || [];
+        const tagBtns = `<button type="button" data-tag="" class="${!recTag ? "active" : ""}">${t("filter_all")}</button>` +
+          tags.map((tg) => {
+            const label = lang === "zh" ? tg.labelZh : tg.label;
+            return `<button type="button" data-tag="${tg.id}" class="${recTag === tg.id ? "active" : ""}">${label}</button>`;
+          }).join("");
         sub.innerHTML = `
           <input class="search-mini" id="recSearch" type="search" placeholder="${t("app_filter_keyword")}…" value="${recQ}" />
           <div class="app-chip-row" id="recChips">
             <button type="button" data-rf="friends" class="${recFriends ? "active" : ""}">${t("app_filter_friends")}</button>
-            <button type="button" data-rf="duration">${t("app_filter_duration")}</button>
-            <button type="button" data-rf="date" class="${recDate !== "all" ? "active" : ""}">${t("app_filter_date")}</button>
+            <button type="button" data-dur="all" class="${recDur === "all" ? "active" : ""}">${t("filter_all")}</button>
+            <button type="button" data-dur="under1" class="${recDur === "under1" ? "active" : ""}">${t("app_dur_under1")}</button>
+            <button type="button" data-dur="1to3" class="${recDur === "1to3" ? "active" : ""}">${t("app_dur_1to3")}</button>
+            <button type="button" data-dur="over3" class="${recDur === "over3" ? "active" : ""}">${t("app_dur_over3")}</button>
           </div>
-          <p style="margin:0.35rem 0 0;font-size:0.65rem"><span class="app-tbd">${t("app_tbd_tags")}</span></p>`;
+          <div class="filter-grid">
+            <div><label>${t("app_filter_from")}</label><input class="search-mini" style="margin:0" type="date" id="recFrom" value="${recFrom}" /></div>
+            <div><label>${t("app_filter_to")}</label><input class="search-mini" style="margin:0" type="date" id="recTo" value="${recTo}" /></div>
+          </div>
+          <p style="margin:0.45rem 0 0.25rem;font-size:0.68rem;font-weight:800;color:var(--green-900)">${t("app_filter_tags")}</p>
+          <div class="app-chip-row" id="recTags" style="flex-wrap:wrap">${tagBtns}</div>`;
         document.getElementById("recSearch").addEventListener("input", (e) => {
           recQ = e.target.value.trim().toLowerCase();
           renderListOnly();
         });
         document.getElementById("recChips").addEventListener("click", (e) => {
-          const btn = e.target.closest("button[data-rf]");
-          if (!btn) return;
-          if (btn.dataset.rf === "friends") {
+          const friendBtn = e.target.closest("button[data-rf]");
+          const durBtn = e.target.closest("button[data-dur]");
+          if (friendBtn) {
             recFriends = !recFriends;
-            btn.classList.toggle("active", recFriends);
-          } else if (btn.dataset.rf === "date") {
-            recDate = recDate === "all" ? "month" : "all";
-            btn.classList.toggle("active", recDate !== "all");
-          } else {
-            showToast(t("app_filter_duration") + " · TBD");
+            friendBtn.classList.toggle("active", recFriends);
           }
+          if (durBtn) {
+            recDur = durBtn.dataset.dur;
+            document.querySelectorAll("#recChips [data-dur]").forEach((b) => b.classList.toggle("active", b === durBtn));
+          }
+          renderListOnly();
+        });
+        document.getElementById("recFrom").addEventListener("change", (e) => { recFrom = e.target.value; renderListOnly(); });
+        document.getElementById("recTo").addEventListener("change", (e) => { recTo = e.target.value; renderListOnly(); });
+        document.getElementById("recTags").addEventListener("click", (e) => {
+          const btn = e.target.closest("button[data-tag]");
+          if (!btn) return;
+          recTag = btn.dataset.tag || "";
+          document.querySelectorAll("#recTags button").forEach((b) => b.classList.toggle("active", b === btn));
           renderListOnly();
         });
       } else {
@@ -167,13 +196,13 @@
             const name = lang === "zh" ? (tr.nameZh || tr.titleZh || tr.name || tr.title) : (tr.name || tr.title);
             const dist = tr.distanceKm != null ? tr.distanceKm + " km" : (tr.distance || "");
             const img = tr.image || "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=200&q=60";
-            const followHref = "index.html?follow=route&trail=" + encodeURIComponent(tr.id || "");
-            return `<a class="route-card" href="${followHref}">
+            const href = "route-detail.html?id=" + encodeURIComponent(tr.id || "");
+            return `<a class="route-card" href="${href}">
               <img src="${img}" alt="" />
               <div class="meta">
                 <strong>${name || "Trail"}</strong>
                 <p>${dist}${tr.duration ? " · " + tr.duration : ""}</p>
-                <span class="follow-cta">${t("app_track_follow")} →</span>
+                <span class="follow-cta">${t("app_save_to_plans")} →</span>
               </div>
             </a>`;
           }).join("")
@@ -208,27 +237,105 @@
         let rows = records.slice();
         if (recQ) {
           rows = rows.filter((r) => {
-            const text = ((r.title || "") + " " + (r.titleZh || "") + " " + (r.user || "")).toLowerCase();
+            const tags = (r.activityTags || []).map((id) => TW.activityTagLabel ? TW.activityTagLabel(id) : id).join(" ");
+            const text = ((r.title || "") + " " + (r.titleZh || "") + " " + (r.user || "") + " " + tags).toLowerCase();
             return text.includes(recQ);
           });
         }
-        if (recFriends) rows = rows.filter((_, i) => i % 2 === 0);
-        if (recDate === "month") rows = rows.slice(0, 3);
+        if (recFriends) rows = rows.filter((r) => TW.recordIsFriend(r));
+        if (recDur !== "all") {
+          rows = rows.filter((r) => {
+            const m = TW.recordDurationMinutes(r);
+            if (recDur === "under1") return m > 0 && m < 60;
+            if (recDur === "1to3") return m >= 60 && m <= 180;
+            if (recDur === "over3") return m > 180;
+            return true;
+          });
+        }
+        if (recFrom || recTo) {
+          rows = rows.filter((r) => {
+            const d = TW.recordDateValue(r);
+            if (!d) return true;
+            const iso = d.toISOString().slice(0, 10);
+            if (recFrom && iso < recFrom) return false;
+            if (recTo && iso > recTo) return false;
+            return true;
+          });
+        }
+        if (recTag) {
+          rows = rows.filter((r) => (r.activityTags || []).indexOf(recTag) >= 0);
+        }
         list.innerHTML = rows.length
           ? rows.map((r) => {
               const title = TW.tt(r, "title") || r.title;
               const href = "record-detail.html?id=" + encodeURIComponent(r.id || "");
+              const tags = typeof TW.activityTagsHtml === "function" ? TW.activityTagsHtml(r.activityTags) : "";
               return `<a class="record-row" href="${href}" style="text-decoration:none;color:inherit;display:block">
                 <strong>${title}</strong>
                 <p>${r.user || ""} · ${r.distance || ""} · ${r.duration || ""}</p>
                 <p>★ ${r.rating != null ? r.rating : "—"} · ${r.elev || (r.elevGain != null ? r.elevGain + " m" : "")}</p>
+                ${tags}
               </a>`;
             }).join("")
           : `<p style="text-align:center;color:var(--text-muted);padding:2rem 1rem">${t("hikes_empty")}</p>`;
       } else {
+        const reports = (typeof TW.getCommunityReports === "function" ? TW.getCommunityReports({ dateRange: "all" }) : TW.reports || []).slice(0, 12);
+        const now = new Date();
+        const dateStr = String(now.getDate()).padStart(2, "0") + "/" + String(now.getMonth() + 1).padStart(2, "0") + "/" + now.getFullYear();
+        const timeStr = String(now.getHours()).padStart(2, "0") + ":" + String(now.getMinutes()).padStart(2, "0");
         list.innerHTML = `
-          <p style="text-align:center;color:var(--text-muted);padding:1.25rem 0.5rem 0.75rem">${t("app_incidents_hint")}</p>
-          <a class="btn btn-primary btn-block" href="index.html">${t("app_report")}</a>`;
+          <div class="inc-form" id="incForm">
+            <strong style="display:block;color:var(--green-900);margin-bottom:0.45rem">${t("report_modal_title")}</strong>
+            <p style="font-size:0.72rem;color:var(--text-muted);margin:0 0 0.5rem">${t("app_incidents_hint")}</p>
+            <div class="form-group">
+              <label>${t("report_photos")}</label>
+              <p style="font-size:0.7rem;color:var(--text-muted);margin:0 0 0.3rem">${t("report_photos_hint")}</p>
+              <button type="button" class="btn btn-amber btn-block" id="incPhotos">${t("add_photos")}</button>
+            </div>
+            <div class="filter-grid">
+              <div class="form-group"><label>${t("date")}</label><input class="form-input" id="incDate" value="${dateStr}" /></div>
+              <div class="form-group"><label>${t("time")}</label><input class="form-input" id="incTime" value="${timeStr}" /></div>
+            </div>
+            <div class="form-group">
+              <label>${t("category")}</label>
+              <select class="form-select" id="incCat">
+                <option value="waste">${t("cat_waste")}</option>
+                <option value="tree">${t("cat_tree")}</option>
+                <option value="vandalism">${t("cat_vandalism")}</option>
+                <option value="obstruction">${t("cat_obstruction")}</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>${t("location")}</label>
+              <input class="form-input" id="incLoc" value="${lang === "zh" ? "香港" : "Hong Kong"}" />
+              <a href="index.html" style="display:inline-block;margin-top:0.35rem;font-size:0.72rem;font-weight:800;color:var(--green-800)">${t("pick_on_map")}</a>
+            </div>
+            <div class="form-group">
+              <label>${t("title_label")}</label>
+              <input class="form-input" id="incTitle" placeholder="${t("add_title")}" />
+            </div>
+            <div class="form-group">
+              <label>${t("description")}</label>
+              <textarea class="form-textarea" id="incDesc" rows="2" placeholder="${t("tell_more")}"></textarea>
+            </div>
+            <button type="button" class="btn btn-primary btn-block" id="incSubmit">${t("confirm")}</button>
+          </div>
+          ${reports.map(renderReportItem).join("") || `<p style="text-align:center;color:var(--text-muted)">${t("no_trails")}</p>`}`;
+        document.getElementById("incPhotos").addEventListener("click", () => showToast("📷"));
+        document.getElementById("incSubmit").addEventListener("click", () => {
+          if (typeof CMS !== "undefined" && CMS.submitIncident) {
+            CMS.submitIncident({
+              title: document.getElementById("incTitle").value.trim() || t("report_modal_title"),
+              desc: document.getElementById("incDesc").value.trim(),
+              category: document.getElementById("incCat").value,
+              date: document.getElementById("incDate").value + " " + document.getElementById("incTime").value,
+              coords: document.getElementById("incLoc").value,
+              reporter: (TW.user && TW.user.name) || "",
+            });
+          }
+          showToast(t("toast_report"));
+          renderListOnly();
+        });
       }
     }
 

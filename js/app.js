@@ -193,7 +193,11 @@ function twAppBottomNav(active) {
   ];
   return `<nav class="app-bottom-nav" aria-label="App">${items.map((it) => {
     const classes = [it.cls, it.id === active ? "active" : ""].filter(Boolean).join(" ");
-    const dot = it.id === "profile"
+    let unread = false;
+    try {
+      unread = it.id === "profile" && localStorage.getItem("tw_app_notif_read") !== "1";
+    } catch (e) {}
+    const dot = unread
       ? `<span class="nav-notif-dot" aria-hidden="true"></span>`
       : "";
     return `<a href="${it.href}"${classes ? ` class="${classes}"` : ""}><span class="nav-ico" aria-hidden="true">${twIcon(it.icon)}${dot}</span><span>${it.label}</span></a>`;

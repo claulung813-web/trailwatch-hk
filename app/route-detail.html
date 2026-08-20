@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>TrailWatch App — Route</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="../css/styles.css" />
+  <style>
+    body { margin: 0; }
+    .phone-body { flex: 1; overflow-y: auto; background: #f3f4f6; min-height: 0; }
+    .app-detail-bar {
+      display: flex; align-items: center; gap: 0.35rem;
+      padding: 2.35rem 0.65rem 0.55rem; background: #fff; border-bottom: 1px solid var(--border);
+    }
+    .app-detail-bar h1 {
+      flex: 1; font-size: 0.95rem; margin: 0; text-align: center; color: #111;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .app-detail-bar .ib {
+      width: 36px; height: 36px; border: none; background: none; cursor: pointer;
+      font-size: 1.25rem; color: #111; display: grid; place-items: center; text-decoration: none;
+      flex-shrink: 0;
+    }
+    #detailMap { height: 210px; width: 100%; }
+    .map-wrap { position: relative; background: #e8ece8; }
+    .rec-card {
+      margin: 0.65rem 0.7rem 0.85rem; background: #fff; border-radius: 14px;
+      padding: 0.85rem 0.9rem 1rem; box-shadow: 0 2px 10px rgba(0,0,0,.06);
+    }
+    .rec-stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem 0.35rem; }
+    .rec-stat .val { font-size: 0.88rem; font-weight: 800; color: #111; }
+    .rec-stat .lbl { font-size: 0.62rem; color: var(--text-muted); font-weight: 600; margin-top: 0.08rem; }
+    .route-actions { display: grid; gap: 0.45rem; padding: 0 0.7rem 1.25rem; }
+  </style>
+</head>
+<body>
+  <div class="app-page">
+    <div class="app-page-top">
+      <a href="explore.html" id="backWeb"></a>
+      <div class="lang-switch" style="margin:0.75rem auto 0;width:fit-content;background:rgba(255,255,255,0.15);border-color:rgba(255,255,255,0.25)">
+        <button type="button" data-lang="en" style="color:#fff">EN</button>
+        <button type="button" data-lang="zh" style="color:#fff">繁</button>
+      </div>
+    </div>
+    <div class="phone-frame">
+      <div class="phone-notch"></div>
+      <div class="phone-screen">
+        <div class="app-detail-bar">
+          <a class="ib" href="explore.html" id="backInline">‹</a>
+          <h1 id="routeTitle">—</h1>
+          <span class="ib" aria-hidden="true"></span>
+        </div>
+        <div class="phone-body">
+          <div class="map-wrap"><div id="detailMap"></div></div>
+          <div class="rec-card">
+            <p id="routeDesc" style="font-size:0.8rem;color:var(--text-muted);margin:0 0 0.75rem"></p>
+            <div class="rec-stats-grid" id="routeStats"></div>
+          </div>
+          <div class="route-actions">
+            <button type="button" class="btn btn-primary btn-block" id="btnSavePlan"></button>
+            <a class="btn btn-secondary btn-block" id="btnFollow" href="index.html">Track</a>
+          </div>
+        </div>
+        <div data-app-nav></div>
+      </div>
+    </div>
+  </div>
+  <div class="toast" id="toast"></div>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="../js/i18n.js"></script>
+  <script src="../js/data.js"></script>
+  <script src="../js/cms-store.js"></script>
+  <script src="../js/app.js"></script>
+  <script>
+    document.documentElement.lang = TW.getLang() === "zh" ? "zh-Hant" : "en";
+    const lang = TW.getLang();
+    const t = TW.t;
+    document.querySelectorAll(".lang-switch button").forEach((b) => {
+      b.classList.toggle("active", b.dataset.lang === lang);
+      b.addEventListener("click", () => { TW.setLang(b.dataset.lang); location.reload(); });
+    });
+    document.getElementById("backWeb").textContent = "‹ " + t("nav_explore");
+    twMountAppNav("explore");
+
+    const id = new URLSearchParams(location.search).get("id");
+    const trail = (typeof TW.resolveTrailSource === "function" && TW.resolveTrailSource(id))
+      || (TW.trails || []).find((x) => x.id === id)
+      || (typeof TW.getPublishedTrails === "function" && TW.getPublishedTrails().find((x) => x.id === id));
+    if (!trail) {
+      location.href = "explore.html";
+    } else {
+      document.getElementById("routeTitle").textContent = TW.tt(trail, "title");
+      document.getElementById("routeDesc").textContent = TW.tt(trail, "desc") || "";
+      const stats = [
+        { val: trail.distance || "—", lbl: t("app_distance") },
+        { val: trail.duration || "—", lbl: t("app_duration") },
+        { val: trail.elevation || trail.elev || "—", lbl: t("app_elev_gain") },
+      ];
+      document.getElementById("routeStats").innerHTML = stats.map((s) =>
+        `<div class="rec-stat"><div class="val">${s.val}</div><div class="lbl">${s.lbl}</div></div>`
+      ).join("");
+
+      const followHref = "index.html?follow=route&trail=" + encodeURIComponent(trail.id);
+      document.getElementById("btnFollow").href = followHref;
+      document.getElementById("btnFollow").textContent = t("app_track_follow");
+
+      function syncSave() {
+        const on = TW.isPlanned(trail.id);
+        document.getElementById("btnSavePlan").textContent = on ? t("app_remove_from_plans") : t("app_save_to_plans");
+      }
+      syncSave();
+      document.getElementById("btnSavePlan").addEventListener("click", () => {
+        const added = TW.togglePlan(trail.id);
+        showToast(added ? t("toast_planned") : t("toast_unplanned"));
+        syncSave();
+      });
+
+      let path = Array.isArray(trail.path) ? trail.path : [];
+      if (path.length < 2 && trail.lat != null) path = TW.demoPathAround(trail.lat, trail.lng);
+      if (path.length < 2) path = [[22.35, 114.25], [22.36, 114.26]];
+      const map = L.map("detailMap", { zoomControl: false }).setView(path[0], 13);
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 18 }).addTo(map);
+      const line = L.polyline(path, { color: "#2563eb", weight: 5 }).addTo(map);
+      if (typeof TW.addRouteEndpoints === "function") TW.addRouteEndpoints(map, path);
+      setTimeout(() => { map.invalidateSize(); map.fitBounds(line.getBounds().pad(0.22)); }, 80);
+    }
+  </script>
+</body>
+</html>

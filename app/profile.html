@@ -10,44 +10,42 @@
   <link rel="stylesheet" href="../css/styles.css" />
   <style>
     body { margin: 0; }
-    .phone-body { flex: 1; overflow-y: auto; padding: 0.75rem 0.9rem 1rem; background: #f7faf7; }
+    .phone-body { flex: 1; overflow-y: auto; padding: 0.75rem 0.9rem 1rem; background: #f7faf7; min-height: 0; }
     .app-head {
-      padding: 2.45rem 0.9rem 0.85rem; background: #fff; border-bottom: 1px solid var(--border);
+      padding: 2.45rem 0.9rem 0.55rem; background: #fff; border-bottom: 1px solid var(--border);
     }
-    .app-head-logo-row {
-      display: flex; align-items: center; justify-content: center; gap: 0.4rem;
-      margin-bottom: 0.65rem;
-    }
-    .app-head-logo-row .brand-word {
-      height: 16px; width: auto; max-width: 120px; object-fit: contain;
-    }
-    .profile-row { display: flex; align-items: center; gap: 0.75rem; }
+    .profile-row { display: flex; align-items: center; gap: 0.65rem; }
     .profile-row h1 { font-size: 1.05rem; color: var(--green-900); margin: 0; }
     .profile-row .rank { font-size: 0.72rem; color: var(--text-muted); margin-top: 0.15rem; }
-    .head-actions { margin-left: auto; display: flex; gap: 0.35rem; }
-    .icon-round {
-      width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--border);
-      background: #fff; display: grid; place-items: center; position: relative; cursor: pointer;
-      color: var(--green-900); text-decoration: none;
+    .hub-tabs {
+      display: flex; gap: 0.3rem; padding: 0.45rem 0.65rem; background: #fff;
+      border-bottom: 1px solid var(--border); overflow-x: auto; -webkit-overflow-scrolling: touch;
     }
-    .icon-round .dot {
-      position: absolute; top: 4px; right: 4px; width: 7px; height: 7px;
-      border-radius: 50%; background: #e84a3c; border: 1.5px solid #fff;
+    .hub-tabs button {
+      border: none; border-radius: 999px; padding: 0.38rem 0.7rem; white-space: nowrap;
+      font-size: 0.72rem; font-weight: 700; background: var(--green-50); color: var(--green-900); cursor: pointer;
     }
-    .life-grid {
-      display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.4rem; margin-bottom: 0.75rem;
+    .hub-tabs button.active { background: var(--green-900); color: #fff; }
+    .hub-tabs button .dot {
+      display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #e84a3c;
+      margin-left: 0.25rem; vertical-align: middle;
     }
+    .life-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.4rem; margin-bottom: 0.75rem; }
     .life-box {
       background: #fff; border: 1px solid var(--border); border-radius: 12px;
       padding: 0.65rem 0.35rem; text-align: center;
     }
-    .life-box .val { font-size: 1rem; font-weight: 800; color: var(--green-900); }
-    .life-box .lbl { font-size: 0.62rem; color: var(--text-muted); font-weight: 600; }
+    .life-box .val { font-size: 0.95rem; font-weight: 800; color: var(--green-900); }
+    .life-box .lbl { font-size: 0.6rem; color: var(--text-muted); font-weight: 600; }
     .badge-card {
       background: #fff; border: 1px solid var(--border); border-radius: 12px;
       padding: 0.75rem 0.85rem; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.65rem;
     }
-    .menu-list { background: #fff; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+    .section-label {
+      font-size: 0.7rem; font-weight: 800; color: var(--text-muted);
+      text-transform: uppercase; letter-spacing: 0.04em; margin: 0.85rem 0 0.4rem;
+    }
+    .menu-list { background: #fff; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 0.75rem; }
     .menu-list a, .menu-list button {
       display: flex; align-items: center; gap: 0.65rem; width: 100%;
       padding: 0.75rem 0.85rem; border: none; border-bottom: 1px solid #f0f0f0;
@@ -57,33 +55,58 @@
     .menu-list a:last-child, .menu-list button:last-child { border-bottom: none; }
     .menu-list .chev { margin-left: auto; color: #9ca3af; font-weight: 400; }
     .menu-list .prem { margin-left: auto; }
-    .section-label {
-      font-size: 0.7rem; font-weight: 800; color: var(--text-muted);
-      text-transform: uppercase; letter-spacing: 0.04em; margin: 0.85rem 0 0.4rem;
-    }
-    .badge-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.45rem; }
-    .badge-item {
-      background: #fff; border: 1px solid var(--border); border-radius: 10px;
-      padding: 0.55rem 0.3rem; text-align: center; cursor: pointer; font-size: 0.65rem; font-weight: 700;
-      color: var(--green-900);
-    }
-    .badge-item.locked { opacity: 0.4; filter: grayscale(1); }
-    .badge-item .ico { font-size: 1.2rem; display: block; margin-bottom: 0.2rem; }
-    .settings-sheet {
-      display: none; position: absolute; inset: 0; z-index: 40; background: #f7faf7;
-      flex-direction: column;
-    }
-    .settings-sheet.open { display: flex; }
-    .settings-sheet .sheet-head {
-      padding: 2.4rem 0.9rem 0.75rem; background: #fff; border-bottom: 1px solid var(--border);
-      display: flex; align-items: center; gap: 0.5rem;
-    }
-    .friend-card {
+    .friend-card, .bm-card, .notif-card {
       background: #fff; border: 1px solid var(--border); border-radius: 12px;
       padding: 0.7rem 0.8rem; margin-bottom: 0.55rem; display: flex; align-items: center; gap: 0.55rem;
     }
-    .friend-card strong { display: block; font-size: 0.85rem; color: var(--green-900); }
-    .friend-card span { font-size: 0.68rem; color: var(--text-muted); }
+    .friend-card strong, .bm-card strong, .notif-card strong { display: block; font-size: 0.85rem; color: var(--green-900); }
+    .friend-card span, .bm-card span, .notif-card span { font-size: 0.68rem; color: var(--text-muted); }
+    .subchips { display: flex; gap: 0.3rem; flex-wrap: wrap; margin-bottom: 0.55rem; }
+    .subchips button {
+      border: none; border-radius: 999px; padding: 0.32rem 0.65rem; font-size: 0.7rem; font-weight: 700;
+      background: #fff; border: 1px solid var(--border); color: var(--green-900); cursor: pointer;
+    }
+    .subchips button.active { background: var(--green-900); color: #fff; border-color: var(--green-900); }
+    .search-mini {
+      width: 100%; border: 1px solid var(--border); border-radius: 10px;
+      padding: 0.45rem 0.7rem; font-size: 0.8rem; margin-bottom: 0.45rem; background: #fff; box-sizing: border-box;
+    }
+    .filter-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.35rem; margin-bottom: 0.45rem; }
+    .filter-grid label { font-size: 0.62rem; font-weight: 700; color: var(--text-muted); display: block; }
+    .top-records { display: grid; gap: 0.45rem; margin-bottom: 0.75rem; }
+    .top-record-card {
+      background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 0.65rem 0.75rem;
+    }
+    .top-record-card .name { font-weight: 800; color: var(--green-900); font-size: 0.85rem; }
+    .top-record-card .val { font-size: 1.05rem; font-weight: 800; color: #111; margin: 0.15rem 0; }
+    .top-record-card .foot { font-size: 0.65rem; color: var(--text-muted); font-weight: 700; }
+    .highlight-list { list-style: none; padding: 0; margin: 0 0 0.75rem; }
+    .highlight-list li {
+      display: flex; align-items: center; gap: 0.45rem; background: #fff; border: 1px solid var(--border);
+      border-radius: 10px; padding: 0.55rem 0.7rem; margin-bottom: 0.35rem; font-size: 0.78rem;
+    }
+    .highlight-list .hl-label { flex: 1; color: var(--text-muted); }
+    .highlight-list .hl-val { font-weight: 800; color: var(--green-900); }
+    .chart-card {
+      background: #fff; border: 1px solid var(--border); border-radius: 12px;
+      padding: 0.75rem; margin-bottom: 0.65rem;
+    }
+    .chart-card h3 { margin: 0 0 0.45rem; font-size: 0.82rem; color: var(--green-900); }
+    .chart-bars { display: flex; align-items: flex-end; gap: 0.25rem; height: 90px; }
+    .chart-bars .bar-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; height: 100%; justify-content: flex-end; }
+    .chart-bars .bar { width: 100%; max-width: 18px; border-radius: 4px 4px 0 0; min-height: 4px; }
+    .chart-bars .bar-label { font-size: 0.5rem; color: var(--text-muted); margin-top: 0.2rem; }
+    .toggle-pills { display: flex; gap: 0.2rem; }
+    .toggle-pills button {
+      border: 1px solid var(--border); background: #fff; border-radius: 999px;
+      padding: 0.2rem 0.55rem; font-size: 0.65rem; font-weight: 700; color: var(--green-900); cursor: pointer;
+    }
+    .toggle-pills button.active { background: var(--green-900); color: #fff; border-color: var(--green-900); }
+    .pace-chart { width: 100%; height: auto; display: block; }
+    .hub-panel[hidden] { display: none !important; }
+    .info-pane[hidden] { display: none !important; }
+    .form-group { margin-bottom: 0.65rem; }
+    .form-group label { display: block; font-size: 0.72rem; font-weight: 700; color: var(--green-900); margin-bottom: 0.25rem; }
   </style>
 </head>
 <body>
@@ -100,91 +123,188 @@
       <div class="phone-notch"></div>
       <div class="phone-screen" style="position:relative">
         <div class="app-head">
-          <div class="app-head-logo-row" aria-label="TrailWatch">
-            <span data-app-logo aria-hidden="true"></span>
-            <img class="brand-word" src="../assets/brand/header-logo.webp" alt="TrailWatch" width="120" height="16" decoding="async" />
-          </div>
           <div class="profile-row">
-            <div id="avatarWrap" style="width:52px;height:52px;border-radius:50%;background:var(--green-100);overflow:hidden;flex-shrink:0"></div>
-            <div>
+            <div id="avatarWrap" style="width:48px;height:48px;border-radius:50%;background:var(--green-100);overflow:hidden;flex-shrink:0"></div>
+            <div style="min-width:0;flex:1">
               <h1 id="userName"></h1>
               <div class="rank" id="membershipStatus"></div>
             </div>
-            <div class="head-actions">
-              <button type="button" class="icon-round" id="btnNotif" aria-label="Notifications">
-                <span id="bellIcon"></span><span class="dot"></span>
-              </button>
-              <button type="button" class="icon-round" id="btnSettings" aria-label="Settings">⚙</button>
-            </div>
           </div>
         </div>
 
-        <div class="phone-body" id="mainBody">
-          <div id="dashMembershipCard" style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:0.75rem 0.85rem;margin-bottom:0.75rem"></div>
-          <div class="section-label" id="lblLifetime"></div>
-          <div class="life-grid">
-            <div class="life-box"><div class="val" id="lifeKm">—</div><div class="lbl" id="lblKm"></div></div>
-            <div class="life-box"><div class="val" id="lifeHrs">—</div><div class="lbl" id="lblHrs"></div></div>
-            <div class="life-box"><div class="val" id="lifeRec">—</div><div class="lbl" id="lblRec"></div></div>
-          </div>
+        <div class="hub-tabs" id="hubTabs" role="tablist"></div>
 
-          <div class="badge-card">
-            <span id="selBadgeIco" style="font-size:1.4rem">🌿</span>
-            <div style="flex:1">
-              <div style="font-size:0.65rem;font-weight:700;color:var(--text-muted);text-transform:uppercase" id="lblSelBadge"></div>
-              <strong id="selBadge" style="color:var(--green-900);font-size:0.9rem"></strong>
+        <div class="phone-body">
+          <!-- Dashboard -->
+          <section class="hub-panel" id="panelDashboard" data-hub="dashboard">
+            <div id="dashMembershipCard" style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:0.75rem 0.85rem;margin-bottom:0.75rem"></div>
+            <div class="section-label" id="lblLifetime"></div>
+            <div class="life-grid">
+              <div class="life-box"><div class="val" id="lifeKm">—</div><div class="lbl" id="lblKm"></div></div>
+              <div class="life-box"><div class="val" id="lifeHrs">—</div><div class="lbl" id="lblHrs"></div></div>
+              <div class="life-box"><div class="val" id="lifeRec">—</div><div class="lbl" id="lblRec"></div></div>
             </div>
-            <a href="#badges" style="font-size:0.72rem;font-weight:700;color:var(--green-800)" id="linkBadges"></a>
-          </div>
+            <div class="badge-card">
+              <span id="selBadgeIco" style="font-size:1.4rem">🌿</span>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:0.65rem;font-weight:700;color:var(--text-muted);text-transform:uppercase" id="lblSelBadge"></div>
+                <strong id="selBadge" style="color:var(--green-900);font-size:0.9rem"></strong>
+              </div>
+              <button type="button" style="border:none;background:none;font-size:0.72rem;font-weight:700;color:var(--green-800);cursor:pointer" id="linkBadges"></button>
+            </div>
+            <div id="dashMoreGate"></div>
+            <button type="button" class="btn btn-primary btn-block" id="dashMoreBtn" hidden style="margin-bottom:0.75rem"></button>
+            <div id="dashPremiumMore" hidden>
+              <div class="section-label" id="lblTopRec"></div>
+              <div class="top-records" id="dashTopRecords"></div>
+              <div class="section-label" id="lblHighlights"></div>
+              <ul class="highlight-list" id="milHighlights"></ul>
+              <div class="section-label" id="lblInsights"></div>
+              <div class="chart-card">
+                <h3 id="lblPace"></h3>
+                <svg class="pace-chart" viewBox="0 0 320 120" preserveAspectRatio="none">
+                  <path fill="rgba(61,168,85,0.2)" d="M20,70 L60,66 L100,74 L140,62 L180,68 L220,58 L300,60 L300,110 L20,110 Z"/>
+                  <path fill="none" stroke="#3da855" stroke-width="2.5" d="M20,70 L60,66 L100,74 L140,62 L180,68 L220,58 L300,60"/>
+                  <path fill="none" stroke="#4a90c8" stroke-width="2.5" d="M20,85 L60,78 L100,82 L140,55 L180,66 L220,42 L300,48"/>
+                </svg>
+                <div style="display:flex;gap:0.75rem;font-size:0.68rem;color:var(--text-muted);margin-top:0.35rem">
+                  <span><span style="color:#3da855">●</span> <span id="lblAvgPace"></span></span>
+                  <span><span style="color:#4a90c8">●</span> <span id="lblBestPace"></span></span>
+                </div>
+              </div>
+              <div class="chart-card">
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:0.35rem;margin-bottom:0.35rem">
+                  <h3 style="margin:0" id="lblActivity"></h3>
+                  <div class="toggle-pills" id="activityToggle">
+                    <button type="button" class="active" data-mode="yearly"></button>
+                    <button type="button" data-mode="monthly"></button>
+                  </div>
+                </div>
+                <div class="chart-bars" id="activityBars"></div>
+              </div>
+              <div class="chart-card">
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:0.35rem;margin-bottom:0.35rem">
+                  <h3 style="margin:0" id="lblDistTrend"></h3>
+                  <div class="toggle-pills" id="distToggle">
+                    <button type="button" class="active" data-mode="yearly"></button>
+                    <button type="button" data-mode="monthly"></button>
+                  </div>
+                </div>
+                <div class="chart-bars" id="distBars"></div>
+              </div>
+              <div class="chart-card">
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:0.35rem;margin-bottom:0.35rem">
+                  <h3 style="margin:0" id="lblElevTrend"></h3>
+                  <div class="toggle-pills" id="elevToggle">
+                    <button type="button" class="active" data-mode="yearly"></button>
+                    <button type="button" data-mode="monthly"></button>
+                  </div>
+                </div>
+                <div class="chart-bars" id="elevBars"></div>
+              </div>
+              <div class="chart-card">
+                <h3 id="lblRegion"></h3>
+                <div id="regionPie"></div>
+              </div>
+            </div>
+          </section>
 
-          <div id="dashMoreGate"></div>
+          <!-- My Info -->
+          <section class="hub-panel" id="panelInfo" data-hub="info" hidden>
+            <div class="subchips" id="infoChips"></div>
+            <div class="info-pane" data-info="badges">
+              <p style="font-size:0.72rem;color:var(--text-muted);margin:0 0 0.55rem" id="badgeHint"></p>
+              <div id="badgePicker"></div>
+            </div>
+            <div class="info-pane" data-info="records" hidden>
+              <div class="premium-row" id="footRow" style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;background:#fff;border:1px solid var(--border);border-radius:12px;padding:0.65rem 0.8rem;margin-bottom:0.55rem;font-size:0.78rem;font-weight:600;color:var(--green-900)">
+                <span id="footLabel"></span><span class="app-premium-pill" id="footPrem"></span>
+              </div>
+              <input class="search-mini" id="recSearch" type="search" />
+              <div class="filter-grid">
+                <div><label id="lblRecFrom"></label><input class="search-mini" style="margin:0" type="date" id="recFrom" /></div>
+                <div><label id="lblRecTo"></label><input class="search-mini" style="margin:0" type="date" id="recTo" /></div>
+              </div>
+              <div id="recDistrictWrap" style="margin-bottom:0.45rem"></div>
+              <div class="subchips" id="recExtra"></div>
+              <button type="button" class="btn btn-secondary btn-block" style="margin-bottom:0.55rem;font-size:0.8rem" id="btnExportGpx"></button>
+              <div id="hikeList"></div>
+            </div>
+            <div class="info-pane" data-info="plans" hidden>
+              <input class="search-mini" id="planSearch" type="search" />
+              <div class="filter-grid">
+                <div><label id="lblPlanFrom"></label><input class="search-mini" style="margin:0" type="date" id="planFrom" /></div>
+                <div><label id="lblPlanTo"></label><input class="search-mini" style="margin:0" type="date" id="planTo" /></div>
+              </div>
+              <div id="planDistrictWrap" style="margin-bottom:0.45rem"></div>
+              <button type="button" class="btn btn-secondary btn-block" style="margin-bottom:0.55rem;font-size:0.8rem" id="btnImportGpx"></button>
+              <input type="file" id="gpxFile" accept=".gpx,application/gpx+xml" hidden />
+              <div id="planList"></div>
+            </div>
+            <div class="info-pane" data-info="groups" hidden>
+              <input class="search-mini" id="groupSearch" type="search" />
+              <div class="subchips" id="groupWhen"></div>
+              <div class="filter-grid">
+                <div><label id="lblGroupFrom"></label><input class="search-mini" style="margin:0" type="date" id="groupFrom" /></div>
+                <div><label id="lblGroupTo"></label><input class="search-mini" style="margin:0" type="date" id="groupTo" /></div>
+              </div>
+              <div id="groupList"></div>
+            </div>
+          </section>
 
-          <div class="menu-list" id="mainMenu"></div>
+          <!-- Friends -->
+          <section class="hub-panel" id="panelFriends" data-hub="friends" hidden>
+            <div class="subchips" id="friendTabs"></div>
+            <div id="friendList"></div>
+          </section>
 
-          <div class="section-label" id="lblMore"></div>
-          <div class="menu-list" id="moreMenu"></div>
+          <!-- Bookmarks -->
+          <section class="hub-panel" id="panelBookmarks" data-hub="bookmarks" hidden>
+            <div class="subchips" id="bmTabs"></div>
+            <div id="bmList"></div>
+          </section>
 
-          <div class="section-label" id="lblBadgesSec"></div>
-          <p style="font-size:0.68rem;color:var(--text-muted);margin:0 0 0.4rem" id="badgeHint"></p>
-          <div id="badgePicker" style="margin-bottom:0.75rem"></div>
-          <div class="badge-grid" id="badgeGrid"></div>
-
-          <div class="section-label" id="lblPremium"></div>
-          <div class="menu-list" id="premiumList"></div>
-        </div>
-
-        <!-- Settings panel -->
-        <div class="settings-sheet" id="settingsSheet">
-          <div class="sheet-head">
-            <button type="button" id="closeSettings" style="border:none;background:none;font-size:1.3rem;color:var(--green-900);cursor:pointer">‹</button>
-            <strong style="flex:1;text-align:center;color:var(--green-900)" id="settingsTitle"></strong>
-            <span style="width:24px"></span>
-          </div>
-          <div class="phone-body">
+          <!-- Settings -->
+          <section class="hub-panel" id="panelSettings" data-hub="settings" hidden>
             <div class="menu-list">
-              <a href="#"><span id="setProfile"></span><span class="chev">›</span></a>
-              <a href="#"><span id="setPremium"></span><span class="prem"><span class="app-premium-pill" id="setPremPill"></span></span></a>
-              <a href="#"><span id="setOffline"></span><span class="prem"><span class="app-premium-pill"></span></span></a>
-              <a href="#"><span id="setOverseas"></span><span class="prem"><span class="app-premium-pill"></span></span></a>
+              <a href="../get-app.html#premium"><span id="setPremium"></span><span class="prem"><span class="app-premium-pill" id="setPremPill"></span></span></a>
+              <button type="button" id="setOffline"><span id="setOfflineLbl"></span><span class="prem"><span class="app-premium-pill"></span></span></button>
+              <button type="button" id="setOverseas"><span id="setOverseasLbl"></span><span class="prem"><span class="app-premium-pill"></span></span></button>
             </div>
-            <button type="button" class="btn btn-primary btn-block" style="margin-top:1rem" id="btnTrial"></button>
-          </div>
+            <div class="section-label" id="lblProfileSettings"></div>
+            <div style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:0.85rem;margin-bottom:0.75rem">
+              <div class="form-group">
+                <label id="lblName"></label>
+                <input class="form-input" id="settingsName" />
+              </div>
+              <div class="form-group">
+                <label id="lblEmail"></label>
+                <input class="form-input" id="settingsEmail" type="email" />
+              </div>
+              <button type="button" class="btn btn-primary btn-block" id="btnSaveProfile"></button>
+            </div>
+            <div class="section-label" id="lblLanding"></div>
+            <p style="font-size:0.72rem;color:var(--text-muted);margin:0 0 0.45rem" id="landingHint"></p>
+            <div class="subchips" id="landingChips"></div>
+          </section>
+
+          <!-- Notifications -->
+          <section class="hub-panel" id="panelNotif" data-hub="notifications" hidden>
+            <button type="button" class="btn btn-secondary btn-block" style="margin-bottom:0.65rem;font-size:0.8rem" id="btnMarkRead"></button>
+            <div id="notifList"></div>
+          </section>
+
+          <!-- Sync -->
+          <section class="hub-panel" id="panelSync" data-hub="sync" hidden>
+            <div style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:0.85rem;margin-bottom:0.75rem">
+              <strong style="color:var(--green-900);display:block;margin-bottom:0.35rem" id="syncTitle"></strong>
+              <p style="font-size:0.78rem;color:var(--text-muted);margin:0 0 0.65rem" id="syncBody"></p>
+              <span class="app-premium-pill" id="syncPrem"></span>
+            </div>
+            <div class="menu-list" id="syncList"></div>
+          </section>
         </div>
 
-        <!-- Notifications panel -->
-        <div class="settings-sheet" id="notifSheet">
-          <div class="sheet-head">
-            <button type="button" id="closeNotif" style="border:none;background:none;font-size:1.3rem;color:var(--green-900);cursor:pointer">‹</button>
-            <strong style="flex:1;text-align:center;color:var(--green-900)" id="notifTitle"></strong>
-            <span style="width:24px"></span>
-          </div>
-          <div class="phone-body">
-            <div class="friend-card"><div><strong id="n1t"></strong><span id="n1b"></span></div></div>
-            <div class="friend-card"><div><strong id="n2t"></strong><span id="n2b"></span></div></div>
-          </div>
-        </div>
-
-        <!-- Friends / records / gallery panels as simple overlays via hash sections in body -->
         <div data-app-nav></div>
       </div>
     </div>
@@ -202,6 +322,7 @@
     document.documentElement.lang = TW.getLang() === "zh" ? "zh-Hant" : "en";
     const lang = TW.getLang();
     const t = TW.t;
+    const zh = lang === "zh";
     document.querySelectorAll(".lang-switch button").forEach((b) => {
       b.classList.toggle("active", b.dataset.lang === lang);
       b.addEventListener("click", () => { TW.setLang(b.dataset.lang); location.reload(); });
@@ -209,25 +330,68 @@
     document.getElementById("backWeb").textContent = t("app_back_web");
     twMountAppNav("profile");
 
-    const u = TW.user || { name: "Hiker", rank: "Explorer", rankZh: "探索者" };
-    document.getElementById("avatarWrap").innerHTML = TW.avatarHtml(u.avatar, "", 'style="width:52px;height:52px;object-fit:cover"')
-      || `<div style="width:52px;height:52px;display:grid;place-items:center;font-weight:800;color:var(--green-900)">${(u.name || "H")[0]}</div>`;
+    const u = TW.user || { name: "Hiker", email: "hiker@example.com" };
+    document.getElementById("avatarWrap").innerHTML = TW.avatarHtml(u.avatar, "", 'style="width:48px;height:48px;object-fit:cover"')
+      || `<div style="width:48px;height:48px;display:grid;place-items:center;font-weight:800;color:var(--green-900)">${(u.name || "H")[0]}</div>`;
     document.getElementById("userName").textContent = u.name;
     TW.renderMembershipHeader(document.getElementById("membershipStatus"));
-    TW.renderMembershipCard(document.getElementById("dashMembershipCard"));
-    TW.applyPremiumMoreGate();
-    TW.renderSelectedBadgeCard(null, document.getElementById("selBadge"));
-    const selBadge = TW.resolveDashboardBadge(TW.getSelectedBadgeId());
-    if (selBadge) document.getElementById("selBadgeIco").textContent = selBadge.emoji;
-    TW.renderBadgePicker(document.getElementById("badgePicker"), () => {
-      const b = TW.resolveDashboardBadge(TW.getSelectedBadgeId());
-      if (b) {
-        document.getElementById("selBadgeIco").textContent = b.emoji;
-        TW.renderSelectedBadgeCard(null, document.getElementById("selBadge"));
-      }
-    });
-    document.getElementById("bellIcon").innerHTML = twIcon("bell");
 
+    const HUBS = [
+      { id: "dashboard", label: t("app_sec_dashboard") },
+      { id: "info", label: t("app_sec_my_info") },
+      { id: "friends", label: t("app_my_friends") },
+      { id: "bookmarks", label: t("app_bookmarks") },
+      { id: "settings", label: t("app_settings") },
+      { id: "notifications", label: t("app_notifications"), notif: true },
+      { id: "sync", label: t("app_sec_sync") },
+    ];
+    let hub = "dashboard";
+    let infoTab = "badges";
+    let friendTab = "list";
+    let bmTab = "all";
+    let groupWhen = "all";
+    let recDur = "all";
+    let recGroup = "all";
+
+    function notifUnread() {
+      try { return localStorage.getItem("tw_app_notif_read") !== "1"; } catch (e) { return true; }
+    }
+
+    function renderHubTabs() {
+      document.getElementById("hubTabs").innerHTML = HUBS.map((h) =>
+        `<button type="button" data-hub="${h.id}" class="${hub === h.id ? "active" : ""}">${h.label}${h.notif && notifUnread() ? '<span class="dot"></span>' : ""}</button>`
+      ).join("");
+    }
+
+    function showHub(id) {
+      hub = id;
+      if (id === "info") {
+        /* keep infoTab; hash may set type */
+      }
+      document.querySelectorAll(".hub-panel").forEach((el) => {
+        el.hidden = el.getAttribute("data-hub") !== id;
+      });
+      renderHubTabs();
+      try {
+        const u = new URL(location.href);
+        let h = id === "dashboard" ? "overview" : id;
+        if (id === "info") h = infoTab === "badges" ? "profile" : "profile&type=" + infoTab;
+        u.hash = h;
+        history.replaceState(null, "", u.pathname + u.search + u.hash);
+      } catch (e) {}
+      if (id === "info") showInfo(infoTab);
+      if (id === "friends") renderFriends();
+      if (id === "bookmarks") renderBookmarks();
+      if (id === "notifications") renderNotifs();
+    }
+
+    document.getElementById("hubTabs").addEventListener("click", (e) => {
+      const btn = e.target.closest("button[data-hub]");
+      if (btn) showHub(btn.dataset.hub);
+    });
+
+    /* —— Dashboard —— */
+    TW.renderMembershipCard(document.getElementById("dashMembershipCard"));
     TW.ensureDemoHike();
     document.getElementById("lblLifetime").textContent = t("dash_lifetime");
     document.getElementById("lifeKm").textContent = ((TW.stats && TW.stats.distanceKm) || 128) + " km";
@@ -235,79 +399,408 @@
     document.getElementById("lifeRec").textContent = String((TW.stats && TW.stats.records) || TW.getHikes().length || 12);
     document.getElementById("lblKm").textContent = t("app_distance");
     document.getElementById("lblHrs").textContent = t("app_duration");
-    document.getElementById("lblRec").textContent = t("app_my_records");
+    document.getElementById("lblRec").textContent = t("records");
     document.getElementById("lblSelBadge").textContent = t("dash_selected_badge");
-    document.getElementById("linkBadges").textContent = t("app_my_badges");
-    document.getElementById("lblMore").textContent = t("app_more");
+    document.getElementById("linkBadges").textContent = t("dash_change_badge");
+    function refreshSelBadge() {
+      const b = TW.resolveDashboardBadge(TW.getSelectedBadgeId());
+      if (b) {
+        document.getElementById("selBadgeIco").textContent = b.emoji;
+        document.getElementById("selBadge").textContent = b.name;
+      }
+    }
+    refreshSelBadge();
+    document.getElementById("linkBadges").addEventListener("click", () => {
+      infoTab = "badges";
+      showHub("info");
+    });
+
     const isPrem = typeof TW.isMemberPremium === "function" && TW.isMemberPremium();
-    document.getElementById("moreMenu").innerHTML = `
-      <a href="milestones.html" ${isPrem ? "" : 'data-premium-lock="1"'}><span>${t("app_milestones")}</span><span class="chev">›</span></a>
-      <a href="insights.html" ${isPrem ? "" : 'data-premium-lock="1"'}><span>${t("app_insights")}</span><span class="chev">›</span>${isPrem ? "" : `<span class="prem"><span class="app-premium-pill">${t("app_detailed_insights")}</span></span>`}</a>`;
-    document.querySelectorAll("#moreMenu [data-premium-lock]").forEach((a) => {
-      a.addEventListener("click", (e) => {
-        e.preventDefault();
-        showToast(t("dash_more_premium_body"));
-        setTimeout(() => { location.href = "../get-app.html#premium"; }, 800);
-      });
+    TW.applyPremiumMoreGate();
+    const moreBtn = document.getElementById("dashMoreBtn");
+    moreBtn.textContent = t("dash_more");
+    moreBtn.hidden = !isPrem;
+    function setDashMore(open) {
+      const panel = document.getElementById("dashPremiumMore");
+      if (!isPrem) return;
+      panel.hidden = !open;
+      moreBtn.textContent = open ? t("dash_more_hide") : t("dash_more");
+    }
+    moreBtn.addEventListener("click", () => {
+      const panel = document.getElementById("dashPremiumMore");
+      setDashMore(panel.hidden);
     });
-    document.getElementById("lblBadgesSec").textContent = t("dash_set_badge");
-    document.getElementById("badgeHint").textContent = t("app_badge_criteria");
-    document.getElementById("lblPremium").textContent = t("app_premium");
 
-    document.getElementById("mainMenu").innerHTML = [
-      { href: "records.html", label: t("app_my_records") },
-      { href: "index.html?mode=plan", label: t("app_my_plans") },
-      { href: "hikes.html?mine=1", label: t("app_my_groups") },
-      { href: "index.html", label: t("app_my_reports"), toast: false },
-      { href: "gallery.html", label: t("app_my_gallery") },
-      { href: "friends.html", label: t("app_my_friends") },
-    ].map((item) => `<a href="${item.href}"><span>${item.label}</span><span class="chev">›</span></a>`).join("");
+    document.getElementById("lblTopRec").textContent = t("mil_top_records");
+    document.getElementById("lblHighlights").textContent = t("mil_highlights");
+    document.getElementById("lblInsights").textContent = t("dash_insights");
+    document.getElementById("lblPace").textContent = t("insights_pace");
+    document.getElementById("lblAvgPace").textContent = t("insights_avg");
+    document.getElementById("lblBestPace").textContent = t("insights_best");
+    document.getElementById("lblActivity").textContent = t("insights_activity");
+    document.getElementById("lblDistTrend").textContent = t("insights_distance");
+    document.getElementById("lblElevTrend").textContent = t("insights_elevation");
+    document.getElementById("lblRegion").textContent = t("insights_region");
+    ["activityToggle", "distToggle", "elevToggle"].forEach((id) => {
+      const el = document.getElementById(id);
+      el.querySelector('[data-mode="yearly"]').textContent = t("insights_yearly");
+      el.querySelector('[data-mode="monthly"]').textContent = t("insights_monthly");
+    });
 
-    /* Legacy badge grid removed — picker above uses dashboard badges */
-    document.getElementById("badgeGrid") && (document.getElementById("badgeGrid").style.display = "none");
-
-    document.getElementById("premiumList").innerHTML = [
-      { label: t("app_live_share"), note: t("app_live_share_premium") },
-      { label: t("app_group_organize_premium"), note: t("app_upgrade") },
-      { label: t("app_group_organize_public"), note: t("app_group_public_soon") },
-      { label: t("app_footprint_map"), note: t("app_premium_lock") },
-      { label: t("app_offline_maps"), note: t("app_premium_lock") },
-      { label: t("app_overseas_maps"), note: t("app_premium_lock") },
-      { label: t("app_unlimited_photos"), note: t("app_premium_lock") },
-    ].map((p) =>
-      `<button type="button" data-upgrade><span>${p.label}</span><span class="prem"><span class="app-premium-pill">${t("app_upgrade")}</span></span></button>`
+    const mil = TW.getMilestonesDemo();
+    document.getElementById("dashTopRecords").innerHTML = mil.topRecords.map((r) =>
+      `<div class="top-record-card"><div class="name">${r.title}</div><div class="val">${r.val}</div><div class="foot">${t(r.key)}</div></div>`
     ).join("");
-    document.getElementById("premiumList").addEventListener("click", (e) => {
-      if (e.target.closest("[data-upgrade]")) showToast(t("app_free_trial"));
+    document.getElementById("milHighlights").innerHTML = mil.highlights.map((h) =>
+      `<li><span>${h.icon}</span><span class="hl-label">${t(h.labelKey)}</span><span class="hl-val">${h.val}</span></li>`
+    ).join("");
+    TW.bindInsightToggle(document.getElementById("activityToggle"), document.getElementById("activityBars"), "activity");
+    TW.bindInsightToggle(document.getElementById("distToggle"), document.getElementById("distBars"), "distance");
+    TW.bindInsightToggle(document.getElementById("elevToggle"), document.getElementById("elevBars"), "elevation");
+    TW.renderRegionPie(document.getElementById("regionPie"));
+
+    /* —— My Info —— */
+    document.getElementById("infoChips").innerHTML = [
+      { id: "badges", label: t("app_my_badges") },
+      { id: "records", label: t("app_my_records") },
+      { id: "plans", label: t("app_my_plans") },
+      { id: "groups", label: t("app_my_groups") },
+    ].map((c) => `<button type="button" data-info="${c.id}" class="${infoTab === c.id ? "active" : ""}">${c.label}</button>`).join("");
+
+    document.getElementById("badgeHint").textContent = t("app_badge_criteria");
+    TW.renderProfileBadgeGrid(document.getElementById("badgePicker"), () => refreshSelBadge());
+
+    document.getElementById("footLabel").textContent = t("app_footprint_map");
+    document.getElementById("footPrem").textContent = t("app_premium");
+    document.getElementById("footRow").addEventListener("click", () => showToast(t("app_upgrade")));
+    document.getElementById("recSearch").placeholder = t("me_search") + "…";
+    document.getElementById("lblRecFrom").textContent = t("app_filter_from");
+    document.getElementById("lblRecTo").textContent = t("app_filter_to");
+    document.getElementById("recDistrictWrap").innerHTML = TW.districtSelectHtml("recDistrict");
+    document.getElementById("btnExportGpx").textContent = t("app_export_gpx");
+    document.getElementById("recExtra").innerHTML = `
+      <button type="button" data-dur="all" class="active">${t("filter_all")}</button>
+      <button type="button" data-dur="under1">${t("app_dur_under1")}</button>
+      <button type="button" data-dur="1to3">${t("app_dur_1to3")}</button>
+      <button type="button" data-dur="over3">${t("app_dur_over3")}</button>
+      <button type="button" data-grp="all" class="active">${t("filter_all")}</button>
+      <button type="button" data-grp="group">${t("app_filter_group")}</button>
+      <button type="button" data-grp="solo">${t("app_filter_solo")}</button>`;
+
+    function allMyRecords() {
+      const hikes = (TW.getHikes() || []).map((h) => Object.assign({}, h, { _kind: "hike" }));
+      return hikes;
+    }
+    function renderRecords() {
+      const opts = {
+        q: document.getElementById("recSearch").value,
+        district: (document.getElementById("recDistrict") || {}).value || "",
+        from: document.getElementById("recFrom").value,
+        to: document.getElementById("recTo").value,
+      };
+      let list = allMyRecords().filter((item) => TW.matchesProfileFilters(item, opts));
+      if (recDur !== "all") {
+        list = list.filter((r) => {
+          const m = TW.recordDurationMinutes ? TW.recordDurationMinutes(r) : Math.round((r.seconds || 0) / 60);
+          if (recDur === "under1") return m > 0 && m < 60;
+          if (recDur === "1to3") return m >= 60 && m <= 180;
+          if (recDur === "over3") return m > 180;
+          return true;
+        });
+      }
+      if (recGroup === "group") list = list.filter((r) => r.groupId);
+      if (recGroup === "solo") list = list.filter((r) => !r.groupId);
+      document.getElementById("hikeList").innerHTML = list.length
+        ? list.map((h) => {
+            const row = TW.renderHikeListItem(h, "hike-detail.html?id=" + encodeURIComponent(h.id));
+            return row.replace("</a>", `<button type="button" class="btn btn-secondary" style="margin:0.35rem 0.75rem 0.75rem;padding:0.3rem 0.55rem;font-size:0.7rem" data-gpx="${h.id}">${t("app_export_gpx")}</button></a>`);
+          }).join("")
+        : `<p style="text-align:center;color:var(--text-muted);padding:1.5rem 0">${t("hikes_empty")}</p>`;
+    }
+    document.getElementById("btnExportGpx").addEventListener("click", () => showToast(t("app_gpx_exported")));
+    document.getElementById("hikeList").addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-gpx]");
+      if (btn) { e.preventDefault(); e.stopPropagation(); showToast(t("app_gpx_exported")); }
+    });
+    ["recSearch", "recFrom", "recTo"].forEach((id) => {
+      document.getElementById(id).addEventListener("input", renderRecords);
+      document.getElementById(id).addEventListener("change", renderRecords);
+    });
+    document.getElementById("recDistrictWrap").addEventListener("change", renderRecords);
+    document.getElementById("recExtra").addEventListener("click", (e) => {
+      const dur = e.target.closest("[data-dur]");
+      const grp = e.target.closest("[data-grp]");
+      if (dur) {
+        recDur = dur.dataset.dur;
+        document.querySelectorAll("#recExtra [data-dur]").forEach((b) => b.classList.toggle("active", b === dur));
+      }
+      if (grp) {
+        recGroup = grp.dataset.grp;
+        document.querySelectorAll("#recExtra [data-grp]").forEach((b) => b.classList.toggle("active", b === grp));
+      }
+      renderRecords();
     });
 
-    document.getElementById("settingsTitle").textContent = t("app_settings");
-    document.getElementById("setProfile").textContent = t("nav_profile");
+    document.getElementById("planSearch").placeholder = t("me_search") + "…";
+    document.getElementById("lblPlanFrom").textContent = t("app_filter_from");
+    document.getElementById("lblPlanTo").textContent = t("app_filter_to");
+    document.getElementById("planDistrictWrap").innerHTML = TW.districtSelectHtml("planDistrict");
+    document.getElementById("btnImportGpx").textContent = t("app_import_gpx");
+    if (TW.ensureDemoPlans) TW.ensureDemoPlans();
+    function renderPlans() {
+      const q = document.getElementById("planSearch").value.trim().toLowerCase();
+      const district = (document.getElementById("planDistrict") || {}).value || "";
+      const drafts = (TW.getRouteDrafts && TW.getRouteDrafts()) || [];
+      const planned = (TW.getPlans() || []).map((id) => TW.resolveTrailSource ? TW.resolveTrailSource(id) : (TW.trails || []).find((x) => x.id === id)).filter(Boolean);
+      let rows = drafts.map((d) => ({ id: d.id, title: d.name, titleZh: d.nameZh, _draft: true, updatedAt: d.updatedAt })).concat(planned);
+      rows = rows.filter((r) => {
+        if (q) {
+          const hay = ((r.title || "") + " " + (r.titleZh || "")).toLowerCase();
+          if (!hay.includes(q)) return false;
+        }
+        if (district && TW.guessDistrict(r) !== district) return false;
+        return true;
+      });
+      document.getElementById("planList").innerHTML = rows.length
+        ? rows.map((r) => {
+            const name = TW.tt(r, "title") || r.title;
+            const href = r._draft
+              ? "index.html?mode=plan&draft=" + encodeURIComponent(r.id)
+              : "route-detail.html?id=" + encodeURIComponent(r.id);
+            return `<a class="bm-card" href="${href}" style="text-decoration:none;color:inherit">
+              <div style="flex:1"><strong>${name}</strong><span>${r._draft ? (zh ? "草稿" : "Draft") : (r.distance || "")}</span></div>
+              <span class="chev">›</span>
+            </a>`;
+          }).join("")
+        : `<p style="text-align:center;color:var(--text-muted);padding:1.5rem 0">${t("plan_empty")}</p>
+           <a class="btn btn-primary btn-block" href="explore.html">${t("plan_go_explore")}</a>`;
+    }
+    document.getElementById("btnImportGpx").addEventListener("click", () => document.getElementById("gpxFile").click());
+    document.getElementById("gpxFile").addEventListener("change", () => {
+      if (TW.newRouteDraft) {
+        const d = TW.newRouteDraft({ name: zh ? "匯入的 GPX" : "Imported GPX" });
+        showToast(t("app_gpx_imported"));
+        setTimeout(() => { location.href = "index.html?mode=plan&draft=" + encodeURIComponent(d.id); }, 600);
+      } else showToast(t("app_gpx_imported"));
+    });
+    ["planSearch", "planFrom", "planTo"].forEach((id) => {
+      document.getElementById(id).addEventListener("input", renderPlans);
+      document.getElementById(id).addEventListener("change", renderPlans);
+    });
+    document.getElementById("planDistrictWrap").addEventListener("change", renderPlans);
+
+    document.getElementById("groupSearch").placeholder = t("me_search") + "…";
+    document.getElementById("lblGroupFrom").textContent = t("app_filter_from");
+    document.getElementById("lblGroupTo").textContent = t("app_filter_to");
+    document.getElementById("groupWhen").innerHTML = `
+      <button type="button" data-w="all" class="active">${t("groups_all_when") || t("filter_all")}</button>
+      <button type="button" data-w="upcoming">${t("groups_upcoming") || (zh ? "即將舉行" : "Upcoming")}</button>
+      <button type="button" data-w="past">${t("groups_past") || (zh ? "已結束" : "Past")}</button>`;
+    function renderGroups() {
+      const q = document.getElementById("groupSearch").value.trim().toLowerCase();
+      let list = (TW.groupHikes || TW.meetups || []).slice();
+      if (!list.length && TW.getPublishedGroupHikes) list = TW.getPublishedGroupHikes() || [];
+      if (!list.length) {
+        list = [
+          { id: "gh1", title: "Dragon's Back sunrise", titleZh: "龍脊日出", date: "2026-09-12", when: "upcoming" },
+          { id: "gh2", title: "Sai Kung family walk", titleZh: "西貢親子行", date: "2026-07-01", when: "past" },
+        ];
+      }
+      list = list.filter((g) => {
+        const name = ((g.title || "") + " " + (g.titleZh || "")).toLowerCase();
+        if (q && !name.includes(q)) return false;
+        const when = g.when || (Date.parse(g.date) < Date.now() ? "past" : "upcoming");
+        if (groupWhen !== "all" && when !== groupWhen) return false;
+        return true;
+      });
+      document.getElementById("groupList").innerHTML = list.length
+        ? list.map((g) => {
+            const name = TW.tt(g, "title") || g.title;
+            return `<a class="bm-card" href="group-detail.html?id=${encodeURIComponent(g.id)}" style="text-decoration:none;color:inherit">
+              <div style="flex:1"><strong>${name}</strong><span>${g.date || ""}</span></div><span>›</span>
+            </a>`;
+          }).join("")
+        : `<p style="text-align:center;color:var(--text-muted);padding:1.5rem 0">${zh ? "暫無聯誼" : "No group hikes yet"}</p>`;
+    }
+    document.getElementById("groupWhen").addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-w]");
+      if (!btn) return;
+      groupWhen = btn.dataset.w;
+      document.querySelectorAll("#groupWhen button").forEach((b) => b.classList.toggle("active", b === btn));
+      renderGroups();
+    });
+    document.getElementById("groupSearch").addEventListener("input", renderGroups);
+
+    function showInfo(tab) {
+      infoTab = tab;
+      document.querySelectorAll("#infoChips button").forEach((b) => b.classList.toggle("active", b.dataset.info === tab));
+      document.querySelectorAll(".info-pane").forEach((el) => {
+        el.hidden = el.getAttribute("data-info") !== tab;
+      });
+      try {
+        const u = new URL(location.href);
+        u.hash = tab === "badges" ? "profile" : "profile&type=" + tab;
+        history.replaceState(null, "", u.pathname + u.search + u.hash);
+      } catch (e) {}
+      if (tab === "records") renderRecords();
+      if (tab === "plans") renderPlans();
+      if (tab === "groups") renderGroups();
+    }
+    document.getElementById("infoChips").addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-info]");
+      if (btn) showInfo(btn.dataset.info);
+    });
+
+    /* —— Friends —— */
+    const friends = [
+      { name: "Sarah Chen", status: "friend", routes: 12 },
+      { name: "Marcus Lee", status: "friend", routes: 8 },
+      { name: "Alex Ng", status: "pending", routes: 0 },
+    ];
+    document.getElementById("friendTabs").innerHTML = `
+      <button type="button" data-ft="list" class="active">${t("friends_list")}</button>
+      <button type="button" data-ft="pending">${t("friends_pending")}</button>`;
+    function renderFriends() {
+      const rows = friendTab === "pending"
+        ? friends.filter((f) => f.status === "pending")
+        : friends.filter((f) => f.status === "friend");
+      document.getElementById("friendList").innerHTML = rows.length
+        ? rows.map((f) => `
+          <div class="friend-card">
+            <div style="width:36px;height:36px;border-radius:50%;background:var(--green-100);display:grid;place-items:center;font-weight:800;color:var(--green-900)">${f.name[0]}</div>
+            <div style="flex:1"><strong>${f.name}</strong><span>${f.routes} ${zh ? "路線" : "routes"}</span></div>
+            <button type="button" class="btn btn-secondary" style="padding:0.3rem 0.55rem;font-size:0.7rem" data-fact="${f.status}">${f.status === "pending" ? t("confirm") : (zh ? "查看" : "View")}</button>
+          </div>`).join("")
+        : `<p style="text-align:center;color:var(--text-muted);padding:1.5rem 0">${zh ? "暫無項目" : "Nothing here"}</p>`;
+    }
+    document.getElementById("friendTabs").addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-ft]");
+      if (!btn) return;
+      friendTab = btn.dataset.ft;
+      document.querySelectorAll("#friendTabs button").forEach((b) => b.classList.toggle("active", b === btn));
+      renderFriends();
+    });
+    document.getElementById("friendList").addEventListener("click", (e) => {
+      if (e.target.closest("[data-fact]")) showToast(t("confirm"));
+    });
+
+    /* —— Bookmarks —— */
+    if (TW.ensureDemoBookmarks) TW.ensureDemoBookmarks();
+    document.getElementById("bmTabs").innerHTML = `
+      <button type="button" data-bm="all" class="active">${t("filter_all")}</button>
+      <button type="button" data-bm="routes">${t("app_bm_routes")}</button>
+      <button type="button" data-bm="records">${t("app_bm_records")}</button>
+      <button type="button" data-bm="events">${t("app_bm_events")}</button>`;
+    function renderBookmarks() {
+      const routeIds = TW.getBookmarks() || [];
+      const routes = routeIds.map((id) => (TW.trails || []).find((x) => x.id === id)).filter(Boolean)
+        .map((r) => ({ type: "routes", id: r.id, title: TW.tt(r, "title"), href: "route-detail.html?id=" + encodeURIComponent(r.id) }));
+      const records = (TW.records || []).slice(0, 2).map((r) => ({
+        type: "records", id: r.id, title: TW.tt(r, "title"), href: "record-detail.html?id=" + encodeURIComponent(r.id),
+      }));
+      const events = [
+        { type: "events", id: "gh1", title: zh ? "龍脊日出聯誼" : "Dragon's Back sunrise", href: "group-detail.html?id=gh1" },
+      ];
+      let rows = routes.concat(records).concat(events);
+      if (bmTab !== "all") rows = rows.filter((r) => r.type === bmTab);
+      document.getElementById("bmList").innerHTML = rows.length
+        ? rows.map((r) => `<a class="bm-card" href="${r.href}" style="text-decoration:none;color:inherit">
+            <div style="flex:1"><strong>${r.title}</strong><span>${t("app_bm_" + r.type) || r.type}</span></div><span>›</span>
+          </a>`).join("")
+        : `<p style="text-align:center;color:var(--text-muted);padding:1.5rem 0">${zh ? "暫無書籤" : "No bookmarks yet"}</p>`;
+    }
+    document.getElementById("bmTabs").addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-bm]");
+      if (!btn) return;
+      bmTab = btn.dataset.bm;
+      document.querySelectorAll("#bmTabs button").forEach((b) => b.classList.toggle("active", b === btn));
+      renderBookmarks();
+    });
+
+    /* —— Settings —— */
     document.getElementById("setPremium").textContent = t("app_premium");
     document.getElementById("setPremPill").textContent = t("app_premium");
-    document.getElementById("setOffline").textContent = t("app_offline_maps");
-    document.getElementById("setOverseas").textContent = t("app_overseas_maps");
-    document.getElementById("btnTrial").textContent = t("app_free_trial");
-    document.getElementById("btnTrial").addEventListener("click", () => showToast(t("app_free_trial")));
+    document.getElementById("setOfflineLbl").textContent = t("app_offline_maps");
+    document.getElementById("setOverseasLbl").textContent = t("app_overseas_maps");
+    document.getElementById("setOffline").addEventListener("click", () => showToast(t("app_upgrade")));
+    document.getElementById("setOverseas").addEventListener("click", () => showToast(t("app_upgrade")));
+    document.getElementById("lblProfileSettings").textContent = t("nav_settings");
+    document.getElementById("lblName").textContent = t("profile_name");
+    document.getElementById("lblEmail").textContent = t("profile_email");
+    document.getElementById("settingsName").value = u.name || "";
+    document.getElementById("settingsEmail").value = u.email || "";
+    document.getElementById("btnSaveProfile").textContent = t("profile_save");
+    document.getElementById("btnSaveProfile").addEventListener("click", () => showToast(t("toast_saved")));
+    document.getElementById("lblLanding").textContent = t("app_landing_page");
+    document.getElementById("landingHint").textContent = t("app_landing_hint");
+    let landing = "home";
+    try { landing = localStorage.getItem("tw_app_landing") || "home"; } catch (e) {}
+    const landOpts = [
+      { id: "home", label: t("app_landing_community") },
+      { id: "explore", label: t("app_landing_explore") },
+      { id: "track", label: t("app_landing_track") },
+      { id: "profile", label: t("app_landing_profile") },
+    ];
+    function renderLanding() {
+      document.getElementById("landingChips").innerHTML = landOpts.map((o) =>
+        `<button type="button" data-land="${o.id}" class="${landing === o.id ? "active" : ""}">${o.label}</button>`
+      ).join("");
+    }
+    renderLanding();
+    document.getElementById("landingChips").addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-land]");
+      if (!btn) return;
+      landing = btn.dataset.land;
+      try { localStorage.setItem("tw_app_landing", landing); } catch (err) {}
+      renderLanding();
+      showToast(t("toast_saved"));
+    });
 
-    document.getElementById("notifTitle").textContent = t("app_notifications");
-    document.getElementById("n1t").textContent = lang === "zh" ? "聯誼邀請" : "Group hike invite";
-    document.getElementById("n1b").textContent = lang === "zh" ? "Sarah 邀請你參加龍脊聯誼" : "Sarah invited you to Dragon's Back";
-    document.getElementById("n2t").textContent = lang === "zh" ? "好友請求" : "Friend request";
-    document.getElementById("n2b").textContent = lang === "zh" ? "James 想加你為好友" : "James wants to be friends";
+    /* —— Notifications —— */
+    document.getElementById("btnMarkRead").textContent = t("app_notif_mark_read");
+    function renderNotifs() {
+      const items = (TW.demoNotifications && TW.demoNotifications()) || [];
+      document.getElementById("notifList").innerHTML = items.length
+        ? items.map((n) => `<div class="notif-card"><div style="flex:1"><strong>${n.title}</strong><span>${n.time || ""}</span></div></div>`).join("")
+        : `<p style="text-align:center;color:var(--text-muted);padding:1.5rem 0">${t("notif_empty")}</p>`;
+    }
+    document.getElementById("btnMarkRead").addEventListener("click", () => {
+      try { localStorage.setItem("tw_app_notif_read", "1"); } catch (e) {}
+      renderHubTabs();
+      twMountAppNav("profile");
+      showToast(t("notif_empty"));
+    });
 
-    document.getElementById("btnSettings").addEventListener("click", () => {
-      document.getElementById("settingsSheet").classList.add("open");
+    /* —— Sync —— */
+    document.getElementById("syncTitle").textContent = t("app_sync_title");
+    document.getElementById("syncBody").textContent = t("app_sync_body");
+    document.getElementById("syncPrem").textContent = t("app_sync_premium");
+    document.getElementById("syncList").innerHTML = [
+      t("app_sync_garmin"), t("app_sync_polar"), t("app_sync_apple"),
+    ].map((label) =>
+      `<button type="button" data-sync><span>${label}</span><span class="prem"><span class="app-premium-pill">${t("app_premium")}</span></span></button>`
+    ).join("");
+    document.getElementById("syncList").addEventListener("click", (e) => {
+      if (e.target.closest("[data-sync]")) showToast(isPrem ? t("toast_saved") : t("app_sync_premium"));
     });
-    document.getElementById("closeSettings").addEventListener("click", () => {
-      document.getElementById("settingsSheet").classList.remove("open");
-    });
-    document.getElementById("btnNotif").addEventListener("click", () => {
-      document.getElementById("notifSheet").classList.add("open");
-    });
-    document.getElementById("closeNotif").addEventListener("click", () => {
-      document.getElementById("notifSheet").classList.remove("open");
-    });
+
+    /* Boot from hash */
+    const hash = (location.hash || "").replace(/^#/, "");
+    const hashMap = {
+      overview: "dashboard", dashboard: "dashboard",
+      profile: "info", info: "info",
+      friends: "friends", bookmarks: "bookmarks",
+      settings: "settings", notifications: "notifications", sync: "sync",
+      milestones: "dashboard", insights: "dashboard",
+    };
+    if (hash.indexOf("profile") === 0) {
+      const type = (hash.match(/type=(\w+)/) || [])[1];
+      if (type) infoTab = type;
+    }
+    showHub(hashMap[hash.split("&")[0]] || "dashboard");
+    if (hash === "milestones" || hash === "insights" || hash.indexOf("more") >= 0) {
+      if (isPrem) setDashMore(true);
+    }
   </script>
 </body>
 </html>
