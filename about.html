@@ -14,55 +14,26 @@
   <main class="page">
     <div class="container" style="max-width:720px">
       <h1 class="page-title" data-i18n="about_title">About Us</h1>
-      <p class="page-sub" id="aboutBody"></p>
-
-      <div class="about-progs">
-        <article class="card" style="padding:1.1rem">
-          <h2 style="font-size:1.05rem;color:var(--green-900);margin:0 0 0.4rem" data-i18n="footer_ctc_title"></h2>
-          <p class="page-sub" style="margin:0" data-i18n="footer_ctc_body"></p>
-        </article>
-        <article class="card" style="padding:1.1rem">
-          <h2 style="font-size:1.05rem;color:var(--green-900);margin:0 0 0.4rem" data-i18n="footer_mytree_title"></h2>
-          <p class="page-sub" style="margin:0" data-i18n="footer_mytree_body"></p>
-        </article>
-        <article class="card" style="padding:1.1rem">
-          <h2 style="font-size:1.05rem;color:var(--green-900);margin:0 0 0.4rem" data-i18n="footer_backyard_title"></h2>
-          <p class="page-sub" style="margin:0" data-i18n="footer_backyard_body"></p>
-        </article>
-      </div>
-
-      <div class="card" style="padding:1.25rem;margin-top:1.5rem;scroll-margin-top:calc(var(--nav-h) + 1rem)" id="premium">
-        <h2 style="font-size:1.1rem;color:var(--green-900);margin-bottom:0.5rem" data-i18n="footer_premium"></h2>
-        <p class="page-sub" style="margin-bottom:0.85rem" data-i18n="footer_premium_body"></p>
-        <a class="btn btn-primary" href="get-app.html#premium" data-i18n="footer_premium_link"></a>
-      </div>
-
-      <p style="margin:1.25rem 0 0">
-        <a class="btn btn-secondary" href="register.html" data-i18n="register_cta"></a>
-      </p>
+      <h2 class="about-motto" data-i18n="about_motto">Enjoy · Share · Protect · Develop</h2>
+      <div class="about-body legal-prose" id="aboutBody"></div>
 
       <div class="card" style="padding:1.25rem;margin-top:1.5rem;scroll-margin-top:calc(var(--nav-h) + 1rem)" id="contact">
-        <h2 style="font-size:1.1rem;color:var(--green-900);margin-bottom:0.75rem" data-i18n="contact_title">Contact</h2>
+        <h2 style="font-size:1.1rem;color:var(--green-900);margin-bottom:0.75rem" data-i18n="contact_title">Contact Us</h2>
         <p style="margin-bottom:0.4rem"><strong data-i18n="contact_email_label">Email</strong>: <a id="cEmail" href="#"></a></p>
         <p style="margin-bottom:0.4rem"><strong data-i18n="contact_phone_label">Phone</strong>: <span id="cPhone"></span></p>
         <p><strong data-i18n="contact_address_label">Address</strong>: <span id="cAddr"></span></p>
       </div>
 
-      <div class="card" style="padding:1.25rem;margin-top:1.5rem;scroll-margin-top:calc(var(--nav-h) + 1rem)" id="faq">
-        <h2 style="font-size:1.1rem;color:var(--green-900);margin-bottom:0.75rem" data-i18n="footer_faq"></h2>
-        <div id="faqList"></div>
-      </div>
-
-      <div class="card" style="padding:1.25rem;margin-top:1.5rem" id="newsletter">
+      <div class="card" style="padding:1.25rem;margin-top:1.5rem;scroll-margin-top:calc(var(--nav-h) + 1rem)" id="newsletter">
         <h2 style="font-size:1.1rem;color:var(--green-900);margin-bottom:0.5rem" data-i18n="footer_newsletter"></h2>
-        <p style="font-size:0.9rem;color:var(--text-muted);margin-bottom:0.85rem">Get trail tips, events, and conservation news.</p>
+        <p style="font-size:0.9rem;color:var(--text-muted);margin-bottom:0.85rem" data-i18n="about_newsletter_hint"></p>
         <form id="newsletterForm" style="display:flex;gap:0.5rem;flex-wrap:wrap">
           <input class="form-input" type="email" required placeholder="you@email.com" style="flex:1;min-width:200px" />
-          <button type="submit" class="btn btn-primary" data-i18n="confirm"></button>
+          <button type="submit" class="btn btn-primary" data-i18n="footer_newsletter_cta"></button>
         </form>
       </div>
 
-      <div class="card" style="padding:1.35rem;margin-top:1.5rem">
+      <div class="card" style="padding:1.35rem;margin-top:1.5rem;scroll-margin-top:calc(var(--nav-h) + 1rem)" id="feedback">
         <h2 style="font-size:1.1rem;color:var(--green-900);margin-bottom:0.35rem" data-i18n="feedback_title"></h2>
         <p style="font-size:0.9rem;color:var(--text-muted);margin-bottom:1rem" data-i18n="feedback_sub"></p>
         <form id="feedbackForm">
@@ -95,38 +66,45 @@
   <script>
     document.documentElement.lang = TW.getLang() === "zh" ? "zh-Hant" : "en";
     initShell("about");
-    const c = TW.getSiteContent();
-    document.getElementById("aboutBody").textContent =
-      TW.getLang() === "zh" ? c.aboutZh : c.aboutEn;
-    document.getElementById("cEmail").textContent = c.contactEmail;
-    document.getElementById("cEmail").href = "mailto:" + c.contactEmail;
-    document.getElementById("cPhone").textContent = c.contactPhone;
-    document.getElementById("cAddr").textContent =
-      TW.getLang() === "zh" ? c.contactAddressZh : c.contactAddress;
-    document.getElementById("faqList").innerHTML = [1, 2, 3, 4]
-      .map(
-        (i) =>
-          `<p class="faq-item"><strong>${TW.t("faq_" + i + "_q")}</strong><br/>${TW.t("faq_" + i + "_a")}</p>`
-      )
+    const zh = TW.getLang() === "zh";
+    const paras = [
+      TW.t("about_p1"),
+      TW.t("about_p2"),
+      TW.t("about_p3"),
+      TW.t("about_p4"),
+    ];
+    document.getElementById("aboutBody").innerHTML = paras
+      .map((p) => `<p>${p}</p>`)
       .join("");
+    const c = typeof TW.getSiteContent === "function" ? TW.getSiteContent() : {};
+    const email = c.contactEmail || "info@trailwatch.hk";
+    document.getElementById("cEmail").textContent = email;
+    document.getElementById("cEmail").href = "mailto:" + email;
+    document.getElementById("cPhone").textContent = c.contactPhone || "—";
+    document.getElementById("cAddr").textContent = zh
+      ? c.contactAddressZh || c.contactAddress || "—"
+      : c.contactAddress || "—";
 
     document.getElementById("feedbackForm").addEventListener("submit", (e) => {
       e.preventDefault();
-      CMS.submitFeedback({
-        name: document.getElementById("fbName").value,
-        email: document.getElementById("fbEmail").value,
-        subject: document.getElementById("fbSubject").value,
-        message: document.getElementById("fbMessage").value,
-      });
+      if (typeof CMS !== "undefined" && CMS.submitFeedback) {
+        CMS.submitFeedback({
+          name: document.getElementById("fbName").value,
+          email: document.getElementById("fbEmail").value,
+          subject: document.getElementById("fbSubject").value,
+          message: document.getElementById("fbMessage").value,
+        });
+      }
       showToast(TW.t("feedback_thanks"));
       e.target.reset();
     });
     const nl = document.getElementById("newsletterForm");
-    if (nl) nl.addEventListener("submit", (e) => {
-      e.preventDefault();
-      showToast(TW.t("feedback_thanks"));
-      e.target.reset();
-    });
+    if (nl)
+      nl.addEventListener("submit", (e) => {
+        e.preventDefault();
+        showToast(TW.t("feedback_thanks"));
+        e.target.reset();
+      });
   </script>
 </body>
 </html>

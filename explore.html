@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="css/styles.css?v=20260821e" />
 </head>
 <body>
   <div id="app-header"></div>
@@ -23,7 +23,6 @@
         <div class="search-bar explore-search">
           <input type="search" id="trailSearch" data-i18n-placeholder="search_placeholder" />
         </div>
-        <button type="button" class="btn btn-secondary" id="advancedToggle" data-i18n="explore_advanced"></button>
         <button type="button" class="btn btn-primary explore-map-btn" id="toggleMapView" data-i18n="explore_map_view"></button>
       </div>
 
@@ -33,7 +32,7 @@
         <button class="tab" data-tab="incidents" data-i18n="tab_incidents"></button>
       </div>
 
-      <div class="explore-advanced" id="advancedPanel" hidden>
+      <div class="explore-advanced" id="advancedPanel">
         <div class="filter-bar" id="routeAdvanced">
           <div>
             <label data-i18n="filter_district"></label>
@@ -70,6 +69,50 @@
             </select>
           </div>
         </div>
+
+        <div class="filter-bar is-hidden" id="recordFilters" hidden>
+          <div>
+            <label data-i18n="rec_filter_friends"></label>
+            <div class="chip-row" id="recordPeople">
+              <button type="button" class="chip active" data-people="all" data-i18n="rec_filter_all_people"></button>
+              <button type="button" class="chip" data-people="friends" data-i18n="rec_filter_friends"></button>
+            </div>
+          </div>
+          <div>
+            <label data-i18n="explore_duration"></label>
+            <select class="form-select" id="recordDuration">
+              <option value="all" data-i18n="explore_duration_any"></option>
+              <option value="short" data-i18n="explore_duration_short"></option>
+              <option value="mid" data-i18n="explore_duration_mid"></option>
+              <option value="long" data-i18n="explore_duration_long"></option>
+            </select>
+          </div>
+          <div>
+            <label data-i18n="app_filter_from"></label>
+            <input class="form-select" type="date" id="recordFrom" />
+          </div>
+          <div>
+            <label data-i18n="app_filter_to"></label>
+            <input class="form-select" type="date" id="recordTo" />
+          </div>
+        </div>
+
+        <div class="filter-bar reports-filters is-hidden" id="incidentFilters" hidden style="margin-bottom:0">
+          <div>
+            <label for="exploreIncDate" data-i18n="reports_filter_date"></label>
+            <select class="form-select" id="exploreIncDate">
+              <option value="6m" selected data-i18n="reports_date_6m"></option>
+              <option value="30d" data-i18n="reports_date_30d"></option>
+              <option value="90d" data-i18n="reports_date_90d"></option>
+              <option value="year" data-i18n="reports_date_year"></option>
+              <option value="all" data-i18n="reports_date_all"></option>
+            </select>
+          </div>
+          <div class="reports-cat-wrap" style="grid-column:1 / -1">
+            <span class="reports-filter-label" data-i18n="reports_filter_category"></span>
+            <div class="chip-row" id="exploreIncCats"></div>
+          </div>
+        </div>
       </div>
 
       <div class="explore-view-row" id="viewModes" role="tablist"></div>
@@ -88,36 +131,6 @@
       </div>
 
       <div id="view-records" class="hidden">
-        <div class="explore-advanced" id="recordFilters">
-          <div class="filter-bar">
-            <div>
-              <label data-i18n="rec_filter_friends"></label>
-              <div class="chip-row" id="recordPeople">
-                <button type="button" class="chip active" data-people="all" data-i18n="rec_filter_all_people"></button>
-                <button type="button" class="chip" data-people="friends" data-i18n="rec_filter_friends"></button>
-              </div>
-            </div>
-            <div>
-              <label data-i18n="explore_duration"></label>
-              <select class="form-select" id="recordDuration">
-                <option value="all" data-i18n="explore_duration_any"></option>
-                <option value="short" data-i18n="explore_duration_short"></option>
-                <option value="mid" data-i18n="explore_duration_mid"></option>
-                <option value="long" data-i18n="explore_duration_long"></option>
-              </select>
-            </div>
-            <div>
-              <label data-i18n="rec_date_range"></label>
-              <select class="form-select" id="recordDate">
-                <option value="all" selected data-i18n="reports_date_all"></option>
-                <option value="6m" data-i18n="reports_date_6m"></option>
-                <option value="30d" data-i18n="reports_date_30d"></option>
-                <option value="90d" data-i18n="reports_date_90d"></option>
-                <option value="year" data-i18n="reports_date_year"></option>
-              </select>
-            </div>
-          </div>
-        </div>
         <div class="explore-toolbar">
           <h2 class="explore-count" id="recordCount"></h2>
         </div>
@@ -125,22 +138,6 @@
       </div>
 
       <div id="view-incidents" class="hidden">
-        <div class="reports-filters" style="margin-bottom:0.75rem">
-          <div>
-            <label for="exploreIncDate" data-i18n="reports_filter_date"></label>
-            <select class="form-select" id="exploreIncDate">
-              <option value="6m" selected data-i18n="reports_date_6m"></option>
-              <option value="30d" data-i18n="reports_date_30d"></option>
-              <option value="90d" data-i18n="reports_date_90d"></option>
-              <option value="year" data-i18n="reports_date_year"></option>
-              <option value="all" data-i18n="reports_date_all"></option>
-            </select>
-          </div>
-          <div class="reports-cat-wrap">
-            <span class="reports-filter-label" data-i18n="reports_filter_category"></span>
-            <div class="chip-row" id="exploreIncCats"></div>
-          </div>
-        </div>
         <div class="explore-toolbar">
           <h2 class="explore-count" id="incCount"></h2>
           <a class="btn btn-secondary" href="reports.html" data-i18n="report_incident_btn"></a>
@@ -159,6 +156,7 @@
   <script src="js/i18n.js"></script>
   <script src="js/data.js"></script>
   <script src="js/cms-store.js"></script>
+  <script src="js/hikes.js"></script>
   <script src="js/app.js"></script>
   <script>
     document.documentElement.lang = TW.getLang() === "zh" ? "zh-Hant" : "en";
@@ -178,11 +176,17 @@
     let activeTab = "routes";
     let recPeople = "all";
     let recDuration = "all";
-    let recDate = "all";
+    let recFrom = "";
+    let recTo = "";
     let incDate = "6m";
     let incCat = "all";
     let incMap = null;
     let incMarkers = [];
+
+    function routeDetailHref(t) {
+      const id = (t && (t.trailId || t.id)) || "";
+      return id ? "rec-trail.html?id=" + encodeURIComponent(id) : "explore.html";
+    }
 
     function recAsTrail(r) {
       const lat = r.lat != null ? r.lat : r.path && r.path[0] ? r.path[0][0] : 22.32;
@@ -437,11 +441,12 @@
         if (t.lat == null || t.lng == null) return;
         bounds.push([t.lat, t.lng]);
         const name = TW.tt(t, "title");
-        L.marker([t.lat, t.lng])
-          .addTo(exploreLayer)
-          .bindPopup(
-            `<strong>${TW.escapeHtml(name)}</strong><br/>${TW.escapeHtml(t.distance || "")} · ${TW.escapeHtml(t.duration || "")}`
-          );
+        const href = routeDetailHref(t);
+        const marker = L.marker([t.lat, t.lng]).addTo(exploreLayer);
+        marker.bindTooltip(name, { direction: "top", opacity: 0.95 });
+        marker.on("click", () => {
+          location.href = href;
+        });
       });
       setTimeout(() => {
         exploreMap.invalidateSize();
@@ -522,13 +527,6 @@
       if (themeBtn || areaBtn) renderAll();
     });
 
-    document.getElementById("advancedToggle").addEventListener("click", () => {
-      const panel = document.getElementById("advancedPanel");
-      panel.hidden = !panel.hidden;
-      document.getElementById("advancedToggle").textContent = panel.hidden
-        ? TW.t("explore_advanced")
-        : TW.t("explore_hide_advanced");
-    });
     distSel.addEventListener("change", () => {
       district = distSel.value;
       renderAll();
@@ -570,16 +568,14 @@
       return (h ? +h[1] : 0) + (m ? +m[1] / 60 : 0);
     }
 
-    function recordInDateRange(r, range) {
-      if (!range || range === "all") return true;
+    function recordIsoDate(r) {
+      if (typeof TW.recordDateValue === "function") {
+        const d = TW.recordDateValue(r);
+        if (d && !isNaN(d.getTime())) return d.toISOString().slice(0, 10);
+      }
       const d = TW.parseReportDate ? TW.parseReportDate(r.date) : new Date(r.date);
-      if (!d || isNaN(d.getTime())) return true;
-      const from = new Date();
-      if (range === "30d") from.setDate(from.getDate() - 30);
-      else if (range === "90d") from.setDate(from.getDate() - 90);
-      else if (range === "year") from.setFullYear(from.getFullYear() - 1);
-      else from.setMonth(from.getMonth() - 6);
-      return d >= from;
+      if (d && !isNaN(d.getTime())) return d.toISOString().slice(0, 10);
+      return "";
     }
 
     function friendNames() {
@@ -594,7 +590,9 @@
         if (q && hay.indexOf(q) < 0) return false;
         if (recPeople === "friends") {
           const u = String(r.user || "").toLowerCase();
-          if (names.indexOf(u) < 0) return false;
+          if (typeof TW.recordIsFriend === "function") {
+            if (!TW.recordIsFriend(r)) return false;
+          } else if (names.indexOf(u) < 0) return false;
         }
         const hrs = parseRecordHours(r);
         const matchDur =
@@ -603,7 +601,10 @@
           (recDuration === "mid" && hrs >= 2 && hrs <= 4) ||
           (recDuration === "long" && hrs > 4);
         if (!matchDur) return false;
-        return recordInDateRange(r, recDate);
+        const iso = recordIsoDate(r);
+        if (recFrom && iso && iso < recFrom) return false;
+        if (recTo && iso && iso > recTo) return false;
+        return true;
       });
     }
 
@@ -620,10 +621,12 @@
           query = "";
           recPeople = "all";
           recDuration = "all";
-          recDate = "all";
+          recFrom = "";
+          recTo = "";
           document.getElementById("trailSearch").value = "";
           document.getElementById("recordDuration").value = "all";
-          document.getElementById("recordDate").value = "all";
+          document.getElementById("recordFrom").value = "";
+          document.getElementById("recordTo").value = "";
           document.querySelectorAll("#recordPeople .chip").forEach((c) =>
             c.classList.toggle("active", c.dataset.people === "all")
           );
@@ -710,12 +713,25 @@
     }
 
     function syncTabChrome(tab) {
-      document.getElementById("viewModes").hidden = tab !== "routes";
-      document.getElementById("subChips").hidden = tab !== "routes";
-      document.getElementById("toggleMapView").hidden = tab !== "routes";
-      document.getElementById("routeAdvanced").hidden = tab !== "routes";
-      document.getElementById("advancedToggle").hidden = tab !== "routes";
-      if (tab !== "routes") document.getElementById("advancedPanel").hidden = true;
+      const onRoutes = tab === "routes";
+      const viewModes = document.getElementById("viewModes");
+      const subChips = document.getElementById("subChips");
+      const mapBtn = document.getElementById("toggleMapView");
+      viewModes.hidden = !onRoutes;
+      subChips.hidden = !onRoutes;
+      mapBtn.hidden = !onRoutes;
+      viewModes.classList.toggle("is-hidden", !onRoutes);
+      subChips.classList.toggle("is-hidden", !onRoutes);
+      mapBtn.classList.toggle("is-hidden", !onRoutes);
+      const routeAdv = document.getElementById("routeAdvanced");
+      const recAdv = document.getElementById("recordFilters");
+      const incAdv = document.getElementById("incidentFilters");
+      routeAdv.hidden = tab !== "routes";
+      recAdv.hidden = tab !== "records";
+      incAdv.hidden = tab !== "incidents";
+      routeAdv.classList.toggle("is-hidden", tab !== "routes");
+      recAdv.classList.toggle("is-hidden", tab !== "records");
+      incAdv.classList.toggle("is-hidden", tab !== "incidents");
       const ph =
         tab === "records"
           ? TW.t("community_records")
@@ -739,7 +755,7 @@
       if (tab === "routes" && mapMode && exploreMap) setTimeout(() => exploreMap.invalidateSize(), 80);
     }
 
-    ["recordDuration", "recordDate", "exploreIncDate"].forEach((id) => {
+    ["recordDuration", "exploreIncDate"].forEach((id) => {
       const sel = document.getElementById(id);
       if (!sel) return;
       sel.querySelectorAll("option[data-i18n]").forEach((opt) => {
@@ -757,8 +773,12 @@
       recDuration = e.target.value;
       renderRecords();
     });
-    document.getElementById("recordDate").addEventListener("change", (e) => {
-      recDate = e.target.value;
+    document.getElementById("recordFrom").addEventListener("change", (e) => {
+      recFrom = e.target.value || "";
+      renderRecords();
+    });
+    document.getElementById("recordTo").addEventListener("change", (e) => {
+      recTo = e.target.value || "";
       renderRecords();
     });
     document.getElementById("exploreIncDate").addEventListener("change", (e) => {

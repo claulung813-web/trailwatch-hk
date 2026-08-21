@@ -16,44 +16,45 @@
       <h1 class="page-title" data-i18n="articles_title"></h1>
       <p class="page-sub" data-i18n="articles_sub"></p>
 
+      <div class="tw-toolbar">
+        <div class="search-bar">
+          <input type="search" id="articleSearch" data-i18n-placeholder="article_search_placeholder" />
+        </div>
+        <div class="articles-cat-filter">
+          <span class="articles-cat-label" id="articleFilterLabel" data-i18n="article_filter_label"></span>
+          <div
+            class="chip-row articles-cat-chips"
+            id="articleCategoryFilter"
+            role="toolbar"
+            aria-labelledby="articleFilterLabel"
+          ></div>
+        </div>
+        <div class="articles-extra-filters">
+          <div class="gallery-filter-field">
+            <label for="articleArea" data-i18n="article_filter_area"></label>
+            <select class="form-select" id="articleArea"></select>
+          </div>
+          <div class="gallery-filter-field">
+            <label for="articleRoute" data-i18n="article_filter_route"></label>
+            <select class="form-select" id="articleRoute"></select>
+          </div>
+          <div class="gallery-filter-field">
+            <label for="articleDateFrom" data-i18n="gallery_date_from"></label>
+            <input class="form-input" type="date" id="articleDateFrom" />
+          </div>
+          <div class="gallery-filter-field">
+            <label for="articleDateTo" data-i18n="gallery_date_to"></label>
+            <input class="form-input" type="date" id="articleDateTo" />
+          </div>
+        </div>
+      </div>
+
       <section class="articles-featured" aria-labelledby="articlesFeaturedHeading">
         <h2 id="articlesFeaturedHeading" class="articles-section-title" data-i18n="articles_featured"></h2>
         <div class="articles-featured-grid" id="featuredArticles"></div>
       </section>
 
       <section class="articles-main" aria-labelledby="articlesAllHeading">
-        <div class="tw-toolbar articles-toolbar">
-          <div class="search-bar articles-search">
-            <input type="search" id="articleSearch" data-i18n-placeholder="article_search_placeholder" />
-          </div>
-          <div class="articles-cat-filter">
-            <span class="articles-cat-label" id="articleFilterLabel" data-i18n="article_filter_label"></span>
-            <div
-              class="chip-row articles-cat-chips"
-              id="articleCategoryFilter"
-              role="toolbar"
-              aria-labelledby="articleFilterLabel"
-            ></div>
-          </div>
-          <div class="articles-extra-filters">
-            <div class="gallery-filter-field">
-              <label for="articleArea" data-i18n="article_filter_area"></label>
-              <select class="form-select" id="articleArea"></select>
-            </div>
-            <div class="gallery-filter-field">
-              <label for="articleRoute" data-i18n="article_filter_route"></label>
-              <select class="form-select" id="articleRoute"></select>
-            </div>
-            <div class="gallery-filter-field">
-              <label for="articleDateFrom" data-i18n="gallery_date_from"></label>
-              <input class="form-input" type="date" id="articleDateFrom" />
-            </div>
-            <div class="gallery-filter-field">
-              <label for="articleDateTo" data-i18n="gallery_date_to"></label>
-              <input class="form-input" type="date" id="articleDateTo" />
-            </div>
-          </div>
-        </div>
         <h2 id="articlesAllHeading" class="articles-section-title articles-section-title--sm" data-i18n="articles_all_heading"></h2>
         <div id="articleList"></div>
       </section>

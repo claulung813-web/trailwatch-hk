@@ -31,6 +31,9 @@ function twIcon(name) {
     speaker: `<svg viewBox="0 0 24 24" ${stroke}><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>`,
     insights: `<svg viewBox="0 0 24 24" ${stroke}><path d="M4 19V9"/><path d="M10 19V5"/><path d="M16 19v-8"/><path d="M22 19V3"/></svg>`,
     milestones: `<svg viewBox="0 0 24 24" ${stroke}><path d="M8 21h8"/><path d="M12 17V3"/><path d="m7 7 5-4 5 4"/><path d="M5 21h14"/></svg>`,
+    facebook: `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M14 9h3V6h-3c-1.7 0-3 1.3-3 3v2H9v3h2v7h3v-7h2.5l.5-3H14V9z"/></svg>`,
+    instagram: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>`,
+    youtube: `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.6A3 3 0 0 0 .5 6.2 31.5 31.5 0 0 0 0 12a31.5 31.5 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.6 9.4.6 9.4.6s7.5 0 9.4-.6a3 3 0 0 0 2.1-2.1A31.5 31.5 0 0 0 24 12a31.5 31.5 0 0 0-.5-5.8zM9.8 15.5v-7l6.2 3.5-6.2 3.5z"/></svg>`,
   };
   return icons[name] || "";
 }
@@ -916,6 +919,7 @@ function renderHeader(active) {
             <a href="gallery.html" class="${active === "gallery" ? "active" : ""}">${t("nav_gallery")}</a>
           </div>
         </div>
+        <a href="donate.html" class="${active === "donate" || active === "support" ? "active" : ""}">${t("nav_support")}</a>
       </nav>
       <div class="header-actions">
         <div class="lang-switch" role="group" aria-label="Language">
@@ -966,45 +970,31 @@ function renderFooter() {
             <img class="logo-img footer" src="assets/brand/footer-logo.webp" alt="TrailWatch Footer Logo" />
           </a>
           <p class="footer-org">${t("footer_org")}</p>
-          <h4>${t("footer_about_heading")}</h4>
-          <div class="footer-prog">
-            <strong>${t("footer_ctc_title")}</strong>
-            <p>${t("footer_ctc_body")}</p>
-          </div>
-          <div class="footer-prog">
-            <strong>${t("footer_mytree_title")}</strong>
-            <p>${t("footer_mytree_body")}</p>
-          </div>
-          <div class="footer-prog">
-            <strong>${t("footer_backyard_title")}</strong>
-            <p>${t("footer_backyard_body")}</p>
-          </div>
-          <a href="about.html">${t("footer_about_more")}</a>
         </div>
         <div>
-          <h4>${t("footer_premium")}</h4>
-          <p class="footer-blurb">${t("footer_premium_body")}</p>
-          <a href="get-app.html#premium">${t("footer_premium_link")}</a>
+          <h4><a href="about.html">${t("footer_about_heading")}</a></h4>
           <h4><a href="about.html#contact">${t("footer_contact")}</a></h4>
-          <h4><a href="about.html#faq">${t("footer_faq")}</a></h4>
-          <h4>${t("footer_legal")}</h4>
-          <a href="legal.html#terms">${t("footer_terms")}</a>
-          <a href="legal.html#privacy">${t("footer_privacy")}</a>
+          <h4><a href="about.html#feedback">${t("feedback_title")}</a></h4>
+          <h4><a href="donate.html">${t("nav_support")}</a></h4>
+          <h4><a href="faq.html">${t("footer_faq")}</a></h4>
+          <h4><a href="get-app.html#premium">${t("footer_premium")}</a></h4>
+          <a href="terms.html">${t("footer_terms")}</a>
+          <a href="privacy.html">${t("footer_privacy")}</a>
         </div>
         <div>
           <h4>${t("footer_social")}</h4>
           <div class="footer-social" aria-label="Social">
-            <a href="https://www.facebook.com/trailwatchhk" target="_blank" rel="noopener">Facebook</a>
-            <a href="https://www.instagram.com/trailwatchhk" target="_blank" rel="noopener">Instagram</a>
-            <a href="https://www.youtube.com/@parksandtrails" target="_blank" rel="noopener">YouTube</a>
+            <a href="https://www.facebook.com/trailwatchhk" target="_blank" rel="noopener" aria-label="Facebook">${twIcon("facebook")}</a>
+            <a href="https://www.instagram.com/trailwatchhk" target="_blank" rel="noopener" aria-label="Instagram">${twIcon("instagram")}</a>
+            <a href="https://www.youtube.com/@parksandtrails" target="_blank" rel="noopener" aria-label="YouTube">${twIcon("youtube")}</a>
           </div>
         </div>
       </div>
       <div class="footer-bottom">
         <span>${t("footer_copy")}</span>
         <span class="footer-bottom-links">
-          <a href="legal.html#terms">${t("footer_terms")}</a>
-          <a href="legal.html#privacy">${t("footer_privacy")}</a>
+          <a href="terms.html">${t("footer_terms")}</a>
+          <a href="privacy.html">${t("footer_privacy")}</a>
         </span>
       </div>
     </div>
@@ -1517,8 +1507,11 @@ function renderTrailCard(t, opts) {
     <div class="trail-card-body">
       <div class="feature-icons">
         <span title="District">${TW.getLang() === "zh" ? "區" : "📍"}</span>
-        <span style="width:auto;padding:0 0.45rem;border-radius:999px;font-size:0.65rem;font-weight:600">${TW.districtName(t.district)}</span>
+        <span class="district-chip">${TW.districtName(t.district)}</span>
+      </div>
+      <div class="trail-diff-row" title="L${t.difficulty}">
         ${difficultyPips(t.difficulty)}
+        <span class="trail-diff-label">L${t.difficulty} · ${difficultyLabel(t.difficulty)}</span>
       </div>
       <h3>${title}</h3>
       <p class="desc">${desc}</p>
@@ -1695,9 +1688,10 @@ document.addEventListener("click", (e) => {
   e.preventDefault();
   e.stopPropagation();
   if (!TW.requireLogin({ messageKey: "login_to_save" })) return;
-  const id = btn.dataset.trail;
+  const id = btn.dataset.trail || btn.dataset.id;
+  const type = btn.dataset.bmType || "route";
   if (!id || typeof TW.toggleBookmark !== "function") return;
-  const on = TW.toggleBookmark(id);
+  const on = TW.toggleBookmark(id, type);
   btn.classList.toggle("active", on);
   btn.setAttribute("aria-pressed", on ? "true" : "false");
   showToast(on ? TW.t("toast_bookmarked") : TW.t("toast_unbookmarked"));

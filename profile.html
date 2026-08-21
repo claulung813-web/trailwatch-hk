@@ -278,7 +278,13 @@
       <section class="me-panel" id="bookmarks" data-me-panel="bookmarks" hidden>
         <h2 class="page-title" style="font-size:1.25rem;margin-bottom:0.35rem" data-i18n="bookmarks_title"></h2>
         <p class="page-sub" data-i18n="bookmarks_sub"></p>
-        <div class="trail-grid" id="bookmarkGrid"></div>
+        <div class="chip-row filters" id="bmFilters" role="tablist">
+          <button type="button" class="chip active" data-bm="all" data-i18n="filter_all"></button>
+          <button type="button" class="chip" data-bm="route" data-i18n="app_bm_routes"></button>
+          <button type="button" class="chip" data-bm="record" data-i18n="app_bm_records"></button>
+          <button type="button" class="chip" data-bm="event" data-i18n="app_bm_events"></button>
+        </div>
+        <div class="bm-list" id="bookmarkGrid"></div>
       </section>
 
       <!-- Settings -->
@@ -718,18 +724,45 @@
 
     /* Bookmarks */
     TW.ensureDemoBookmarks();
+    let bmFilter = "all";
+    function bmTypeLabel(type) {
+      if (type === "route") return TW.t("app_bm_routes");
+      if (type === "record") return TW.t("app_bm_records");
+      if (type === "event") return TW.t("app_bm_events");
+      return type;
+    }
     function renderBookmarks() {
-      const trails = TW.getBookmarks()
-        .map((id) => (TW.trails || []).find((t) => t.id === id))
-        .filter(Boolean);
+      let items = typeof TW.resolveBookmarkItems === "function" ? TW.resolveBookmarkItems() : [];
+      if (bmFilter !== "all") items = items.filter((it) => it.type === bmFilter);
       const grid = document.getElementById("bookmarkGrid");
-      if (!trails.length) {
+      if (!items.length) {
         grid.innerHTML = `<p style="color:var(--text-muted);padding:1.5rem 0">${TW.t("bookmarks_empty")}</p>
           <a class="btn btn-primary" href="explore.html">${TW.t("nav_explore")}</a>`;
         return;
       }
-      grid.innerHTML = trails.map((t) => renderTrailCard(t)).join("");
+      grid.innerHTML = items
+        .map((it) => {
+          const img = it.image
+            ? `<img class="bm-card-img" src="${TW.recordPhotoSrc ? TW.recordPhotoSrc(it.image) : it.image}" alt="" loading="lazy" onerror="this.remove()" />`
+            : `<div class="bm-card-img bm-card-img--empty">${twIcon ? twIcon(it.type === "event" ? "groupHikes" : it.type === "record" ? "records" : "routes") : ""}</div>`;
+          return `<a class="bm-card" href="${it.href}">
+            ${img}
+            <div class="bm-card-body">
+              <strong>${it.title}</strong>
+              <span class="bm-card-type">${bmTypeLabel(it.type)}${it.meta ? " · " + it.meta : ""}</span>
+            </div>
+            <span class="bm-card-chevron" aria-hidden="true">›</span>
+          </a>`;
+        })
+        .join("");
     }
+    document.getElementById("bmFilters").addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-bm]");
+      if (!btn) return;
+      bmFilter = btn.dataset.bm;
+      document.querySelectorAll("#bmFilters .chip").forEach((c) => c.classList.toggle("active", c === btn));
+      renderBookmarks();
+    });
     renderBookmarks();
 
     /* Settings */

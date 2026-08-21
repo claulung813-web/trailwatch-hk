@@ -203,6 +203,26 @@
       border-bottom: 1px solid #f4f4f5;
       font-size: 0.85rem;
     }
+    .plan-via-seq li[draggable="true"] {
+      cursor: grab;
+      user-select: none;
+    }
+    .plan-via-seq li[draggable="true"]:active { cursor: grabbing; }
+    .plan-via-seq li.via-dragging {
+      opacity: 0.45;
+      background: #f3faf5;
+    }
+    .plan-via-seq li.via-drop-target {
+      box-shadow: inset 0 2px 0 var(--green-700);
+    }
+    .plan-via-seq .via-grip {
+      color: #9ca3af;
+      font-size: 0.95rem;
+      letter-spacing: -1px;
+      line-height: 1;
+      padding: 0 0.15rem;
+      flex-shrink: 0;
+    }
     .plan-via-seq li:last-child { border-bottom: 0; }
     .plan-via-seq li.empty {
       color: var(--text-muted);
@@ -538,7 +558,7 @@
         rows.push(
           '<li data-via-i="' +
             i +
-            '"><span class="plan-dot via">' +
+            '" draggable="true"><span class="via-grip" aria-hidden="true">⋮⋮</span><span class="plan-dot via">' +
             (i + 1) +
             '</span><span class="via-label">' +
             TW.t("plan_via_n").replace("{n}", String(i + 1)) +
@@ -547,20 +567,6 @@
             ", " +
             Number(v[1]).toFixed(4) +
             '</span><span class="via-actions">' +
-            '<button type="button" data-via-up="' +
-            i +
-            '"' +
-            (i === 0 ? " disabled" : "") +
-            ' title="' +
-            TW.t("plan_via_up") +
-            '">↑</button>' +
-            '<button type="button" data-via-down="' +
-            i +
-            '"' +
-            (i === vias.length - 1 ? " disabled" : "") +
-            ' title="' +
-            TW.t("plan_via_down") +
-            '">↓</button>' +
             '<button type="button" data-via-del="' +
             i +
             '" title="' +
@@ -927,32 +933,8 @@
     });
 
     document.getElementById("viaOrderList").addEventListener("click", (e) => {
-      const up = e.target.closest("[data-via-up]");
-      const down = e.target.closest("[data-via-down]");
       const del = e.target.closest("[data-via-del]");
       const row = e.target.closest("[data-via-i]");
-      if (up) {
-        const i = Number(up.dataset.viaUp);
-        if (i > 0) {
-          const tmp = vias[i];
-          vias[i] = vias[i - 1];
-          vias[i - 1] = tmp;
-          redraw();
-          persistSoft();
-        }
-        return;
-      }
-      if (down) {
-        const i = Number(down.dataset.viaDown);
-        if (i < vias.length - 1) {
-          const tmp = vias[i];
-          vias[i] = vias[i + 1];
-          vias[i + 1] = tmp;
-          redraw();
-          persistSoft();
-        }
-        return;
-      }
       if (del) {
         vias.splice(Number(del.dataset.viaDel), 1);
         redraw();
@@ -963,6 +945,49 @@
         map.panTo(vias[Number(row.dataset.viaI)]);
       }
     });
+
+    (function bindViaDrag() {
+      const el = document.getElementById("viaOrderList");
+      if (!el || el.dataset.dndBound) return;
+      el.dataset.dndBound = "1";
+      let dragFrom = null;
+      el.addEventListener("dragstart", (e) => {
+        const row = e.target.closest("[data-via-i]");
+        if (!row || e.target.closest("[data-via-del]")) {
+          e.preventDefault();
+          return;
+        }
+        dragFrom = Number(row.dataset.viaI);
+        row.classList.add("via-dragging");
+        e.dataTransfer.effectAllowed = "move";
+        e.dataTransfer.setData("text/plain", String(dragFrom));
+      });
+      el.addEventListener("dragend", () => {
+        el.querySelectorAll(".via-dragging, .via-drop-target").forEach((n) => {
+          n.classList.remove("via-dragging", "via-drop-target");
+        });
+        dragFrom = null;
+      });
+      el.addEventListener("dragover", (e) => {
+        const row = e.target.closest("[data-via-i]");
+        if (!row || dragFrom == null) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "move";
+        el.querySelectorAll(".via-drop-target").forEach((n) => n.classList.remove("via-drop-target"));
+        row.classList.add("via-drop-target");
+      });
+      el.addEventListener("drop", (e) => {
+        const row = e.target.closest("[data-via-i]");
+        if (!row || dragFrom == null) return;
+        e.preventDefault();
+        const to = Number(row.dataset.viaI);
+        if (to === dragFrom || to < 0 || to >= vias.length) return;
+        const moved = vias.splice(dragFrom, 1)[0];
+        vias.splice(to, 0, moved);
+        redraw();
+        persistSoft();
+      });
+    })();
 
     document.querySelectorAll("[data-draw]").forEach((btn) => {
       btn.addEventListener("click", () => setDrawMode(btn.dataset.draw));

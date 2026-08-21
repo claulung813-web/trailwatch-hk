@@ -4,45 +4,15 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Legal — TrailWatch HK</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/styles.css" />
+  <meta http-equiv="refresh" content="0; url=terms.html" />
+  <link rel="canonical" href="terms.html" />
 </head>
 <body>
-  <div id="app-header"></div>
-  <main class="page">
-    <div class="container" style="max-width:720px">
-      <h1 class="page-title" data-i18n="legal_title"></h1>
-      <p class="page-sub" data-i18n="legal_updated"></p>
-
-      <section class="legal-block" id="terms">
-        <h2 data-i18n="legal_terms_title"></h2>
-        <p data-i18n="legal_terms_intro"></p>
-        <p data-i18n="legal_terms_1"></p>
-        <p data-i18n="legal_terms_2"></p>
-        <p data-i18n="legal_terms_3"></p>
-        <p data-i18n="legal_terms_4"></p>
-      </section>
-
-      <section class="legal-block" id="privacy">
-        <h2 data-i18n="legal_privacy_title"></h2>
-        <p data-i18n="legal_privacy_intro"></p>
-        <p data-i18n="legal_privacy_1"></p>
-        <p data-i18n="legal_privacy_2"></p>
-        <p data-i18n="legal_privacy_3"></p>
-        <p data-i18n="legal_privacy_4"></p>
-      </section>
-    </div>
-  </main>
-  <div id="app-footer"></div>
-  <script src="js/i18n.js"></script>
-  <script src="js/data.js"></script>
-  <script src="js/cms-store.js"></script>
-  <script src="js/app.js"></script>
+  <p><a href="terms.html">Terms and Conditions</a> · <a href="privacy.html">Privacy Policy</a></p>
   <script>
-    document.documentElement.lang = TW.getLang() === "zh" ? "zh-Hant" : "en";
-    initShell("about");
+    const hash = (location.hash || "").replace(/^#/, "");
+    if (hash === "privacy") location.replace("privacy.html");
+    else location.replace("terms.html");
   </script>
 </body>
 </html>

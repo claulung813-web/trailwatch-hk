@@ -46,40 +46,49 @@
     initShell("explore");
 
     const id = new URLSearchParams(location.search).get("id");
-    const r = TW.getRecommendedTrail(id);
+    const r =
+      (typeof TW.resolveTrailSource === "function" && TW.resolveTrailSource(id)) ||
+      (typeof TW.getRecommendedTrail === "function" && TW.getRecommendedTrail(id)) ||
+      (TW.trails || []).find((t) => t.id === id);
     if (!r) {
       location.href = "explore.html";
     } else {
       document.getElementById("recTitle").textContent = TW.tt(r, "title");
-      document.getElementById("recDesc").textContent = TW.tt(r, "desc");
-      document.getElementById("recImg").src = r.image;
+      document.getElementById("recDesc").textContent = TW.tt(r, "desc") || "";
+      document.getElementById("recImg").src = r.image || "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1200&q=60";
       document.getElementById("recMeta").innerHTML =
         `<span>📍 ${TW.districtName(r.district)}</span>` +
-        `<span>📏 ${r.distance || "—"}</span>` +
+        `<span>📏 ${r.distance || (r.distanceKm != null ? r.distanceKm + " km" : "—")}</span>` +
         `<span>⏱ ${r.duration || "—"}</span>` +
         `<span>L${r.difficulty || 2}</span>`;
 
-      if (r.trailId) {
+      const planId = r.trailId || r.id;
+      if (planId) {
         document.getElementById("recPlan").href = "plan.html";
         document.getElementById("recPlan").addEventListener("click", (e) => {
           e.preventDefault();
           if (!TW.requireLogin({ messageKey: "login_to_save" })) return;
-          if (!TW.isPlanned(r.trailId)) TW.togglePlan(r.trailId);
+          if (!TW.isPlanned(planId)) TW.togglePlan(planId);
           showToast(TW.t("toast_planned"));
         });
       }
 
       const bm = document.getElementById("recBookmark");
-      bm.dataset.trail = r.trailId || r.id;
+      bm.dataset.trail = planId;
       if (TW.isBookmarked(bm.dataset.trail)) {
         bm.classList.add("active");
         bm.textContent = TW.t("rec_bookmark") + " ✓";
       }
 
       const dup = document.getElementById("recDup");
-      dup.dataset.trail = r.trailId || r.id;
+      dup.dataset.trail = planId;
 
-      const path = (r.path && r.path.length ? r.path : [[22.32, 114.17]]).map((p) => [p[0], p[1]]);
+      const rawPath = r.path && r.path.length ? r.path : null;
+      let path = rawPath
+        ? rawPath.map((p) => [Number(p[0]), Number(p[1])])
+        : r.lat != null && typeof TW.demoPathAround === "function"
+          ? TW.demoPathAround(r.lat, r.lng)
+          : [[22.32, 114.17]];
       const map = L.map("recMap").setView(path[0], 13);
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
         attribution: "© OpenStreetMap",

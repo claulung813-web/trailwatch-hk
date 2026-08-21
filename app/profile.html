@@ -688,26 +688,21 @@
     if (TW.ensureDemoBookmarks) TW.ensureDemoBookmarks();
     document.getElementById("bmTabs").innerHTML = `
       <button type="button" data-bm="all" class="active">${t("filter_all")}</button>
-      <button type="button" data-bm="routes">${t("app_bm_routes")}</button>
-      <button type="button" data-bm="records">${t("app_bm_records")}</button>
-      <button type="button" data-bm="events">${t("app_bm_events")}</button>`;
+      <button type="button" data-bm="route">${t("app_bm_routes")}</button>
+      <button type="button" data-bm="record">${t("app_bm_records")}</button>
+      <button type="button" data-bm="event">${t("app_bm_events")}</button>`;
     function renderBookmarks() {
-      const routeIds = TW.getBookmarks() || [];
-      const routes = routeIds.map((id) => (TW.trails || []).find((x) => x.id === id)).filter(Boolean)
-        .map((r) => ({ type: "routes", id: r.id, title: TW.tt(r, "title"), href: "route-detail.html?id=" + encodeURIComponent(r.id) }));
-      const records = (TW.records || []).slice(0, 2).map((r) => ({
-        type: "records", id: r.id, title: TW.tt(r, "title"), href: "record-detail.html?id=" + encodeURIComponent(r.id),
-      }));
-      const events = [
-        { type: "events", id: "gh1", title: zh ? "龍脊日出聯誼" : "Dragon's Back sunrise", href: "group-detail.html?id=gh1" },
-      ];
-      let rows = routes.concat(records).concat(events);
+      let rows = typeof TW.resolveBookmarkItems === "function" ? TW.resolveBookmarkItems() : [];
+      if (bmTab === "routes") bmTab = "route";
+      if (bmTab === "records") bmTab = "record";
+      if (bmTab === "events") bmTab = "event";
       if (bmTab !== "all") rows = rows.filter((r) => r.type === bmTab);
+      const typeKey = { route: "app_bm_routes", record: "app_bm_records", event: "app_bm_events" };
       document.getElementById("bmList").innerHTML = rows.length
-        ? rows.map((r) => `<a class="bm-card" href="${r.href}" style="text-decoration:none;color:inherit">
-            <div style="flex:1"><strong>${r.title}</strong><span>${t("app_bm_" + r.type) || r.type}</span></div><span>›</span>
+        ? rows.map((r) => `<a class="bm-card" href="../${r.href}" style="text-decoration:none;color:inherit">
+            <div style="flex:1"><strong>${r.title}</strong><span>${t(typeKey[r.type] || "") || r.type}</span></div><span>›</span>
           </a>`).join("")
-        : `<p style="text-align:center;color:var(--text-muted);padding:1.5rem 0">${zh ? "暫無書籤" : "No bookmarks yet"}</p>`;
+        : `<p style="text-align:center;color:var(--text-muted);padding:1.5rem 0">${t("bookmarks_empty")}</p>`;
     }
     document.getElementById("bmTabs").addEventListener("click", (e) => {
       const btn = e.target.closest("[data-bm]");
@@ -716,6 +711,7 @@
       document.querySelectorAll("#bmTabs button").forEach((b) => b.classList.toggle("active", b === btn));
       renderBookmarks();
     });
+    renderBookmarks();
 
     /* —— Settings —— */
     document.getElementById("setPremium").textContent = t("app_premium");

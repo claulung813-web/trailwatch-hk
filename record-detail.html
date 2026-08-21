@@ -193,7 +193,9 @@
 
     document.getElementById("btnBookmark").addEventListener("click", () => {
       if (!TW.requireLogin({ messageKey: "login_to_save" })) return;
-      showToast(t("toast_bookmarked"));
+      if (!rec || !rec.id) return;
+      const on = TW.toggleBookmark(rec.id, "record");
+      showToast(on ? t("toast_bookmarked") : t("toast_unbookmarked"));
     });
     document.getElementById("btnShare").addEventListener("click", () => {
       const url = location.href;

@@ -1662,6 +1662,20 @@ TW.isPlanned = function (trailId) {
 };
 
 TW.BOOKMARK_KEY = "tw_bookmarks";
+TW.BOOKMARK_TYPES = ["route", "record", "event"];
+
+TW.normalizeBookmark = function (entry) {
+  if (typeof entry === "string" && entry) return { id: entry, type: "route" };
+  if (!entry || !entry.id) return null;
+  const type = entry.type === "records" || entry.type === "record"
+    ? "record"
+    : entry.type === "events" || entry.type === "event" || entry.type === "group"
+      ? "event"
+      : entry.type === "routes" || entry.type === "route"
+        ? "route"
+        : "route";
+  return { id: String(entry.id), type: type };
+};
 
 TW.getBookmarks = function () {
   try {
@@ -1671,14 +1685,44 @@ TW.getBookmarks = function () {
   }
 };
 
+TW.getBookmarkEntries = function () {
+  return (TW.getBookmarks() || []).map(TW.normalizeBookmark).filter(Boolean);
+};
+
 TW.setBookmarks = function (ids) {
-  localStorage.setItem(TW.BOOKMARK_KEY, JSON.stringify(ids || []));
+  const normalized = (ids || []).map(TW.normalizeBookmark).filter(Boolean);
+  localStorage.setItem(TW.BOOKMARK_KEY, JSON.stringify(normalized));
 };
 
 TW.ensureDemoBookmarks = function () {
-  if (TW.getBookmarks().length) return;
-  const ids = (TW.trails || []).slice(0, 3).map((t) => t.id).filter(Boolean);
-  if (ids.length) TW.setBookmarks(ids);
+  let entries = TW.getBookmarkEntries();
+  let seeded = false;
+  try {
+    seeded = !!localStorage.getItem("tw_bm_seed_v2");
+  } catch (e) {}
+
+  if (!entries.length) {
+    (TW.trails || []).slice(0, 3).forEach((t) => {
+      if (t && t.id) entries.push({ id: t.id, type: "route" });
+    });
+  }
+
+  if (!seeded) {
+    if (!entries.some((e) => e.type === "record")) {
+      (TW.records || []).slice(0, 2).forEach((r) => {
+        if (r && r.id) entries.push({ id: r.id, type: "record" });
+      });
+    }
+    if (!entries.some((e) => e.type === "event")) {
+      entries.push({ id: "meetup_0", type: "event" });
+      entries.push({ id: "meetup_1", type: "event" });
+    }
+    try {
+      localStorage.setItem("tw_bm_seed_v2", "1");
+    } catch (e) {}
+  }
+
+  TW.setBookmarks(entries);
 };
 
 TW.guessDistrict = function (item) {
@@ -1752,22 +1796,83 @@ TW.districtSelectHtml = function (id) {
   return `<select class="form-select" id="${id}">${opts.join("")}</select>`;
 };
 
-TW.isBookmarked = function (trailId) {
-  return TW.getBookmarks().indexOf(trailId) >= 0;
+TW.isBookmarked = function (id, type) {
+  if (!id) return false;
+  const want = TW.normalizeBookmark({ id: id, type: type || "route" });
+  if (!want) return false;
+  return TW.getBookmarkEntries().some((e) => e.id === want.id && e.type === want.type);
 };
 
-TW.toggleBookmark = function (trailId) {
-  if (!trailId) return false;
-  const ids = TW.getBookmarks();
-  const i = ids.indexOf(trailId);
+TW.toggleBookmark = function (id, type) {
+  if (!id) return false;
+  const want = TW.normalizeBookmark({ id: id, type: type || "route" });
+  if (!want) return false;
+  const entries = TW.getBookmarkEntries();
+  const i = entries.findIndex((e) => e.id === want.id && e.type === want.type);
   if (i >= 0) {
-    ids.splice(i, 1);
-    TW.setBookmarks(ids);
+    entries.splice(i, 1);
+    TW.setBookmarks(entries);
     return false;
   }
-  ids.push(trailId);
-  TW.setBookmarks(ids);
+  entries.push(want);
+  TW.setBookmarks(entries);
   return true;
+};
+
+/** Resolve bookmarked items for UI (routes, records, group hikes / events). */
+TW.resolveBookmarkItems = function () {
+  const zh = TW.getLang() === "zh";
+  return TW.getBookmarkEntries().map((entry) => {
+    if (entry.type === "route") {
+      const t = (TW.trails || []).find((x) => x.id === entry.id);
+      if (!t) return null;
+      return {
+        type: "route",
+        id: t.id,
+        title: TW.tt(t, "title"),
+        meta: TW.districtName ? TW.districtName(t.district) : "",
+        image: t.image || "",
+        href: "rec-trail.html?id=" + encodeURIComponent(t.id),
+      };
+    }
+    if (entry.type === "record") {
+      const rec =
+        (TW.records || []).find((x) => x.id === entry.id) ||
+        (typeof TW.getHike === "function" ? TW.getHike(entry.id) : null);
+      if (!rec) return null;
+      const title = TW.tt ? TW.tt(rec, "title") : (zh && rec.titleZh ? rec.titleZh : rec.title);
+      return {
+        type: "record",
+        id: rec.id,
+        title: title || entry.id,
+        meta: zh && rec.dateZh ? rec.dateZh : (rec.date || rec.distance || ""),
+        image: rec.image || (rec.photos && rec.photos[0]) || "",
+        href: "record-detail.html?id=" + encodeURIComponent(rec.id),
+      };
+    }
+    if (entry.type === "event") {
+      const g = typeof TW.getGroupHike === "function" ? TW.getGroupHike(entry.id) : null;
+      const fallbackTitles = {
+        meetup_0: { en: "Wilson Trail Section 4 meetup", zh: "衛奕信徑第四段聯誼" },
+        meetup_1: { en: "Dragon's Back sunrise hike", zh: "龍脊日出聯誼" },
+      };
+      const fb = fallbackTitles[entry.id];
+      const title = g
+        ? (zh && g.titleZh ? g.titleZh : g.title)
+        : fb
+          ? (zh ? fb.zh : fb.en)
+          : entry.id;
+      return {
+        type: "event",
+        id: entry.id,
+        title: title,
+        meta: TW.t("app_bm_events"),
+        image: (g && (g.image || g.cover)) || "",
+        href: "group-hike-detail.html?id=" + encodeURIComponent(entry.id),
+      };
+    }
+    return null;
+  }).filter(Boolean);
 };
 
 

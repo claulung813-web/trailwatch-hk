@@ -239,9 +239,6 @@
       </div>
       </div>
       <p class="meta" id="groupInviteHint" style="margin:-0.35rem 0 0.85rem;display:none"></p>
-      <div class="explore-toolbar">
-        <h2 class="explore-count" id="groupCount"></h2>
-      </div>
       <div class="trail-grid" id="groupGrid"></div>
     </div>
   </main>
@@ -498,17 +495,6 @@
         if (filter === "invited") return isInvited(m);
         return true;
       });
-      const countEl = document.getElementById("groupCount");
-      if (countEl) {
-        const filterKey = {
-          past: "groups_past",
-          upcoming: "groups_upcoming",
-          joined: "groups_joined",
-          friend: "groups_filter_friend",
-          invited: "groups_filter_invited",
-        }[filter];
-        countEl.textContent = list.length + " · " + TW.t(filterKey || "groups_title");
-      }
       document.getElementById("groupGrid").innerHTML = list.length
         ? list
             .map((m) => {
