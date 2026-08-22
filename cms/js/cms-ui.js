@@ -55,7 +55,6 @@ function cmsSidebar(active) {
     cmsNavLink("transactions.html", "transactions", "Transactions", active) +
     cmsNavLink("notifications.html", "notifications", "Notifications", active) +
     cmsNavLink("popups.html", "popups", "Pop-ups", active) +
-    cmsNavLink("static-pages.html", "static", "Static pages", active) +
     cmsNavLink("page-terms.html", "terms", "Terms", active) +
     cmsNavLink("page-privacy.html", "privacy", "Privacy", active) +
     cmsNavLink("page-faq.html", "faq", "FAQ", active) +

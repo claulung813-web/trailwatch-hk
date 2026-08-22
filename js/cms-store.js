@@ -255,12 +255,10 @@ CMS.seedStaticPages = function () {
     aboutZh: "",
     termsEn: "",
     termsZh: "",
-    termsHtmlEn: "",
-    termsHtmlZh: "",
-    privacyEn: "",
-    privacyZh: "",
-    privacyHtmlEn: "",
-    privacyHtmlZh: "",
+    termsHtmlEn: (window.TW && TW.LEGAL_HTML && TW.LEGAL_HTML.termsEn) || "",
+    termsHtmlZh: (window.TW && TW.LEGAL_HTML && TW.LEGAL_HTML.termsEn) || "",
+    privacyHtmlEn: (window.TW && TW.LEGAL_HTML && TW.LEGAL_HTML.privacyEn) || "",
+    privacyHtmlZh: (window.TW && TW.LEGAL_HTML && TW.LEGAL_HTML.privacyEn) || "",
     faqEn: "",
     faqZh: "",
     faqItems: null,
@@ -1190,7 +1188,22 @@ CMS.getStore = function () {
       store.staticPages = CMS.seedStaticPages();
       migrated = true;
     } else {
-      store.staticPages = Object.assign({}, CMS.seedStaticPages(), store.staticPages);
+      const pageSeed = CMS.seedStaticPages();
+      store.staticPages = Object.assign({}, pageSeed, store.staticPages);
+      ["termsHtmlEn", "termsHtmlZh", "privacyHtmlEn", "privacyHtmlZh"].forEach((k) => {
+        const text = String(store.staticPages[k] || "")
+          .replace(/<[^>]+>/g, " ")
+          .replace(/\s+/g, " ")
+          .trim();
+        if (text.length < 40 && pageSeed[k] && String(pageSeed[k]).length > 40) {
+          store.staticPages[k] = pageSeed[k];
+          migrated = true;
+        }
+      });
+      if (Array.isArray(store.staticPages.faqItems) && !store.staticPages.faqItems.length) {
+        store.staticPages.faqItems = null;
+        migrated = true;
+      }
     }
     // Refresh community incident seed when demo data grew (keep user-submitted ids)
     if (window.TW && TW.reports && TW.reports.length) {
@@ -1709,7 +1722,11 @@ TW.applyCmsCopy = function () {
     const kind = (staticEl && staticEl.getAttribute("data-legal")) || (prose && prose.getAttribute("data-legal")) || "terms";
     const html = zh ? pages[kind + "HtmlZh"] || pages[kind + "HtmlEn"] : pages[kind + "HtmlEn"] || pages[kind + "HtmlZh"];
     const plain = zh ? pages[kind + "Zh"] : pages[kind + "En"];
-    if (html && String(html).trim()) {
+    const htmlText = String(html || "")
+      .replace(/<[^>]+>/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+    if (html && htmlText.length >= 40) {
       if (prose) {
         prose.innerHTML = html;
         prose.hidden = false;

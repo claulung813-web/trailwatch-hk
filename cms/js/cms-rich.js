@@ -89,13 +89,31 @@ function cmsMountRich(hostId, initialHtml) {
   };
 }
 
+function cmsLegalPlainText(html) {
+  return String(html || "")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function cmsIsPlaceholderLegal(s) {
-  const t = String(s || "").toLowerCase();
-  return !t.trim() || t.indexOf("edit in cms") >= 0 || t.indexOf("demo") >= 0 && t.length < 80;
+  const t = cmsLegalPlainText(s).toLowerCase();
+  if (t.length < 40) return true;
+  if (t.indexOf("edit in cms") >= 0) return true;
+  if (t.indexOf("demo") >= 0 && t.length < 90) return true;
+  return false;
+}
+
+function cmsLiveLegalHtml(key, lang) {
+  const pack = (window.TW && TW.LEGAL_HTML) || {};
+  if (key === "terms") return pack.termsEn || "";
+  if (key === "privacy") return pack.privacyEn || "";
+  return "";
 }
 
 function cmsFetchLiveProse(relHtml) {
-  return fetch(relHtml)
+  return fetch(relHtml, { cache: "no-store" })
     .then((r) => r.text())
     .then((html) => {
       const doc = new DOMParser().parseFromString(html, "text/html");
@@ -118,18 +136,22 @@ function cmsBindBilingualLegal(opts) {
       b.classList.toggle("active", b.dataset.lang === which)
     );
   }
-  function boot(which, html, fallbackUrl) {
+  function boot(which, stored, fallbackUrl) {
     const id = which === "en" ? "richEn" : "richZh";
-    const ready = (h) => {
-      editors[which] = cmsMountRich(id, h);
-    };
-    if (html && !cmsIsPlaceholderLegal(html)) ready(html);
-    else if (fallbackUrl && which === "en") {
-      cmsFetchLiveProse(fallbackUrl).then((h) => ready(h || html || "<p></p>"));
-    } else ready(html || "<p></p>");
+    const seed = cmsLiveLegalHtml(key, which);
+    editors[which] = cmsMountRich(id, "<p>Loading live page…</p>");
+    const apply = (h) => editors[which].setHtml(h || seed || "<p></p>");
+    if (stored && !cmsIsPlaceholderLegal(stored)) {
+      apply(stored);
+      return;
+    }
+    const chained = fallbackUrl
+      ? cmsFetchLiveProse(fallbackUrl).then((h) => (h && !cmsIsPlaceholderLegal(h) ? h : seed))
+      : Promise.resolve(seed || stored || "");
+    chained.then(apply);
   }
   boot("en", pages[key + "HtmlEn"] || pages[key + "En"] || "", live);
-  boot("zh", pages[key + "HtmlZh"] || pages[key + "Zh"] || "", null);
+  boot("zh", pages[key + "HtmlZh"] || pages[key + "Zh"] || "", live);
   document.querySelector(".cms-lang-tabs").addEventListener("click", (e) => {
     const b = e.target.closest("[data-lang]");
     if (b) show(b.dataset.lang);

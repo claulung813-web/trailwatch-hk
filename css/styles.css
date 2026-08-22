@@ -5027,7 +5027,7 @@ a.record-item {
   z-index: 1300;
   display: none;
   flex-direction: column;
-  background: rgba(0,0,0,0.25);
+  background: #e8ece8;
 }
 .app-report-sheet.open {
   display: flex;
@@ -5036,10 +5036,18 @@ a.record-item {
   flex: 1.1;
   min-height: 0;
   position: relative;
+  background: #dce8dc;
+}
+.phone-screen.report-open .phone-topbar,
+.phone-screen.report-open .follow-banner,
+.phone-screen.report-open .figma-map-controls,
+.phone-screen.report-open .report-fab {
+  visibility: hidden;
+  pointer-events: none;
 }
 .report-sheet-back {
   position: absolute;
-  top: 0.75rem;
+  top: 3.25rem;
   left: 0.75rem;
   z-index: 20;
 }

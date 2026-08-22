@@ -88,9 +88,31 @@
     }
     .figma-sheet.expanded { max-height: 72% !important; }
     .figma-pause-sheet { max-height: 70% !important; }
+    .sheet-handle-hit {
+      display: flex; flex-direction: column; align-items: center; gap: 0.2rem;
+      width: 100%; border: none; background: none; cursor: pointer; padding: 0.15rem 0 0.2rem;
+    }
     .sheet-handle {
-      width: 36px; height: 4px; border-radius: 999px;
-      background: #d1d5db; margin: 0 auto 0.65rem; cursor: pointer;
+      width: 44px; height: 5px; border-radius: 999px;
+      background: #9ca3af; margin: 0;
+    }
+    .drawer-chevron {
+      display: block; width: 22px; height: 12px; color: var(--green-700);
+      transition: transform 0.2s ease;
+    }
+    .figma-sheet.expanded .drawer-chevron { transform: rotate(180deg); }
+    .figma-sheet.hint-drawer .sheet-handle {
+      background: var(--green-700);
+    }
+    .figma-sheet.hint-drawer .drawer-chevron {
+      animation: twChevronNudge 0.85s ease-in-out 6;
+    }
+    .figma-pause-sheet .sheet-handle {
+      display: block; margin: 0 auto 0.65rem;
+    }
+    @keyframes twChevronNudge {
+      0%, 100% { transform: translateY(0); opacity: 0.55; }
+      50% { transform: translateY(-7px); opacity: 1; }
     }
     .figma-actions { gap: 2.4rem !important; margin-bottom: 0.55rem !important; }
     .action-circle { color: #1a1a1a !important; font-weight: 600; }
@@ -139,10 +161,6 @@
     .elev-pace-chart .chart-heads .elev { color: #7cb342; }
     .elev-pace-chart .chart-heads .pace { color: #7eb6d9; }
     .elev-pace-chart svg { width: 100%; height: auto; display: block; }
-    .drawer-toggle-btn {
-      display: block; width: 100%; border: none; background: none; cursor: pointer;
-      font-size: 0.7rem; font-weight: 700; color: var(--green-700); padding: 0.35rem;
-    }
     .figma-pause-stats {
       display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.15rem 0; margin-bottom: 0.75rem;
     }
@@ -370,7 +388,13 @@
 
         <!-- Live tracking drawer -->
         <div class="track-sheet figma-sheet hidden" id="activeSheet">
-          <div class="sheet-handle" id="sheetHandle" aria-hidden="true"></div>
+          <button type="button" class="sheet-handle-hit" id="sheetHandle">
+            <span class="sheet-handle" aria-hidden="true"></span>
+            <svg class="drawer-chevron" viewBox="0 0 24 14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M5 9l7-6 7 6"/>
+              <path d="M5 13l7-6 7 6"/>
+            </svg>
+          </button>
           <div class="track-actions figma-actions">
             <button class="action-circle" type="button" id="btnPause">
               <span class="circle amber" aria-hidden="true">❚❚</span>
@@ -447,7 +471,6 @@
               </svg>
             </div>
           </div>
-          <button type="button" class="drawer-toggle-btn" id="btnExpandDrawer"></button>
           <button type="button" class="cleanup-link" id="btnCleanup"><span id="lblCleanup">Cleanup</span></button>
           <span class="sr-only" id="lTime"></span>
           <span class="sr-only" id="lDist"></span>
@@ -792,7 +815,7 @@
       document.getElementById("lLoss").textContent = t("app_elev_loss");
       document.getElementById("lblElevAxis").textContent = t("app_elev_axis");
       document.getElementById("lblPaceAxis").textContent = t("app_pace_axis");
-      document.getElementById("btnExpandDrawer").textContent = t("app_drawer_more");
+      document.getElementById("sheetHandle").setAttribute("aria-label", t("app_drawer_more"));
       document.getElementById("lblTitle").textContent = t("app_hike_title");
       document.getElementById("lblPrivacy").textContent = t("app_privacy");
       document.getElementById("lblPhotoPrivModal").textContent = t("app_photo_privacy");
@@ -989,7 +1012,8 @@
     function setDrawer(open) {
       drawerOpen = open;
       activeSheet.classList.toggle("expanded", open);
-      document.getElementById("btnExpandDrawer").textContent = TW.t(open ? "app_drawer_less" : "app_drawer_more");
+      if (open) activeSheet.classList.remove("hint-drawer");
+      document.getElementById("sheetHandle").setAttribute("aria-label", TW.t(open ? "app_drawer_less" : "app_drawer_more"));
     }
 
     function fmtTime(sec) {
@@ -1043,9 +1067,12 @@
       renderActivityTagPicker();
       setDrawer(false);
       showState("active");
+      activeSheet.classList.add("hint-drawer");
+      clearTimeout(window._twDrawerHint);
+      window._twDrawerHint = setTimeout(() => activeSheet.classList.remove("hint-drawer"), 8000);
       if (!timer) timer = setInterval(tick, 1000);
       if (!pathLine) pathLine = L.polyline([route[0]], { color: "#2563eb", weight: 5 }).addTo(map);
-      showToast(lang === "zh" ? "已開始追蹤" : "Tracking started");
+      showToast(TW.t("app_tracking_started"));
     }
 
     function finishSave() {
@@ -1383,7 +1410,6 @@
 
     document.getElementById("btnPause").addEventListener("click", doPause);
     document.getElementById("sheetHandle").addEventListener("click", () => setDrawer(!drawerOpen));
-    document.getElementById("btnExpandDrawer").addEventListener("click", () => setDrawer(!drawerOpen));
 
     document.getElementById("btnResume").addEventListener("click", () => {
       showState("active");
@@ -1513,6 +1539,7 @@
       if (!document.getElementById("appReportDate").value) document.getElementById("appReportDate").value = nowDateStr();
       if (!document.getElementById("appReportTime").value) document.getElementById("appReportTime").value = nowTimeStr();
       reportSheet.classList.add("open");
+      document.querySelector(".phone-screen").classList.add("report-open");
       document.getElementById("fabReport").style.display = "none";
       setTimeout(() => {
         if (!reportMap) {
@@ -1537,6 +1564,7 @@
     }
     function closeReport() {
       reportSheet.classList.remove("open");
+      document.querySelector(".phone-screen").classList.remove("report-open");
       document.getElementById("fabReport").style.display = "grid";
       if (mapMode === "report") {
         mapMode = "track";
