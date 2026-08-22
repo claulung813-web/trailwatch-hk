@@ -1,6 +1,103 @@
 /* TrailWatch HK — Shared demo data */
 window.TW = window.TW || {};
 
+TW.LOCAL_PREVIEW = "http://127.0.0.1:5173";
+
+TW.repoBasePath = function () {
+  const p = (location.pathname || "").replace(/\\/g, "/");
+  const app = p.match(/^(.*)\/app(?:\/|$)/);
+  if (app) return app[1];
+  const cms = p.match(/^(.*)\/cms(?:\/|$)/);
+  if (cms) return cms[1];
+  if (p.indexOf("/trailwatch-hk/") === 0 || p === "/trailwatch-hk") return "/trailwatch-hk";
+  return "";
+};
+
+TW.isLocalPreview = function () {
+  return /^(127\.0\.0\.1|localhost)$/i.test(location.hostname || "");
+};
+
+TW.probeLiveOrigin = function () {
+  if (TW.isLocalPreview()) return Promise.resolve(true);
+  const base = TW.repoBasePath();
+  const url = location.origin + base + "/assets/brand/icon.svg?tw_probe=" + Date.now();
+  return new Promise((resolve) => {
+    const timer = setTimeout(() => resolve(false), 2200);
+    fetch(url, { cache: "no-store" })
+      .then((r) => {
+        clearTimeout(timer);
+        resolve(!!(r && r.ok));
+      })
+      .catch(() => {
+        clearTimeout(timer);
+        resolve(false);
+      });
+  });
+};
+
+TW.showSiteFallbackBanner = function () {
+  let el = document.getElementById("twSiteFallback");
+  if (!el) {
+    el = document.createElement("div");
+    el.id = "twSiteFallback";
+    el.className = "tw-site-fallback";
+    document.body.appendChild(el);
+  }
+  el.hidden = false;
+  el.textContent = "GitHub Pages isn’t responding. Opening local preview at 127.0.0.1:5173.";
+  clearTimeout(window._twFallbackHide);
+  window._twFallbackHide = setTimeout(() => {
+    el.hidden = true;
+  }, 5000);
+};
+
+/** Open a public site path; if GitHub Pages is down, fall back to local preview. */
+TW.gotoPublic = function (relPath, evt) {
+  if (evt) evt.preventDefault();
+  const path = String(relPath || "index.html").replace(/^\.\.\//, "").replace(/^\//, "");
+  const localUrl = TW.LOCAL_PREVIEW + "/" + path;
+  if (TW.isLocalPreview()) {
+    const href = evt && evt.currentTarget && evt.currentTarget.getAttribute("href");
+    location.href = href || ("/" + path);
+    return Promise.resolve();
+  }
+  return TW.probeLiveOrigin().then((ok) => {
+    if (ok) {
+      const href = evt && evt.currentTarget && evt.currentTarget.getAttribute("href");
+      location.href = href || (TW.repoBasePath() + "/" + path);
+      return;
+    }
+    TW.showSiteFallbackBanner();
+    location.href = localUrl;
+  });
+};
+
+TW.bindPublicFallbacks = function (root) {
+  const scope = root || document;
+  scope.querySelectorAll("a[href]").forEach((a) => {
+    if (a.dataset.twFallbackBound === "1") return;
+    const href = a.getAttribute("href") || "";
+    const isGetApp = href.indexOf("get-app.html") >= 0;
+    const isViewSite = a.id === "cmsViewSite" || a.id === "backWeb";
+    const isGithub = /github\.io/i.test(href);
+    if (!isGetApp && !isViewSite && !isGithub) return;
+    a.dataset.twFallbackBound = "1";
+    a.addEventListener("click", (e) => {
+      let rel = href.replace(/^\.\.\//, "");
+      if (/^https?:/i.test(rel)) {
+        try {
+          const u = new URL(rel);
+          rel = u.pathname.replace(/^\/trailwatch-hk\//, "") + u.hash;
+        } catch (err) {
+          rel = "index.html";
+        }
+      }
+      if (!rel || rel === "#" || rel.charAt(0) === "#") rel = "index.html";
+      TW.gotoPublic(rel.replace(/^\//, ""), e);
+    });
+  });
+};
+
 TW.user = {
   name: "Alex Wong",
   nickname: "山中遊子",
@@ -2573,3 +2670,11 @@ TW.districtName = function (id) {
   if (!d) return id;
   return TW.getLang() === "zh" ? d.nameZh : d.name;
 };
+
+(function twBindFallbacksWhenReady() {
+  function run() {
+    if (typeof TW.bindPublicFallbacks === "function") TW.bindPublicFallbacks(document);
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", run);
+  else run();
+})();

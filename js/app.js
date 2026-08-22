@@ -296,6 +296,9 @@ function twAppCommunityTabs(active) {
 
 function twMountAppNav(active, selector) {
   twMountPhoneShell();
+  if (typeof TW !== "undefined" && typeof TW.bindPublicFallbacks === "function") {
+    TW.bindPublicFallbacks(document);
+  }
   if (typeof TW !== "undefined" && typeof TW.bindAppLinkRewrites === "function") {
     TW.bindAppLinkRewrites(document);
     if (!window._twAppLinkObserver) {

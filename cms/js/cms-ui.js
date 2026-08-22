@@ -63,7 +63,7 @@ function cmsSidebar(active) {
     <div class="side-foot">
       <div style="opacity:.85;margin-bottom:.25rem;font-weight:600">${name}</div>
       <div style="opacity:.65;margin-bottom:.5rem;font-size:0.75rem">${tierLabel}</div>
-      <a href="../index.html" target="_blank">View website ↗</a><br/>
+      <a href="../index.html" id="cmsViewSite" target="_blank">View website ↗</a><br/>
       <a href="#" id="cmsLogout">Log out</a>
     </div>
   </aside>`;
@@ -93,8 +93,73 @@ function cmsInitShell(active) {
       CMS.logout();
       location.href = "index.html";
     });
+    if (typeof TW !== "undefined" && TW.bindPublicFallbacks) TW.bindPublicFallbacks(shell);
+    cmsBindZhParity(shell);
   }
   return true;
+}
+
+function cmsZhPairs(scope) {
+  const root = scope || document;
+  const pairs = [];
+  root.querySelectorAll("input[id$='Zh'], textarea[id$='Zh'], input[id$='zh'], textarea[id$='zh']").forEach((zh) => {
+    const base = zh.id.replace(/Zh$/i, "");
+    if (!base || base === zh.id) return;
+    const en =
+      root.querySelector("#" + CSS.escape(base)) ||
+      root.querySelector("#" + CSS.escape(base + "En")) ||
+      root.querySelector("#" + CSS.escape(base + "en"));
+    if (!en) return;
+    pairs.push({ en: en, zh: zh });
+  });
+  return pairs;
+}
+
+function cmsMarkZhPair(pair) {
+  const enVal = String(pair.en.value || "").trim();
+  const zhVal = String(pair.zh.value || "").trim();
+  const missing = !!enVal && !zhVal;
+  pair.zh.classList.toggle("cms-i18n-missing", missing);
+  let hint = pair.zh.nextElementSibling;
+  if (!hint || !hint.classList || !hint.classList.contains("cms-i18n-hint")) {
+    hint = document.createElement("div");
+    hint.className = "cms-i18n-hint";
+    hint.textContent = "Missing translation";
+    pair.zh.insertAdjacentElement("afterend", hint);
+  }
+  hint.classList.toggle("show", missing);
+  return missing;
+}
+
+function cmsBindZhParity(scope) {
+  const root = scope || document;
+  const updateAll = () => cmsZhPairs(root).forEach(cmsMarkZhPair);
+  root.addEventListener("input", (e) => {
+    const el = e.target;
+    if (!el || !el.id) return;
+    if (/Zh$/i.test(el.id) || root.querySelector("#" + CSS.escape(el.id) + "Zh") || root.querySelector("#" + CSS.escape(el.id) + "zh")) {
+      updateAll();
+    }
+  });
+  if (!window._cmsZhSubmitBound) {
+    window._cmsZhSubmitBound = true;
+    document.addEventListener(
+      "submit",
+      (e) => {
+        const form = e.target;
+        if (!form || !form.closest || !form.closest(".cms-body")) return;
+        const missing = cmsZhPairs(form).filter(cmsMarkZhPair);
+        if (!missing.length) return;
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        const names = missing.map((p) => p.zh.id.replace(/Zh$/i, "")).join(", ");
+        cmsToast("Missing 繁 for: " + names + " (or clear the English field)");
+      },
+      true
+    );
+  }
+  updateAll();
+  setTimeout(updateAll, 400);
 }
 
 function uid(prefix) {
