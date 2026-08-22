@@ -1125,16 +1125,353 @@ TW.reports = [
   },
 ];
 
-TW.badges = [
-  { name: "First Hike", nameZh: "首次行山", emoji: "🥾", color: "#2d8a45", progress: 1, total: 1, criteria: "Save your first tracked hike.", criteriaZh: "儲存第一次追蹤行程。" },
-  { name: "Be Friends", nameZh: "交友", emoji: "🤝", color: "#3da855", progress: 1, total: 1, criteria: "Add a friend on TrailWatch.", criteriaZh: "在 TrailWatch 新增一位好友。" },
-  { name: "To The Peak", nameZh: "登頂", emoji: "🏔️", color: "#7c3aed", progress: 1, total: 1, criteria: "Reach a summit above 500 m.", criteriaZh: "登上海拔 500 米以上的山頂。" },
-  { name: "Trail Runner", nameZh: "越野跑", emoji: "🏃", color: "#2563eb", progress: 1, total: 1, criteria: "Finish a hike averaging under 12 min/km.", criteriaZh: "完成平均配速快於 12 分鐘／公里的行程。" },
-  { name: "Trail Blazer", nameZh: "開路先鋒", emoji: "🔥", color: "#dc2626", progress: 1, total: 1, criteria: "Log 100 km in a calendar year.", criteriaZh: "一年內累積 100 公里。" },
-  { name: "Night Owl", nameZh: "夜行者", emoji: "🌙", color: "#1e3a5f", locked: true, progress: 0, total: 1, criteria: "Complete a hike that starts after sunset.", criteriaZh: "完成一次日落後出發的行程。" },
-  { name: "Group Leader", nameZh: "隊伍領袖", emoji: "👥", color: "#9ca3af", locked: true, progress: 0, total: 1, criteria: "Organize a group hike.", criteriaZh: "舉辦一次聯誼。" },
-  { name: "Century Club", nameZh: "百公里會", emoji: "💯", color: "#b45309", locked: true, progress: 42, total: 100, criteria: "Record 100 lifetime hikes.", criteriaZh: "累積 100 次行程記錄。" },
+/**
+ * Badge catalog (Category → Series → Badge) aligned with product criteria table.
+ * HOLD series are shown as coming soon and are not awardable yet.
+ */
+TW.badgeCatalog = [
+  {
+    id: "geographical",
+    name: "Geographical",
+    nameZh: "地理",
+    series: [
+      {
+        id: "peaks",
+        name: "Peaks",
+        nameZh: "山峰",
+        criteriaType: "gps",
+        criteriaLabel: "Tracked activity passes listed GPS points (radius buffer).",
+        criteriaLabelZh: "追蹤行程經過所列 GPS 座標（緩衝半徑）。",
+        badges: [
+          { id: "peak_tai_mo_shan", name: "Tai Mo Shan", nameZh: "大帽山", emoji: "⛰", color: "#2d8a45", points: [{ lat: 22.4111, lng: 114.1247, radiusM: 150 }] },
+          { id: "peak_lantau", name: "Lantau Peak", nameZh: "鳳凰山", emoji: "🏔", color: "#2563eb", points: [{ lat: 22.2492, lng: 113.9201, radiusM: 25 }] },
+          { id: "peak_high_junk", name: "High Junk Peak", nameZh: "釣魚翁", emoji: "🗻", color: "#7c3aed", points: [{ lat: 22.2957, lng: 114.286, radiusM: 25 }] },
+          { id: "peak_lion_rock", name: "Lion Rock", nameZh: "獅子山", emoji: "🦁", color: "#b45309", points: [{ lat: 22.3526, lng: 114.1862, radiusM: 100 }] },
+          { id: "peak_castle", name: "Castle Peak", nameZh: "青山", emoji: "🏰", color: "#0b421a", points: [{ lat: 22.3884, lng: 113.9532, radiusM: 100 }] },
+        ],
+      },
+      {
+        id: "waterfalls",
+        name: "Waterfalls",
+        nameZh: "瀑布",
+        criteriaType: "gps",
+        criteriaLabel: "Tracked activity passes listed GPS points (radius buffer).",
+        criteriaLabelZh: "追蹤行程經過所列 GPS 座標（緩衝半徑）。",
+        badges: [
+          {
+            id: "wf_brides_pool",
+            name: "Bride's Pool",
+            nameZh: "新娘潭",
+            emoji: "💧",
+            color: "#0891b2",
+            points: [
+              { lat: 22.5031, lng: 114.2372, radiusM: 25 },
+              { lat: 22.5041, lng: 114.2415, radiusM: 25 },
+            ],
+          },
+          { id: "wf_little_hawaii", name: "Little Hawaii", nameZh: "小夏威夷", emoji: "🌴", color: "#0d9488", points: [{ lat: 22.3318, lng: 114.2458, radiusM: 50 }] },
+          {
+            id: "wf_ng_tung_tsai",
+            name: "Ng Tung Tsai",
+            nameZh: "梧桐寨",
+            emoji: "💦",
+            color: "#0284c7",
+            points: [
+              { lat: 22.4272, lng: 114.1318, radiusM: 25 },
+              { lat: 22.4241, lng: 114.1318, radiusM: 25 },
+              { lat: 22.4237, lng: 114.1316, radiusM: 25 },
+              { lat: 22.4232, lng: 114.1309, radiusM: 25 },
+            ],
+          },
+        ],
+      },
+      {
+        id: "reservoir",
+        name: "Reservoir circuits",
+        nameZh: "環塘路線",
+        criteriaType: "route_cover",
+        criteriaLabel: "Tracked activity covers 90% of the planned route (buffer).",
+        criteriaLabelZh: "追蹤行程覆蓋計劃路線 90%（緩衝距離）。",
+        badges: [
+          {
+            id: "res_shing_mun",
+            name: "Shing Mun Reservoir path",
+            nameZh: "城門塘畔徑",
+            emoji: "🛤",
+            color: "#15803d",
+            planShareUrl: "https://www.trailwatch.hk/plan-share/239342",
+          },
+          {
+            id: "res_aberdeen",
+            name: "Upper + Lower Aberdeen Reservoir",
+            nameZh: "上環水塘＋下環水塘",
+            emoji: "🌊",
+            color: "#1d4ed8",
+            planRef: "https://www.hiking.gov.hk/console/public/uploads/others/file/9c5b9e6baa712124b2d3bf99c2b4da5a7b2825f3.pdf",
+          },
+          {
+            id: "res_ho_pui",
+            name: "Ho Pui Reservoir",
+            nameZh: "河背水塘",
+            emoji: "🏞",
+            color: "#047857",
+            planShareUrl: "https://www.trailwatch.hk/plan-share/108903",
+          },
+        ],
+      },
+      {
+        id: "ancient",
+        name: "Ancient Trails",
+        nameZh: "古道",
+        criteriaType: "route_cover",
+        hold: true,
+        criteriaLabel: "Tracked activity covers 90% of the planned route (buffer).",
+        criteriaLabelZh: "追蹤行程覆蓋計劃路線 90%（緩衝距離）。",
+        badges: [
+          { id: "anc_lai_kok", name: "Lai Kok Ancient Trail", nameZh: "荔谷古道", emoji: "🧭", color: "#78716c", timeLimit: true, optIn: true },
+          { id: "anc_mau_ping", name: "Mau Ping Ancient Trail", nameZh: "茅坪古道", emoji: "🧭", color: "#78716c", timeLimit: true, optIn: true },
+          { id: "anc_tung_o", name: "Tung O Ancient Trail", nameZh: "東澳古道", emoji: "🧭", color: "#78716c", timeLimit: true, optIn: true },
+          { id: "anc_yung_pak", name: "Yung Pak Corridor", nameZh: "榕北走廊", emoji: "🧭", color: "#78716c", timeLimit: true, optIn: true },
+          { id: "anc_tsi_sha", name: "Tsi Sha Ancient Trail", nameZh: "慈沙古道", emoji: "🧭", color: "#78716c", timeLimit: true, optIn: true },
+        ],
+      },
+    ],
+  },
+  {
+    id: "mileage",
+    name: "Mileage",
+    nameZh: "里程",
+    series: [
+      {
+        id: "distance",
+        name: "Distance",
+        nameZh: "距離",
+        criteriaType: "lifetime_distance",
+        criteriaLabel: "Lifetime total distance tracked.",
+        criteriaLabelZh: "終身累計追蹤距離。",
+        showProgress: true,
+        badges: [
+          { id: "dist_50", name: "50 km", nameZh: "50 公里", emoji: "🥾", color: "#65a30d", targetKm: 50 },
+          { id: "dist_100", name: "100 km", nameZh: "100 公里", emoji: "🥾", color: "#4d7c0f", targetKm: 100 },
+          { id: "dist_200", name: "200 km", nameZh: "200 公里", emoji: "🥾", color: "#3f6212", targetKm: 200 },
+          { id: "dist_500", name: "500 km", nameZh: "500 公里", emoji: "🔥", color: "#ca8a04", targetKm: 500 },
+          { id: "dist_1000", name: "1000 km", nameZh: "1000 公里", emoji: "🔥", color: "#a16207", targetKm: 1000 },
+          { id: "dist_2000", name: "2000 km", nameZh: "2000 公里", emoji: "🔥", color: "#854d0e", targetKm: 2000 },
+          { id: "dist_5000", name: "5000 km", nameZh: "5000 公里", emoji: "💯", color: "#b45309", targetKm: 5000 },
+          { id: "dist_10k", name: "10k km", nameZh: "1 萬公里", emoji: "💯", color: "#9a3412", targetKm: 10000 },
+          { id: "dist_25k", name: "25k km", nameZh: "2.5 萬公里", emoji: "🏆", color: "#7c2d12", targetKm: 25000 },
+          { id: "dist_50k", name: "50k km", nameZh: "5 萬公里", emoji: "🏆", color: "#9f1239", targetKm: 50000 },
+          { id: "dist_75k", name: "75k km", nameZh: "7.5 萬公里", emoji: "🏆", color: "#881337", targetKm: 75000 },
+          { id: "dist_100k", name: "100k km", nameZh: "10 萬公里", emoji: "👑", color: "#4c0519", targetKm: 100000 },
+        ],
+      },
+      {
+        id: "four_trails",
+        name: "Four trails",
+        nameZh: "四徑",
+        criteriaType: "route_cover",
+        criteriaLabel: "Tracked activity covers 90% of planned route / distance posts (buffer).",
+        criteriaLabelZh: "追蹤行程覆蓋計劃路線／標距柱 90%（緩衝距離）。",
+        showProgress: true,
+        badges: [
+          { id: "ft_maclehose", name: "Maclehose", nameZh: "麥理浩徑", emoji: "🗺", color: "#166534", totalKm: 100 },
+          { id: "ft_wilson", name: "Wilson", nameZh: "衛奕信徑", emoji: "🗺", color: "#1e40af", totalKm: 78 },
+          { id: "ft_island", name: "Island", nameZh: "港島徑", emoji: "🗺", color: "#6d28d9", totalKm: 50 },
+          { id: "ft_lantau", name: "Lantau", nameZh: "鳳凰徑", emoji: "🗺", color: "#0e7490", totalKm: 70 },
+        ],
+      },
+    ],
+  },
+  {
+    id: "app",
+    name: "App functions",
+    nameZh: "App 功能",
+    series: [
+      {
+        id: "overseas",
+        name: "Overseas tracking",
+        nameZh: "海外追蹤",
+        criteriaType: "count",
+        criteriaLabel: "Tracked records with GPS points outside Hong Kong territory.",
+        criteriaLabelZh: "追蹤記錄含香港境外 GPS 點的次數。",
+        showProgress: true,
+        badges: [
+          { id: "os_1", name: "Tracked once overseas", nameZh: "海外追蹤 1 次", emoji: "✈️", color: "#2563eb", targetCount: 1 },
+          { id: "os_5", name: "Tracked 5 times overseas", nameZh: "海外追蹤 5 次", emoji: "✈️", color: "#1d4ed8", targetCount: 5 },
+          { id: "os_10", name: "Tracked 10 times overseas", nameZh: "海外追蹤 10 次", emoji: "🌏", color: "#1e40af", targetCount: 10 },
+          { id: "os_50", name: "Tracked 50 times overseas", nameZh: "海外追蹤 50 次", emoji: "🌏", color: "#1e3a8a", targetCount: 50 },
+          { id: "os_100", name: "Tracked 100 times overseas", nameZh: "海外追蹤 100 次", emoji: "🌐", color: "#172554", targetCount: 100 },
+        ],
+      },
+      {
+        id: "group_org",
+        name: "Group hike organizer",
+        nameZh: "聯誼主辦",
+        criteriaType: "count",
+        criteriaLabel: "Organized group hikes (count).",
+        criteriaLabelZh: "主辦聯誼次數。",
+        showProgress: true,
+        badges: [
+          { id: "gh_5", name: "Organized 5 group hikes", nameZh: "主辦 5 次聯誼", emoji: "👥", color: "#059669", targetCount: 5 },
+          { id: "gh_10", name: "Organized 10 group hikes", nameZh: "主辦 10 次聯誼", emoji: "👥", color: "#047857", targetCount: 10 },
+          { id: "gh_25", name: "Organized 25 group hikes", nameZh: "主辦 25 次聯誼", emoji: "🧑‍🤝‍🧑", color: "#065f46", targetCount: 25 },
+          { id: "gh_50", name: "Organized 50 group hikes", nameZh: "主辦 50 次聯誼", emoji: "🧑‍🤝‍🧑", color: "#064e3b", targetCount: 50 },
+          { id: "gh_100", name: "Organized 100 group hikes", nameZh: "主辦 100 次聯誼", emoji: "🏅", color: "#022c22", targetCount: 100 },
+        ],
+      },
+      {
+        id: "incidents",
+        name: "Incident report",
+        nameZh: "個案報告",
+        criteriaType: "count",
+        criteriaLabel: "Incident reports submitted (count).",
+        criteriaLabelZh: "提交個案報告次數。",
+        showProgress: true,
+        badges: [
+          { id: "ir_1", name: "Report 1 incident", nameZh: "報告 1 宗個案", emoji: "⚠️", color: "#ea580c", targetCount: 1 },
+          { id: "ir_5", name: "Report 5 incidents", nameZh: "報告 5 宗個案", emoji: "⚠️", color: "#c2410c", targetCount: 5 },
+          { id: "ir_10", name: "Report 10 incidents", nameZh: "報告 10 宗個案", emoji: "🚨", color: "#9a3412", targetCount: 10 },
+          { id: "ir_25", name: "Report 25 incidents", nameZh: "報告 25 宗個案", emoji: "🚨", color: "#7c2d12", targetCount: 25 },
+          { id: "ir_50", name: "Report 50 incidents", nameZh: "報告 50 宗個案", emoji: "🛡️", color: "#431407", targetCount: 50 },
+        ],
+      },
+    ],
+  },
+  {
+    id: "outside",
+    name: "Outside app",
+    nameZh: "App 以外",
+    series: [
+      {
+        id: "volunteer",
+        name: "Volunteer",
+        nameZh: "義工",
+        criteriaType: "cms",
+        criteriaLabel: "Assigned to user on CMS.",
+        criteriaLabelZh: "由 CMS 指派予用戶。",
+        badges: [
+          { id: "vol_become", name: "Become a volunteer", nameZh: "成為義工", emoji: "🤲", color: "#16a34a" },
+          { id: "vol_5", name: "Join 5 volunteer activities", nameZh: "參加 5 次義工活動", emoji: "🤲", color: "#15803d" },
+        ],
+      },
+      {
+        id: "photos",
+        name: "Photos",
+        nameZh: "相片",
+        criteriaType: "cms",
+        criteriaLabel: "Photo selected — assigned to user on CMS.",
+        criteriaLabelZh: "相片入選後由 CMS 指派予用戶。",
+        badges: [
+          { id: "photo_contributor", name: "Photo contributor", nameZh: "相片貢獻者", emoji: "📷", color: "#7c3aed" },
+        ],
+      },
+      {
+        id: "donation",
+        name: "Donation",
+        nameZh: "捐款",
+        criteriaType: "cms",
+        criteriaLabel: "Donated — assigned to user on CMS.",
+        criteriaLabelZh: "完成捐款後由 CMS 指派予用戶。",
+        badges: [
+          { id: "donor", name: "Donor", nameZh: "捐款者", emoji: "💚", color: "#0b421a" },
+        ],
+      },
+      {
+        id: "env_care",
+        name: "Environmental Care",
+        nameZh: "環境關懷",
+        criteriaType: "cms",
+        criteriaLabel: "Proof sent externally (e.g. form) — assigned on CMS.",
+        criteriaLabelZh: "經外部途徑提交證明（如表格）後由 CMS 指派。",
+        badges: [
+          { id: "env_trail_cleanup", name: "Trail Cleanup", nameZh: "淨山", emoji: "🧹", color: "#2d8a45" },
+          { id: "env_beach_cleaning", name: "Beach cleaning", nameZh: "淨灘", emoji: "🏖", color: "#0891b2" },
+        ],
+      },
+    ],
+  },
 ];
+
+/** Effective catalog: CMS override when present, else built-in defaults. */
+TW.getEffectiveBadgeCatalog = function () {
+  try {
+    if (typeof CMS !== "undefined" && typeof CMS.getBadgeCatalog === "function") {
+      const c = CMS.getBadgeCatalog();
+      if (Array.isArray(c) && c.length) return c;
+    }
+  } catch (e) {}
+  return TW.badgeCatalog || [];
+};
+
+/** Demo progress / unlocks for badge criteria (local MVP). */
+TW.getBadgeProgressState = function () {
+  const dist = Number((TW.stats && TW.stats.distanceKm) || 0);
+  const reports = Number((TW.stats && TW.stats.reports) || 0);
+  let cmsAssigned = [];
+  let usedCmsAssignments = false;
+  try {
+    const email =
+      (typeof TW.memberEmail === "function" && TW.memberEmail()) ||
+      (TW.user && TW.user.email) ||
+      "";
+    let userId = "";
+    if (typeof TW.getMemberAuth === "function") {
+      const auth = TW.getMemberAuth();
+      userId = (auth && (auth.userId || auth.id)) || "";
+    }
+    if (typeof CMS !== "undefined" && typeof CMS.getAssignedBadgeIdsForUser === "function") {
+      usedCmsAssignments = true;
+      cmsAssigned = CMS.getAssignedBadgeIdsForUser(email, userId) || [];
+    }
+  } catch (e) {}
+  if (!usedCmsAssignments) {
+    try {
+      cmsAssigned = JSON.parse(localStorage.getItem("tw_cms_badges") || "[]");
+    } catch (e) {
+      cmsAssigned = [];
+    }
+    if (!cmsAssigned.length) {
+      cmsAssigned = ["vol_become", "donor", "photo_contributor"];
+      try {
+        localStorage.setItem("tw_cms_badges", JSON.stringify(cmsAssigned));
+      } catch (e) {}
+    }
+  }
+  return {
+    distanceKm: dist,
+    overseasCount: 3,
+    groupHikesOrganized: 8,
+    incidentReports: Math.max(reports, 6),
+    gpsUnlocked: ["peak_tai_mo_shan", "peak_lion_rock", "wf_brides_pool", "res_shing_mun"],
+    fourTrailKm: {
+      ft_maclehose: 42,
+      ft_wilson: 18,
+      ft_island: 50,
+      ft_lantau: 12,
+    },
+    cmsAssigned: cmsAssigned,
+  };
+};
+
+/** Flat list kept for older callers; prefer badgeCatalog. */
+TW.badges = [];
+(function seedLegacyBadges() {
+  (TW.badgeCatalog || []).forEach((cat) => {
+    (cat.series || []).forEach((series) => {
+      (series.badges || []).forEach((b) => {
+        TW.badges.push({
+          id: b.id,
+          name: b.name,
+          nameZh: b.nameZh,
+          emoji: b.emoji,
+          color: b.color,
+          category: cat.id,
+          series: series.id,
+        });
+      });
+    });
+  });
+})();
 
 TW.treeGame = {
   level: 7,
@@ -1662,6 +1999,11 @@ TW.isPlanned = function (trailId) {
 };
 
 TW.BOOKMARK_KEY = "tw_bookmarks";
+
+/** True when the page is under /app/ (phone shell). */
+TW.isAppShell = TW.isAppShell || function () {
+  return /\/app(?:\/|$)/.test((location.pathname || "").replace(/\\/g, "/"));
+};
 TW.BOOKMARK_TYPES = ["route", "record", "event"];
 
 TW.normalizeBookmark = function (entry) {
@@ -1822,6 +2164,7 @@ TW.toggleBookmark = function (id, type) {
 /** Resolve bookmarked items for UI (routes, records, group hikes / events). */
 TW.resolveBookmarkItems = function () {
   const zh = TW.getLang() === "zh";
+  const inApp = typeof TW.isAppShell === "function" ? TW.isAppShell() : /\/app(?:\/|$)/.test((location.pathname || "").replace(/\\/g, "/"));
   return TW.getBookmarkEntries().map((entry) => {
     if (entry.type === "route") {
       const t = (TW.trails || []).find((x) => x.id === entry.id);
@@ -1832,7 +2175,9 @@ TW.resolveBookmarkItems = function () {
         title: TW.tt(t, "title"),
         meta: TW.districtName ? TW.districtName(t.district) : "",
         image: t.image || "",
-        href: "rec-trail.html?id=" + encodeURIComponent(t.id),
+        href: inApp
+          ? "route-detail.html?id=" + encodeURIComponent(t.id)
+          : "rec-trail.html?id=" + encodeURIComponent(t.id),
       };
     }
     if (entry.type === "record") {
@@ -1868,7 +2213,9 @@ TW.resolveBookmarkItems = function () {
         title: title,
         meta: TW.t("app_bm_events"),
         image: (g && (g.image || g.cover)) || "",
-        href: "group-hike-detail.html?id=" + encodeURIComponent(entry.id),
+        href: inApp
+          ? "group-detail.html?id=" + encodeURIComponent(entry.id)
+          : "group-hike-detail.html?id=" + encodeURIComponent(entry.id),
       };
     }
     return null;

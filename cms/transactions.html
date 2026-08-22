@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CMS — Transactions</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/cms.css" />
+</head>
+<body class="cms-body">
+  <div id="cmsShell">
+    <h1>Transactions</h1>
+    <p class="sub">All payment and donation details entered by users. Export CSV for finance.</p>
+
+    <div class="cms-toolbar">
+      <input id="q" type="search" placeholder="Search name, email, receipt…" style="flex:1;max-width:320px" />
+      <select id="filterType">
+        <option value="all">All types</option>
+        <option value="premium">Premium</option>
+        <option value="donation">Donation</option>
+      </select>
+      <button type="button" class="cms-btn cms-btn-primary cms-btn-sm" id="btnCsv">Export CSV</button>
+    </div>
+
+    <div class="cms-row">
+      <div class="cms-card" style="flex:1.4;overflow:auto">
+        <table class="cms-table">
+          <thead>
+            <tr><th>Date</th><th>User</th><th>Type</th><th>Amount</th><th>Method</th><th>Status</th><th></th></tr>
+          </thead>
+          <tbody id="list"></tbody>
+        </table>
+      </div>
+      <div class="cms-card" id="detail" style="flex:1;min-width:260px;display:none">
+        <h3 style="margin-top:0">Transaction detail</h3>
+        <pre id="detailPre" style="white-space:pre-wrap;font-size:0.8rem;background:#f9fafb;padding:0.75rem;border-radius:8px;overflow:auto"></pre>
+      </div>
+    </div>
+  </div>
+  <script src="../js/data.js"></script>
+  <script src="../js/cms-store.js"></script>
+  <script src="js/cms-ui.js"></script>
+  <script>
+    cmsInitShell("transactions");
+
+    function filtered() {
+      const q = (document.getElementById("q").value || "").toLowerCase();
+      const ty = document.getElementById("filterType").value;
+      let list = (CMS.getStore().transactions || []).slice();
+      if (ty !== "all") list = list.filter((t) => t.type === ty);
+      if (q) {
+        list = list.filter((t) =>
+          [t.id, t.name, t.email, t.userId, t.method, JSON.stringify(t.details || {})]
+            .join(" ")
+            .toLowerCase()
+            .indexOf(q) >= 0
+        );
+      }
+      return list.sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+    }
+
+    function render() {
+      const list = filtered();
+      document.getElementById("list").innerHTML = list.map((t) => `
+        <tr>
+          <td class="cms-muted">${cmsEsc((t.createdAt || "").slice(0, 10))}</td>
+          <td><strong>${cmsEsc(t.name)}</strong><br/><span class="cms-muted">${cmsEsc(t.email)}</span></td>
+          <td>${cmsEsc(t.type)}</td>
+          <td>${cmsEsc(t.currency || "HKD")} ${Number(t.amount || 0).toLocaleString()}</td>
+          <td>${cmsEsc(t.method)}</td>
+          <td><span class="cms-badge pub">${cmsEsc(t.status)}</span></td>
+          <td><button type="button" class="cms-btn cms-btn-secondary cms-btn-sm" data-open="${cmsEsc(t.id)}">View</button></td>
+        </tr>`).join("") || '<tr><td colspan="7">No transactions</td></tr>';
+      document.querySelectorAll("[data-open]").forEach((b) => b.addEventListener("click", () => {
+        const t = (CMS.getStore().transactions || []).find((x) => x.id === b.dataset.open);
+        document.getElementById("detail").style.display = "block";
+        document.getElementById("detailPre").textContent = JSON.stringify(t, null, 2);
+      }));
+    }
+
+    document.getElementById("btnCsv").addEventListener("click", () => {
+      const list = filtered();
+      const headers = ["id", "createdAt", "type", "name", "email", "userId", "amount", "currency", "method", "status", "periodStart", "periodEnd", "details"];
+      const rows = [headers.join(",")].concat(
+        list.map((t) =>
+          headers
+            .map((h) => {
+              let v = h === "details" ? JSON.stringify(t.details || {}) : t[h];
+              v = String(v == null ? "" : v).replace(/"/g, '""');
+              return `"${v}"`;
+            })
+            .join(",")
+        )
+      );
+      cmsDownloadText("trailwatch-transactions.csv", rows.join("\n"), "text/csv;charset=utf-8");
+      cmsToast("CSV exported");
+    });
+    document.getElementById("q").addEventListener("input", render);
+    document.getElementById("filterType").addEventListener("change", render);
+    render();
+  </script>
+</body>
+</html>

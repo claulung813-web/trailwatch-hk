@@ -112,8 +112,21 @@
           <div class="cms-toolbar" style="margin-top:0.75rem">
             <button type="submit" class="cms-btn cms-btn-primary">Save</button>
             <button type="button" class="cms-btn cms-btn-warn" id="btnMerge">Merge into…</button>
+            <button type="button" class="cms-btn cms-btn-secondary" id="btnActivity">View activity</button>
           </div>
         </form>
+        <div id="subHistory" style="margin-top:1rem"></div>
+        <div id="activityPanel" style="display:none;margin-top:1rem">
+          <h4 style="margin:0 0 0.5rem">Activity &amp; plans</h4>
+          <p class="cms-muted" style="font-size:0.8rem">Tracked activities and planned routes (chronological). Assign Editor’s Choice categories or mark as featured route.</p>
+          <div id="activityList"></div>
+          <div class="cms-form" style="margin-top:0.75rem">
+            <label>Add selected activity route to Editor’s Choice categories</label>
+            <div id="ecCats" class="cms-checks" style="display:flex;flex-wrap:wrap;gap:0.4rem"></div>
+            <button type="button" class="cms-btn cms-btn-secondary cms-btn-sm" id="btnEcAssign">Apply categories</button>
+            <button type="button" class="cms-btn cms-btn-secondary cms-btn-sm" id="btnFeatureRoute">Add as featured route</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -272,7 +285,112 @@
       document.getElementById("canHostPublicGroups").checked = !!u.canHostPublicGroups;
       document.getElementById("hasGps").checked = !!u.hasGps;
       document.getElementById("note").value = u.note || "";
+      renderSubHistory(u);
+      document.getElementById("activityPanel").style.display = "none";
     }
+
+    function renderSubHistory(u) {
+      const txns = (CMS.getStore().transactions || []).filter(
+        (t) => t.userId === u.id || String(t.email || "").toLowerCase() === String(u.email || "").toLowerCase()
+      );
+      const hist = (u.subscriptionHistory || []).concat(
+        txns.filter((t) => t.type === "premium").map((t) => ({
+          start: t.periodStart,
+          end: t.periodEnd,
+          note: "Transaction " + t.id,
+        }))
+      );
+      if (u.premiumStart || u.premiumEnd) {
+        hist.unshift({ start: u.premiumStart, end: u.premiumEnd, note: "Current period" });
+      }
+      document.getElementById("subHistory").innerHTML =
+        "<h4 style='margin:0 0 0.4rem'>Lifetime subscription record</h4>" +
+        (hist.length
+          ? "<ul style='margin:0;padding-left:1.1rem;font-size:0.85rem'>" +
+            hist
+              .map(
+                (h) =>
+                  `<li>${esc(h.start || "—")} → ${esc(h.end || "—")}${h.note ? " · " + esc(h.note) : ""}</li>`
+              )
+              .join("") +
+            "</ul>"
+          : "<p class='cms-muted'>No subscription history.</p>");
+    }
+
+    let activityRouteId = "";
+    function renderActivity(userId) {
+      const records = (TW.records || [])
+        .concat(typeof TW.getHikes === "function" ? TW.getHikes() || [] : [])
+        .filter((r) => !userId || r.userId === userId || r.user === "Alex Wong" || true)
+        .slice(0, 12);
+      const plans = (TW.trails || []).slice(0, 6).map((t) => ({
+        kind: "plan",
+        id: t.id,
+        title: t.title,
+        when: t.updatedAt || "planned",
+      }));
+      const items = records
+        .map((r) => ({
+          kind: "track",
+          id: r.id || r.trailId,
+          title: r.title || r.name || r.id,
+          when: r.date || r.isoDate || r.endedAt || "",
+          routeId: r.trailId || r.routeId || r.id,
+        }))
+        .concat(plans)
+        .sort((a, b) => String(b.when).localeCompare(String(a.when)));
+      document.getElementById("activityList").innerHTML = items
+        .map(
+          (it) => `
+        <label style="display:flex;gap:0.5rem;align-items:flex-start;padding:0.4rem 0;border-bottom:1px solid #eee;font-size:0.85rem">
+          <input type="radio" name="actPick" value="${esc(it.routeId || it.id)}" data-title="${esc(it.title)}" />
+          <span><strong>${esc(it.title)}</strong><br/>
+          <span class="cms-muted">${esc(it.kind)} · ${esc(String(it.when).slice(0, 16))}</span></span>
+        </label>`
+        )
+        .join("") || "<p class='cms-muted'>No activity found.</p>";
+      document.getElementById("ecCats").innerHTML = (CMS.getStore().editorsChoiceCategories || [])
+        .map((c) => `<label><input type="checkbox" data-ec="${esc(c.id)}" /> ${esc(c.name)}</label>`)
+        .join("");
+      document.getElementById("activityPanel").style.display = "block";
+      activityRouteId = "";
+      document.querySelectorAll("input[name=actPick]").forEach((r) =>
+        r.addEventListener("change", () => {
+          activityRouteId = r.value;
+        })
+      );
+    }
+
+    document.getElementById("btnActivity").addEventListener("click", () => {
+      const id = document.getElementById("userId").value;
+      if (!id) return;
+      renderActivity(id);
+    });
+    document.getElementById("btnEcAssign").addEventListener("click", () => {
+      if (!activityRouteId) return cmsToast("Select an activity first");
+      const cats = Array.from(document.querySelectorAll("#ecCats [data-ec]:checked")).map((c) => c.dataset.ec);
+      if (!cats.length) return cmsToast("Pick at least one category");
+      const s = CMS.getStore();
+      s.editorsChoiceCategories = (s.editorsChoiceCategories || []).map((c) => {
+        if (cats.indexOf(c.id) < 0) return c;
+        const routeIds = (c.routeIds || []).slice();
+        if (routeIds.indexOf(activityRouteId) < 0) routeIds.push(activityRouteId);
+        return Object.assign({}, c, { routeIds });
+      });
+      CMS.setStore(s);
+      cmsToast("Added to Editor’s Choice categories");
+    });
+    document.getElementById("btnFeatureRoute").addEventListener("click", () => {
+      if (!activityRouteId) return cmsToast("Select an activity first");
+      const s = CMS.getStore();
+      const ids = (s.featuredRouteIds || []).slice();
+      if (ids.indexOf(activityRouteId) >= 0) return cmsToast("Already featured");
+      if (ids.length >= 20) return cmsToast("Max 20 featured routes");
+      ids.push(activityRouteId);
+      s.featuredRouteIds = ids;
+      CMS.setStore(s);
+      cmsToast("Added as featured route");
+    });
 
     function saveUser() {
       const id = document.getElementById("userId").value;

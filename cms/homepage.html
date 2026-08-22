@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CMS — Homepage featured</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/cms.css" />
+</head>
+<body class="cms-body">
+  <div id="cmsShell">
+    <h1>Homepage — Featured &amp; app functions</h1>
+    <p class="sub">Manage featured routes (max 20), featured articles, and the App functions strip. Hero banners are edited under <a href="banners.html">Hero banners</a>.</p>
+
+    <div class="cms-row">
+      <div class="cms-card" style="flex:1">
+        <h3 style="margin-top:0">Featured routes <span class="cms-muted" id="routeCount"></span></h3>
+        <div class="cms-toolbar">
+          <input id="routeSearch" placeholder="Search by route ID or title…" style="flex:1" />
+          <button type="button" class="cms-btn cms-btn-primary cms-btn-sm" id="btnAddRoute">Add</button>
+        </div>
+        <div id="routeHits" class="cms-muted" style="font-size:0.8rem;margin-bottom:0.5rem"></div>
+        <ul id="routeList" style="list-style:none;padding:0;margin:0"></ul>
+      </div>
+      <div class="cms-card" style="flex:1">
+        <h3 style="margin-top:0">Featured articles <span class="cms-muted" id="articleCount"></span></h3>
+        <div class="cms-toolbar">
+          <input id="articleSearch" placeholder="Search by keyword or URL…" style="flex:1" />
+          <button type="button" class="cms-btn cms-btn-primary cms-btn-sm" id="btnAddArticle">Add</button>
+        </div>
+        <div id="articleHits" class="cms-muted" style="font-size:0.8rem;margin-bottom:0.5rem"></div>
+        <ul id="articleList" style="list-style:none;padding:0;margin:0"></ul>
+      </div>
+    </div>
+
+    <div class="cms-card" style="margin-top:1rem">
+      <div class="cms-toolbar">
+        <h3 style="margin:0;flex:1">App functions</h3>
+        <button type="button" class="cms-btn cms-btn-primary cms-btn-sm" id="btnNewFn">Add function</button>
+      </div>
+      <table class="cms-table">
+        <thead><tr><th>Order</th><th>Graphic</th><th>Text</th><th>Premium</th><th></th></tr></thead>
+        <tbody id="fnList"></tbody>
+      </table>
+      <form class="cms-form" id="fnForm" style="margin-top:1rem;display:none">
+        <input type="hidden" id="fnId" />
+        <label>Title (EN)</label><input id="fnTitle" required />
+        <label>Title (繁)</label><input id="fnTitleZh" />
+        <label>Body (EN)</label><textarea id="fnBody" rows="2"></textarea>
+        <label>Body (繁)</label><textarea id="fnBodyZh" rows="2"></textarea>
+        <label>Graphic URL</label><input id="fnImage" />
+        <label>Order</label><input id="fnOrder" type="number" min="0" value="0" />
+        <label class="cms-checks"><input type="checkbox" id="fnPremium" /> Premium feature tag</label>
+        <div class="cms-toolbar"><button class="cms-btn cms-btn-primary" type="submit">Save</button>
+          <button class="cms-btn cms-btn-secondary" type="button" id="fnCancel">Cancel</button></div>
+      </form>
+    </div>
+  </div>
+  <script src="../js/data.js"></script>
+  <script src="../js/cms-store.js"></script>
+  <script src="js/cms-ui.js"></script>
+  <script>
+    cmsInitShell("homepage");
+    const MAX_ROUTES = 20;
+    let pendingRouteId = "";
+    let pendingArticleId = "";
+
+    function trailTitle(id) {
+      const t = (TW.trails || []).find((x) => x.id === id);
+      return t ? (t.title || id) : id;
+    }
+    function articleTitle(id) {
+      const store = CMS.getStore();
+      const a = (store.articles || TW.articles || []).find((x) => x.id === id);
+      return a ? (a.title || id) : id;
+    }
+
+    function renderRoutes() {
+      const store = CMS.getStore();
+      const ids = store.featuredRouteIds || [];
+      document.getElementById("routeCount").textContent = `(${ids.length}/${MAX_ROUTES})`;
+      document.getElementById("routeList").innerHTML = ids.map((id, i) => `
+        <li style="display:flex;gap:0.4rem;align-items:center;padding:0.45rem 0;border-bottom:1px solid var(--cms-border)">
+          <span class="cms-muted" style="width:1.5rem">${i + 1}</span>
+          <div style="flex:1"><strong>${cmsEsc(trailTitle(id))}</strong><br/><span class="cms-muted">${cmsEsc(id)}</span></div>
+          <button type="button" class="cms-btn cms-btn-secondary cms-btn-sm" data-rup="${cmsEsc(id)}">↑</button>
+          <button type="button" class="cms-btn cms-btn-secondary cms-btn-sm" data-rdn="${cmsEsc(id)}">↓</button>
+          <button type="button" class="cms-btn cms-btn-danger cms-btn-sm" data-rrm="${cmsEsc(id)}">Remove</button>
+        </li>`).join("") || '<li class="cms-muted">No featured routes yet.</li>';
+      document.querySelectorAll("[data-rup]").forEach((b) => b.addEventListener("click", () => moveRoute(b.dataset.rup, -1)));
+      document.querySelectorAll("[data-rdn]").forEach((b) => b.addEventListener("click", () => moveRoute(b.dataset.rdn, 1)));
+      document.querySelectorAll("[data-rrm]").forEach((b) => b.addEventListener("click", () => {
+        const s = CMS.getStore();
+        s.featuredRouteIds = (s.featuredRouteIds || []).filter((x) => x !== b.dataset.rrm);
+        CMS.setStore(s);
+        renderRoutes();
+      }));
+    }
+
+    function moveRoute(id, dir) {
+      const s = CMS.getStore();
+      const list = (s.featuredRouteIds || []).slice();
+      const i = list.indexOf(id);
+      const j = i + dir;
+      if (i < 0 || j < 0 || j >= list.length) return;
+      const t = list[i]; list[i] = list[j]; list[j] = t;
+      s.featuredRouteIds = list;
+      CMS.setStore(s);
+      renderRoutes();
+    }
+
+    function renderArticles() {
+      const store = CMS.getStore();
+      const ids = store.featuredArticleIds || [];
+      document.getElementById("articleCount").textContent = `(${ids.length})`;
+      document.getElementById("articleList").innerHTML = ids.map((id, i) => `
+        <li style="display:flex;gap:0.4rem;align-items:center;padding:0.45rem 0;border-bottom:1px solid var(--cms-border)">
+          <span class="cms-muted" style="width:1.5rem">${i + 1}</span>
+          <div style="flex:1"><strong>${cmsEsc(articleTitle(id))}</strong><br/><span class="cms-muted">${cmsEsc(id)}</span></div>
+          <button type="button" class="cms-btn cms-btn-secondary cms-btn-sm" data-aup="${cmsEsc(id)}">↑</button>
+          <button type="button" class="cms-btn cms-btn-secondary cms-btn-sm" data-adn="${cmsEsc(id)}">↓</button>
+          <button type="button" class="cms-btn cms-btn-danger cms-btn-sm" data-arm="${cmsEsc(id)}">Remove</button>
+        </li>`).join("") || '<li class="cms-muted">No featured articles yet.</li>';
+      document.querySelectorAll("[data-aup]").forEach((b) => b.addEventListener("click", () => moveArticle(b.dataset.aup, -1)));
+      document.querySelectorAll("[data-adn]").forEach((b) => b.addEventListener("click", () => moveArticle(b.dataset.adn, 1)));
+      document.querySelectorAll("[data-arm]").forEach((b) => b.addEventListener("click", () => {
+        const s = CMS.getStore();
+        s.featuredArticleIds = (s.featuredArticleIds || []).filter((x) => x !== b.dataset.arm);
+        CMS.setStore(s);
+        renderArticles();
+      }));
+    }
+
+    function moveArticle(id, dir) {
+      const s = CMS.getStore();
+      const list = (s.featuredArticleIds || []).slice();
+      const i = list.indexOf(id);
+      const j = i + dir;
+      if (i < 0 || j < 0 || j >= list.length) return;
+      const t = list[i]; list[i] = list[j]; list[j] = t;
+      s.featuredArticleIds = list;
+      CMS.setStore(s);
+      renderArticles();
+    }
+
+    document.getElementById("routeSearch").addEventListener("input", () => {
+      const q = document.getElementById("routeSearch").value.trim().toLowerCase();
+      if (!q) { document.getElementById("routeHits").textContent = ""; pendingRouteId = ""; return; }
+      const hit = (TW.trails || []).find((t) =>
+        String(t.id).toLowerCase() === q ||
+        String(t.title || "").toLowerCase().indexOf(q) >= 0 ||
+        String(t.id).toLowerCase().indexOf(q) >= 0
+      );
+      pendingRouteId = hit ? hit.id : "";
+      document.getElementById("routeHits").textContent = hit
+        ? `Match: ${hit.title} (${hit.id})`
+        : "No matching route";
+    });
+    document.getElementById("btnAddRoute").addEventListener("click", () => {
+      if (!pendingRouteId) return cmsToast("Search and select a route first");
+      const s = CMS.getStore();
+      const ids = s.featuredRouteIds || [];
+      if (ids.indexOf(pendingRouteId) >= 0) return cmsToast("Already featured");
+      if (ids.length >= MAX_ROUTES) return cmsToast("Max 20 featured routes");
+      ids.push(pendingRouteId);
+      s.featuredRouteIds = ids;
+      CMS.setStore(s);
+      cmsToast("Route added");
+      renderRoutes();
+    });
+
+    document.getElementById("articleSearch").addEventListener("input", () => {
+      const q = document.getElementById("articleSearch").value.trim().toLowerCase();
+      if (!q) { document.getElementById("articleHits").textContent = ""; pendingArticleId = ""; return; }
+      const pool = CMS.getStore().articles || TW.articles || [];
+      const hit = pool.find((a) =>
+        String(a.id).toLowerCase().indexOf(q) >= 0 ||
+        String(a.title || "").toLowerCase().indexOf(q) >= 0 ||
+        String(a.url || "").toLowerCase().indexOf(q) >= 0 ||
+        String(a.slug || "").toLowerCase().indexOf(q) >= 0
+      );
+      pendingArticleId = hit ? hit.id : "";
+      document.getElementById("articleHits").textContent = hit
+        ? `Match: ${hit.title} (${hit.id})`
+        : "No matching article";
+    });
+    document.getElementById("btnAddArticle").addEventListener("click", () => {
+      if (!pendingArticleId) return cmsToast("Search and select an article first");
+      const s = CMS.getStore();
+      const ids = s.featuredArticleIds || [];
+      if (ids.indexOf(pendingArticleId) >= 0) return cmsToast("Already featured");
+      ids.push(pendingArticleId);
+      s.featuredArticleIds = ids;
+      CMS.setStore(s);
+      cmsToast("Article added");
+      renderArticles();
+    });
+
+    function renderFns() {
+      const list = (CMS.getStore().appFunctions || []).slice().sort((a, b) => (a.order || 0) - (b.order || 0));
+      document.getElementById("fnList").innerHTML = list.map((f) => `
+        <tr>
+          <td>${f.order ?? 0}</td>
+          <td>${f.image ? `<img src="../${cmsEsc(f.image)}" alt="" style="width:48px;height:48px;object-fit:cover;border-radius:8px" onerror="this.style.display='none'" />` : "—"}</td>
+          <td><strong>${cmsEsc(f.title)}</strong><br/><span class="cms-muted">${cmsEsc(f.body || "")}</span></td>
+          <td>${f.premium ? '<span class="cms-badge gov">Premium</span>' : "—"}</td>
+          <td>
+            <button type="button" class="cms-btn cms-btn-secondary cms-btn-sm" data-fup="${cmsEsc(f.id)}">↑</button>
+            <button type="button" class="cms-btn cms-btn-secondary cms-btn-sm" data-fdn="${cmsEsc(f.id)}">↓</button>
+            <button type="button" class="cms-btn cms-btn-secondary cms-btn-sm" data-fed="${cmsEsc(f.id)}">Edit</button>
+            <button type="button" class="cms-btn cms-btn-danger cms-btn-sm" data-frm="${cmsEsc(f.id)}">Remove</button>
+          </td>
+        </tr>`).join("");
+      document.querySelectorAll("[data-fed]").forEach((b) => b.addEventListener("click", () => openFn(b.dataset.fed)));
+      document.querySelectorAll("[data-frm]").forEach((b) => b.addEventListener("click", () => {
+        const s = CMS.getStore();
+        s.appFunctions = (s.appFunctions || []).filter((x) => x.id !== b.dataset.frm);
+        CMS.setStore(s);
+        renderFns();
+      }));
+      document.querySelectorAll("[data-fup]").forEach((b) => b.addEventListener("click", () => {
+        const s = CMS.getStore();
+        s.appFunctions = cmsMoveItem(s.appFunctions || [], b.dataset.fup, -1).map((x, i) => Object.assign({}, x, { order: i }));
+        CMS.setStore(s);
+        renderFns();
+      }));
+      document.querySelectorAll("[data-fdn]").forEach((b) => b.addEventListener("click", () => {
+        const s = CMS.getStore();
+        s.appFunctions = cmsMoveItem(s.appFunctions || [], b.dataset.fdn, 1).map((x, i) => Object.assign({}, x, { order: i }));
+        CMS.setStore(s);
+        renderFns();
+      }));
+    }
+
+    function openFn(id) {
+      const f = (CMS.getStore().appFunctions || []).find((x) => x.id === id) || {};
+      document.getElementById("fnForm").style.display = "block";
+      document.getElementById("fnId").value = f.id || "";
+      document.getElementById("fnTitle").value = f.title || "";
+      document.getElementById("fnTitleZh").value = f.titleZh || "";
+      document.getElementById("fnBody").value = f.body || "";
+      document.getElementById("fnBodyZh").value = f.bodyZh || "";
+      document.getElementById("fnImage").value = f.image || "";
+      document.getElementById("fnOrder").value = f.order ?? 0;
+      document.getElementById("fnPremium").checked = !!f.premium;
+    }
+
+    document.getElementById("btnNewFn").addEventListener("click", () => {
+      document.getElementById("fnForm").style.display = "block";
+      document.getElementById("fnForm").reset();
+      document.getElementById("fnId").value = "";
+    });
+    document.getElementById("fnCancel").addEventListener("click", () => {
+      document.getElementById("fnForm").style.display = "none";
+    });
+    document.getElementById("fnForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const s = CMS.getStore();
+      const id = document.getElementById("fnId").value || uid("af");
+      const entry = {
+        id,
+        title: document.getElementById("fnTitle").value.trim(),
+        titleZh: document.getElementById("fnTitleZh").value.trim(),
+        body: document.getElementById("fnBody").value.trim(),
+        bodyZh: document.getElementById("fnBodyZh").value.trim(),
+        image: document.getElementById("fnImage").value.trim(),
+        order: Number(document.getElementById("fnOrder").value) || 0,
+        premium: document.getElementById("fnPremium").checked,
+      };
+      const list = (s.appFunctions || []).slice();
+      const i = list.findIndex((x) => x.id === id);
+      if (i >= 0) list[i] = entry; else list.push(entry);
+      s.appFunctions = list;
+      CMS.setStore(s);
+      cmsToast("App function saved");
+      document.getElementById("fnForm").style.display = "none";
+      renderFns();
+    });
+
+    renderRoutes();
+    renderArticles();
+    renderFns();
+  </script>
+</body>
+</html>

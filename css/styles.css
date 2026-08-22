@@ -1508,6 +1508,56 @@ img.profile-avatar[hidden] {
   color: var(--text-muted);
   margin-bottom: 0.25rem;
 }
+.profile-badge-card .ico img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 14px;
+  display: block;
+}
+.profile-badge-grid--compact {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+.badge-cat-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 0.75rem;
+}
+.badge-cat-chips .chip {
+  font-size: 0.72rem;
+  padding: 0.3rem 0.65rem;
+}
+.badge-cms-sync-note {
+  margin-top: 0.85rem;
+  font-size: 0.68rem;
+  color: var(--text-muted);
+}
+.badge-picker--compact .dash-badge-cat {
+  font-size: 0.85rem;
+  margin: 0.85rem 0 0.25rem;
+}
+.badge-picker--compact .dash-badge-series {
+  font-size: 0.72rem;
+  margin: 0.55rem 0 0.15rem;
+}
+.badge-picker--compact .dash-badge-series-crit {
+  font-size: 0.65rem;
+  margin-bottom: 0.4rem;
+}
+.badge-picker--compact .profile-badge-card {
+  padding: 0.65rem 0.4rem 0.55rem;
+}
+.badge-picker--compact .profile-badge-card .ico {
+  width: 40px;
+  height: 40px;
+  font-size: 1.2rem;
+}
+.badge-picker--compact .profile-badge-card .name {
+  font-size: 0.7rem;
+}
+
 .profile-badge-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
@@ -2188,15 +2238,40 @@ img.profile-avatar[hidden] {
 }
 
 .dash-badge-cat {
-  font-size: 0.72rem;
+  font-size: 0.95rem;
   font-weight: 800;
-  color: var(--green-800);
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  margin: 0.85rem 0 0.45rem;
+  color: var(--green-900);
+  text-transform: none;
+  letter-spacing: 0;
+  margin: 1.15rem 0 0.35rem;
 }
 
 .dash-badge-cat:first-child { margin-top: 0; }
+
+.dash-badge-series {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--green-800);
+  margin: 0.75rem 0 0.2rem;
+}
+
+.dash-badge-series-crit {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin: 0 0 0.5rem;
+  line-height: 1.4;
+}
+
+.badge-hold-tag {
+  font-size: 0.58rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #92400e;
+  background: #fef3c7;
+  padding: 0.12rem 0.35rem;
+  border-radius: 999px;
+}
 
 .dash-badge-pick {
   display: flex;
@@ -4993,6 +5068,33 @@ a.record-item {
   flex: 1.1;
   min-height: 0;
   position: relative;
+}
+.report-sheet-back {
+  position: absolute;
+  top: 0.75rem;
+  left: 0.75rem;
+  z-index: 20;
+}
+.report-sheet-head {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin-bottom: 0.5rem;
+}
+.report-cancel-btn {
+  border: none;
+  background: var(--green-50, #eef5ef);
+  color: var(--green-900);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 0.35rem 0.65rem;
+  border-radius: 999px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.report-cancel-btn:hover {
+  background: #dcefe0;
 }
 .app-report-sheet .form-part {
   flex: 1;

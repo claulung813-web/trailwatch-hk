@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CMS — Badges</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/cms.css" />
+  <style>
+    .cms-tabs { display: flex; gap: 0.35rem; margin-bottom: 1rem; flex-wrap: wrap; }
+    .cms-tabs button {
+      border: 1px solid #d1d5db; background: #fff; border-radius: 8px;
+      padding: 0.45rem 0.85rem; font: inherit; cursor: pointer; font-weight: 600;
+    }
+    .cms-tabs button.active { background: #0b421a; color: #fff; border-color: #0b421a; }
+    .cms-cat-tabs { display: flex; gap: 0.35rem; flex-wrap: wrap; margin-bottom: 0.85rem; }
+    .cms-cat-tabs button {
+      border: 1px solid #d1d5db; background: #f9fafb; border-radius: 999px;
+      padding: 0.35rem 0.75rem; font: inherit; cursor: pointer; font-size: 0.85rem;
+    }
+    .cms-cat-tabs button.active { background: #dcfce7; border-color: #166534; color: #166534; font-weight: 700; }
+    .badge-preview {
+      width: 40px; height: 40px; border-radius: 10px; display: grid; place-items: center;
+      font-size: 1.25rem; overflow: hidden; flex-shrink: 0;
+    }
+    .badge-preview img { width: 100%; height: 100%; object-fit: cover; }
+    .series-card { background: #f9fafb; margin-top: 0.75rem; }
+    .badge-editor { background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 0.75rem; margin-top: 0.65rem; }
+    .gps-hint { font-size: 0.75rem; color: #6b7280; margin: 0.25rem 0 0.5rem; }
+    .row-actions { display: flex; gap: 0.35rem; flex-wrap: wrap; }
+    .cms-form.inline-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem 0.75rem;
+    }
+    @media (max-width: 720px) {
+      .cms-form.inline-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body class="cms-body">
+  <div id="cmsShell">
+    <h1>Badges</h1>
+    <p class="sub">
+      Manage badge categories → series → badges (names, graphics, GPS / route criteria).
+      Assign Outside-app badges to users by email or user ID. App-function criteria (distance, overseas, group hikes, incidents) stay count-based.
+    </p>
+
+    <div class="cms-tabs" role="tablist">
+      <button type="button" class="active" data-tab="catalog">Catalog</button>
+      <button type="button" data-tab="assign">Assign to user</button>
+    </div>
+
+    <section id="tabCatalog">
+      <div class="cms-card">
+        <div class="cms-toolbar">
+          <button type="button" class="cms-btn cms-btn-primary" id="addSeries">+ Add series</button>
+          <button type="button" class="cms-btn cms-btn-secondary" id="saveCatalog">Save catalog</button>
+          <button type="button" class="cms-btn cms-btn-secondary" id="resetCatalog">Reset to defaults</button>
+        </div>
+        <div class="cms-cat-tabs" id="catTabs"></div>
+        <div id="seriesList"></div>
+      </div>
+    </section>
+
+    <section id="tabAssign" hidden>
+      <div class="cms-card">
+        <h3 style="margin:0 0 0.75rem">Assign badge</h3>
+        <div class="cms-form">
+          <label for="asBadge">Badge</label>
+          <select id="asBadge"></select>
+          <div class="cms-form inline-grid">
+            <div>
+              <label for="asEmail">User email</label>
+              <input id="asEmail" type="email" placeholder="alex.wong@email.com" list="userEmails" />
+              <datalist id="userEmails"></datalist>
+            </div>
+            <div>
+              <label for="asUserId">User ID (optional)</label>
+              <input id="asUserId" placeholder="usr_alex_wong" />
+            </div>
+          </div>
+          <label for="asName">Display name (optional)</label>
+          <input id="asName" />
+          <label for="asNote">Staff note</label>
+          <input id="asNote" placeholder="e.g. proof received via Google Form" />
+          <button type="button" class="cms-btn cms-btn-primary" id="btnAssign" style="margin-top:0.5rem">Assign badge</button>
+        </div>
+      </div>
+      <div class="cms-card" style="margin-top:1rem">
+        <h3 style="margin:0 0 0.75rem">Current assignments</h3>
+        <div id="assignTable"></div>
+      </div>
+    </section>
+  </div>
+
+  <script src="../js/data.js"></script>
+  <script src="../js/cms-store.js"></script>
+  <script src="js/cms-ui.js"></script>
+  <script>
+    cmsInitShell("badges");
+
+    let catalog = JSON.parse(JSON.stringify(CMS.getBadgeCatalog()));
+    let catIndex = 0;
+    let openSeries = {};
+
+    function esc(s) {
+      return String(s || "")
+        .replace(/&/g, "&amp;")
+        .replace(/"/g, "&quot;")
+        .replace(/</g, "&lt;");
+    }
+
+    function slug(s, fallback) {
+      const v = String(s || "")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "_")
+        .replace(/^_|_$/g, "");
+      return v || fallback || "id_" + Date.now().toString(36);
+    }
+
+    function pointsToText(points) {
+      return (points || [])
+        .map((p) => [p.lat, p.lng, p.radiusM != null ? p.radiusM : 25].join(", "))
+        .join("\n");
+    }
+
+    function textToPoints(text) {
+      return String(text || "")
+        .split(/\n+/)
+        .map((line) => line.trim())
+        .filter(Boolean)
+        .map((line) => {
+          const parts = line.split(/[, ]+/).map((x) => x.trim()).filter(Boolean);
+          const lat = parseFloat(parts[0]);
+          const lng = parseFloat(parts[1]);
+          const radiusM = parseFloat(parts[2]);
+          if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+          return {
+            lat: lat,
+            lng: lng,
+            radiusM: Number.isFinite(radiusM) && radiusM > 0 ? radiusM : 25,
+          };
+        })
+        .filter(Boolean);
+    }
+
+    function criteriaTypes() {
+      return [
+        { id: "gps", label: "GPS point(s) + buffer" },
+        { id: "route_cover", label: "Planned route cover (90%)" },
+        { id: "lifetime_distance", label: "Lifetime distance (hardcoded logic)" },
+        { id: "count", label: "App count (hardcoded logic)" },
+        { id: "cms", label: "CMS assign only" },
+      ];
+    }
+
+    function renderCatTabs() {
+      document.getElementById("catTabs").innerHTML = catalog
+        .map(
+          (c, i) =>
+            `<button type="button" class="${i === catIndex ? "active" : ""}" data-cat="${i}">${esc(c.name)} (${(c.series || []).length})</button>`
+        )
+        .join("");
+      document.querySelectorAll("[data-cat]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          catIndex = +btn.dataset.cat;
+          renderSeries();
+          renderCatTabs();
+        });
+      });
+    }
+
+    function badgeFieldsHtml(series, badge, si, bi) {
+      const type = series.criteriaType || "gps";
+      let extra = "";
+      if (type === "gps") {
+        extra = `
+          <label>GPS points (lat, lng, radiusM — one per line)</label>
+          <p class="gps-hint">Example: 22.4111, 114.1247, 150</p>
+          <textarea data-s="${si}" data-b="${bi}" data-f="pointsText" rows="3">${esc(pointsToText(badge.points))}</textarea>`;
+      } else if (type === "route_cover") {
+        extra = `
+          <label>Plan share URL</label>
+          <input data-s="${si}" data-b="${bi}" data-f="planShareUrl" value="${esc(badge.planShareUrl || "")}" />
+          <label>Plan / PDF reference URL</label>
+          <input data-s="${si}" data-b="${bi}" data-f="planRef" value="${esc(badge.planRef || "")}" />
+          <label>Total km (Four Trails progress; optional)</label>
+          <input type="number" min="0" data-s="${si}" data-b="${bi}" data-f="totalKm" value="${badge.totalKm != null ? badge.totalKm : ""}" />`;
+      } else if (type === "lifetime_distance") {
+        extra = `
+          <label>Target km</label>
+          <input type="number" min="1" data-s="${si}" data-b="${bi}" data-f="targetKm" value="${badge.targetKm != null ? badge.targetKm : ""}" />`;
+      } else if (type === "count") {
+        extra = `
+          <label>Target count</label>
+          <input type="number" min="1" data-s="${si}" data-b="${bi}" data-f="targetCount" value="${badge.targetCount != null ? badge.targetCount : ""}" />
+          <p class="gps-hint">Count source is hardcoded by series (overseas / group organizer / incidents).</p>`;
+      } else if (type === "cms") {
+        extra = `<p class="gps-hint">Awarded only via Assign to user (no automatic unlock).</p>`;
+      }
+      return extra;
+    }
+
+    function renderSeries() {
+      const cat = catalog[catIndex];
+      if (!cat) {
+        document.getElementById("seriesList").innerHTML = "<p>No categories.</p>";
+        return;
+      }
+      const series = cat.series || [];
+      document.getElementById("seriesList").innerHTML =
+        series
+          .map((s, si) => {
+            const open = !!openSeries[cat.id + ":" + s.id];
+            const badges = s.badges || [];
+            return `
+            <div class="cms-card series-card" data-si="${si}">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:0.75rem;flex-wrap:wrap">
+                <div>
+                  <strong>${esc(s.name)}</strong>
+                  <span class="cms-muted" style="margin-left:0.35rem">${esc(s.criteriaType || "")}${s.hold ? " · HOLD" : ""} · ${badges.length} badges</span>
+                </div>
+                <div class="row-actions">
+                  <button type="button" class="cms-btn cms-btn-secondary cms-btn-sm" data-toggle="${si}">${open ? "Hide badges" : "Edit badges"}</button>
+                  <button type="button" class="cms-btn cms-btn-secondary cms-btn-sm" data-sup="${si}" ${si === 0 ? "disabled" : ""}>↑</button>
+                  <button type="button" class="cms-btn cms-btn-secondary cms-btn-sm" data-sdown="${si}" ${si === series.length - 1 ? "disabled" : ""}>↓</button>
+                  <button type="button" class="cms-btn cms-btn-danger cms-btn-sm" data-sdel="${si}">Remove series</button>
+                </div>
+              </div>
+              <div class="cms-form" style="margin-top:0.65rem">
+                <div class="cms-form inline-grid">
+                  <div><label>Series name (EN)</label><input data-sf="name" data-si="${si}" value="${esc(s.name)}" /></div>
+                  <div><label>Series name (繁)</label><input data-sf="nameZh" data-si="${si}" value="${esc(s.nameZh)}" /></div>
+                </div>
+                <div class="cms-form inline-grid">
+                  <div>
+                    <label>Criteria type</label>
+                    <select data-sf="criteriaType" data-si="${si}">
+                      ${criteriaTypes()
+                        .map((t) => `<option value="${t.id}" ${s.criteriaType === t.id ? "selected" : ""}>${t.label}</option>`)
+                        .join("")}
+                    </select>
+                  </div>
+                  <div style="display:flex;align-items:end;gap:1rem;padding-bottom:0.35rem">
+                    <label><input type="checkbox" data-sf="hold" data-si="${si}" ${s.hold ? "checked" : ""} /> HOLD / coming soon</label>
+                    <label><input type="checkbox" data-sf="showProgress" data-si="${si}" ${s.showProgress ? "checked" : ""} /> Progress tracker</label>
+                  </div>
+                </div>
+                <label>Criteria label (EN)</label>
+                <input data-sf="criteriaLabel" data-si="${si}" value="${esc(s.criteriaLabel)}" />
+                <label>Criteria label (繁)</label>
+                <input data-sf="criteriaLabelZh" data-si="${si}" value="${esc(s.criteriaLabelZh)}" />
+              </div>
+              ${
+                open
+                  ? `<div style="margin-top:0.75rem">
+                <div class="cms-toolbar">
+                  <button type="button" class="cms-btn cms-btn-primary cms-btn-sm" data-add-badge="${si}">+ Add badge</button>
+                </div>
+                ${badges
+                  .map(
+                    (b, bi) => `
+                  <div class="badge-editor" data-si="${si}" data-bi="${bi}">
+                    <div style="display:flex;justify-content:space-between;gap:0.75rem;align-items:center;flex-wrap:wrap">
+                      <div style="display:flex;align-items:center;gap:0.55rem">
+                        <div class="badge-preview" style="background:${esc(b.color || "#2d8a45")}">${
+                          b.image
+                            ? `<img src="${esc(b.image)}" alt="" />`
+                            : esc(b.emoji || "🏅")
+                        }</div>
+                        <strong>${esc(b.name || b.id)}</strong>
+                      </div>
+                      <div class="row-actions">
+                        <button type="button" class="cms-btn cms-btn-secondary cms-btn-sm" data-bup="${si}:${bi}" ${bi === 0 ? "disabled" : ""}>↑</button>
+                        <button type="button" class="cms-btn cms-btn-secondary cms-btn-sm" data-bdown="${si}:${bi}" ${bi === badges.length - 1 ? "disabled" : ""}>↓</button>
+                        <button type="button" class="cms-btn cms-btn-danger cms-btn-sm" data-bdel="${si}:${bi}">Remove</button>
+                      </div>
+                    </div>
+                    <div class="cms-form" style="margin-top:0.55rem">
+                      <div class="cms-form inline-grid">
+                        <div><label>ID</label><input data-s="${si}" data-b="${bi}" data-f="id" value="${esc(b.id)}" /></div>
+                        <div><label>Emoji</label><input data-s="${si}" data-b="${bi}" data-f="emoji" value="${esc(b.emoji)}" /></div>
+                      </div>
+                      <div class="cms-form inline-grid">
+                        <div><label>Name (EN)</label><input data-s="${si}" data-b="${bi}" data-f="name" value="${esc(b.name)}" /></div>
+                        <div><label>Name (繁)</label><input data-s="${si}" data-b="${bi}" data-f="nameZh" value="${esc(b.nameZh)}" /></div>
+                      </div>
+                      <div class="cms-form inline-grid">
+                        <div><label>Color</label><input data-s="${si}" data-b="${bi}" data-f="color" value="${esc(b.color || "#2d8a45")}" /></div>
+                        <div><label>Graphic URL</label><input data-s="${si}" data-b="${bi}" data-f="image" value="${esc(b.image || "")}" placeholder="https://… or leave blank for emoji" /></div>
+                      </div>
+                      ${badgeFieldsHtml(s, b, si, bi)}
+                      <div class="cms-form inline-grid" style="margin-top:0.35rem">
+                        <label><input type="checkbox" data-s="${si}" data-b="${bi}" data-f="optIn" ${b.optIn ? "checked" : ""} /> Opt-in</label>
+                        <label><input type="checkbox" data-s="${si}" data-b="${bi}" data-f="timeLimit" ${b.timeLimit ? "checked" : ""} /> Time limit</label>
+                      </div>
+                    </div>
+                  </div>`
+                  )
+                  .join("")}
+              </div>`
+                  : ""
+              }
+            </div>`;
+          })
+          .join("") || '<p class="cms-muted" style="margin-top:0.75rem">No series in this category. Add one.</p>';
+
+      bindSeriesHandlers();
+    }
+
+    function syncSeriesField(si, field, value, isCheck) {
+      const series = catalog[catIndex].series[si];
+      if (!series) return;
+      if (isCheck) series[field] = !!value;
+      else series[field] = value;
+      if (field === "name" && !series.id) series.id = slug(value, "series");
+    }
+
+    function syncBadgeField(si, bi, field, value, isCheck) {
+      const badge = catalog[catIndex].series[si].badges[bi];
+      if (!badge) return;
+      if (field === "pointsText") {
+        badge.points = textToPoints(value);
+        return;
+      }
+      if (isCheck) badge[field] = !!value;
+      else if (field === "targetKm" || field === "targetCount" || field === "totalKm") {
+        const n = parseFloat(value);
+        if (value === "" || !Number.isFinite(n)) delete badge[field];
+        else badge[field] = n;
+      } else badge[field] = value;
+    }
+
+    function bindSeriesHandlers() {
+      document.querySelectorAll("[data-sf]").forEach((el) => {
+        const handler = () => {
+          const si = +el.dataset.si;
+          syncSeriesField(si, el.dataset.sf, el.type === "checkbox" ? el.checked : el.value, el.type === "checkbox");
+          if (el.dataset.sf === "criteriaType") renderSeries();
+        };
+        el.addEventListener("change", handler);
+      });
+      document.querySelectorAll("[data-toggle]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const si = +btn.dataset.toggle;
+          const s = catalog[catIndex].series[si];
+          const key = catalog[catIndex].id + ":" + s.id;
+          openSeries[key] = !openSeries[key];
+          renderSeries();
+        });
+      });
+      document.querySelectorAll("[data-sup]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const i = +btn.dataset.sup;
+          const arr = catalog[catIndex].series;
+          if (i < 1) return;
+          const row = arr.splice(i, 1)[0];
+          arr.splice(i - 1, 0, row);
+          renderSeries();
+        });
+      });
+      document.querySelectorAll("[data-sdown]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const i = +btn.dataset.sdown;
+          const arr = catalog[catIndex].series;
+          if (i >= arr.length - 1) return;
+          const row = arr.splice(i, 1)[0];
+          arr.splice(i + 1, 0, row);
+          renderSeries();
+        });
+      });
+      document.querySelectorAll("[data-sdel]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          if (!confirm("Remove this series and its badges?")) return;
+          catalog[catIndex].series.splice(+btn.dataset.sdel, 1);
+          renderSeries();
+          renderCatTabs();
+        });
+      });
+      document.querySelectorAll("[data-add-badge]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const si = +btn.dataset.addBadge;
+          const series = catalog[catIndex].series[si];
+          series.badges = series.badges || [];
+          const id = slug(series.id + "_new", "badge") + "_" + Date.now().toString(36).slice(-3);
+          const badge = { id: id, name: "New badge", nameZh: "新徽章", emoji: "🏅", color: "#2d8a45" };
+          if (series.criteriaType === "gps") badge.points = [{ lat: 22.3, lng: 114.17, radiusM: 50 }];
+          if (series.criteriaType === "lifetime_distance") badge.targetKm = 50;
+          if (series.criteriaType === "count") badge.targetCount = 1;
+          if (series.criteriaType === "route_cover") badge.totalKm = 10;
+          series.badges.push(badge);
+          renderSeries();
+        });
+      });
+      document.querySelectorAll("[data-bup]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const [si, bi] = btn.dataset.bup.split(":").map(Number);
+          const arr = catalog[catIndex].series[si].badges;
+          if (bi < 1) return;
+          const row = arr.splice(bi, 1)[0];
+          arr.splice(bi - 1, 0, row);
+          renderSeries();
+        });
+      });
+      document.querySelectorAll("[data-bdown]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const [si, bi] = btn.dataset.bdown.split(":").map(Number);
+          const arr = catalog[catIndex].series[si].badges;
+          if (bi >= arr.length - 1) return;
+          const row = arr.splice(bi, 1)[0];
+          arr.splice(bi + 1, 0, row);
+          renderSeries();
+        });
+      });
+      document.querySelectorAll("[data-bdel]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const [si, bi] = btn.dataset.bdel.split(":").map(Number);
+          catalog[catIndex].series[si].badges.splice(bi, 1);
+          renderSeries();
+        });
+      });
+      document.querySelectorAll("[data-f][data-s]").forEach((el) => {
+        const handler = () => {
+          syncBadgeField(+el.dataset.s, +el.dataset.b, el.dataset.f, el.type === "checkbox" ? el.checked : el.value, el.type === "checkbox");
+          if (el.dataset.f === "emoji" || el.dataset.f === "image" || el.dataset.f === "color" || el.dataset.f === "name") {
+            /* light refresh of preview via re-render can be heavy; skip */
+          }
+        };
+        el.addEventListener("change", handler);
+        if (el.tagName === "TEXTAREA") el.addEventListener("blur", handler);
+      });
+    }
+
+    document.getElementById("addSeries").addEventListener("click", () => {
+      const cat = catalog[catIndex];
+      if (!cat) return;
+      cat.series = cat.series || [];
+      const id = "series_" + Date.now().toString(36).slice(-4);
+      cat.series.push({
+        id: id,
+        name: "New series",
+        nameZh: "新系列",
+        criteriaType: cat.id === "outside" ? "cms" : "gps",
+        criteriaLabel: "Set criteria in CMS.",
+        criteriaLabelZh: "請在 CMS 設定條件。",
+        showProgress: false,
+        hold: false,
+        badges: [],
+      });
+      openSeries[cat.id + ":" + id] = true;
+      renderSeries();
+      renderCatTabs();
+    });
+
+    document.getElementById("saveCatalog").addEventListener("click", () => {
+      // flush open textareas
+      document.querySelectorAll("textarea[data-f=pointsText]").forEach((el) => {
+        syncBadgeField(+el.dataset.s, +el.dataset.b, "pointsText", el.value, false);
+      });
+      CMS.setBadgeCatalog(catalog);
+      catalog = JSON.parse(JSON.stringify(CMS.getBadgeCatalog()));
+      cmsToast("Badge catalog saved — website & app will sync");
+      renderAssignSelect();
+    });
+
+    document.getElementById("resetCatalog").addEventListener("click", () => {
+      if (!confirm("Reset badge catalog to product defaults? Assignments are kept.")) return;
+      catalog = JSON.parse(JSON.stringify(CMS.resetBadgeCatalog()));
+      catIndex = 0;
+      openSeries = {};
+      renderCatTabs();
+      renderSeries();
+      renderAssignSelect();
+      cmsToast("Catalog reset to defaults");
+    });
+
+    /* —— Assignments —— */
+    function renderAssignSelect() {
+      const opts = CMS.listCatalogBadges(catalog);
+      document.getElementById("asBadge").innerHTML = opts
+        .map(
+          (b) =>
+            `<option value="${esc(b.id)}">${esc(b.emoji || "")} ${esc(b.name)} — ${esc(b.category)} / ${esc(b.series)}</option>`
+        )
+        .join("");
+      const users = (CMS.getStore().users || []).concat(CMS.getStore().members || []);
+      const emails = [];
+      users.forEach((u) => {
+        if (u.email) emails.push(u.email);
+      });
+      document.getElementById("userEmails").innerHTML = [...new Set(emails)]
+        .map((e) => `<option value="${esc(e)}"></option>`)
+        .join("");
+    }
+
+    function findUser(email, userId) {
+      const users = CMS.getStore().users || [];
+      const em = String(email || "").toLowerCase();
+      return (
+        users.find((u) => (userId && u.id === userId) || (em && String(u.email || "").toLowerCase() === em)) ||
+        null
+      );
+    }
+
+    function renderAssignments() {
+      const list = CMS.getBadgeAssignments();
+      const badgeMap = {};
+      CMS.listCatalogBadges(catalog).forEach((b) => {
+        badgeMap[b.id] = b;
+      });
+      if (!list.length) {
+        document.getElementById("assignTable").innerHTML = '<p class="cms-muted">No assignments yet.</p>';
+        return;
+      }
+      document.getElementById("assignTable").innerHTML = `
+        <table class="cms-table">
+          <thead><tr><th>Badge</th><th>User</th><th>Note</th><th>Assigned</th><th></th></tr></thead>
+          <tbody>
+            ${list
+              .map((a) => {
+                const b = badgeMap[a.badgeId];
+                const label = b ? (b.emoji || "") + " " + b.name : a.badgeId;
+                return `<tr>
+                  <td>${esc(label)}</td>
+                  <td>${esc(a.name || "—")}<br/><span class="cms-muted">${esc(a.email || a.userId || "")}</span></td>
+                  <td>${esc(a.note || "—")}</td>
+                  <td class="cms-muted">${esc((a.assignedAt || "").slice(0, 10))}</td>
+                  <td><button type="button" class="cms-btn cms-btn-danger cms-btn-sm" data-unassign="${esc(a.id)}">Remove</button></td>
+                </tr>`;
+              })
+              .join("")}
+          </tbody>
+        </table>`;
+      document.querySelectorAll("[data-unassign]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          CMS.unassignBadge(btn.dataset.unassign);
+          renderAssignments();
+          cmsToast("Assignment removed");
+        });
+      });
+    }
+
+    document.getElementById("btnAssign").addEventListener("click", () => {
+      const email = document.getElementById("asEmail").value.trim();
+      const userId = document.getElementById("asUserId").value.trim();
+      const badgeId = document.getElementById("asBadge").value;
+      if (!badgeId || (!email && !userId)) {
+        cmsToast("Badge and email or user ID required");
+        return;
+      }
+      const user = findUser(email, userId);
+      CMS.assignBadgeToUser({
+        badgeId: badgeId,
+        email: email || (user && user.email) || "",
+        userId: userId || (user && user.id) || "",
+        name: document.getElementById("asName").value.trim() || (user && (user.name || user.displayName)) || "",
+        note: document.getElementById("asNote").value.trim(),
+      });
+      document.getElementById("asNote").value = "";
+      renderAssignments();
+      cmsToast("Badge assigned");
+    });
+
+    document.getElementById("asEmail").addEventListener("change", () => {
+      const u = findUser(document.getElementById("asEmail").value.trim(), "");
+      if (!u) return;
+      if (!document.getElementById("asUserId").value) document.getElementById("asUserId").value = u.id || "";
+      if (!document.getElementById("asName").value) document.getElementById("asName").value = u.name || u.displayName || "";
+    });
+
+    document.querySelectorAll(".cms-tabs [data-tab]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".cms-tabs [data-tab]").forEach((b) => b.classList.toggle("active", b === btn));
+        const tab = btn.dataset.tab;
+        document.getElementById("tabCatalog").hidden = tab !== "catalog";
+        document.getElementById("tabAssign").hidden = tab !== "assign";
+        if (tab === "assign") {
+          renderAssignSelect();
+          renderAssignments();
+        }
+      });
+    });
+
+    renderCatTabs();
+    renderSeries();
+    renderAssignSelect();
+  </script>
+</body>
+</html>

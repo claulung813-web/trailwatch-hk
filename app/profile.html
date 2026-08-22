@@ -61,6 +61,41 @@
     }
     .friend-card strong, .bm-card strong, .notif-card strong { display: block; font-size: 0.85rem; color: var(--green-900); }
     .friend-card span, .bm-card span, .notif-card span { font-size: 0.68rem; color: var(--text-muted); }
+    .app-record-card {
+      background: #fff; border: 1px solid var(--border); border-radius: 12px;
+      margin-bottom: 0.55rem; overflow: hidden;
+    }
+    .app-record-main {
+      display: flex; align-items: center; gap: 0.65rem;
+      padding: 0.65rem 0.75rem; text-decoration: none; color: inherit;
+    }
+    .app-record-thumb {
+      width: 52px; height: 52px; border-radius: 10px; flex-shrink: 0;
+      background: linear-gradient(135deg, #c8e6c9, #81c784);
+      display: grid; place-items: center; font-size: 1.25rem;
+    }
+    .app-record-body { flex: 1; min-width: 0; }
+    .app-record-body .top {
+      display: flex; justify-content: space-between; gap: 0.35rem;
+      font-size: 0.65rem; color: var(--text-muted); margin-bottom: 0.15rem;
+    }
+    .app-record-body h4 {
+      margin: 0 0 0.2rem; font-size: 0.88rem; color: var(--green-900);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .app-record-meta {
+      display: flex; flex-wrap: wrap; gap: 0.45rem;
+      font-size: 0.68rem; color: var(--text-muted);
+    }
+    .app-record-chev { color: #9ca3af; font-size: 1.1rem; flex-shrink: 0; }
+    .app-record-actions {
+      display: flex; justify-content: flex-end;
+      padding: 0 0.65rem 0.55rem;
+    }
+    .app-record-actions .btn {
+      padding: 0.28rem 0.65rem; font-size: 0.68rem; width: auto;
+      white-space: nowrap;
+    }
     .subchips { display: flex; gap: 0.3rem; flex-wrap: wrap; margin-bottom: 0.55rem; }
     .subchips button {
       border: none; border-radius: 999px; padding: 0.32rem 0.65rem; font-size: 0.7rem; font-weight: 700;
@@ -404,10 +439,14 @@
     document.getElementById("linkBadges").textContent = t("dash_change_badge");
     function refreshSelBadge() {
       const b = TW.resolveDashboardBadge(TW.getSelectedBadgeId());
-      if (b) {
-        document.getElementById("selBadgeIco").textContent = b.emoji;
-        document.getElementById("selBadge").textContent = b.name;
+      if (!b) return;
+      const ico = document.getElementById("selBadgeIco");
+      if (b.image) {
+        ico.innerHTML = `<img src="${b.image}" alt="" style="width:1.4rem;height:1.4rem;object-fit:cover;border-radius:6px;display:block" />`;
+      } else {
+        ico.textContent = b.emoji || "🏅";
       }
+      document.getElementById("selBadge").textContent = b.name;
     }
     refreshSelBadge();
     document.getElementById("linkBadges").addEventListener("click", () => {
@@ -468,7 +507,10 @@
     ].map((c) => `<button type="button" data-info="${c.id}" class="${infoTab === c.id ? "active" : ""}">${c.label}</button>`).join("");
 
     document.getElementById("badgeHint").textContent = t("app_badge_criteria");
-    TW.renderProfileBadgeGrid(document.getElementById("badgePicker"), () => refreshSelBadge());
+    const badgePicker = document.getElementById("badgePicker");
+    badgePicker.setAttribute("data-badge-picker", "1");
+    TW.renderProfileBadgeGrid(badgePicker, () => refreshSelBadge(), { compact: true });
+    TW.bindBadgeCatalogSync(() => refreshSelBadge());
 
     document.getElementById("footLabel").textContent = t("app_footprint_map");
     document.getElementById("footPrem").textContent = t("app_premium");
@@ -512,8 +554,26 @@
       if (recGroup === "solo") list = list.filter((r) => !r.groupId);
       document.getElementById("hikeList").innerHTML = list.length
         ? list.map((h) => {
-            const row = TW.renderHikeListItem(h, "hike-detail.html?id=" + encodeURIComponent(h.id));
-            return row.replace("</a>", `<button type="button" class="btn btn-secondary" style="margin:0.35rem 0.75rem 0.75rem;padding:0.3rem 0.55rem;font-size:0.7rem" data-gpx="${h.id}">${t("app_export_gpx")}</button></a>`);
+            const title = zh ? h.titleZh || h.title : h.title;
+            const href = "hike-detail.html?id=" + encodeURIComponent(h.id);
+            return `<article class="app-record-card">
+              <a class="app-record-main" href="${href}">
+                <div class="app-record-thumb" aria-hidden="true">🗺</div>
+                <div class="app-record-body">
+                  <div class="top"><span>${TW.formatHikeDate(h.endedAt || h.startedAt)}</span><span>📍 GPS</span></div>
+                  <h4>${title}</h4>
+                  <div class="app-record-meta">
+                    <span>⏱ ${TW.formatDuration(h.seconds)}</span>
+                    <span>📏 ${h.distanceKm} km</span>
+                    <span>⬆ ${h.elevGain} m</span>
+                  </div>
+                </div>
+                <span class="app-record-chev" aria-hidden="true">›</span>
+              </a>
+              <div class="app-record-actions">
+                <button type="button" class="btn btn-secondary" data-gpx="${h.id}">${t("app_export_gpx")}</button>
+              </div>
+            </article>`;
           }).join("")
         : `<p style="text-align:center;color:var(--text-muted);padding:1.5rem 0">${t("hikes_empty")}</p>`;
     }
@@ -699,9 +759,15 @@
       if (bmTab !== "all") rows = rows.filter((r) => r.type === bmTab);
       const typeKey = { route: "app_bm_routes", record: "app_bm_records", event: "app_bm_events" };
       document.getElementById("bmList").innerHTML = rows.length
-        ? rows.map((r) => `<a class="bm-card" href="../${r.href}" style="text-decoration:none;color:inherit">
-            <div style="flex:1"><strong>${r.title}</strong><span>${t(typeKey[r.type] || "") || r.type}</span></div><span>›</span>
-          </a>`).join("")
+        ? rows.map((r) => {
+            const href = r.href || "#";
+            const icon = r.type === "event" ? "👥" : r.type === "record" ? "🗺" : "🥾";
+            return `<a class="bm-card" href="${href}" style="text-decoration:none;color:inherit">
+              <div style="width:44px;height:44px;border-radius:10px;background:var(--green-50);display:grid;place-items:center;flex-shrink:0;font-size:1.1rem">${icon}</div>
+              <div style="flex:1;min-width:0"><strong>${r.title}</strong><span>${t(typeKey[r.type] || "") || r.type}${r.meta ? " · " + r.meta : ""}</span></div>
+              <span class="chev">›</span>
+            </a>`;
+          }).join("")
         : `<p style="text-align:center;color:var(--text-muted);padding:1.5rem 0">${t("bookmarks_empty")}</p>`;
     }
     document.getElementById("bmTabs").addEventListener("click", (e) => {

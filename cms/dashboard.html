@@ -15,20 +15,22 @@
     <div class="cms-card">
       <h3 style="margin:0 0 0.75rem">Quick actions</h3>
       <div class="cms-toolbar">
-        <a class="cms-btn cms-btn-primary" href="trails.html">+ Recommended trail</a>
-        <a class="cms-btn cms-btn-secondary" href="incidents.html">Review incidents</a>
-        <a class="cms-btn cms-btn-secondary" href="members.html">Members</a>
-        <a class="cms-btn cms-btn-secondary" href="users.html">User management</a>
-        <a class="cms-btn cms-btn-secondary" href="donations.html">Donations</a>
-        <a class="cms-btn cms-btn-secondary" href="feedback.html">Feedback</a>
-        <a class="cms-btn cms-btn-secondary" href="challenges.html">Edit challenges</a>
-        <a class="cms-btn cms-btn-secondary" href="activity-tags.html">Activity tags</a>
-        <a class="cms-btn cms-btn-secondary" href="banners.html">Homepage banners</a>
-        <a class="cms-btn cms-btn-secondary" href="content.html">About / Contact / i18n</a>
+        <a class="cms-btn cms-btn-primary" href="banners.html">Hero banners</a>
+        <a class="cms-btn cms-btn-secondary" href="homepage.html">Featured routes / articles</a>
+        <a class="cms-btn cms-btn-secondary" href="trails.html">Editor's Choice</a>
+        <a class="cms-btn cms-btn-secondary" href="articles.html">Articles</a>
+        <a class="cms-btn cms-btn-secondary" href="feed.html">Community feed</a>
+        <a class="cms-btn cms-btn-secondary" href="group-hikes.html">Group hikes</a>
+        <a class="cms-btn cms-btn-secondary" href="incidents.html">Incidents</a>
+        <a class="cms-btn cms-btn-secondary" href="users.html">Users</a>
+        <a class="cms-btn cms-btn-secondary" href="admins.html">Admins</a>
+        <a class="cms-btn cms-btn-secondary" href="badges.html">Badges</a>
+        <a class="cms-btn cms-btn-secondary" href="gallery.html">Gallery</a>
+        <a class="cms-btn cms-btn-secondary" href="transactions.html">Transactions</a>
+        <a class="cms-btn cms-btn-secondary" href="notifications.html">Notifications</a>
+        <a class="cms-btn cms-btn-secondary" href="popups.html">Pop-ups</a>
+        <a class="cms-btn cms-btn-secondary" href="static-pages.html">Static pages</a>
       </div>
-      <p style="font-size:0.85rem;color:#6b7280;margin:0.75rem 0 0">
-        Later ideas: meetup moderation, feed pinning, push notifications, analytics exports.
-      </p>
     </div>
   </div>
   <script src="../js/data.js"></script>
@@ -49,12 +51,15 @@
     const fbNew = fb.filter((f) => f.status === "new").length;
     const donTotal = don.reduce((n, d) => n + (+d.amount || 0), 0);
     const liveBanners = (s.banners || []).filter((b) => b.published !== false).length;
+    const ntfSched = (s.notifications || []).filter((n) => n.status === "scheduled").length;
     document.getElementById("stats").innerHTML = `
       <div class="cms-stat"><div class="v">${liveBanners}</div><div class="l">Live homepage banners</div></div>
-      <div class="cms-stat"><div class="v">${rec.filter((r) => r.published).length}</div><div class="l">Published recommendations</div></div>
+      <div class="cms-stat"><div class="v">${(s.featuredRouteIds || []).length}</div><div class="l">Featured routes</div></div>
+      <div class="cms-stat"><div class="v">${rec.filter((r) => r.published).length}</div><div class="l">Editor's Choice published</div></div>
       <div class="cms-stat"><div class="v">${pending}</div><div class="l">Incidents awaiting action</div></div>
       <div class="cms-stat"><div class="v">${memPending}</div><div class="l">Member registrations pending</div></div>
       <div class="cms-stat"><div class="v">${users.length}</div><div class="l">App users (${premiumNow} premium)</div></div>
+      <div class="cms-stat"><div class="v">${ntfSched}</div><div class="l">Scheduled notifications</div></div>
       <div class="cms-stat"><div class="v">${fbNew}</div><div class="l">New feedback messages</div></div>
       <div class="cms-stat"><div class="v">HK$${donTotal.toLocaleString()}</div><div class="l">Donations pledged (demo)</div></div>
     `;

@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CMS — Notifications</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/cms.css" />
+</head>
+<body class="cms-body">
+  <div id="cmsShell">
+    <h1>Notifications</h1>
+    <p class="sub">Ad hoc notifications for website and/or app. Schedule send time and choose audience (all / free / premium).</p>
+
+    <div class="cms-row">
+      <div class="cms-card" style="flex:1">
+        <h3 style="margin-top:0" id="formTitle">Compose</h3>
+        <form class="cms-form" id="form">
+          <input type="hidden" id="editId" />
+          <label>Title (EN)</label><input id="title" required />
+          <label>Title (繁)</label><input id="titleZh" />
+          <label>Body (EN)</label><textarea id="body" rows="3" required></textarea>
+          <label>Body (繁)</label><textarea id="bodyZh" rows="3"></textarea>
+          <label>Channels</label>
+          <div class="cms-checks">
+            <label><input type="checkbox" id="chWeb" checked /> Website</label>
+            <label><input type="checkbox" id="chApp" checked /> App</label>
+          </div>
+          <label>Recipient group</label>
+          <select id="audience">
+            <option value="all">All users</option>
+            <option value="free">Free</option>
+            <option value="premium">Premium</option>
+          </select>
+          <label>Status</label>
+          <select id="status">
+            <option value="draft">Draft</option>
+            <option value="scheduled">Scheduled</option>
+            <option value="sent">Sent</option>
+          </select>
+          <label>Schedule date &amp; time</label>
+          <input id="scheduledAt" type="datetime-local" />
+          <div class="cms-toolbar">
+            <button type="submit" class="cms-btn cms-btn-primary">Save</button>
+            <button type="button" class="cms-btn cms-btn-secondary" id="btnNew">New</button>
+          </div>
+        </form>
+      </div>
+      <div class="cms-card" style="flex:1.3">
+        <div class="cms-filter-grid">
+          <div style="grid-column:span 2">
+            <label>Search</label>
+            <input id="q" type="search" placeholder="Keyword…" />
+          </div>
+          <div>
+            <label>Audience</label>
+            <select id="filterAud">
+              <option value="all">All groups</option>
+              <option value="free">Free</option>
+              <option value="premium">Premium</option>
+              <option value="all_users">Audience = all</option>
+            </select>
+          </div>
+        </div>
+        <table class="cms-table">
+          <thead><tr><th>Notification</th><th>Channels</th><th>Audience</th><th>Status</th><th></th></tr></thead>
+          <tbody id="list"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <script src="../js/data.js"></script>
+  <script src="../js/cms-store.js"></script>
+  <script src="js/cms-ui.js"></script>
+  <script>
+    cmsInitShell("notifications");
+
+    function toLocalInput(iso) {
+      if (!iso) return "";
+      const d = new Date(iso);
+      if (isNaN(d.getTime())) return "";
+      const pad = (n) => String(n).padStart(2, "0");
+      return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()) + "T" + pad(d.getHours()) + ":" + pad(d.getMinutes());
+    }
+
+    function render() {
+      const q = (document.getElementById("q").value || "").toLowerCase();
+      const fa = document.getElementById("filterAud").value;
+      let list = (CMS.getStore().notifications || []).slice();
+      if (q) list = list.filter((n) => ((n.title || "") + " " + (n.body || "")).toLowerCase().indexOf(q) >= 0);
+      if (fa === "free" || fa === "premium") list = list.filter((n) => n.audience === fa);
+      if (fa === "all_users") list = list.filter((n) => n.audience === "all");
+      document.getElementById("list").innerHTML = list.map((n) => `
+        <tr>
+          <td><strong>${cmsEsc(n.title)}</strong><br/><span class="cms-muted">${cmsEsc((n.scheduledAt || n.sentAt || "").slice(0, 16))}</span></td>
+          <td>${(n.channels || []).map(cmsEsc).join(", ")}</td>
+          <td>${cmsEsc(n.audience)}</td>
+          <td><span class="cms-badge ${n.status === "sent" ? "pub" : n.status === "scheduled" ? "gov" : "draft"}">${cmsEsc(n.status)}</span></td>
+          <td><button type="button" class="cms-btn cms-btn-secondary cms-btn-sm" data-edit="${cmsEsc(n.id)}">Edit</button>
+            <button type="button" class="cms-btn cms-btn-danger cms-btn-sm" data-del="${cmsEsc(n.id)}">Delete</button></td>
+        </tr>`).join("") || '<tr><td colspan="5">No notifications</td></tr>';
+      document.querySelectorAll("[data-edit]").forEach((b) => b.addEventListener("click", () => openEdit(b.dataset.edit)));
+      document.querySelectorAll("[data-del]").forEach((b) => b.addEventListener("click", () => {
+        if (!confirm("Delete?")) return;
+        const s = CMS.getStore();
+        s.notifications = (s.notifications || []).filter((x) => x.id !== b.dataset.del);
+        CMS.setStore(s);
+        render();
+      }));
+    }
+
+    function openEdit(id) {
+      const n = (CMS.getStore().notifications || []).find((x) => x.id === id);
+      if (!n) return;
+      document.getElementById("editId").value = n.id;
+      document.getElementById("title").value = n.title || "";
+      document.getElementById("titleZh").value = n.titleZh || "";
+      document.getElementById("body").value = n.body || "";
+      document.getElementById("bodyZh").value = n.bodyZh || "";
+      document.getElementById("chWeb").checked = (n.channels || []).indexOf("web") >= 0;
+      document.getElementById("chApp").checked = (n.channels || []).indexOf("app") >= 0;
+      document.getElementById("audience").value = n.audience || "all";
+      document.getElementById("status").value = n.status || "draft";
+      document.getElementById("scheduledAt").value = toLocalInput(n.scheduledAt);
+    }
+
+    document.getElementById("btnNew").addEventListener("click", () => {
+      document.getElementById("form").reset();
+      document.getElementById("editId").value = "";
+      document.getElementById("chWeb").checked = true;
+      document.getElementById("chApp").checked = true;
+    });
+    document.getElementById("q").addEventListener("input", render);
+    document.getElementById("filterAud").addEventListener("change", render);
+    document.getElementById("form").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const channels = [];
+      if (document.getElementById("chWeb").checked) channels.push("web");
+      if (document.getElementById("chApp").checked) channels.push("app");
+      if (!channels.length) return cmsToast("Select at least one channel");
+      const id = document.getElementById("editId").value || uid("ntf");
+      const scheduledAt = document.getElementById("scheduledAt").value
+        ? new Date(document.getElementById("scheduledAt").value).toISOString()
+        : "";
+      const status = document.getElementById("status").value;
+      const entry = {
+        id,
+        kind: "notification",
+        title: document.getElementById("title").value.trim(),
+        titleZh: document.getElementById("titleZh").value.trim(),
+        body: document.getElementById("body").value.trim(),
+        bodyZh: document.getElementById("bodyZh").value.trim(),
+        channels,
+        audience: document.getElementById("audience").value,
+        status,
+        scheduledAt,
+        sentAt: status === "sent" ? (scheduledAt || new Date().toISOString()) : "",
+        graphic: "",
+      };
+      const s = CMS.getStore();
+      const list = (s.notifications || []).slice();
+      const i = list.findIndex((x) => x.id === id);
+      if (i >= 0) list[i] = entry; else list.unshift(entry);
+      s.notifications = list;
+      CMS.setStore(s);
+      cmsToast("Notification saved");
+      render();
+    });
+    render();
+  </script>
+</body>
+</html>

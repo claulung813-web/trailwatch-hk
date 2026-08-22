@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CMS — Group hikes</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/cms.css" />
+</head>
+<body class="cms-body">
+  <div id="cmsShell">
+    <h1>Group hikes</h1>
+    <p class="sub">Pin community group hikes, or disable / remove a user-organized hike with a reason (participants notified in demo).</p>
+
+    <div class="cms-card">
+      <table class="cms-table">
+        <thead>
+          <tr><th>Group hike</th><th>Host</th><th>Status</th><th>Pinned</th><th></th></tr>
+        </thead>
+        <tbody id="list"></tbody>
+      </table>
+    </div>
+
+    <div class="cms-modal-backdrop" id="modal" role="dialog" aria-modal="true">
+      <div class="cms-modal">
+        <h3>Disable / remove group hike</h3>
+        <p class="cms-modal-sub" id="modalSub"></p>
+        <div class="cms-form">
+          <label>Reason (sent to participants)</label>
+          <textarea id="reason" rows="3" placeholder="e.g. Safety concern / policy violation…"></textarea>
+          <label class="cms-checks"><input type="checkbox" id="notify" checked /> Notify participants</label>
+        </div>
+        <div class="cms-modal-actions">
+          <button type="button" class="cms-btn cms-btn-danger" id="confirmDisable">Disable &amp; notify</button>
+          <button type="button" class="cms-btn cms-btn-secondary" id="cancelDisable">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="../js/data.js"></script>
+  <script src="../js/cms-store.js"></script>
+  <script src="js/cms-ui.js"></script>
+  <script>
+    cmsInitShell("group-hikes");
+    let pendingId = null;
+
+    function groups() {
+      const fromTw = (TW.groupHikes || TW.demoGroupHikes || []).map((g) => ({
+        id: g.id,
+        title: g.title || g.name || g.id,
+        host: g.host || g.organizer || g.user || "—",
+      }));
+      if (fromTw.length) return fromTw;
+      return [
+        { id: "meetup_0", title: "Wilson Trail Section 4 meetup", host: "Alex Wong" },
+        { id: "meetup_1", title: "Dragon's Back sunrise hike", host: "Community host" },
+      ];
+    }
+
+    function modMap() {
+      const m = {};
+      (CMS.getStore().groupHikeModeration || []).forEach((x) => { m[x.id] = x; });
+      return m;
+    }
+
+    function render() {
+      const mods = modMap();
+      document.getElementById("list").innerHTML = groups().map((g) => {
+        const mod = mods[g.id] || {};
+        return `<tr>
+          <td><strong>${cmsEsc(g.title)}</strong><br/><span class="cms-muted">${cmsEsc(g.id)}</span></td>
+          <td>${cmsEsc(g.host)}</td>
+          <td>${mod.disabled ? `<span class="cms-badge draft">Disabled</span><br/><span class="cms-muted">${cmsEsc(mod.reason || "")}</span>` : '<span class="cms-badge pub">Live</span>'}</td>
+          <td>${mod.pinned ? '<span class="cms-badge pub">Pinned</span>' : "—"}</td>
+          <td>
+            <button type="button" class="cms-btn cms-btn-secondary cms-btn-sm" data-pin="${cmsEsc(g.id)}">${mod.pinned ? "Unpin" : "Pin"}</button>
+            ${mod.disabled
+              ? `<button type="button" class="cms-btn cms-btn-secondary cms-btn-sm" data-restore="${cmsEsc(g.id)}">Restore</button>`
+              : `<button type="button" class="cms-btn cms-btn-danger cms-btn-sm" data-disable="${cmsEsc(g.id)}">Disable</button>`}
+          </td>
+        </tr>`;
+      }).join("");
+      document.querySelectorAll("[data-pin]").forEach((b) => b.addEventListener("click", () => upsert(b.dataset.pin, { pinned: !(modMap()[b.dataset.pin] || {}).pinned })));
+      document.querySelectorAll("[data-restore]").forEach((b) => b.addEventListener("click", () => upsert(b.dataset.restore, { disabled: false, reason: "", notified: false })));
+      document.querySelectorAll("[data-disable]").forEach((b) => b.addEventListener("click", () => {
+        pendingId = b.dataset.disable;
+        const g = groups().find((x) => x.id === pendingId);
+        document.getElementById("modalSub").textContent = g ? g.title : pendingId;
+        document.getElementById("reason").value = "";
+        document.getElementById("notify").checked = true;
+        document.getElementById("modal").classList.add("open");
+      }));
+    }
+
+    function upsert(id, patch) {
+      const s = CMS.getStore();
+      const list = (s.groupHikeModeration || []).slice();
+      const i = list.findIndex((x) => x.id === id);
+      const base = i >= 0 ? list[i] : { id, pinned: false, disabled: false, reason: "", notified: false };
+      const next = Object.assign({}, base, patch, { updatedAt: new Date().toISOString() });
+      if (i >= 0) list[i] = next; else list.push(next);
+      s.groupHikeModeration = list;
+      CMS.setStore(s);
+      render();
+    }
+
+    document.getElementById("cancelDisable").addEventListener("click", () => {
+      document.getElementById("modal").classList.remove("open");
+      pendingId = null;
+    });
+    document.getElementById("confirmDisable").addEventListener("click", () => {
+      if (!pendingId) return;
+      const reason = document.getElementById("reason").value.trim();
+      if (!reason) return cmsToast("Please enter a reason");
+      const notify = document.getElementById("notify").checked;
+      upsert(pendingId, { disabled: true, reason, notified: notify });
+      document.getElementById("modal").classList.remove("open");
+      cmsToast(notify ? "Disabled — participants notified (demo)" : "Group hike disabled");
+      pendingId = null;
+    });
+
+    render();
+  </script>
+</body>
+</html>

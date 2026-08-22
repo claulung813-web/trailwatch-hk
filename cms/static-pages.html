@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CMS — Static pages</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/cms.css" />
+</head>
+<body class="cms-body">
+  <div id="cmsShell">
+    <h1>Static pages</h1>
+    <p class="sub">Edit legal and support copy (EN + 繁), plus map credits shown with trail maps.</p>
+
+    <form class="cms-form cms-card" id="form">
+      <h3 style="margin-top:0">Terms of use</h3>
+      <label>English</label><textarea id="termsEn" rows="4"></textarea>
+      <label>繁體中文</label><textarea id="termsZh" rows="4"></textarea>
+
+      <h3>Privacy policy</h3>
+      <label>English</label><textarea id="privacyEn" rows="4"></textarea>
+      <label>繁體中文</label><textarea id="privacyZh" rows="4"></textarea>
+
+      <h3>FAQ (optional override)</h3>
+      <label>English</label><textarea id="faqEn" rows="3" placeholder="Leave blank to keep site FAQ accordion"></textarea>
+      <label>繁體中文</label><textarea id="faqZh" rows="3"></textarea>
+
+      <h3>Map credits</h3>
+      <label>English</label><textarea id="mapCreditsEn" rows="2"></textarea>
+      <label>繁體中文</label><textarea id="mapCreditsZh" rows="2"></textarea>
+
+      <div class="cms-toolbar" style="margin-top:1rem">
+        <button type="submit" class="cms-btn cms-btn-primary">Save static pages</button>
+      </div>
+    </form>
+  </div>
+  <script src="../js/data.js"></script>
+  <script src="../js/cms-store.js"></script>
+  <script src="js/cms-ui.js"></script>
+  <script>
+    cmsInitShell("static");
+    const p = CMS.getStore().staticPages || CMS.seedStaticPages();
+    ["termsEn", "termsZh", "privacyEn", "privacyZh", "faqEn", "faqZh", "mapCreditsEn", "mapCreditsZh"].forEach((k) => {
+      document.getElementById(k).value = p[k] || "";
+    });
+    document.getElementById("form").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const s = CMS.getStore();
+      s.staticPages = Object.assign({}, s.staticPages || {}, {
+        termsEn: document.getElementById("termsEn").value,
+        termsZh: document.getElementById("termsZh").value,
+        privacyEn: document.getElementById("privacyEn").value,
+        privacyZh: document.getElementById("privacyZh").value,
+        faqEn: document.getElementById("faqEn").value,
+        faqZh: document.getElementById("faqZh").value,
+        mapCreditsEn: document.getElementById("mapCreditsEn").value,
+        mapCreditsZh: document.getElementById("mapCreditsZh").value,
+      });
+      CMS.setStore(s);
+      cmsToast("Static pages saved");
+    });
+  </script>
+</body>
+</html>

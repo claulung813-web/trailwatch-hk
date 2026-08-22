@@ -10,7 +10,19 @@
 </head>
 <body class="cms-body">
   <div id="cmsShell">
-    <h1>Recommended Trails</h1>
+    <h1>Editor's Choice routes</h1>
+    <p class="sub">Add / edit recommended routes, assign categories, publish, and feature. Reorder partially via order field; homepage featured list (up to 20) is under <a href="homepage.html">Featured &amp; app functions</a>. Category manager below.</p>
+
+    <div class="cms-card" style="margin-bottom:1rem">
+      <div class="cms-toolbar">
+        <h3 style="margin:0;flex:1">Route categories</h3>
+        <input id="ecName" placeholder="Category name" style="max-width:160px" />
+        <input id="ecNameZh" placeholder="繁" style="max-width:120px" />
+        <input id="ecPhoto" placeholder="Photo URL" style="max-width:180px" />
+        <button type="button" class="cms-btn cms-btn-primary cms-btn-sm" id="btnEcAdd">Add category</button>
+      </div>
+      <div id="ecList"></div>
+    </div>
     <p class="sub">Pick a route on the map, assign categories, and publish to Explore (monthly &amp; filter chips).</p>
 
     <div class="cms-row">
@@ -81,6 +93,107 @@
   <script src="js/cms-ui.js"></script>
   <script>
     cmsInitShell("trails");
+
+    function renderEc() {
+      const cats = CMS.getStore().editorsChoiceCategories || [];
+      document.getElementById("ecList").innerHTML = cats
+        .slice()
+        .sort((a, b) => (a.order || 0) - (b.order || 0))
+        .map(
+          (c) => `
+        <div style="display:flex;gap:0.5rem;align-items:center;padding:0.45rem 0;border-bottom:1px solid var(--cms-border)">
+          <div style="flex:1">
+            <strong>${cmsEsc(c.name)}</strong>
+            ${c.nameZh ? `<span class="cms-muted"> · ${cmsEsc(c.nameZh)}</span>` : ""}
+            <br/><span class="cms-muted">${(c.routeIds || []).length} routes · order ${c.order ?? 0}</span>
+          </div>
+          <button type="button" class="cms-btn cms-btn-secondary cms-btn-sm" data-ecup="${cmsEsc(c.id)}">↑</button>
+          <button type="button" class="cms-btn cms-btn-secondary cms-btn-sm" data-ecdn="${cmsEsc(c.id)}">↓</button>
+          <button type="button" class="cms-btn cms-btn-secondary cms-btn-sm" data-eced="${cmsEsc(c.id)}">Edit</button>
+          <button type="button" class="cms-btn cms-btn-danger cms-btn-sm" data-ecrm="${cmsEsc(c.id)}">Remove</button>
+        </div>`
+        )
+        .join("") || '<p class="cms-muted">No categories yet.</p>';
+      document.querySelectorAll("[data-ecup]").forEach((b) =>
+        b.addEventListener("click", () => {
+          const s = CMS.getStore();
+          s.editorsChoiceCategories = cmsMoveItem(s.editorsChoiceCategories || [], b.dataset.ecup, -1).map((x, i) =>
+            Object.assign({}, x, { order: i })
+          );
+          CMS.setStore(s);
+          renderEc();
+        })
+      );
+      document.querySelectorAll("[data-ecdn]").forEach((b) =>
+        b.addEventListener("click", () => {
+          const s = CMS.getStore();
+          s.editorsChoiceCategories = cmsMoveItem(s.editorsChoiceCategories || [], b.dataset.ecdn, 1).map((x, i) =>
+            Object.assign({}, x, { order: i })
+          );
+          CMS.setStore(s);
+          renderEc();
+        })
+      );
+      document.querySelectorAll("[data-ecrm]").forEach((b) =>
+        b.addEventListener("click", () => {
+          if (!confirm("Remove category?")) return;
+          const s = CMS.getStore();
+          s.editorsChoiceCategories = (s.editorsChoiceCategories || []).filter((x) => x.id !== b.dataset.ecrm);
+          CMS.setStore(s);
+          renderEc();
+        })
+      );
+      document.querySelectorAll("[data-eced]").forEach((b) =>
+        b.addEventListener("click", () => {
+          const c = (CMS.getStore().editorsChoiceCategories || []).find((x) => x.id === b.dataset.eced);
+          if (!c) return;
+          const name = prompt("Category name", c.name);
+          if (name == null) return;
+          const nameZh = prompt("Category name (繁)", c.nameZh || "");
+          const photo = prompt("Photo URL", c.photo || "");
+          const routes = prompt("Route IDs (comma-separated, partial reorder OK)", (c.routeIds || []).join(", "));
+          const s = CMS.getStore();
+          s.editorsChoiceCategories = (s.editorsChoiceCategories || []).map((x) =>
+            x.id === c.id
+              ? Object.assign({}, x, {
+                  name: name.trim() || c.name,
+                  nameZh: nameZh == null ? c.nameZh : nameZh,
+                  photo: photo == null ? c.photo : photo,
+                  routeIds: routes
+                    ? routes
+                        .split(",")
+                        .map((t) => t.trim())
+                        .filter(Boolean)
+                    : c.routeIds || [],
+                })
+              : x
+          );
+          CMS.setStore(s);
+          renderEc();
+        })
+      );
+    }
+    document.getElementById("btnEcAdd").addEventListener("click", () => {
+      const name = document.getElementById("ecName").value.trim();
+      if (!name) return cmsToast("Enter a category name");
+      const s = CMS.getStore();
+      const list = (s.editorsChoiceCategories || []).slice();
+      list.push({
+        id: uid("ec"),
+        name,
+        nameZh: document.getElementById("ecNameZh").value.trim(),
+        photo: document.getElementById("ecPhoto").value.trim(),
+        order: list.length,
+        routeIds: [],
+      });
+      s.editorsChoiceCategories = list;
+      CMS.setStore(s);
+      document.getElementById("ecName").value = "";
+      document.getElementById("ecNameZh").value = "";
+      document.getElementById("ecPhoto").value = "";
+      renderEc();
+    });
+    renderEc();
 
     const cats = [
       { id: "accessible", en: "Accessible Trail", zh: "無障礙徑" },

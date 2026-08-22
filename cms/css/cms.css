@@ -57,13 +57,17 @@ body.cms-body {
 
 .cms-shell { display: flex; min-height: 100vh; }
 .cms-sidebar {
-  width: 240px;
+  width: 260px;
   background: var(--cms-sidebar);
   color: white;
   padding: 1.25rem 0;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
+  overflow-y: auto;
+  max-height: 100vh;
+  position: sticky;
+  top: 0;
 }
 .cms-sidebar .brand {
   padding: 0 1.15rem 1.25rem;
@@ -72,12 +76,20 @@ body.cms-body {
   border-bottom: 1px solid rgba(255,255,255,.12);
   margin-bottom: 0.75rem;
 }
+.cms-nav-group {
+  padding: 0.85rem 1.15rem 0.25rem;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.45);
+}
 .cms-sidebar a {
   display: block;
-  padding: 0.65rem 1.15rem;
+  padding: 0.5rem 1.15rem;
   color: rgba(255,255,255,.8);
   text-decoration: none;
-  font-size: 0.9rem;
+  font-size: 0.82rem;
   font-weight: 500;
 }
 .cms-sidebar a:hover, .cms-sidebar a.active {

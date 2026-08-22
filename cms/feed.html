@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CMS — Community feed</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/cms.css" />
+</head>
+<body class="cms-body">
+  <div id="cmsShell">
+    <h1>Community feed</h1>
+    <p class="sub">Pin or remove items, and add staff posts (title, blurb, graphic, detailed text). Chronological log below. Phase 2: user-submitted trail feed posts with search/filter.</p>
+
+    <div class="cms-row">
+      <div class="cms-card" style="flex:1">
+        <h3 style="margin-top:0">Add post</h3>
+        <form class="cms-form" id="form">
+          <input type="hidden" id="editId" />
+          <label>Title</label><input id="title" required />
+          <label>Blurb</label><input id="blurb" />
+          <label>Graphic URL</label><input id="graphic" />
+          <label>Detailed text</label><textarea id="body" rows="4"></textarea>
+          <label class="cms-checks"><input type="checkbox" id="pinned" /> Pin to top</label>
+          <div class="cms-toolbar">
+            <button type="submit" class="cms-btn cms-btn-primary">Save post</button>
+            <button type="button" class="cms-btn cms-btn-secondary" id="btnReset">Clear</button>
+          </div>
+        </form>
+      </div>
+      <div class="cms-card" style="flex:1.4">
+        <h3 style="margin-top:0">Chronological log</h3>
+        <table class="cms-table">
+          <thead><tr><th>When</th><th>Post</th><th>Flags</th><th></th></tr></thead>
+          <tbody id="list"></tbody>
+        </table>
+        <p class="cms-muted" style="font-size:0.8rem;margin-top:0.75rem">Phase 2 — frontend: chronological log of posts added by users, with search and filter.</p>
+      </div>
+    </div>
+  </div>
+  <script src="../js/data.js"></script>
+  <script src="../js/cms-store.js"></script>
+  <script src="js/cms-ui.js"></script>
+  <script>
+    cmsInitShell("feed");
+
+    function render() {
+      const list = (CMS.getStore().feedPosts || []).slice().sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+      document.getElementById("list").innerHTML = list.map((p) => `
+        <tr style="${p.removed ? "opacity:.5" : ""}">
+          <td class="cms-muted">${cmsEsc((p.createdAt || "").slice(0, 16).replace("T", " "))}</td>
+          <td><strong>${cmsEsc(p.title)}</strong><br/><span class="cms-muted">${cmsEsc(p.blurb || "")}</span></td>
+          <td>
+            ${p.pinned ? '<span class="cms-badge pub">Pinned</span> ' : ""}
+            ${p.removed ? '<span class="cms-badge draft">Removed</span>' : ""}
+            ${p.source === "user" ? '<span class="cms-muted">user</span>' : '<span class="cms-muted">cms</span>'}
+          </td>
+          <td>
+            <button type="button" class="cms-btn cms-btn-secondary cms-btn-sm" data-pin="${cmsEsc(p.id)}">${p.pinned ? "Unpin" : "Pin"}</button>
+            <button type="button" class="cms-btn cms-btn-secondary cms-btn-sm" data-edit="${cmsEsc(p.id)}">Edit</button>
+            <button type="button" class="cms-btn cms-btn-danger cms-btn-sm" data-rm="${cmsEsc(p.id)}">${p.removed ? "Restore" : "Remove"}</button>
+          </td>
+        </tr>`).join("") || '<tr><td colspan="4">No posts</td></tr>';
+      document.querySelectorAll("[data-pin]").forEach((b) => b.addEventListener("click", () => {
+        const s = CMS.getStore();
+        s.feedPosts = (s.feedPosts || []).map((p) => p.id === b.dataset.pin ? Object.assign({}, p, { pinned: !p.pinned }) : p);
+        CMS.setStore(s);
+        render();
+      }));
+      document.querySelectorAll("[data-rm]").forEach((b) => b.addEventListener("click", () => {
+        const s = CMS.getStore();
+        s.feedPosts = (s.feedPosts || []).map((p) => p.id === b.dataset.rm ? Object.assign({}, p, { removed: !p.removed }) : p);
+        CMS.setStore(s);
+        render();
+      }));
+      document.querySelectorAll("[data-edit]").forEach((b) => b.addEventListener("click", () => {
+        const p = (CMS.getStore().feedPosts || []).find((x) => x.id === b.dataset.edit);
+        if (!p) return;
+        document.getElementById("editId").value = p.id;
+        document.getElementById("title").value = p.title || "";
+        document.getElementById("blurb").value = p.blurb || "";
+        document.getElementById("graphic").value = p.graphic || "";
+        document.getElementById("body").value = p.body || "";
+        document.getElementById("pinned").checked = !!p.pinned;
+      }));
+    }
+
+    document.getElementById("btnReset").addEventListener("click", () => {
+      document.getElementById("form").reset();
+      document.getElementById("editId").value = "";
+    });
+    document.getElementById("form").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const s = CMS.getStore();
+      const id = document.getElementById("editId").value || uid("feed");
+      const existing = (s.feedPosts || []).find((x) => x.id === id);
+      const entry = {
+        id,
+        title: document.getElementById("title").value.trim(),
+        blurb: document.getElementById("blurb").value.trim(),
+        graphic: document.getElementById("graphic").value.trim(),
+        body: document.getElementById("body").value.trim(),
+        pinned: document.getElementById("pinned").checked,
+        removed: existing ? !!existing.removed : false,
+        createdAt: existing ? existing.createdAt : new Date().toISOString(),
+        source: "cms",
+      };
+      const list = (s.feedPosts || []).slice();
+      const i = list.findIndex((x) => x.id === id);
+      if (i >= 0) list[i] = entry; else list.unshift(entry);
+      s.feedPosts = list;
+      CMS.setStore(s);
+      cmsToast("Feed post saved");
+      document.getElementById("form").reset();
+      document.getElementById("editId").value = "";
+      render();
+    });
+    render();
+  </script>
+</body>
+</html>

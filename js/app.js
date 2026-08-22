@@ -126,6 +126,85 @@ function twAppBrandSrc(file) {
   return (inApp ? "../" : "") + "assets/brand/" + name;
 }
 
+/** True when running under /app/ shell */
+window.TW = window.TW || {};
+TW.isAppShell = function () {
+  return /\/app(?:\/|$)/.test((location.pathname || "").replace(/\\/g, "/"));
+};
+
+/**
+ * Map website paths to in-app equivalents so users stay in the app shell.
+ * Leaves get-app / login / cms / external URLs alone.
+ */
+TW.toAppHref = function (href) {
+  if (!href || !TW.isAppShell()) return href;
+  const raw = String(href).trim();
+  if (/^(https?:|mailto:|tel:|#)/i.test(raw)) return raw;
+  if (raw.indexOf("get-app.html") >= 0 || raw.indexOf("login.html") >= 0 || raw.indexOf("/cms/") >= 0) {
+    return raw;
+  }
+  let path = raw.replace(/^\.\.\//, "");
+  let hash = "";
+  let query = "";
+  const hashIdx = path.indexOf("#");
+  if (hashIdx >= 0) {
+    hash = path.slice(hashIdx);
+    path = path.slice(0, hashIdx);
+  }
+  const qIdx = path.indexOf("?");
+  if (qIdx >= 0) {
+    query = path.slice(qIdx);
+    path = path.slice(0, qIdx);
+  }
+  const file = path.split("/").pop() || path;
+  const map = {
+    "rec-trail.html": "route-detail.html",
+    "route-detail.html": "route-detail.html",
+    "record-detail.html": "record-detail.html",
+    "hike-detail.html": "hike-detail.html",
+    "group-hike-detail.html": "group-detail.html",
+    "group-detail.html": "group-detail.html",
+    "group-hikes.html": "hikes.html",
+    "feed.html": "home.html",
+    "explore.html": "explore.html",
+    "plan.html": "index.html",
+    "profile.html": "profile.html",
+    "reports.html": "explore.html",
+    "articles.html": "home.html",
+    "gallery.html": "gallery.html",
+    "donate.html": "donate.html",
+    "bookmarks.html": "profile.html",
+  };
+  let mapped = map[file] || file;
+  // Keep app Plan & Track (index.html) as-is; only remap bare site index when leaving app shell paths
+  if (file === "index.html") mapped = "index.html";
+  let q = query;
+  if (file === "reports.html" && mapped === "explore.html") {
+    q = q ? (q + "&tab=incidents") : "?tab=incidents";
+  }
+  if (file === "bookmarks.html" || (file === "profile.html" && hash.indexOf("bookmark") >= 0)) {
+    mapped = "profile.html";
+    hash = "#bookmarks";
+  }
+  return mapped + q + hash;
+};
+
+/** Rewrite in-app <a href> targets that point at website pages. */
+TW.bindAppLinkRewrites = function (root) {
+  if (!TW.isAppShell()) return;
+  const scope = root || document;
+  scope.querySelectorAll("a[href]").forEach((a) => {
+    const href = a.getAttribute("href");
+    if (!href || href.charAt(0) === "#") return;
+    if (a.dataset.appHrefDone === "1") return;
+    const next = TW.toAppHref(href);
+    if (next && next !== href) {
+      a.setAttribute("href", next);
+      a.dataset.appHrefDone = "1";
+    }
+  });
+};
+
 /** TrailWatch logo mark (icon.svg by default; use header-logo.webp for wordmark) */
 function twAppLogoHtml(opts) {
   const o = opts || {};
@@ -217,6 +296,27 @@ function twAppCommunityTabs(active) {
 
 function twMountAppNav(active, selector) {
   twMountPhoneShell();
+  if (typeof TW !== "undefined" && typeof TW.bindAppLinkRewrites === "function") {
+    TW.bindAppLinkRewrites(document);
+    if (!window._twAppLinkObserver) {
+      window._twAppLinkObserver = true;
+      document.addEventListener(
+        "click",
+        (e) => {
+          const a = e.target.closest("a[href]");
+          if (!a || !TW.isAppShell()) return;
+          const href = a.getAttribute("href");
+          if (!href || href.charAt(0) === "#") return;
+          const next = TW.toAppHref(href);
+          if (next && next !== href) {
+            e.preventDefault();
+            location.href = next;
+          }
+        },
+        true
+      );
+    }
+  }
   const el = document.querySelector(selector || "[data-app-nav]");
   if (el) el.outerHTML = twAppBottomNav(active);
 }

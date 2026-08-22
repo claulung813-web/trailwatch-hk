@@ -46,7 +46,15 @@
 <body class="cms-body">
   <div id="cmsShell">
     <h1>Gallery featured</h1>
-    <p class="sub">Select up to <strong>10</strong> featured photos for the public Gallery. Remaining photos appear automatically by recency or category.</p>
+    <p class="sub">Select up to <strong>10</strong> featured photos for the public Gallery. Search by GPS, date, description, category, or record ID.</p>
+    <div class="cms-card" style="margin-bottom:1rem">
+      <div class="cms-filter-grid">
+        <div style="grid-column:span 2">
+          <label>Search</label>
+          <input id="galQ" type="search" placeholder="GPS, date, description, category, record ID…" />
+        </div>
+      </div>
+    </div>
     <div class="gal-actions">
       <button type="button" class="cms-btn cms-btn-primary" id="saveFeatured">Save featured (max 10)</button>
       <a class="cms-btn cms-btn-secondary" href="../gallery.html" target="_blank">Preview Gallery ↗</a>
@@ -67,7 +75,27 @@
     }
 
     function render() {
-      const photos = (TW.galleryPhotos || []).slice().sort((a, b) => TW.galleryDateValue(b) - TW.galleryDateValue(a));
+      const q = (document.getElementById("galQ").value || "").trim().toLowerCase();
+      let photos = (TW.galleryPhotos || []).slice().sort((a, b) => TW.galleryDateValue(b) - TW.galleryDateValue(a));
+      if (q) {
+        photos = photos.filter((p) => {
+          const hay = [
+            p.id,
+            p.date,
+            p.category,
+            p.description,
+            p.descriptionZh,
+            p.recordId,
+            p.routeId,
+            p.lat,
+            p.lng,
+            p.gps,
+          ]
+            .join(" ")
+            .toLowerCase();
+          return hay.indexOf(q) >= 0;
+        });
+      }
       document.getElementById("pickGrid").innerHTML = photos
         .map((p) => {
           const on = selected.indexOf(p.id) >= 0;
@@ -77,13 +105,15 @@
               <div class="gal-pick-body">
                 <strong>${p.date} · ${p.category}</strong>
                 ${p.description || ""}
-                <div style="margin-top:0.35rem;opacity:.7">${p.recordId || ""} · ${p.routeId || "—"}</div>
+                <div style="margin-top:0.35rem;opacity:.7">${p.recordId || ""} · ${p.routeId || "—"} · ${p.lat != null ? p.lat + "," + p.lng : ""}</div>
               </div>
             </button>`;
         })
-        .join("");
+        .join("") || '<p class="cms-muted">No photos match.</p>';
       updateCount();
     }
+
+    document.getElementById("galQ").addEventListener("input", render);
 
     document.getElementById("pickGrid").addEventListener("click", (e) => {
       const btn = e.target.closest("[data-id]");

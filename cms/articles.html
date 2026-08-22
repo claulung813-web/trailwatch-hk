@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CMS — Articles</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/cms.css" />
+</head>
+<body class="cms-body">
+  <div id="cmsShell">
+    <h1>Articles</h1>
+    <p class="sub">Edit English and Chinese in the same post. Apply category tags and mark as homepage featured.</p>
+
+    <div class="cms-card" style="margin-bottom:1rem">
+      <div class="cms-toolbar">
+        <h3 style="margin:0;flex:1">Category tags</h3>
+        <input id="tagName" placeholder="Tag name (EN)" style="max-width:160px" />
+        <input id="tagNameZh" placeholder="繁" style="max-width:120px" />
+        <button type="button" class="cms-btn cms-btn-primary cms-btn-sm" id="btnAddTag">Add tag</button>
+      </div>
+      <div id="tagList" class="cms-toolbar" style="flex-wrap:wrap"></div>
+    </div>
+
+    <div class="cms-row">
+      <div class="cms-card" style="flex:1.2;overflow:auto">
+        <div class="cms-toolbar">
+          <input id="q" type="search" placeholder="Search articles…" style="flex:1" />
+          <button type="button" class="cms-btn cms-btn-primary cms-btn-sm" id="btnNew">New article</button>
+        </div>
+        <table class="cms-table">
+          <thead><tr><th>Title</th><th>Tags</th><th>Featured</th><th></th></tr></thead>
+          <tbody id="list"></tbody>
+        </table>
+      </div>
+      <div class="cms-card" style="flex:1;min-width:300px;display:none" id="panel">
+        <h3 style="margin-top:0" id="formTitle">Edit article</h3>
+        <form class="cms-form" id="form">
+          <input type="hidden" id="editId" />
+          <label>Title (EN)</label><input id="title" required />
+          <label>Title (繁)</label><input id="titleZh" />
+          <label>Summary (EN)</label><textarea id="summary" rows="2"></textarea>
+          <label>Summary (繁)</label><textarea id="summaryZh" rows="2"></textarea>
+          <label>Body (EN)</label><textarea id="body" rows="5"></textarea>
+          <label>Body (繁)</label><textarea id="bodyZh" rows="5"></textarea>
+          <label>Image URL</label><input id="image" />
+          <label>URL / slug</label><input id="url" />
+          <label>Tags</label>
+          <div id="tagChecks" class="cms-checks" style="display:flex;flex-wrap:wrap;gap:0.5rem"></div>
+          <label class="cms-checks" style="margin-top:0.75rem">
+            <input type="checkbox" id="featured" /> Featured on homepage
+          </label>
+          <div class="cms-toolbar" style="margin-top:0.75rem">
+            <button type="submit" class="cms-btn cms-btn-primary">Save</button>
+            <button type="button" class="cms-btn cms-btn-danger" id="btnDel">Delete</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  <script src="../js/data.js"></script>
+  <script src="../js/cms-store.js"></script>
+  <script src="js/cms-ui.js"></script>
+  <script>
+    cmsInitShell("articles");
+
+    function tags() { return CMS.getStore().articleTags || []; }
+    function articles() { return CMS.getStore().articles || []; }
+
+    function renderTags() {
+      document.getElementById("tagList").innerHTML = tags().map((t) => `
+        <span class="cms-badge pub" style="display:inline-flex;gap:0.35rem;align-items:center">
+          ${cmsEsc(t.name)}${t.nameZh ? " / " + cmsEsc(t.nameZh) : ""}
+          <button type="button" data-tdel="${cmsEsc(t.id)}" style="border:0;background:transparent;cursor:pointer;color:#fff">×</button>
+        </span>`).join("") || '<span class="cms-muted">No tags</span>';
+      document.querySelectorAll("[data-tdel]").forEach((b) => b.addEventListener("click", () => {
+        const s = CMS.getStore();
+        s.articleTags = (s.articleTags || []).filter((x) => x.id !== b.dataset.tdel);
+        CMS.setStore(s);
+        renderTags();
+        renderList();
+      }));
+      document.getElementById("tagChecks").innerHTML = tags().map((t) => `
+        <label><input type="checkbox" data-tag="${cmsEsc(t.id)}" /> ${cmsEsc(t.name)}</label>`).join("");
+    }
+
+    function renderList() {
+      const q = (document.getElementById("q").value || "").toLowerCase();
+      const featured = new Set(CMS.getStore().featuredArticleIds || []);
+      let list = articles();
+      if (q) list = list.filter((a) => ((a.title || "") + " " + (a.titleZh || "") + " " + (a.id || "")).toLowerCase().indexOf(q) >= 0);
+      document.getElementById("list").innerHTML = list.map((a) => `
+        <tr>
+          <td><strong>${cmsEsc(a.title || a.id)}</strong><br/><span class="cms-muted">${cmsEsc(a.id)}</span></td>
+          <td>${(a.tags || a.categories || []).map((t) => cmsEsc(t)).join(", ") || "—"}</td>
+          <td>${featured.has(a.id) ? '<span class="cms-badge pub">Yes</span>' : "—"}</td>
+          <td><button type="button" class="cms-btn cms-btn-secondary cms-btn-sm" data-open="${cmsEsc(a.id)}">Edit</button></td>
+        </tr>`).join("") || '<tr><td colspan="4">No articles</td></tr>';
+      document.querySelectorAll("[data-open]").forEach((b) => b.addEventListener("click", () => openEdit(b.dataset.open)));
+    }
+
+    function openEdit(id) {
+      const a = articles().find((x) => x.id === id) || { id: uid("art"), tags: [] };
+      document.getElementById("panel").style.display = "block";
+      document.getElementById("editId").value = a.id;
+      document.getElementById("title").value = a.title || "";
+      document.getElementById("titleZh").value = a.titleZh || "";
+      document.getElementById("summary").value = a.summary || a.excerpt || "";
+      document.getElementById("summaryZh").value = a.summaryZh || a.excerptZh || "";
+      document.getElementById("body").value = a.body || a.content || "";
+      document.getElementById("bodyZh").value = a.bodyZh || a.contentZh || "";
+      document.getElementById("image").value = a.image || "";
+      document.getElementById("url").value = a.url || a.slug || "";
+      const selected = new Set(a.tags || a.categories || []);
+      document.querySelectorAll("#tagChecks [data-tag]").forEach((c) => { c.checked = selected.has(c.dataset.tag); });
+      document.getElementById("featured").checked = (CMS.getStore().featuredArticleIds || []).indexOf(a.id) >= 0;
+    }
+
+    document.getElementById("btnAddTag").addEventListener("click", () => {
+      const name = document.getElementById("tagName").value.trim();
+      if (!name) return;
+      const s = CMS.getStore();
+      s.articleTags = (s.articleTags || []).concat([{
+        id: uid("tag"),
+        name,
+        nameZh: document.getElementById("tagNameZh").value.trim(),
+      }]);
+      CMS.setStore(s);
+      document.getElementById("tagName").value = "";
+      document.getElementById("tagNameZh").value = "";
+      renderTags();
+    });
+    document.getElementById("btnNew").addEventListener("click", () => openEdit(uid("art")));
+    document.getElementById("q").addEventListener("input", renderList);
+    document.getElementById("btnDel").addEventListener("click", () => {
+      const id = document.getElementById("editId").value;
+      if (!confirm("Delete article?")) return;
+      const s = CMS.getStore();
+      s.articles = (s.articles || []).filter((x) => x.id !== id);
+      s.featuredArticleIds = (s.featuredArticleIds || []).filter((x) => x !== id);
+      CMS.setStore(s);
+      document.getElementById("panel").style.display = "none";
+      renderList();
+    });
+    document.getElementById("form").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const id = document.getElementById("editId").value || uid("art");
+      const tagIds = Array.from(document.querySelectorAll("#tagChecks [data-tag]:checked")).map((c) => c.dataset.tag);
+      const entry = {
+        id,
+        title: document.getElementById("title").value.trim(),
+        titleZh: document.getElementById("titleZh").value.trim(),
+        summary: document.getElementById("summary").value.trim(),
+        summaryZh: document.getElementById("summaryZh").value.trim(),
+        body: document.getElementById("body").value.trim(),
+        bodyZh: document.getElementById("bodyZh").value.trim(),
+        image: document.getElementById("image").value.trim(),
+        url: document.getElementById("url").value.trim(),
+        tags: tagIds,
+      };
+      const s = CMS.getStore();
+      const list = (s.articles || []).slice();
+      const i = list.findIndex((x) => x.id === id);
+      if (i >= 0) list[i] = Object.assign({}, list[i], entry);
+      else list.unshift(entry);
+      s.articles = list;
+      let feat = (s.featuredArticleIds || []).slice();
+      if (document.getElementById("featured").checked) {
+        if (feat.indexOf(id) < 0) feat.push(id);
+      } else feat = feat.filter((x) => x !== id);
+      s.featuredArticleIds = feat;
+      CMS.setStore(s);
+      cmsToast("Article saved");
+      renderList();
+    });
+
+    renderTags();
+    renderList();
+  </script>
+</body>
+</html>

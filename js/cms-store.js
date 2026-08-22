@@ -44,6 +44,237 @@ CMS.LOGIN_METHODS = [
   { id: "google", label: "Google" },
 ];
 
+CMS.ADMIN_TIERS = [
+  {
+    id: "super",
+    label: "Super admin",
+    desc: "Admin management (add / remove admin and viewer, change permissions) plus all other areas.",
+  },
+  {
+    id: "general",
+    label: "General Admin",
+    desc: "View and edit all fields except admin management.",
+  },
+  {
+    id: "content",
+    label: "Content Admin",
+    desc: "View and edit all fields except admin management and user list.",
+  },
+];
+
+CMS.NOTIF_STATUSES = [
+  { id: "draft", label: "Draft" },
+  { id: "scheduled", label: "Scheduled" },
+  { id: "sent", label: "Sent" },
+];
+
+CMS.seedAdmins = function () {
+  return [
+    {
+      id: "adm_super",
+      name: "TrailWatch Staff",
+      email: "staff@trailwatch.hk",
+      username: "staff",
+      password: "trailwatch",
+      tier: "super",
+      active: true,
+      createdAt: "2026-01-01T00:00:00.000Z",
+    },
+    {
+      id: "adm_general",
+      name: "General Admin",
+      email: "admin@trailwatch.hk",
+      username: "admin",
+      password: "trailwatch",
+      tier: "general",
+      active: true,
+      createdAt: "2026-03-01T00:00:00.000Z",
+    },
+    {
+      id: "adm_content",
+      name: "Content Editor",
+      email: "content@trailwatch.hk",
+      username: "content",
+      password: "trailwatch",
+      tier: "content",
+      active: true,
+      createdAt: "2026-04-01T00:00:00.000Z",
+    },
+  ];
+};
+
+CMS.seedAppFunctions = function () {
+  return [
+    { id: "af_track", order: 0, title: "Plan & Track", titleZh: "規劃與追蹤", body: "GPS tracking with offline maps.", bodyZh: "GPS 追蹤與離線地圖。", image: "assets/brand/device.webp", premium: false },
+    { id: "af_offline", order: 1, title: "Offline maps", titleZh: "離線地圖", body: "Download maps before you go.", bodyZh: "出發前下載地圖。", image: "", premium: true },
+    { id: "af_groups", order: 2, title: "Group hikes", titleZh: "聯誼行山", body: "Join or organize community hikes.", bodyZh: "參加或舉辦聯誼。", image: "", premium: false },
+    { id: "af_report", order: 3, title: "Incident report", titleZh: "事故舉報", body: "Report trail hazards to staff.", bodyZh: "向職員舉報路線危害。", image: "", premium: false },
+  ];
+};
+
+CMS.seedEditorsChoiceCategories = function () {
+  return [
+    { id: "ec_family", name: "Family friendly", nameZh: "適合家庭", photo: "", order: 0, routeIds: [] },
+    { id: "ec_sunrise", name: "Sunrise & sunset", nameZh: "日出日落", photo: "", order: 1, routeIds: [] },
+    { id: "ec_beginner", name: "Beginner picks", nameZh: "新手精選", photo: "", order: 2, routeIds: [] },
+  ];
+};
+
+CMS.seedIncidentCategories = function () {
+  return [
+    { id: "waste", name: "Waste / litter", nameZh: "垃圾", icon: "🗑", order: 0 },
+    { id: "tree", name: "Fallen tree", nameZh: "塌樹", icon: "🌳", order: 1 },
+    { id: "vandalism", name: "Vandalism", nameZh: "破壞", icon: "⚠", order: 2 },
+    { id: "obstruction", name: "Obstruction / flood", nameZh: "阻塞／水浸", icon: "🚧", order: 3 },
+  ];
+};
+
+CMS.seedFeedPosts = function () {
+  return [
+    {
+      id: "feed_cms_1",
+      title: "Welcome to the TrailWatch feed",
+      titleZh: "歡迎來到 TrailWatch 動態",
+      blurb: "Staff picks and stewardship tips.",
+      blurbZh: "職員精選與守護貼士。",
+      graphic: "",
+      body: "Follow this feed for community highlights, trail tips, and stewardship news.",
+      bodyZh: "關注動態以獲取社群精華、路線貼士與守護消息。",
+      pinned: true,
+      removed: false,
+      createdAt: "2026-07-01T09:00:00.000Z",
+      source: "cms",
+    },
+  ];
+};
+
+CMS.seedArticleTags = function () {
+  return [
+    { id: "safety", name: "Safety", nameZh: "安全" },
+    { id: "stewardship", name: "Stewardship", nameZh: "守護" },
+    { id: "howto", name: "How-to", nameZh: "教學" },
+    { id: "news", name: "News", nameZh: "消息" },
+  ];
+};
+
+CMS.seedTransactions = function () {
+  return [
+    {
+      id: "txn_1",
+      type: "premium",
+      userId: "usr_alex_wong",
+      email: "alex.wong@email.com",
+      name: "Alex Wong",
+      amount: 98,
+      currency: "HKD",
+      method: "Credit card",
+      status: "paid",
+      periodStart: "2026-01-01",
+      periodEnd: "2027-12-31",
+      createdAt: "2026-01-01T08:00:00.000Z",
+      details: { plan: "Premium annual", receipt: "RCT-1001" },
+    },
+    {
+      id: "txn_2",
+      type: "donation",
+      userId: "usr_1001",
+      email: "alex@example.com",
+      name: "Alex Chan",
+      amount: 200,
+      currency: "HKD",
+      method: "FPS",
+      status: "confirmed",
+      periodStart: "",
+      periodEnd: "",
+      createdAt: "2026-06-15T12:00:00.000Z",
+      details: { campaign: "Tree planting", note: "Demo donation" },
+    },
+  ];
+};
+
+CMS.seedNotifications = function () {
+  return [
+    {
+      id: "ntf_1",
+      kind: "notification",
+      title: "Premium tip: offline maps",
+      titleZh: "Premium 貼士：離線地圖",
+      body: "Download maps before your next hike.",
+      bodyZh: "下次行山前先下載地圖。",
+      channels: ["web", "app"],
+      audience: "premium",
+      status: "sent",
+      scheduledAt: "2026-07-10T10:00:00.000Z",
+      sentAt: "2026-07-10T10:00:00.000Z",
+      graphic: "",
+    },
+  ];
+};
+
+CMS.seedPopups = function () {
+  return [
+    {
+      id: "pop_1",
+      kind: "popup",
+      title: "Support TrailWatch",
+      titleZh: "支持 TrailWatch",
+      body: "Donate or upgrade to Premium.",
+      bodyZh: "捐款或升級 Premium。",
+      channels: ["web"],
+      audience: "all",
+      status: "draft",
+      scheduledAt: "",
+      sentAt: "",
+      graphic: "",
+    },
+  ];
+};
+
+CMS.seedStaticPages = function () {
+  return {
+    aboutEn: "",
+    aboutZh: "",
+    termsEn: "Terms of use (demo — edit in CMS).",
+    termsZh: "使用條款（示範 — 可於 CMS 編輯）。",
+    privacyEn: "Privacy policy (demo — edit in CMS).",
+    privacyZh: "私隱政策（示範 — 可於 CMS 編輯）。",
+    faqEn: "",
+    faqZh: "",
+    mapCreditsEn: "Map data © OpenStreetMap contributors. Trails curated by TrailWatch.",
+    mapCreditsZh: "地圖資料 © OpenStreetMap 貢獻者。路線由 TrailWatch 整理。",
+  };
+};
+
+CMS.adminTierLabel = function (id) {
+  const t = (CMS.ADMIN_TIERS || []).find((x) => x.id === id);
+  return t ? t.label : id || "—";
+};
+
+CMS.getSessionAdmin = function () {
+  try {
+    const a = JSON.parse(localStorage.getItem(CMS.AUTH_KEY) || "null");
+    if (!a || !a.user) return null;
+    const store = JSON.parse(localStorage.getItem(CMS.STORE_KEY) || "null");
+    const admins = (store && store.admins) || CMS.seedAdmins();
+    const found =
+      admins.find((x) => x.username === a.user || x.email === a.user || x.id === a.adminId) ||
+      admins.find((x) => x.tier === "super");
+    return found
+      ? Object.assign({}, found, { sessionUser: a.user })
+      : { id: "adm_legacy", name: a.user, username: a.user, tier: "super", active: true };
+  } catch (e) {
+    return null;
+  }
+};
+
+CMS.canAccess = function (section) {
+  const admin = CMS.getSessionAdmin();
+  const tier = (admin && admin.tier) || "super";
+  if (section === "admins") return tier === "super";
+  if (section === "users") return tier === "super" || tier === "general";
+  return true;
+};
+
 CMS.defaultStore = function () {
   return {
     recommended: [],
@@ -75,6 +306,22 @@ CMS.defaultStore = function () {
     featuredGalleryIds: [],
     banners: CMS.seedBanners(),
     activityTags: CMS.defaultActivityTags(),
+    badgeCatalog: null,
+    badgeAssignments: [],
+    admins: CMS.seedAdmins(),
+    featuredRouteIds: [],
+    featuredArticleIds: [],
+    appFunctions: CMS.seedAppFunctions(),
+    editorsChoiceCategories: CMS.seedEditorsChoiceCategories(),
+    incidentCategories: CMS.seedIncidentCategories(),
+    feedPosts: CMS.seedFeedPosts(),
+    groupHikeModeration: [],
+    articles: null,
+    articleTags: CMS.seedArticleTags(),
+    transactions: CMS.seedTransactions(),
+    notifications: CMS.seedNotifications(),
+    popups: CMS.seedPopups(),
+    staticPages: CMS.seedStaticPages(),
     updatedAt: null,
   };
 };
@@ -94,6 +341,161 @@ CMS.defaultActivityTags = function () {
         { id: "reservoir", label: "Reservoir", labelZh: "水塘" },
       ]
   ).map((t) => Object.assign({}, t));
+};
+
+/** Deep-clone default badge catalog from TW.badgeCatalog */
+CMS.defaultBadgeCatalog = function () {
+  if (window.TW && Array.isArray(TW.badgeCatalog) && TW.badgeCatalog.length) {
+    return JSON.parse(JSON.stringify(TW.badgeCatalog));
+  }
+  return [];
+};
+
+CMS.getBadgeCatalog = function () {
+  const store = CMS.getStore();
+  if (Array.isArray(store.badgeCatalog) && store.badgeCatalog.length) {
+    return store.badgeCatalog;
+  }
+  return CMS.defaultBadgeCatalog();
+};
+
+CMS.setBadgeCatalog = function (catalog) {
+  const store = CMS.getStore();
+  store.badgeCatalog = Array.isArray(catalog) ? catalog : [];
+  CMS.setStore(store);
+  CMS.bumpBadgeRevision();
+  return store.badgeCatalog;
+};
+
+CMS.resetBadgeCatalog = function () {
+  return CMS.setBadgeCatalog(CMS.defaultBadgeCatalog());
+};
+
+CMS.bumpBadgeRevision = function () {
+  try {
+    localStorage.setItem("tw_badge_rev", String(Date.now()));
+  } catch (e) {}
+};
+
+CMS.getBadgeAssignments = function () {
+  const store = CMS.getStore();
+  return Array.isArray(store.badgeAssignments) ? store.badgeAssignments : [];
+};
+
+CMS.setBadgeAssignments = function (list) {
+  const store = CMS.getStore();
+  store.badgeAssignments = Array.isArray(list) ? list : [];
+  CMS.setStore(store);
+  CMS.bumpBadgeRevision();
+  return store.badgeAssignments;
+};
+
+CMS.seedBadgeAssignments = function () {
+  return [
+    {
+      id: "ba_demo_1",
+      badgeId: "vol_become",
+      userId: "usr_alex_wong",
+      email: "alex.wong@email.com",
+      name: "Alex Wong",
+      note: "Seed volunteer badge",
+      assignedAt: "2026-06-01T10:00:00.000Z",
+    },
+    {
+      id: "ba_demo_2",
+      badgeId: "donor",
+      userId: "usr_alex_wong",
+      email: "alex.wong@email.com",
+      name: "Alex Wong",
+      note: "Seed donor badge",
+      assignedAt: "2026-06-15T10:00:00.000Z",
+    },
+    {
+      id: "ba_demo_3",
+      badgeId: "photo_contributor",
+      userId: "usr_alex_wong",
+      email: "alex.wong@email.com",
+      name: "Alex Wong",
+      note: "Seed photo badge",
+      assignedAt: "2026-07-01T10:00:00.000Z",
+    },
+  ];
+};
+
+CMS.assignBadgeToUser = function (data) {
+  data = data || {};
+  const badgeId = String(data.badgeId || "").trim();
+  const email = String(data.email || "").trim().toLowerCase();
+  const userId = String(data.userId || "").trim();
+  if (!badgeId || (!email && !userId)) return null;
+  const list = CMS.getBadgeAssignments().slice();
+  const exists = list.find(
+    (a) =>
+      a.badgeId === badgeId &&
+      ((email && String(a.email || "").toLowerCase() === email) ||
+        (userId && a.userId === userId))
+  );
+  if (exists) {
+    exists.note = data.note != null ? String(data.note) : exists.note;
+    exists.name = data.name || exists.name;
+    exists.email = email || exists.email;
+    exists.userId = userId || exists.userId;
+    CMS.setBadgeAssignments(list);
+    return exists;
+  }
+  const entry = {
+    id: data.id || "ba_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+    badgeId: badgeId,
+    userId: userId,
+    email: email,
+    name: (data.name || "").trim(),
+    note: (data.note || "").trim(),
+    assignedAt: new Date().toISOString(),
+  };
+  list.unshift(entry);
+  CMS.setBadgeAssignments(list);
+  return entry;
+};
+
+CMS.unassignBadge = function (assignmentId) {
+  const list = CMS.getBadgeAssignments().filter((a) => a.id !== assignmentId);
+  CMS.setBadgeAssignments(list);
+  return list;
+};
+
+/** Badge IDs assigned to a member (by email and/or user id). */
+CMS.getAssignedBadgeIdsForUser = function (email, userId) {
+  const em = String(email || "").trim().toLowerCase();
+  const uid = String(userId || "").trim();
+  return CMS.getBadgeAssignments()
+    .filter(
+      (a) =>
+        (em && String(a.email || "").toLowerCase() === em) ||
+        (uid && a.userId === uid)
+    )
+    .map((a) => a.badgeId);
+};
+
+/** Flat badge options for CMS selects */
+CMS.listCatalogBadges = function (catalog) {
+  catalog = catalog || CMS.getBadgeCatalog();
+  const out = [];
+  (catalog || []).forEach((cat) => {
+    (cat.series || []).forEach((series) => {
+      (series.badges || []).forEach((b) => {
+        out.push({
+          id: b.id,
+          name: b.name,
+          nameZh: b.nameZh,
+          emoji: b.emoji,
+          category: cat.name,
+          series: series.name,
+          criteriaType: series.criteriaType,
+        });
+      });
+    });
+  });
+  return out;
 };
 
 CMS.seedBanners = function () {
@@ -561,6 +963,22 @@ CMS.getStore = function () {
       s.users = CMS.seedUsers();
       s.donations = CMS.seedDonations();
       s.feedback = CMS.seedFeedback();
+      s.badgeCatalog = CMS.defaultBadgeCatalog();
+      s.badgeAssignments = CMS.seedBadgeAssignments();
+      s.admins = CMS.seedAdmins();
+      s.featuredRouteIds = window.TW && TW.trails ? TW.trails.slice(0, 6).map((t) => t.id) : [];
+      s.featuredArticleIds = window.TW && TW.articles ? TW.articles.slice(0, 4).map((a) => a.id) : [];
+      s.appFunctions = CMS.seedAppFunctions();
+      s.editorsChoiceCategories = CMS.seedEditorsChoiceCategories();
+      s.incidentCategories = CMS.seedIncidentCategories();
+      s.feedPosts = CMS.seedFeedPosts();
+      s.groupHikeModeration = [];
+      s.articleTags = CMS.seedArticleTags();
+      s.articles = window.TW && TW.articles ? JSON.parse(JSON.stringify(TW.articles)) : [];
+      s.transactions = CMS.seedTransactions();
+      s.notifications = CMS.seedNotifications();
+      s.popups = CMS.seedPopups();
+      s.staticPages = CMS.seedStaticPages();
       CMS.setStore(s);
       return s;
     }
@@ -646,9 +1064,57 @@ CMS.getStore = function () {
       store.activityTags = CMS.defaultActivityTags();
       migrated = true;
     }
+    if (!Array.isArray(store.badgeCatalog) || !store.badgeCatalog.length) {
+      store.badgeCatalog = CMS.defaultBadgeCatalog();
+      migrated = true;
+    }
+    if (!Array.isArray(store.badgeAssignments)) {
+      store.badgeAssignments = CMS.seedBadgeAssignments();
+      migrated = true;
+    } else if (!store.badgeAssignments.length && !("badgeAssignments" in parsed)) {
+      store.badgeAssignments = CMS.seedBadgeAssignments();
+      migrated = true;
+    }
     if (!Array.isArray(store.banners) || !store.banners.length) {
       store.banners = CMS.seedBanners();
       migrated = true;
+    }
+    const ensureArr = (key, seedFn) => {
+      if (!Array.isArray(store[key]) || (!store[key].length && typeof seedFn === "function")) {
+        store[key] = typeof seedFn === "function" ? seedFn() : [];
+        migrated = true;
+      }
+    };
+    ensureArr("admins", CMS.seedAdmins);
+    if (!Array.isArray(store.featuredRouteIds)) {
+      store.featuredRouteIds = (window.TW && TW.trails ? TW.trails.slice(0, 6).map((t) => t.id) : []);
+      migrated = true;
+    }
+    if (!Array.isArray(store.featuredArticleIds)) {
+      store.featuredArticleIds = (window.TW && TW.articles ? TW.articles.slice(0, 4).map((a) => a.id) : []);
+      migrated = true;
+    }
+    ensureArr("appFunctions", CMS.seedAppFunctions);
+    ensureArr("editorsChoiceCategories", CMS.seedEditorsChoiceCategories);
+    ensureArr("incidentCategories", CMS.seedIncidentCategories);
+    ensureArr("feedPosts", CMS.seedFeedPosts);
+    if (!Array.isArray(store.groupHikeModeration)) {
+      store.groupHikeModeration = [];
+      migrated = true;
+    }
+    ensureArr("articleTags", CMS.seedArticleTags);
+    if (!Array.isArray(store.articles) || !store.articles.length) {
+      store.articles = window.TW && TW.articles ? JSON.parse(JSON.stringify(TW.articles)) : [];
+      migrated = true;
+    }
+    ensureArr("transactions", CMS.seedTransactions);
+    ensureArr("notifications", CMS.seedNotifications);
+    ensureArr("popups", CMS.seedPopups);
+    if (!store.staticPages || typeof store.staticPages !== "object") {
+      store.staticPages = CMS.seedStaticPages();
+      migrated = true;
+    } else {
+      store.staticPages = Object.assign({}, CMS.seedStaticPages(), store.staticPages);
     }
     // Refresh community incident seed when demo data grew (keep user-submitted ids)
     if (window.TW && TW.reports && TW.reports.length) {
@@ -920,8 +1386,32 @@ CMS.isLoggedIn = function () {
 };
 
 CMS.login = function (user, pass) {
-  if (user === CMS.DEMO_USER && pass === CMS.DEMO_PASS) {
-    localStorage.setItem(CMS.AUTH_KEY, JSON.stringify({ user: user, at: Date.now() }));
+  const u = String(user || "").trim();
+  const p = String(pass || "");
+  let admins = [];
+  try {
+    const raw = localStorage.getItem(CMS.STORE_KEY);
+    admins = raw ? JSON.parse(raw).admins || [] : [];
+  } catch (e) {}
+  if (!admins.length) admins = CMS.seedAdmins();
+  const match = admins.find(
+    (a) =>
+      a.active !== false &&
+      (a.username === u || a.email === u) &&
+      String(a.password || "") === p
+  );
+  if (match) {
+    localStorage.setItem(
+      CMS.AUTH_KEY,
+      JSON.stringify({ user: match.username || match.email, adminId: match.id, tier: match.tier, at: Date.now() })
+    );
+    return true;
+  }
+  if (u === CMS.DEMO_USER && p === CMS.DEMO_PASS) {
+    localStorage.setItem(
+      CMS.AUTH_KEY,
+      JSON.stringify({ user: u, adminId: "adm_super", tier: "super", at: Date.now() })
+    );
     return true;
   }
   return false;
@@ -931,9 +1421,13 @@ CMS.logout = function () {
   localStorage.removeItem(CMS.AUTH_KEY);
 };
 
-CMS.requireAuth = function () {
+CMS.requireAuth = function (section) {
   if (!CMS.isLoggedIn()) {
     location.href = "index.html";
+    return false;
+  }
+  if (section && typeof CMS.canAccess === "function" && !CMS.canAccess(section)) {
+    location.href = "dashboard.html";
     return false;
   }
   return true;
