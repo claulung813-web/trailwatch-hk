@@ -81,9 +81,9 @@
       const href = TW.galleryRouteHref(p);
       const route = routeLabel(p);
       return `
-        <article class="gallery-card">
+        <article class="gallery-card media-card">
           <a class="gallery-card-media" href="${esc(href)}">
-            <img src="${esc(p.src)}" alt="" loading="lazy" onerror="this.closest('article').remove()" />
+            <img src="${esc(p.src)}" alt="${esc(desc || route || p.date || "Photo")}" loading="lazy" onerror="this.closest('article').remove()" />
           </a>
           <div class="gallery-card-body">
             <div class="gallery-card-meta">
@@ -104,7 +104,7 @@
       const empty = document.getElementById("galleryEmpty");
       if (!list.length) {
         empty.hidden = false;
-        empty.innerHTML = TW.emptyStateHtml(TW.t("gallery_empty"), TW.t("feed_clear_filters"), 'id="galleryEmptyClear"');
+        empty.innerHTML = TW.emptyStateHtml(TW.t("empty_gallery_date"), TW.t("empty_change_filter"), 'id="galleryEmptyClear"');
         const clearBtn = document.getElementById("galleryEmptyClear");
         if (clearBtn) {
           clearBtn.addEventListener("click", () => {

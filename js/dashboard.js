@@ -545,7 +545,7 @@ TW.applyPremiumMoreGate = function () {
     if (!prem) {
       gate.hidden = false;
       gate.innerHTML = `<div class="dash-premium-gate card" style="padding:1.25rem">
-        <span class="app-premium-pill">PREMIUM</span>
+        <span class="app-premium-pill">${TW.t("app_premium")}</span>
         <h3 style="margin:0.55rem 0 0.35rem;font-size:1rem;color:var(--green-900)">${TW.t("dash_premium_locked_title")}</h3>
         <p style="margin:0 0 1rem;color:var(--text-muted);font-size:0.9rem">${TW.t("dash_more_premium_body")}</p>
         <a class="btn btn-primary" href="${TW.dashBase()}get-app.html#premium">${TW.t("dash_unlock")}</a>

@@ -124,10 +124,12 @@
         <div class="explore-toolbar">
           <h2 class="explore-count" id="listCount"></h2>
         </div>
+        <div class="explore-split">
         <div id="exploreMapWrap" class="explore-map-wrap" hidden>
           <div id="exploreMap"></div>
         </div>
         <div class="trail-grid" id="trailGrid"></div>
+        </div>
       </div>
 
       <div id="view-records" class="hidden">
@@ -419,20 +421,26 @@
       }
     }
 
+    function desktopSplit() {
+      return window.matchMedia("(min-width: 960px)").matches;
+    }
+
     function renderMap(list) {
       const wrap = document.getElementById("exploreMapWrap");
-      wrap.hidden = !mapMode;
-      document.getElementById("trailGrid").hidden = mapMode;
+      const showMap = mapMode || desktopSplit();
+      wrap.hidden = !showMap;
+      document.getElementById("trailGrid").hidden = mapMode && !desktopSplit();
       const btn = document.getElementById("toggleMapView");
       btn.textContent = mapMode ? TW.t("explore_list_view") : TW.t("explore_map_view");
       btn.classList.toggle("btn-secondary", mapMode);
       btn.classList.toggle("btn-primary", !mapMode);
-      if (!mapMode) return;
+      if (!showMap) return;
       if (!exploreMap) {
-        exploreMap = L.map("exploreMap").setView(TW.hkCenter || [22.32, 114.17], 11);
+        exploreMap = L.map("exploreMap", { scrollWheelZoom: false }).setView(TW.hkCenter || [22.32, 114.17], 11);
         L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
           attribution: "© OpenStreetMap",
         }).addTo(exploreMap);
+        if (TW.prepareLeafletMap) TW.prepareLeafletMap(exploreMap);
       }
       if (exploreLayer) exploreLayer.remove();
       exploreLayer = L.layerGroup().addTo(exploreMap);
@@ -554,6 +562,15 @@
       else if (activeTab === "incidents") renderIncidents();
       else renderAll();
     });
+    document.getElementById("trailSearch").addEventListener("keydown", (e) => {
+      if (e.key !== "Escape") return;
+      e.target.value = "";
+      query = "";
+      renderAll();
+    });
+    window.addEventListener("resize", () => {
+      if (activeTab === "routes") renderMap(applySearch(baseForView()));
+    });
     document.getElementById("toggleMapView").addEventListener("click", () => {
       mapMode = !mapMode;
       renderAll();
@@ -669,7 +686,7 @@
       document.getElementById("incCount").textContent = list.length + " " + TW.t("reports_count");
       document.getElementById("exploreIncList").innerHTML =
         list.map(renderReportItem).join("") ||
-        TW.emptyStateHtml(TW.t("no_trails"), TW.t("reports_date_6m"), 'id="incReset"');
+        TW.emptyStateHtml(TW.t("empty_incidents_district"), TW.t("empty_change_filter"), 'id="incReset"');
       const reset = document.getElementById("incReset");
       if (reset) {
         reset.addEventListener("click", () => {
@@ -682,10 +699,11 @@
         });
       }
       if (!incMap) {
-        incMap = L.map("exploreIncMap").setView([22.32, 114.17], 11);
+        incMap = L.map("exploreIncMap", { scrollWheelZoom: false }).setView([22.32, 114.17], 11);
         L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
           attribution: "© OpenStreetMap",
         }).addTo(incMap);
+        if (TW.prepareLeafletMap) TW.prepareLeafletMap(incMap);
       }
       incMarkers.forEach((m) => incMap.removeLayer(m));
       incMarkers = [];

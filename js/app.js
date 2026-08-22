@@ -1027,7 +1027,7 @@ function renderHeader(active) {
       <div class="header-actions">
         <div class="lang-switch" role="group" aria-label="Language">
           <button type="button" class="${lang === "en" ? "active" : ""}" data-lang="en">EN</button>
-          <button type="button" class="${lang === "zh" ? "active" : ""}" data-lang="zh">CH</button>
+          <button type="button" class="${lang === "zh" ? "active" : ""}" data-lang="zh">繁</button>
         </div>
         <div class="nav-notif" id="navNotif">
           <button type="button" class="icon-btn" id="notifToggle" aria-expanded="false" aria-haspopup="true" aria-label="${t("notifications")}">
@@ -1139,6 +1139,47 @@ TW.requireLogin = function (opts) {
     }, opts.delay != null ? opts.delay : 900);
   }
   return false;
+};
+
+TW.prepareLeafletMap = function (map) {
+  if (!map || !map.scrollWheelZoom) return map;
+  map.scrollWheelZoom.disable();
+  const el = map.getContainer();
+  el.setAttribute("tabindex", "0");
+  el.addEventListener("focus", () => map.scrollWheelZoom.enable());
+  el.addEventListener("blur", () => map.scrollWheelZoom.disable());
+  el.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") el.blur();
+  });
+  map.on("popupopen", (ev) => {
+    const close = ev.popup && ev.popup.getElement() && ev.popup.getElement().querySelector(".leaflet-popup-close-button");
+    if (close) close.setAttribute("aria-label", "Close");
+  });
+  let failed = false;
+  map.on("tileerror", () => {
+    if (failed) return;
+    failed = true;
+    let bar = el.parentNode && el.parentNode.querySelector(".map-tile-error");
+    if (!bar) {
+      bar = document.createElement("div");
+      bar.className = "map-tile-error";
+      bar.innerHTML =
+        "<p>" +
+        TW.escapeHtml(TW.t("empty_map_tiles")) +
+        '</p><button type="button" class="btn btn-secondary btn-sm">' +
+        TW.escapeHtml(TW.t("empty_try_again")) +
+        "</button>";
+      el.parentNode.insertBefore(bar, el.nextSibling);
+      bar.querySelector("button").addEventListener("click", () => {
+        failed = false;
+        bar.remove();
+        map.eachLayer((layer) => {
+          if (layer.redraw) layer.redraw();
+        });
+      });
+    }
+  });
+  return map;
 };
 
 TW.emptyStateHtml = function (message, actionLabel, actionHrefOrAttr) {
@@ -1268,7 +1309,9 @@ function initShell(active) {
 
   document.querySelectorAll(".lang-switch button").forEach((btn) => {
     btn.addEventListener("click", () => {
-      TW.setLang(btn.dataset.lang);
+      const next = btn.dataset.lang === "zh" ? "zh" : "en";
+      if (TW.getLang() === next) return;
+      TW.setLang(next);
       location.reload();
     });
   });
@@ -1560,14 +1603,14 @@ TW.renderArticleCard = function (a, opts) {
     .map((t) => `<span class="article-tag">${esc(zh ? t.nameZh || t.name : t.name)}</span>`)
     .join("");
   const img = a.image
-    ? `<div class="article-card-media"><img src="${esc(a.image)}" alt="" loading="lazy" /></div>`
+    ? `<div class="article-card-media"><img src="${esc(a.image)}" alt="${esc(title)}" loading="lazy" /></div>`
     : "";
   const author = a.author ? `<span>${esc(TW.t("article_by"))} ${esc(a.author)}</span>` : "";
   const compact = opts.compact ? " article-card--featured" : "";
   const excerptHtml = excerpt
     ? `<p class="article-excerpt${opts.compact ? " article-excerpt--short" : ""}">${esc(excerpt)}</p>`
     : "";
-  return `<article class="article-card article-card--rich${compact}">
+  return `<article class="article-card article-card--rich media-card${compact}">
     ${img}
     <div class="article-card-body">
       <div class="meta">${esc(cat)} · ${esc(a.date || "")}${author ? " · " + author : ""}</div>
@@ -1600,7 +1643,7 @@ function renderTrailCard(t, opts) {
     : `<button type="button" class="trail-bookmark bookmark-btn${bookmarked ? " active" : ""}" data-trail="${t.id}" aria-pressed="${bookmarked ? "true" : "false"}" title="${TW.t("rec_bookmark")}">${twIcon("bookmarks")}</button>`;
 
   return `
-  <article class="trail-card" id="${t.id}">
+  <article class="trail-card media-card" id="${t.id}">
     <div class="trail-card-img">
       <img src="${t.image}" alt="${title}" loading="lazy" />
       ${bookmarkBtn}
@@ -1609,7 +1652,6 @@ function renderTrailCard(t, opts) {
     </div>
     <div class="trail-card-body">
       <div class="feature-icons">
-        <span title="District">${TW.getLang() === "zh" ? "區" : "📍"}</span>
         <span class="district-chip">${TW.districtName(t.district)}</span>
       </div>
       <div class="trail-diff-row" title="L${t.difficulty}">
@@ -1641,8 +1683,8 @@ function renderRecordItem(r, detailHref) {
       : "#");
   const date = TW.getLang() === "zh" && r.dateZh ? r.dateZh : r.date;
   return `
-  <a class="record-item" href="${href}" style="text-decoration:none;color:inherit">
-    <img src="${r.image}" alt="" loading="lazy" />
+  <a class="record-item media-card" href="${href}">
+    <img src="${r.image}" alt="${TW.escapeHtml(TW.tt(r, "title"))}" loading="lazy" />
     <div class="body">
       <div class="top"><span>${date || ""}</span><span>★ ${r.rating != null ? r.rating : "—"}</span></div>
       <h4>${TW.tt(r, "title")}</h4>
@@ -1857,9 +1899,9 @@ function renderReportItem(r) {
   const catKey = "cat_" + (TW.normalizeReportCategory ? TW.normalizeReportCategory(r.category) : r.category);
   const catLabel = TW.t(catKey) !== catKey ? TW.t(catKey) : r.category || "";
   return `
-  <article class="report-item">
+  <article class="report-item media-card">
     <div class="report-thumb-wrap">
-      <img class="report-thumb" src="${r.image || ""}" alt="" />
+      <img class="report-thumb" src="${r.image || ""}" alt="${TW.escapeHtml(TW.tt(r, "title"))}" />
       <span class="status-badge ${statusClass(r.status)}">${statusLabel(r.status)}</span>
     </div>
     <div>

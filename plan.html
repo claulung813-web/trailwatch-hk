@@ -337,6 +337,7 @@
           </div>
         </div>
 
+        <div class="plan-workspace">
         <div style="position:relative">
           <div id="planMap"></div>
           <div class="plan-ctx" id="planCtx" role="menu">
@@ -353,6 +354,7 @@
           <h3 data-i18n="plan_via_order"></h3>
           <p class="meta" style="margin:0 0 0.25rem;font-size:0.75rem" data-i18n="plan_via_hint"></p>
           <ol class="plan-via-seq" id="viaOrderList"></ol>
+        </div>
         </div>
       </section>
 
@@ -407,11 +409,12 @@
 
     const mapEl = document.getElementById("planMap");
     const ctx = document.getElementById("planCtx");
-    const map = L.map("planMap", { doubleClickZoom: false }).setView(TW.hkCenter, 12);
+    const map = L.map("planMap", { doubleClickZoom: false, scrollWheelZoom: false }).setView(TW.hkCenter, 12);
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       attribution: "© OpenStreetMap",
       maxZoom: 19,
     }).addTo(map);
+    if (TW.prepareLeafletMap) TW.prepareLeafletMap(map);
 
     function spinePoints() {
       const pts = [];

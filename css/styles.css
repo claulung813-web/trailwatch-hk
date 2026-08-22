@@ -5167,3 +5167,178 @@ a.record-item {
   font-weight: 700;
   color: var(--green-800);
 }
+
+:focus-visible {
+  outline: 2px solid var(--green-700);
+  outline-offset: 2px;
+}
+
+.prem-pill,
+.app-premium-pill,
+.dash-premium-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 0.12rem 0.4rem;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--green-900);
+  border: 1px solid var(--green-700);
+  box-shadow: none;
+}
+.app-premium-pill::before,
+.dash-premium-pill::before { content: none; }
+
+.media-card {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+.media-card h3,
+.media-card h4,
+.article-card--rich strong {
+  font-size: 1.05rem;
+  line-height: 1.3;
+  color: var(--green-900);
+}
+.record-item.media-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  padding: 0;
+  gap: 0;
+}
+.record-item.media-card img {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+  border-radius: 0;
+}
+.record-item.media-card .body { padding: 0.9rem 1rem 1rem; }
+.report-item.media-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  padding: 0;
+  gap: 0;
+  border-radius: var(--radius);
+}
+.report-item.media-card .report-thumb-wrap { width: 100%; }
+.report-item.media-card .report-thumb {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 10;
+  border-radius: 0;
+}
+.report-item.media-card > div:last-child { padding: 0.85rem 1rem 1rem; }
+.article-card--rich.media-card {
+  grid-template-columns: 1fr;
+  padding: 0;
+}
+.article-card--rich.media-card .article-card-media {
+  aspect-ratio: 16 / 10;
+  border-radius: 0;
+}
+.article-card--rich.media-card .article-card-body { padding: 0.9rem 1rem 1.05rem; }
+
+.media-snap {
+  display: flex;
+  gap: 0.85rem;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 0.35rem;
+  mask-image: linear-gradient(90deg, #000 92%, transparent);
+}
+.media-snap > * {
+  flex: 0 0 min(78%, 280px);
+  scroll-snap-align: start;
+}
+@media (min-width: 900px) {
+  .media-snap {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    overflow: visible;
+    mask-image: none;
+  }
+  .media-snap > * { flex: none; }
+}
+
+.hero h1 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.home-slider-pause {
+  position: absolute;
+  right: 3.4rem;
+  bottom: 0.75rem;
+  z-index: 3;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255,255,255,.92);
+  color: var(--green-900);
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.28rem 0.7rem;
+  cursor: pointer;
+}
+
+.explore-split {
+  display: grid;
+  gap: 1rem;
+}
+@media (min-width: 960px) {
+  .explore-split {
+    grid-template-columns: minmax(280px, 1fr) minmax(320px, 1.1fr);
+    align-items: start;
+  }
+  .explore-split .explore-map-wrap { display: block !important; }
+  .explore-split .trail-grid { display: grid !important; }
+  .explore-map-btn { display: none; }
+  .plan-workspace {
+    display: grid;
+    grid-template-columns: 1.4fr 0.7fr;
+    gap: 1.15rem;
+    align-items: start;
+  }
+  .plan-workspace #planMap { height: min(68vh, 620px); }
+}
+
+.map-tile-error {
+  margin-top: 0.5rem;
+  padding: 0.65rem 0.8rem;
+  border-radius: var(--radius-sm);
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  font-size: 0.85rem;
+}
+.map-tile-error p { margin: 0 0 0.45rem; }
+
+.legal-cms {
+  white-space: pre-wrap;
+  background: var(--green-50);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 1rem 1.1rem;
+  margin-bottom: 1.25rem;
+  font-size: 0.92rem;
+  line-height: 1.55;
+}
+.trust-note {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  line-height: 1.45;
+  margin: 0.65rem 0 0;
+  padding: 0.7rem 0.8rem;
+  background: var(--mint);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}

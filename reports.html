@@ -106,6 +106,7 @@
         <label data-i18n="description"></label>
         <textarea class="form-textarea" data-i18n-placeholder="tell_more"></textarea>
       </div>
+      <p class="trust-note" data-i18n="report_after_submit"></p>
       <button class="btn btn-primary btn-block btn-lg" id="confirmReport" data-i18n="confirm"></button>
     </div>
   </div>
@@ -144,10 +145,11 @@
     let category = "all";
     let mapMarkers = [];
 
-    const map = L.map("reportMap").setView([22.32, 114.17], 11);
+    const map = L.map("reportMap", { scrollWheelZoom: false }).setView([22.32, 114.17], 11);
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       attribution: "© OpenStreetMap",
     }).addTo(map);
+    if (TW.prepareLeafletMap) TW.prepareLeafletMap(map);
 
     const categories = [
       { id: "all", labelKey: "filter_all" },
@@ -174,7 +176,7 @@
       document.getElementById("reportCount").textContent = list.length + " " + TW.t("reports_count");
       document.getElementById("reportList").innerHTML =
         list.map(renderReportItem).join("") ||
-        TW.emptyStateHtml(TW.t("no_trails"), TW.t("reports_date_6m"), 'id="reportReset"');
+        TW.emptyStateHtml(TW.t("empty_incidents_district"), TW.t("empty_change_filter"), 'id="reportReset"');
       const reset = document.getElementById("reportReset");
       if (reset) {
         reset.addEventListener("click", () => {
@@ -253,10 +255,11 @@
       picker.classList.add("open");
       setTimeout(() => {
         if (!pickerMap) {
-          pickerMap = L.map("pickerMap").setView([pinLat, pinLng], 15);
+          pickerMap = L.map("pickerMap", { scrollWheelZoom: false }).setView([pinLat, pinLng], 15);
           L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
             attribution: "© OpenStreetMap",
           }).addTo(pickerMap);
+          if (TW.prepareLeafletMap) TW.prepareLeafletMap(pickerMap);
           pickerMarker = L.marker([pinLat, pinLng], { draggable: true }).addTo(pickerMap);
           pickerMarker.on("dragend", () => {
             const p = pickerMarker.getLatLng();

@@ -54,15 +54,16 @@
   cursor: pointer;
 }
 
-.chip:hover,
-.chip.active {
+.chip:hover {
   border-color: var(--green-600);
   color: var(--green-900);
   background: var(--green-50);
 }
-
 .chip.active {
-  border-bottom: 2px solid var(--green-600);
+  border-color: var(--green-900);
+  border-bottom: 2px solid var(--green-800);
+  color: #fff;
+  background: var(--green-900);
 }
 
 .tw-site-fallback {

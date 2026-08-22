@@ -22,6 +22,7 @@
         </div>
         <button type="button" class="home-slider-arrow prev" id="homeSliderPrev" aria-label="Previous banner"></button>
         <button type="button" class="home-slider-arrow next" id="homeSliderNext" aria-label="Next banner"></button>
+        <button type="button" class="home-slider-pause" id="homeSliderPause"></button>
         <div class="home-slider-dots" id="homeSliderDots" role="tablist"></div>
       </section>
 
@@ -30,7 +31,7 @@
           <h2 data-i18n="home_rec_routes"></h2>
           <a class="link-more" href="explore.html" data-i18n="view_all"></a>
         </div>
-        <div class="trail-grid" id="homeRecRoutes"></div>
+        <div class="trail-grid media-snap" id="homeRecRoutes"></div>
       </section>
 
       <section class="mt-2">
@@ -38,7 +39,7 @@
           <h2 data-i18n="home_featured_articles"></h2>
           <a class="link-more" href="articles.html" data-i18n="view_all"></a>
         </div>
-        <div class="articles-featured-grid" id="homeArticles"></div>
+        <div class="articles-featured-grid media-snap" id="homeArticles"></div>
       </section>
 
       <section class="mt-2">
@@ -127,7 +128,7 @@
         ? `<div class="hero-device"><img src="${esc(device)}" alt="TrailWatch app on iPhone" /></div>`
         : "";
       return `<article class="hero ${b.showDevice ? "hero--app" : ""} home-slide${i === 0 ? " is-active" : ""}" data-slide="${i}"${i === 0 ? "" : " hidden"}>
-        <div class="hero-bg" style="background-image:linear-gradient(to top, rgba(11, 66, 26, 0.78) 0%, rgba(11, 66, 26, 0.28) 45%, rgba(11, 66, 26, 0.12) 100%), url('${esc(img)}')"></div>
+        <div class="hero-bg" role="img" aria-label="${esc(title)}" style="background-image:linear-gradient(to top, rgba(11, 66, 26, 0.78) 0%, rgba(11, 66, 26, 0.28) 45%, rgba(11, 66, 26, 0.12) 100%), url('${esc(img)}')"></div>
         <div class="hero-content">
           ${badge ? `<div class="hero-badge">${esc(badge)}</div>` : ""}
           ${seo ? `<p class="hero-seo-kws">${esc(seo)}</p>` : ""}
@@ -161,6 +162,8 @@
       next.setAttribute("aria-label", TW.t("home_banner_next"));
       let idx = 0;
       let timer = null;
+      let paused = false;
+      const pauseBtn = document.getElementById("homeSliderPause");
       const slides = () => Array.from(track.querySelectorAll(".home-slide"));
       function go(n) {
         const list = slides();
@@ -175,12 +178,26 @@
       }
       function start() {
         stop();
-        if (slides().length < 2) return;
+        if (paused || slides().length < 2) return;
         timer = setInterval(() => go(idx + 1), 7000);
       }
       function stop() {
         if (timer) clearInterval(timer);
         timer = null;
+      }
+      function syncPauseLabel() {
+        if (!pauseBtn) return;
+        pauseBtn.textContent = paused ? TW.t("home_banner_play") : TW.t("home_banner_pause");
+        pauseBtn.setAttribute("aria-pressed", paused ? "true" : "false");
+      }
+      if (pauseBtn) {
+        syncPauseLabel();
+        pauseBtn.addEventListener("click", () => {
+          paused = !paused;
+          syncPauseLabel();
+          if (paused) stop();
+          else start();
+        });
       }
       prev.addEventListener("click", () => {
         go(idx - 1);
@@ -255,7 +272,7 @@
     }
     const cmsRecs = typeof TW.getRecommendedTrails === "function" ? TW.getRecommendedTrails() : [];
     const recSource = cmsRecs.length ? cmsRecs : (TW.trails || []);
-    const rec = recSource.slice(0, 6).map(recAsTrail);
+      const rec = recSource.slice(0, 8).map(recAsTrail);
     document.getElementById("homeRecRoutes").innerHTML = rec.length
       ? rec.map((t) => renderTrailCard(t, { hidePlan: false })).join("")
       : `<p style="color:var(--text-muted)">${TW.t("page_coming_filters")}</p>`;

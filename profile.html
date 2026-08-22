@@ -296,7 +296,7 @@
             <div id="highestBadge" style="margin-top:0.75rem"></div>
           </div>
           <a class="premium-card" href="get-app.html#premium">
-            <div class="premium-badge">PREMIUM</div>
+            <div class="app-premium-pill">Premium</div>
             <div class="info">
               <strong data-i18n="profile_premium"></strong>
               <span id="premiumEnds"></span>
@@ -554,7 +554,7 @@
       if (gate) {
         gate.hidden = !!prem;
         if (!prem) {
-          gate.innerHTML = `<span class="app-premium-pill">PREMIUM</span>
+          gate.innerHTML = `<span class="app-premium-pill">${TW.t("app_premium")}</span>
             <p style="margin:0.65rem 0 1rem;max-width:22rem">${TW.t("footprint_locked")}</p>
             <a class="btn btn-primary" href="get-app.html#premium">${TW.t("dash_unlock")}</a>`;
         }

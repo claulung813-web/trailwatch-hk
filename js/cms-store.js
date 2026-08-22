@@ -1569,7 +1569,7 @@ TW.getHomeBanners = function () {
   const list = (store && store.banners) || [];
   const published = list.filter((b) => b && b.published !== false);
   const source = published.length ? published : CMS.seedBanners();
-  return source.slice().sort((a, b) => (a.order || 0) - (b.order || 0));
+  return source.slice().sort((a, b) => (a.order || 0) - (b.order || 0)).slice(0, 4);
 };
 
 TW.getChallenges = function () {
@@ -1598,6 +1598,18 @@ TW.applyCmsCopy = function () {
     if (el) {
       el.textContent = footExtra;
       el.style.display = "block";
+    }
+  }
+  const staticEl = document.getElementById("legalCmsCopy");
+  if (staticEl && typeof CMS !== "undefined" && CMS.getStore) {
+    const pages = CMS.getStore().staticPages || {};
+    const kind = staticEl.getAttribute("data-legal") || "terms";
+    const text = zh ? pages[kind + "Zh"] : pages[kind + "En"];
+    if (text && String(text).trim()) {
+      staticEl.hidden = false;
+      staticEl.textContent = text;
+      const fallback = document.querySelector(".legal-prose");
+      if (zh && fallback && String(text).length > 40) fallback.hidden = true;
     }
   }
 };
