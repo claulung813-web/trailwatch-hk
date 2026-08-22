@@ -1283,6 +1283,9 @@ CMS.submitFeedback = function (data) {
 CMS.setStore = function (store) {
   store.updatedAt = new Date().toISOString();
   localStorage.setItem(CMS.STORE_KEY, JSON.stringify(store));
+  try {
+    window.dispatchEvent(new CustomEvent("tw-cms-saved", { detail: { at: store.updatedAt } }));
+  } catch (e) {}
 };
 
 CMS.trailToRecommended = function (t, i) {

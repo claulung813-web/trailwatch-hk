@@ -10,15 +10,28 @@
   <link rel="stylesheet" href="../css/styles.css" />
   <style>
     body { margin: 0; }
+    .phone-screen { display: flex; flex-direction: column; height: 100%; }
     .phone-body { flex: 1; overflow-y: auto; padding: 0.75rem 0.9rem 1rem; background: #f7faf7; }
+    .app-detail-bar {
+      display: flex; align-items: center; gap: 0.35rem;
+      padding: 2.35rem 0.65rem 0.45rem; background: #fff; border-bottom: 1px solid var(--border);
+    }
+    .app-detail-bar .ib {
+      width: 36px; height: 36px; border: none; background: none; cursor: pointer;
+      font-size: 1.25rem; color: #111; display: grid; place-items: center; text-decoration: none;
+    }
+    .join-dock {
+      padding: 0.7rem 0.9rem 1.05rem; background: #fff; border-top: 1px solid var(--border);
+    }
+    .stage-tabs {
+      display: flex; gap: 0.35rem; padding: 0.55rem 0.9rem; background: #fff;
+      border-bottom: 1px solid var(--border); overflow-x: auto; flex-wrap: nowrap;
+      mask-image: linear-gradient(90deg, #000 88%, transparent);
+    }
     .hero { height: 140px; background: center/cover no-repeat; position: relative; }
     .hero::after {
       content: ""; position: absolute; inset: 0;
       background: linear-gradient(transparent, rgba(0,0,0,0.45));
-    }
-    .stage-tabs {
-      display: flex; gap: 0.35rem; padding: 0.55rem 0.9rem; background: #fff;
-      border-bottom: 1px solid var(--border); overflow-x: auto;
     }
     .stage-tabs button {
       border: none; border-radius: 999px; padding: 0.35rem 0.7rem;
@@ -55,6 +68,10 @@
     <div class="phone-frame">
       <div class="phone-notch"></div>
       <div class="phone-screen">
+        <div class="app-detail-bar">
+          <a class="ib" href="hikes.html" id="backInline" aria-label="Back">‹</a>
+          <span style="flex:1"></span>
+        </div>
         <div class="hero" id="hero"></div>
         <div style="padding:0.75rem 0.9rem 0.35rem;background:#fff;border-bottom:1px solid var(--border)">
           <h1 style="font-size:1.05rem;color:var(--green-900);margin:0" id="title"></h1>
@@ -63,6 +80,7 @@
         </div>
         <div class="stage-tabs" id="stages"></div>
         <div class="phone-body" id="content"></div>
+        <div class="join-dock" id="joinDock" hidden></div>
         <div data-app-nav></div>
       </div>
     </div>
@@ -160,7 +178,12 @@
           </div>`;
       }
       if (stage === "recruiting") {
-        html += `<button type="button" class="btn btn-primary btn-block" id="btnJoin">${t("groups_join_cta")}</button>`;
+        document.getElementById("joinDock").hidden = false;
+        document.getElementById("joinDock").innerHTML =
+          `<button type="button" class="btn btn-primary btn-block" id="btnJoin">${t("groups_join_cta")}</button>`;
+      } else {
+        document.getElementById("joinDock").hidden = true;
+        document.getElementById("joinDock").innerHTML = "";
       }
       document.getElementById("content").innerHTML = html;
       const joinBtn = document.getElementById("btnJoin");

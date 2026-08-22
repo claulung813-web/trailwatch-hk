@@ -52,6 +52,7 @@
           </label>
           <div class="cms-toolbar" style="margin-top:0.75rem">
             <button type="submit" class="cms-btn cms-btn-primary">Save</button>
+            <a class="cms-btn cms-btn-secondary" href="../articles.html" target="_blank" rel="noopener">View website</a>
             <button type="button" class="cms-btn cms-btn-danger" id="btnDel">Delete</button>
           </div>
         </form>
@@ -94,7 +95,10 @@
           <td><strong>${cmsEsc(a.title || a.id)}</strong><br/><span class="cms-muted">${cmsEsc(a.id)}</span></td>
           <td>${(a.tags || a.categories || []).map((t) => cmsEsc(t)).join(", ") || "—"}</td>
           <td>${featured.has(a.id) ? '<span class="cms-badge pub">Yes</span>' : "—"}</td>
-          <td><button type="button" class="cms-btn cms-btn-secondary cms-btn-sm" data-open="${cmsEsc(a.id)}">Edit</button></td>
+          <td style="white-space:nowrap">
+            <button type="button" class="cms-btn cms-btn-secondary cms-btn-sm" data-open="${cmsEsc(a.id)}">Edit</button>
+            ${cmsPreviewBtn("article", a.id, "View website")}
+          </td>
         </tr>`).join("") || '<tr><td colspan="4">No articles</td></tr>';
       document.querySelectorAll("[data-open]").forEach((b) => b.addEventListener("click", () => openEdit(b.dataset.open)));
     }

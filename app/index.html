@@ -30,7 +30,7 @@
     }
     .mode-toggle button {
       border: none; background: transparent; border-radius: 999px;
-      padding: 0.35rem 0.7rem; font-size: 0.72rem; font-weight: 800;
+      padding: 0.28rem 0.5rem; font-size: 0.65rem; font-weight: 800;
       color: var(--text-muted); cursor: pointer;
     }
     .mode-toggle button.active { background: var(--green-900); color: #fff; }
@@ -296,12 +296,13 @@
         <div class="map-shell">
           <div id="appMap"></div>
           <div class="phone-topbar">
-            <a class="round-btn" href="home.html" id="trackBack" title="Back" aria-label="Back">
+            <button type="button" class="round-btn" id="trackBack" title="Back" aria-label="Back">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
-            </a>
+            </button>
             <div class="mode-toggle" id="modeToggle" role="group">
               <button type="button" class="active" data-mode="track" id="modeTrack">Track</button>
               <button type="button" data-mode="plan" id="modePlan">Plan</button>
+              <button type="button" data-mode="report" id="modeReport">Report</button>
             </div>
             <div class="gps-pill figma-gps" title="GPS">
               <span class="gps-signal" aria-hidden="true"></span>
@@ -344,6 +345,7 @@
 
         <!-- Plan panel -->
         <div class="plan-panel" id="planPanel">
+          <button type="button" class="figma-back" id="planBack" aria-label="Back">‹</button>
           <div class="plan-tools" id="planTools">
             <button type="button" class="active" data-tool="start" id="btnPlanStartHere"></button>
             <button type="button" data-tool="end" id="btnPlanEndHere"></button>
@@ -509,6 +511,7 @@
 
         <div class="env-modal" id="modalA">
           <div class="env-modal-sheet">
+            <button type="button" class="figma-back env-sheet-back" data-close-modal="modalA" aria-label="Back">‹</button>
             <strong style="color:var(--green-900)" id="aTitle"></strong>
             <p style="font-size:0.8rem;color:var(--text-muted);margin:0.35rem 0 0" id="aHint"></p>
             <label class="env-sheet-check"><input type="checkbox" id="checkA" /> <span id="aLabel"></span></label>
@@ -521,6 +524,7 @@
 
         <div class="env-modal" id="modalE">
           <div class="env-modal-sheet">
+            <button type="button" class="figma-back env-sheet-back" data-close-modal="modalE" aria-label="Back">‹</button>
             <strong style="color:var(--green-900)" id="eTitle"></strong>
             <p style="font-size:0.8rem;color:var(--text-muted);margin:0.35rem 0 0" id="eHint"></p>
             <label class="env-sheet-check"><input type="checkbox" id="checkE" /> <span id="eLabel"></span></label>
@@ -581,6 +585,7 @@
 
         <div class="env-modal" id="modalShare">
           <div class="env-modal-sheet">
+            <button type="button" class="figma-back env-sheet-back" data-close-modal="modalShare" aria-label="Back">‹</button>
             <div style="display:flex;justify-content:space-between;align-items:center">
               <strong style="color:var(--green-900)" id="shareTitle"></strong>
               <button type="button" id="closeShare">✕</button>
@@ -590,6 +595,16 @@
             <div class="share-url" id="shareUrl"></div>
             <p style="font-size:0.72rem;color:var(--text-muted);margin:0 0 0.55rem" id="shareEmailHint"></p>
             <button type="button" class="btn btn-primary btn-block" id="copyShare"></button>
+          </div>
+        </div>
+
+        <div class="env-modal" id="offlineMapsSheet">
+          <div class="env-modal-sheet">
+            <button type="button" class="figma-back env-sheet-back" data-close-modal="offlineMapsSheet" aria-label="Back">‹</button>
+            <strong style="color:var(--green-900)" id="offlineMapsTitle"></strong>
+            <p style="font-size:0.8rem;color:var(--text-muted);margin:0.45rem 0 0.75rem" id="offlineMapsBody"></p>
+            <span class="app-premium-pill" id="offlineMapsPrem"></span>
+            <a class="btn btn-primary btn-block" style="margin-top:0.85rem" href="../get-app.html#premium" id="offlineMapsUpgrade"></a>
           </div>
         </div>
 
@@ -760,6 +775,7 @@
       document.getElementById("gpsText").textContent = t("app_gps_ready");
       document.getElementById("modeTrack").textContent = t("app_mode_track");
       document.getElementById("modePlan").textContent = t("app_mode_plan");
+      document.getElementById("modeReport").textContent = t("app_mode_report");
       document.getElementById("lblStart").textContent = t("app_start");
       document.getElementById("fabReportLbl").textContent = t("app_report");
       document.getElementById("lblPause").textContent = t("app_pause");
@@ -830,6 +846,10 @@
       document.getElementById("shareTitle").textContent = t("app_live_share_title");
       document.getElementById("shareBody").textContent = t("app_live_share_body");
       document.getElementById("sharePremium").textContent = t("app_live_share_premium");
+      document.getElementById("offlineMapsTitle").textContent = t("app_offline_maps");
+      document.getElementById("offlineMapsBody").textContent = t("app_offline_premium_body");
+      document.getElementById("offlineMapsPrem").textContent = t("app_premium");
+      document.getElementById("offlineMapsUpgrade").textContent = t("app_upgrade");
       document.getElementById("copyShare").textContent = t("app_live_share_send");
       document.getElementById("shareEmailHint").textContent = t("app_live_share_email_hint").replace("{email}", t("app_live_share_email"));
       document.getElementById("shareUrl").textContent = liveShareUrl();
@@ -1059,6 +1079,14 @@
       mapMode = mode;
       document.querySelectorAll("#modeToggle button").forEach((b) => b.classList.toggle("active", b.dataset.mode === mode));
       planPanel.classList.toggle("show", mode === "plan");
+      if (mode === "report") {
+        idleBar.classList.add("hidden");
+        activeSheet.classList.add("hidden");
+        pauseSheet.classList.add("hidden");
+        openReport();
+        return;
+      }
+      closeReport();
       if (mode === "plan") {
         idleBar.classList.add("hidden");
         activeSheet.classList.add("hidden");
@@ -1078,6 +1106,34 @@
         return;
       }
       setMapMode(btn.dataset.mode);
+    });
+
+    document.getElementById("planBack").addEventListener("click", () => setMapMode("track"));
+    document.getElementById("trackBack").addEventListener("click", (e) => {
+      e.preventDefault();
+      const openModal = document.querySelector(".env-modal.open");
+      if (openModal) {
+        openModal.classList.remove("open");
+        return;
+      }
+      if (reportSheet.classList.contains("open") || mapMode === "report") {
+        closeReport();
+        return;
+      }
+      if (mapMode === "plan") {
+        setMapMode("track");
+        return;
+      }
+      location.href = "home.html";
+    });
+    document.querySelectorAll("[data-close-modal]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const el = document.getElementById(btn.dataset.closeModal);
+        if (el) el.classList.remove("open");
+      });
+    });
+    document.getElementById("btnLayers").addEventListener("click", () => {
+      document.getElementById("offlineMapsSheet").classList.add("open");
     });
 
     function planIcon(type, label) {
@@ -1481,8 +1537,13 @@
     function closeReport() {
       reportSheet.classList.remove("open");
       document.getElementById("fabReport").style.display = "grid";
+      if (mapMode === "report") {
+        mapMode = "track";
+        document.querySelectorAll("#modeToggle button").forEach((b) => b.classList.toggle("active", b.dataset.mode === "track"));
+        showState(state === "active" || state === "paused" ? state : "idle");
+      }
     }
-    document.getElementById("fabReport").addEventListener("click", openReport);
+    document.getElementById("fabReport").addEventListener("click", () => setMapMode("report"));
     document.getElementById("appPickOnMap").addEventListener("click", () => {
       const el = document.getElementById("reportMiniMap");
       if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });

@@ -81,7 +81,6 @@
         <div class="app-detail-bar">
           <a class="ib" href="explore.html?tab=records" id="backInline">‹</a>
           <h1 id="recTitle">—</h1>
-          <button type="button" class="ib" id="btnBookmark" aria-label="Save">🔖</button>
           <button type="button" class="ib" id="btnShare" aria-label="Share">↗</button>
         </div>
         <div class="phone-body">
@@ -107,6 +106,10 @@
             <h2 id="photosHeading">Photos</h2>
             <div class="photo-strip" id="photoGrid"></div>
             <p id="photoEmpty" style="display:none;color:var(--text-muted);font-size:0.78rem;margin:0.35rem 0 0"></p>
+          </div>
+          <div class="route-actions" style="display:grid;gap:0.45rem;padding:0 0.7rem 1.25rem">
+            <button type="button" class="btn btn-primary btn-block" id="btnBookmark"></button>
+            <button type="button" class="btn btn-secondary btn-block" id="btnExportGpx"></button>
           </div>
         </div>
         <div data-app-nav></div>
@@ -196,7 +199,10 @@
       });
     }
 
+    document.getElementById("btnBookmark").textContent = t("rec_bookmark");
+    document.getElementById("btnExportGpx").textContent = t("app_export_gpx");
     document.getElementById("btnBookmark").addEventListener("click", () => showToast(t("rec_bookmark")));
+    document.getElementById("btnExportGpx").addEventListener("click", () => showToast(t("app_gpx_exported")));
     document.getElementById("btnShare").addEventListener("click", () => showToast(t("rec_share")));
   </script>
 </body>

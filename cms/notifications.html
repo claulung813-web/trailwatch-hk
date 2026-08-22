@@ -38,15 +38,19 @@
             <option value="scheduled">Scheduled</option>
             <option value="sent">Sent</option>
           </select>
+          <p class="cms-muted">Save keeps a draft or schedule. Use Send to go live after confirming channel and audience.</p>
           <label>Schedule date &amp; time</label>
           <input id="scheduledAt" type="datetime-local" />
           <div class="cms-toolbar">
             <button type="submit" class="cms-btn cms-btn-primary">Save</button>
             <button type="button" class="cms-btn cms-btn-secondary" id="btnNew">New</button>
+            <button type="button" class="cms-btn cms-btn-primary" id="btnSend">Send</button>
+            <button type="button" class="cms-btn cms-btn-secondary" id="btnDry">Dry-run</button>
           </div>
         </form>
       </div>
       <div class="cms-card" style="flex:1.3">
+        <div id="calWrap"></div>
         <div class="cms-filter-grid">
           <div style="grid-column:span 2">
             <label>Search</label>
@@ -90,6 +94,10 @@
       if (q) list = list.filter((n) => ((n.title || "") + " " + (n.body || "")).toLowerCase().indexOf(q) >= 0);
       if (fa === "free" || fa === "premium") list = list.filter((n) => n.audience === fa);
       if (fa === "all_users") list = list.filter((n) => n.audience === "all");
+      document.getElementById("calWrap").innerHTML = cmsRenderCalendar(
+        CMS.getStore().notifications || [],
+        (n) => n.scheduledAt || n.sentAt
+      );
       document.getElementById("list").innerHTML = list.map((n) => `
         <tr>
           <td><strong>${cmsEsc(n.title)}</strong><br/><span class="cms-muted">${cmsEsc((n.scheduledAt || n.sentAt || "").slice(0, 16))}</span></td>
@@ -142,7 +150,7 @@
       const scheduledAt = document.getElementById("scheduledAt").value
         ? new Date(document.getElementById("scheduledAt").value).toISOString()
         : "";
-      const status = document.getElementById("status").value;
+      const status = document.getElementById("status").value === "sent" ? "draft" : document.getElementById("status").value;
       const entry = {
         id,
         kind: "notification",
@@ -154,18 +162,52 @@
         audience: document.getElementById("audience").value,
         status,
         scheduledAt,
-        sentAt: status === "sent" ? (scheduledAt || new Date().toISOString()) : "",
+        sentAt: "",
         graphic: "",
       };
       const s = CMS.getStore();
       const list = (s.notifications || []).slice();
       const i = list.findIndex((x) => x.id === id);
-      if (i >= 0) list[i] = entry; else list.unshift(entry);
+      if (i >= 0) list[i] = Object.assign({}, list[i], entry); else list.unshift(entry);
       s.notifications = list;
       CMS.setStore(s);
-      cmsToast("Notification saved");
+      document.getElementById("editId").value = id;
+      cmsToast(status === "scheduled" ? "Scheduled" : "Saved as draft");
       render();
     });
+
+    function formChannels() {
+      const channels = [];
+      if (document.getElementById("chWeb").checked) channels.push("web");
+      if (document.getElementById("chApp").checked) channels.push("app");
+      return channels;
+    }
+
+    async function sendNotification(dryRun) {
+      const channels = formChannels();
+      if (!channels.length) return cmsToast("Select at least one channel");
+      const audience = document.getElementById("audience").value;
+      const res = await cmsConfirmSend({ channels, audience, dryRun: !!dryRun });
+      if (!res) return;
+      if (res.dryRun) {
+        cmsToast("Dry-run to " + res.email + " (demo — not delivered)");
+        return;
+      }
+      document.getElementById("form").dispatchEvent(new Event("submit", { cancelable: true, bubbles: true }));
+      const id = document.getElementById("editId").value;
+      const s = CMS.getStore();
+      s.notifications = (s.notifications || []).map((x) =>
+        x.id === id
+          ? Object.assign({}, x, { status: "sent", sentAt: new Date().toISOString() })
+          : x
+      );
+      CMS.setStore(s);
+      document.getElementById("status").value = "sent";
+      cmsToast("Sent (demo)");
+      render();
+    }
+    document.getElementById("btnSend").addEventListener("click", () => sendNotification(false));
+    document.getElementById("btnDry").addEventListener("click", () => sendNotification(true));
     render();
   </script>
 </body>

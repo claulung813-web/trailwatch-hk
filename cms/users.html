@@ -9,8 +9,8 @@
 </head>
 <body class="cms-body">
   <div id="cmsShell">
-    <h1>User management</h1>
-    <p class="sub">Search app users, filter by premium status or subscription period, edit accounts, merge duplicates, and export GPS.</p>
+    <h1>Users</h1>
+    <p class="sub">App accounts: search, premium, merge, GPS export. New registrations are moderated on <a href="members.html">Members</a>.</p>
 
     <div class="cms-stats" id="stats" style="margin-bottom:1rem"></div>
 
@@ -61,9 +61,7 @@
               <th class="cms-check"><input type="checkbox" id="checkAll" title="Select all visible" /></th>
               <th>User</th>
               <th>Status</th>
-              <th>Premium period</th>
-              <th>Login</th>
-              <th>Roles</th>
+              <th>Premium</th>
               <th></th>
             </tr>
           </thead>
@@ -73,7 +71,17 @@
       <div class="cms-card" id="detailPanel" style="display:none;flex:1;min-width:280px">
         <h3 style="margin-top:0" id="dName">—</h3>
         <p class="cms-muted" id="dMeta"></p>
-        <form class="cms-form" id="userForm">
+        <div class="cms-tabs" id="userTabs">
+          <button type="button" data-utab="view" class="active">View</button>
+          <button type="button" data-utab="edit">Edit</button>
+          <button type="button" data-utab="activity">Activity</button>
+          <button type="button" data-utab="sub">Subscription</button>
+        </div>
+        <div id="tabView">
+          <p id="dView" class="cms-muted"></p>
+          <button type="button" class="cms-btn cms-btn-primary cms-btn-sm" id="btnGoEdit">Edit account</button>
+        </div>
+        <form class="cms-form" id="userForm" hidden>
           <input type="hidden" id="userId" />
           <label>Name</label>
           <input type="text" id="userName" />
@@ -112,12 +120,9 @@
           <div class="cms-toolbar" style="margin-top:0.75rem">
             <button type="submit" class="cms-btn cms-btn-primary">Save</button>
             <button type="button" class="cms-btn cms-btn-warn" id="btnMerge">Merge into…</button>
-            <button type="button" class="cms-btn cms-btn-secondary" id="btnActivity">View activity</button>
           </div>
         </form>
-        <div id="subHistory" style="margin-top:1rem"></div>
-        <div id="activityPanel" style="display:none;margin-top:1rem">
-          <h4 style="margin:0 0 0.5rem">Activity &amp; plans</h4>
+        <div id="tabActivity" hidden>
           <p class="cms-muted" style="font-size:0.8rem">Tracked activities and planned routes (chronological). Assign Editor’s Choice categories or mark as featured route.</p>
           <div id="activityList"></div>
           <div class="cms-form" style="margin-top:0.75rem">
@@ -126,6 +131,9 @@
             <button type="button" class="cms-btn cms-btn-secondary cms-btn-sm" id="btnEcAssign">Apply categories</button>
             <button type="button" class="cms-btn cms-btn-secondary cms-btn-sm" id="btnFeatureRoute">Add as featured route</button>
           </div>
+        </div>
+        <div id="tabSub" hidden>
+          <div id="subHistory"></div>
         </div>
       </div>
     </div>
@@ -232,26 +240,26 @@
           </td>
           <td>
             <strong>${esc(u.name)}</strong><br/>
-            <span class="cms-muted">${esc(u.email)}</span><br/>
-            <span class="cms-muted">${esc(u.id)}${u.facebookId ? " · FB " + esc(u.facebookId) : ""}</span>
+            <span class="cms-muted">${esc(u.email)}</span>
           </td>
           <td>
             <span class="cms-badge ${nowPrem ? "pub" : "draft"}">${nowPrem ? "Premium" : "Free"}</span>
-            ${u.premium && !nowPrem ? '<br/><span class="cms-muted">flag on, not current</span>' : ""}
+            ${u.trailFeedEditor ? '<br/><span class="cms-muted">Editor</span>' : ""}
           </td>
           <td><span class="cms-muted">${esc(period)}</span></td>
-          <td>${esc(CMS.loginMethodLabel(u.loginMethod))}</td>
-          <td>
-            ${u.trailFeedEditor ? '<span class="cms-badge gov">Feed editor</span>' : '<span class="cms-muted">—</span>'}
-            ${u.hasGps ? '<br/><span class="cms-muted">GPS</span>' : ""}
+          <td style="white-space:nowrap">
+            <button type="button" class="cms-btn cms-btn-secondary cms-btn-sm" data-view="${esc(u.id)}">View</button>
+            <button type="button" class="cms-btn cms-btn-secondary cms-btn-sm" data-edit="${esc(u.id)}">Edit</button>
           </td>
-          <td><button type="button" class="cms-btn cms-btn-secondary cms-btn-sm" data-open="${esc(u.id)}">Open</button></td>
         </tr>`;
           })
-          .join("") || '<tr><td colspan="7">No users match these filters.</td></tr>';
+          .join("") || '<tr><td colspan="5">No users match these filters.</td></tr>';
 
-      document.querySelectorAll("[data-open]").forEach((b) =>
-        b.addEventListener("click", () => openDetail(b.dataset.open))
+      document.querySelectorAll("[data-view]").forEach((b) =>
+        b.addEventListener("click", () => openDetail(b.dataset.view, "view"))
+      );
+      document.querySelectorAll("[data-edit]").forEach((b) =>
+        b.addEventListener("click", () => openDetail(b.dataset.edit, "edit"))
       );
       document.querySelectorAll("[data-sel]").forEach((c) =>
         c.addEventListener("change", () => {
@@ -263,7 +271,28 @@
       updateSelCount();
     }
 
-    function openDetail(id) {
+    function setUserTab(tab) {
+      document.querySelectorAll("#userTabs [data-utab]").forEach((b) => {
+        b.classList.toggle("active", b.dataset.utab === tab);
+      });
+      document.getElementById("tabView").hidden = tab !== "view";
+      document.getElementById("userForm").hidden = tab !== "edit";
+      document.getElementById("tabActivity").hidden = tab !== "activity";
+      document.getElementById("tabSub").hidden = tab !== "sub";
+      if (tab === "activity") {
+        const id = document.getElementById("userId").value;
+        if (id) renderActivity(id);
+      }
+    }
+
+    document.getElementById("userTabs").addEventListener("click", (e) => {
+      const b = e.target.closest("[data-utab]");
+      if (!b) return;
+      setUserTab(b.dataset.utab);
+    });
+    document.getElementById("btnGoEdit").addEventListener("click", () => setUserTab("edit"));
+
+    function openDetail(id, tab) {
       const u = (CMS.getStore().users || []).find((x) => x.id === id);
       if (!u) return;
       document.getElementById("detailPanel").style.display = "block";
@@ -285,8 +314,17 @@
       document.getElementById("canHostPublicGroups").checked = !!u.canHostPublicGroups;
       document.getElementById("hasGps").checked = !!u.hasGps;
       document.getElementById("note").value = u.note || "";
+      document.getElementById("dView").innerHTML =
+        esc(u.email) +
+        "<br/>Login: " +
+        esc(CMS.loginMethodLabel(u.loginMethod)) +
+        "<br/>Premium: " +
+        (CMS.isUserPremiumNow(u) ? "current" : "free") +
+        " (" +
+        esc((u.premiumStart || "—") + " → " + (u.premiumEnd || "—")) +
+        ")";
       renderSubHistory(u);
-      document.getElementById("activityPanel").style.display = "none";
+      setUserTab(tab || "view");
     }
 
     function renderSubHistory(u) {
@@ -352,7 +390,6 @@
       document.getElementById("ecCats").innerHTML = (CMS.getStore().editorsChoiceCategories || [])
         .map((c) => `<label><input type="checkbox" data-ec="${esc(c.id)}" /> ${esc(c.name)}</label>`)
         .join("");
-      document.getElementById("activityPanel").style.display = "block";
       activityRouteId = "";
       document.querySelectorAll("input[name=actPick]").forEach((r) =>
         r.addEventListener("change", () => {
@@ -361,11 +398,6 @@
       );
     }
 
-    document.getElementById("btnActivity").addEventListener("click", () => {
-      const id = document.getElementById("userId").value;
-      if (!id) return;
-      renderActivity(id);
-    });
     document.getElementById("btnEcAssign").addEventListener("click", () => {
       if (!activityRouteId) return cmsToast("Select an activity first");
       const cats = Array.from(document.querySelectorAll("#ecCats [data-ec]:checked")).map((c) => c.dataset.ec);
@@ -421,7 +453,7 @@
       CMS.setStore(store);
       renderStats();
       renderList();
-      openDetail(id);
+      openDetail(id, "edit");
       cmsToast("User updated");
     }
 
@@ -497,7 +529,7 @@
       document.getElementById("detailPanel").style.display = "none";
       renderStats();
       renderList();
-      openDetail(targetId);
+      openDetail(targetId, "view");
       cmsToast("Users merged");
     });
 
@@ -505,27 +537,34 @@
     document.getElementById("btnExportCsv").addEventListener("click", () => downloadExport("csv"));
 
     document.getElementById("btnAddUser").addEventListener("click", () => {
-      const email = prompt("New user email");
-      if (!email) return;
-      const name = prompt("Display name", email.split("@")[0]) || email.split("@")[0];
-      const user = CMS.addUser({
-        name: name,
-        email: email,
-        premium: true,
-        premiumStart: todayISO(),
-        premiumEnd: "2027-12-31",
-        note: "Added from CMS · Premium",
+      cmsOpenDrawer("Add user", [
+        { id: "email", label: "Email", type: "email", value: "" },
+        { id: "name", label: "Display name", value: "" },
+      ], (v) => {
+        const email = (v.email || "").trim();
+        if (!email) return cmsToast("Enter an email");
+        const name = (v.name || "").trim() || email.split("@")[0];
+        const user = CMS.addUser({
+          name: name,
+          email: email,
+          premium: true,
+          premiumStart: todayISO(),
+          premiumEnd: "2027-12-31",
+          note: "Added from CMS · Premium",
+        });
+        if (!user) {
+          cmsToast("Could not add user");
+          return;
+        }
+        renderStats();
+        renderList();
+        openDetail(user.id, "edit");
+        cmsToast(
+          user.email === email.toLowerCase() && (user.note || "").indexOf("Added from CMS") >= 0
+            ? "User added as Premium"
+            : "Email already exists — opened that account"
+        );
       });
-      if (!user) {
-        cmsToast("Could not add user");
-        return;
-      }
-      renderStats();
-      renderList();
-      openDetail(user.id);
-      cmsToast(user.email === email.trim().toLowerCase() && user.note.indexOf("Added from CMS") >= 0
-        ? "User added as Premium"
-        : "Email already exists — opened that account");
     });
 
     document.getElementById("btnSelectAll").addEventListener("click", () => {

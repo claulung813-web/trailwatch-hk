@@ -10,28 +10,8 @@
 <body class="cms-body">
   <div id="cmsShell">
     <h1>Dashboard</h1>
-    <p class="sub">Overview of publishable content and pending moderation.</p>
+    <p class="sub">Queues that need staff action. Open a card to work the list.</p>
     <div class="cms-stats" id="stats"></div>
-    <div class="cms-card">
-      <h3 style="margin:0 0 0.75rem">Quick actions</h3>
-      <div class="cms-toolbar">
-        <a class="cms-btn cms-btn-primary" href="banners.html">Hero banners</a>
-        <a class="cms-btn cms-btn-secondary" href="homepage.html">Featured routes / articles</a>
-        <a class="cms-btn cms-btn-secondary" href="trails.html">Editor's Choice</a>
-        <a class="cms-btn cms-btn-secondary" href="articles.html">Articles</a>
-        <a class="cms-btn cms-btn-secondary" href="feed.html">Community feed</a>
-        <a class="cms-btn cms-btn-secondary" href="group-hikes.html">Group hikes</a>
-        <a class="cms-btn cms-btn-secondary" href="incidents.html">Incidents</a>
-        <a class="cms-btn cms-btn-secondary" href="users.html">Users</a>
-        <a class="cms-btn cms-btn-secondary" href="admins.html">Admins</a>
-        <a class="cms-btn cms-btn-secondary" href="badges.html">Badges</a>
-        <a class="cms-btn cms-btn-secondary" href="gallery.html">Gallery</a>
-        <a class="cms-btn cms-btn-secondary" href="transactions.html">Transactions</a>
-        <a class="cms-btn cms-btn-secondary" href="notifications.html">Notifications</a>
-        <a class="cms-btn cms-btn-secondary" href="popups.html">Pop-ups</a>
-        <a class="cms-btn cms-btn-secondary" href="static-pages.html">Static pages</a>
-      </div>
-    </div>
   </div>
   <script src="../js/data.js"></script>
   <script src="../js/cms-store.js"></script>
@@ -39,29 +19,17 @@
   <script>
     cmsInitShell("dash");
     const s = CMS.getStore();
-    const rec = s.recommended || [];
-    const inc = s.incidents || [];
-    const mem = s.members || [];
-    const users = s.users || [];
-    const don = s.donations || [];
-    const fb = s.feedback || [];
-    const pending = inc.filter((i) => i.status === "received" || i.status === "under_review").length;
-    const memPending = mem.filter((m) => m.status === "pending").length;
-    const premiumNow = users.filter((u) => CMS.isUserPremiumNow(u)).length;
-    const fbNew = fb.filter((f) => f.status === "new").length;
-    const donTotal = don.reduce((n, d) => n + (+d.amount || 0), 0);
-    const liveBanners = (s.banners || []).filter((b) => b.published !== false).length;
+    const pending = (s.incidents || []).filter((i) => i.status === "received" || i.status === "under_review").length;
+    const memPending = (s.members || []).filter((m) => m.status === "pending").length;
     const ntfSched = (s.notifications || []).filter((n) => n.status === "scheduled").length;
+    const unpublished = (s.banners || []).filter((b) => b.published === false).length;
+    const fbNew = (s.feedback || []).filter((f) => f.status === "new").length;
     document.getElementById("stats").innerHTML = `
-      <div class="cms-stat"><div class="v">${liveBanners}</div><div class="l">Live homepage banners</div></div>
-      <div class="cms-stat"><div class="v">${(s.featuredRouteIds || []).length}</div><div class="l">Featured routes</div></div>
-      <div class="cms-stat"><div class="v">${rec.filter((r) => r.published).length}</div><div class="l">Editor's Choice published</div></div>
-      <div class="cms-stat"><div class="v">${pending}</div><div class="l">Incidents awaiting action</div></div>
-      <div class="cms-stat"><div class="v">${memPending}</div><div class="l">Member registrations pending</div></div>
-      <div class="cms-stat"><div class="v">${users.length}</div><div class="l">App users (${premiumNow} premium)</div></div>
-      <div class="cms-stat"><div class="v">${ntfSched}</div><div class="l">Scheduled notifications</div></div>
-      <div class="cms-stat"><div class="v">${fbNew}</div><div class="l">New feedback messages</div></div>
-      <div class="cms-stat"><div class="v">HK$${donTotal.toLocaleString()}</div><div class="l">Donations pledged (demo)</div></div>
+      <a class="cms-stat" href="incidents.html"><div class="v">${pending}</div><div class="l">Incidents pending</div></a>
+      <a class="cms-stat" href="members.html"><div class="v">${memPending}</div><div class="l">Members pending</div></a>
+      <a class="cms-stat" href="notifications.html"><div class="v">${ntfSched}</div><div class="l">Scheduled notifications</div></a>
+      <a class="cms-stat" href="banners.html"><div class="v">${unpublished}</div><div class="l">Unpublished banners</div></a>
+      <a class="cms-stat" href="feedback.html"><div class="v">${fbNew}</div><div class="l">New feedback</div></a>
     `;
   </script>
 </body>

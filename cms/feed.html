@@ -58,6 +58,7 @@
           <td>
             <button type="button" class="cms-btn cms-btn-secondary cms-btn-sm" data-pin="${cmsEsc(p.id)}">${p.pinned ? "Unpin" : "Pin"}</button>
             <button type="button" class="cms-btn cms-btn-secondary cms-btn-sm" data-edit="${cmsEsc(p.id)}">Edit</button>
+            ${cmsPreviewBtn("feed", p.id, "View website")}
             <button type="button" class="cms-btn cms-btn-danger cms-btn-sm" data-rm="${cmsEsc(p.id)}">${p.removed ? "Restore" : "Remove"}</button>
           </td>
         </tr>`).join("") || '<tr><td colspan="4">No posts</td></tr>';

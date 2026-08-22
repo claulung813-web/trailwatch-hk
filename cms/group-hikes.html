@@ -74,9 +74,10 @@
           <td>${mod.pinned ? '<span class="cms-badge pub">Pinned</span>' : "—"}</td>
           <td>
             <button type="button" class="cms-btn cms-btn-secondary cms-btn-sm" data-pin="${cmsEsc(g.id)}">${mod.pinned ? "Unpin" : "Pin"}</button>
+            ${cmsPreviewBtn("group", g.id, "View website")}
             ${mod.disabled
               ? `<button type="button" class="cms-btn cms-btn-secondary cms-btn-sm" data-restore="${cmsEsc(g.id)}">Restore</button>`
-              : `<button type="button" class="cms-btn cms-btn-danger cms-btn-sm" data-disable="${cmsEsc(g.id)}">Disable</button>`}
+              : `<button type="button" class="cms-btn cms-btn-danger cms-btn-sm" data-disable="${cmsEsc(g.id)}" data-cms-no-confirm="1">Disable</button>`}
           </td>
         </tr>`;
       }).join("");

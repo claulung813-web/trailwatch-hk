@@ -147,20 +147,21 @@
         b.addEventListener("click", () => {
           const c = (CMS.getStore().editorsChoiceCategories || []).find((x) => x.id === b.dataset.eced);
           if (!c) return;
-          const name = prompt("Category name", c.name);
-          if (name == null) return;
-          const nameZh = prompt("Category name (繁)", c.nameZh || "");
-          const photo = prompt("Photo URL", c.photo || "");
-          const routes = prompt("Route IDs (comma-separated, partial reorder OK)", (c.routeIds || []).join(", "));
+          cmsOpenDrawer("Edit category", [
+            { id: "name", label: "Name (EN)", value: c.name },
+            { id: "nameZh", label: "Name (繁)", value: c.nameZh || "" },
+            { id: "photo", label: "Photo URL", value: c.photo || "" },
+            { id: "routes", label: "Route IDs (comma-separated)", type: "textarea", rows: 4, value: (c.routeIds || []).join(", ") },
+          ], (v) => {
           const s = CMS.getStore();
           s.editorsChoiceCategories = (s.editorsChoiceCategories || []).map((x) =>
             x.id === c.id
               ? Object.assign({}, x, {
-                  name: name.trim() || c.name,
-                  nameZh: nameZh == null ? c.nameZh : nameZh,
-                  photo: photo == null ? c.photo : photo,
-                  routeIds: routes
-                    ? routes
+                  name: (v.name || "").trim() || c.name,
+                  nameZh: v.nameZh,
+                  photo: v.photo,
+                  routeIds: v.routes
+                    ? v.routes
                         .split(",")
                         .map((t) => t.trim())
                         .filter(Boolean)
@@ -170,6 +171,7 @@
           );
           CMS.setStore(s);
           renderEc();
+          });
         })
       );
     }
@@ -371,6 +373,7 @@
             <td>${badge}</td>
             <td>
               <button class="cms-btn cms-btn-secondary cms-btn-sm" data-edit="${r.id}">Edit</button>
+              ${cmsPreviewBtn("trail", r.id, "View website")}
               <button class="cms-btn cms-btn-danger cms-btn-sm" data-del="${r.id}">Delete</button>
             </td>
           </tr>`;

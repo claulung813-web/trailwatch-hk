@@ -61,7 +61,8 @@
             <div class="rec-stats-grid" id="routeStats"></div>
           </div>
           <div class="route-actions">
-            <button type="button" class="btn btn-primary btn-block" id="btnSavePlan"></button>
+            <button type="button" class="btn btn-primary btn-block" id="btnBookmark"></button>
+            <button type="button" class="btn btn-secondary btn-block" id="btnSavePlan"></button>
             <a class="btn btn-secondary btn-block" id="btnFollow" href="index.html">Track</a>
           </div>
         </div>
@@ -105,6 +106,8 @@
       ).join("");
 
       const followHref = "index.html?follow=route&trail=" + encodeURIComponent(trail.id);
+      document.getElementById("btnBookmark").textContent = t("rec_bookmark");
+      document.getElementById("btnBookmark").addEventListener("click", () => showToast(t("rec_bookmark")));
       document.getElementById("btnFollow").href = followHref;
       document.getElementById("btnFollow").textContent = t("app_track_follow");
 

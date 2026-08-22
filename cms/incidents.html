@@ -11,7 +11,7 @@
 <body class="cms-body">
   <div id="cmsShell">
     <h1>Incident Reports</h1>
-    <p class="sub">Change status, update details, and manage report categories (name + icon).</p>
+    <p class="sub">Change status, update details, and manage report categories (name + icon). Preview a report on the public site before you publish.</p>
 
     <div class="cms-card" style="margin-bottom:1rem">
       <div class="cms-toolbar">
@@ -57,8 +57,9 @@
           <textarea id="staffNoteZh"></textarea>
           <div class="cms-toolbar" style="margin-top:0.75rem">
             <button type="submit" class="cms-btn cms-btn-primary">Save update</button>
-            <button type="button" class="cms-btn cms-btn-warn" id="btnPublish">Mark published</button>
-            <button type="button" class="cms-btn cms-btn-danger" id="btnReject">Reject</button>
+            <a class="cms-btn cms-btn-secondary" id="btnPreviewInc" href="../reports.html" target="_blank" rel="noopener">View website</a>
+            <button type="button" class="cms-btn cms-btn-primary" id="btnPublish">Mark published</button>
+            <button type="button" class="cms-btn cms-btn-warn" id="btnReject">Reject</button>
           </div>
         </form>
       </div>
@@ -120,15 +121,20 @@
         b.addEventListener("click", () => {
           const c = (CMS.getStore().incidentCategories || []).find((x) => x.id === b.dataset.ced);
           if (!c) return;
-          const name = prompt("Category name", c.name);
-          if (name == null) return;
-          const icon = prompt("Icon", c.icon || "");
-          const s = CMS.getStore();
-          s.incidentCategories = (s.incidentCategories || []).map((x) =>
-            x.id === c.id ? Object.assign({}, x, { name: name.trim() || c.name, icon: icon == null ? c.icon : icon }) : x
-          );
-          CMS.setStore(s);
-          renderCats();
+          cmsOpenDrawer("Edit category", [
+            { id: "name", label: "Name (EN)", value: c.name },
+            { id: "nameZh", label: "Name (繁)", value: c.nameZh || "" },
+            { id: "icon", label: "Icon", value: c.icon || "" },
+          ], (v) => {
+            const s = CMS.getStore();
+            s.incidentCategories = (s.incidentCategories || []).map((x) =>
+              x.id === c.id
+                ? Object.assign({}, x, { name: v.name.trim() || c.name, nameZh: v.nameZh, icon: v.icon })
+                : x
+            );
+            CMS.setStore(s);
+            renderCats();
+          });
         })
       );
     }
@@ -184,7 +190,10 @@
           </td>
           <td><span class="cms-badge ${statusBadge(i.status)}">${CMS.statusLabel(i.status)}</span></td>
           <td>${i.published ? "Yes" : "No"}</td>
-          <td><button class="cms-btn cms-btn-secondary cms-btn-sm" data-open="${i.id}">Open</button></td>
+          <td style="white-space:nowrap">
+            <button class="cms-btn cms-btn-secondary cms-btn-sm" data-open="${i.id}">Edit</button>
+            ${cmsPreviewBtn("incident", i.id, "View website")}
+          </td>
         </tr>`)
         .join("") || '<tr><td colspan="4">No incidents.</td></tr>';
 
