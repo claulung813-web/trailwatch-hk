@@ -57,6 +57,7 @@
     </div>
   </div>
   <script src="../js/data.js"></script>
+  <script src="../js/live-routes.js"></script>
   <script src="../js/cms-store.js"></script>
   <script src="js/cms-ui.js"></script>
   <script>
@@ -66,6 +67,8 @@
     let pendingArticleId = "";
 
     function trailTitle(id) {
+      const rec = (CMS.getStore().recommended || []).find((x) => x.id === id);
+      if (rec) return rec.title || id;
       const t = (TW.trails || []).find((x) => x.id === id);
       return t ? (t.title || id) : id;
     }
@@ -146,7 +149,8 @@
     document.getElementById("routeSearch").addEventListener("input", () => {
       const q = document.getElementById("routeSearch").value.trim().toLowerCase();
       if (!q) { document.getElementById("routeHits").textContent = ""; pendingRouteId = ""; return; }
-      const hit = (TW.trails || []).find((t) =>
+      const pool = (CMS.getStore().recommended || []).concat(TW.trails || []);
+      const hit = pool.find((t) =>
         String(t.id).toLowerCase() === q ||
         String(t.title || "").toLowerCase().indexOf(q) >= 0 ||
         String(t.id).toLowerCase().indexOf(q) >= 0

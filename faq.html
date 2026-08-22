@@ -25,6 +25,7 @@
   <div id="app-footer"></div>
   <script src="js/i18n.js"></script>
   <script src="js/data.js"></script>
+  <script src="js/live-routes.js"></script>
   <script src="js/cms-store.js"></script>
   <script src="js/app.js"></script>
   <script>
@@ -63,13 +64,14 @@
         .join("");
     }
 
-    const count = parseInt(TW.t("faq_count"), 10) || 15;
     const list = document.getElementById("faqList");
-    list.innerHTML = Array.from({ length: count }, (_, i) => i + 1)
-      .map((n) => {
-        const q = TW.t("faq_" + n + "_q");
-        const a = TW.t("faq_" + n + "_a");
-        if (!q || q === "faq_" + n + "_q") return "";
+    const items = typeof TW.getFaqItems === "function" ? TW.getFaqItems() : [];
+    const zh = TW.getLang() === "zh";
+    list.innerHTML = items
+      .map((it) => {
+        const q = zh ? it.qZh || it.qEn : it.qEn || it.qZh;
+        const a = zh ? it.aZh || it.aEn : it.aEn || it.aZh;
+        if (!q) return "";
         return `<details class="faq-item">
           <summary class="faq-summary">
             <span class="faq-q">${faqEsc(q)}</span>
@@ -78,7 +80,7 @@
           <div class="faq-answer">${formatFaqAnswer(a)}</div>
         </details>`;
       })
-      .join("");
+      .join("") || `<p class="page-sub">${TW.t("article_empty")}</p>`;
 
     // Accordion: opening one closes others (optional UX; still expandable/collapsible)
     list.addEventListener("toggle", (e) => {

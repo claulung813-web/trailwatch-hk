@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CMS — User routes</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="css/cms.css" />
+</head>
+<body class="cms-body">
+  <div id="cmsShell">
+    <h1>User routes</h1>
+    <p class="sub">Community GPS records (same fields as trailwatch.hk/route/…). Published routes appear under Explore → Records.</p>
+    <div class="cms-row">
+      <div class="cms-card">
+        <h3 style="margin-top:0" id="formTitle">Add user route</h3>
+        <form class="cms-form" id="routeForm">
+          <input type="hidden" id="editId" />
+          <label>Title (usually the date)</label>
+          <input id="title" required placeholder="22/08/2026" />
+          <label>Author / hiker name</label>
+          <input id="author" required />
+          <label>Region label (EN)</label>
+          <input id="region" placeholder="Kowloon, NT Central &amp; Tsuen Wan" />
+          <label>Region (繁)</label>
+          <input id="regionZh" />
+          <label>District</label>
+          <select id="district"></select>
+          <label>Date</label>
+          <input id="date" placeholder="22/08/2026" />
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.5rem">
+            <div><label>Duration</label><input id="durationClock" placeholder="2:39:01" /></div>
+            <div><label>Start</label><input id="startTime" placeholder="08:35" /></div>
+            <div><label>End</label><input id="endTime" placeholder="11:14" /></div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.5rem">
+            <div><label>Distance km</label><input id="distanceKm" placeholder="9.02" /></div>
+            <div><label>Pace km/h</label><input id="paceKmh" placeholder="3.40" /></div>
+            <div><label>Elev. change m</label><input id="elevChange" placeholder="216" /></div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem">
+            <div><label>Max m</label><input id="elevMax" /></div>
+            <div><label>Min m</label><input id="elevMin" /></div>
+          </div>
+          <label>Track / cover image URL</label>
+          <input id="image" />
+          <label class="cms-checks"><input type="checkbox" id="published" checked /> Published</label>
+          <p class="cms-muted" style="font-size:0.8rem">Map: click at least 2 points.</p>
+          <div class="cms-toolbar">
+            <button type="button" class="cms-btn cms-btn-secondary cms-btn-sm" id="clearPath">Clear</button>
+            <span id="pathCount" class="cms-muted">0 points</span>
+          </div>
+          <div id="routeMap" class="cms-map cms-map--edit"></div>
+          <div class="cms-toolbar" style="margin-top:0.75rem">
+            <button type="submit" class="cms-btn cms-btn-primary">Save user route</button>
+            <button type="button" class="cms-btn cms-btn-secondary" id="resetForm">New</button>
+          </div>
+        </form>
+      </div>
+      <div class="cms-card">
+        <h3 style="margin-top:0">Routes</h3>
+        <table class="cms-table">
+          <thead><tr><th>Route</th><th>Hiker</th><th></th></tr></thead>
+          <tbody id="list"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="../js/data.js"></script>
+  <script src="../js/live-routes.js"></script>
+  <script src="../js/cms-store.js"></script>
+  <script src="js/cms-ui.js"></script>
+  <script>
+    cmsInitShell("user-routes");
+    let path = [];
+    const distSel = document.getElementById("district");
+    distSel.innerHTML = (TW.districts || []).map((d) => `<option value="${d.id}">${d.name}</option>`).join("");
+    const map = L.map("routeMap").setView([22.32, 114.17], 11);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "© OSM" }).addTo(map);
+    let layer = L.layerGroup().addTo(map);
+    function redraw() {
+      layer.clearLayers();
+      document.getElementById("pathCount").textContent = path.length + " points";
+      if (path.length) L.polyline(path, { color: "#2563eb", weight: 4 }).addTo(layer);
+      path.forEach((p) => L.circleMarker(p, { radius: 5, fillColor: "#2d8a45", fillOpacity: 1, color: "#fff" }).addTo(layer));
+    }
+    map.on("click", (e) => {
+      path.push([e.latlng.lat, e.latlng.lng]);
+      redraw();
+    });
+    document.getElementById("clearPath").addEventListener("click", () => { path = []; redraw(); });
+
+    function resetForm() {
+      document.getElementById("routeForm").reset();
+      document.getElementById("editId").value = "";
+      document.getElementById("formTitle").textContent = "Add user route";
+      document.getElementById("published").checked = true;
+      path = [];
+      redraw();
+    }
+    function loadEdit(id) {
+      const r = (CMS.getStore().userRoutes || []).find((x) => x.id === id);
+      if (!r) return;
+      document.getElementById("formTitle").textContent = "Edit user route";
+      document.getElementById("editId").value = r.id;
+      document.getElementById("title").value = r.title || "";
+      document.getElementById("author").value = r.author || "";
+      document.getElementById("region").value = r.region || "";
+      document.getElementById("regionZh").value = r.regionZh || "";
+      document.getElementById("district").value = r.district || "tsuen-wan";
+      document.getElementById("date").value = r.date || "";
+      document.getElementById("durationClock").value = r.durationClock || r.duration || "";
+      document.getElementById("startTime").value = r.startTime || "";
+      document.getElementById("endTime").value = r.endTime || "";
+      document.getElementById("distanceKm").value = r.distanceKm != null ? r.distanceKm : "";
+      document.getElementById("paceKmh").value = r.paceKmh != null ? r.paceKmh : "";
+      document.getElementById("elevChange").value = r.elevChange != null ? r.elevChange : "";
+      document.getElementById("elevMax").value = r.elevMax != null ? r.elevMax : "";
+      document.getElementById("elevMin").value = r.elevMin != null ? r.elevMin : "";
+      document.getElementById("image").value = r.image || "";
+      document.getElementById("published").checked = r.published !== false;
+      path = (r.path || []).map((p) => [p[0], p[1]]);
+      redraw();
+    }
+    function renderList() {
+      const list = CMS.getStore().userRoutes || [];
+      document.getElementById("list").innerHTML = list.map((r) => `<tr>
+        <td><strong>${cmsEsc(r.title)}</strong><br/><span class="cms-muted">${cmsEsc(r.distance || r.distanceKm || "")}</span></td>
+        <td>${cmsEsc(r.author || "")}</td>
+        <td>
+          <button class="cms-btn cms-btn-secondary cms-btn-sm" data-edit="${cmsEsc(r.id)}">Edit</button>
+          ${cmsPreviewBtn("userRoute", r.id, "View website")}
+          <button class="cms-btn cms-btn-danger cms-btn-sm" data-del="${cmsEsc(r.id)}">Delete</button>
+        </td>
+      </tr>`).join("") || '<tr><td colspan="3">No user routes yet.</td></tr>';
+      document.querySelectorAll("[data-edit]").forEach((b) => b.addEventListener("click", () => loadEdit(b.dataset.edit)));
+      document.querySelectorAll("[data-del]").forEach((b) => b.addEventListener("click", () => {
+        if (!confirm("Delete this user route?")) return;
+        const s = CMS.getStore();
+        s.userRoutes = (s.userRoutes || []).filter((x) => x.id !== b.dataset.del);
+        CMS.setStore(s);
+        renderList();
+        cmsToast("Deleted");
+      }));
+    }
+    document.getElementById("routeForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      if (path.length < 2) return cmsToast("Add at least 2 map points");
+      const km = parseFloat(document.getElementById("distanceKm").value) || 0;
+      const clock = document.getElementById("durationClock").value.trim();
+      const id = document.getElementById("editId").value || "ur_" + Date.now();
+      const entry = {
+        id,
+        kind: "user",
+        userRoute: true,
+        title: document.getElementById("title").value.trim(),
+        titleZh: document.getElementById("title").value.trim(),
+        author: document.getElementById("author").value.trim(),
+        user: document.getElementById("author").value.trim(),
+        region: document.getElementById("region").value.trim(),
+        regionZh: document.getElementById("regionZh").value.trim(),
+        snippet: document.getElementById("region").value.trim(),
+        district: document.getElementById("district").value,
+        date: document.getElementById("date").value.trim(),
+        durationClock: clock,
+        duration: clock,
+        startTime: document.getElementById("startTime").value.trim(),
+        endTime: document.getElementById("endTime").value.trim(),
+        distanceKm: km,
+        distance: km ? km + " km" : "",
+        paceKmh: parseFloat(document.getElementById("paceKmh").value) || 0,
+        elevChange: parseFloat(document.getElementById("elevChange").value) || 0,
+        elev: (document.getElementById("elevChange").value || "") + " m",
+        elevMax: parseFloat(document.getElementById("elevMax").value) || 0,
+        elevMin: parseFloat(document.getElementById("elevMin").value) || 0,
+        image: document.getElementById("image").value.trim(),
+        photos: [document.getElementById("image").value.trim()].filter(Boolean),
+        published: document.getElementById("published").checked,
+        privacy: "Public",
+        path: path.slice(),
+        lat: path[0][0],
+        lng: path[0][1],
+      };
+      const s = CMS.getStore();
+      const list = s.userRoutes || [];
+      const i = list.findIndex((x) => x.id === id);
+      if (i >= 0) list[i] = Object.assign({}, list[i], entry);
+      else list.unshift(entry);
+      s.userRoutes = list;
+      CMS.setStore(s);
+      cmsToast("User route saved");
+      renderList();
+      resetForm();
+    });
+    document.getElementById("resetForm").addEventListener("click", resetForm);
+    renderList();
+    setTimeout(() => map.invalidateSize(), 100);
+  </script>
+</body>
+</html>

@@ -37,7 +37,15 @@
           <label>Description (EN)</label>
           <textarea id="desc"></textarea>
           <label>Description (繁)</label>
-          <textarea id="descZh"></textarea>
+          <textarea id="descZh" rows="4"></textarea>
+          <label>Itinerary (EN)</label>
+          <input id="itinerary" placeholder="Start › via › end" />
+          <label>Itinerary (繁)</label>
+          <input id="itineraryZh" />
+          <label>Author</label>
+          <input id="author" value="TrailWatch" />
+          <label>Published date</label>
+          <input id="pubDate" placeholder="02/06/2026" />
           <label>Or link existing trail library</label>
           <select id="trailLib">
             <option value="">— Custom / map only —</option>
@@ -47,11 +55,19 @@
           <label>District</label>
           <select id="district"></select>
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.5rem">
-            <div><label>Distance</label><input id="distance" placeholder="7.2 km" /></div>
-            <div><label>Duration</label><input id="duration" placeholder="2h 30m" /></div>
-            <div><label>Difficulty 1–5</label><input id="difficulty" type="number" min="1" max="5" value="2" /></div>
+            <div><label>Distance km</label><input id="distance" placeholder="3.21" /></div>
+            <div><label>Duration clock</label><input id="duration" placeholder="1:14:02" /></div>
+            <div><label>Elev. change m</label><input id="elevChange" placeholder="134" /></div>
           </div>
-          <label>Image URL</label>
+          <label>Difficulty 1–5</label>
+          <input id="difficulty" type="number" min="1" max="5" value="2" />
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem">
+            <div><label>Elev max m</label><input id="elevMax" /></div>
+            <div><label>Elev min m</label><input id="elevMin" /></div>
+          </div>
+          <label>Photo URLs (one per line)</label>
+          <textarea id="photos" rows="3"></textarea>
+          <label>Cover image URL</label>
           <input id="image" placeholder="https://…" />
           <label>Month tag (YYYY-MM)</label>
           <input id="month" placeholder="2026-07" />
@@ -89,6 +105,7 @@
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="../js/data.js"></script>
+  <script src="../js/live-routes.js"></script>
   <script src="../js/cms-store.js"></script>
   <script src="js/cms-ui.js"></script>
   <script>
@@ -314,8 +331,19 @@
         district: document.getElementById("district").value,
         difficulty: +document.getElementById("difficulty").value || 2,
         distance: document.getElementById("distance").value.trim(),
+        distanceKm: parseFloat(document.getElementById("distance").value) || null,
         duration: document.getElementById("duration").value.trim(),
-        elevation: "",
+        durationClock: document.getElementById("duration").value.trim(),
+        elevation: (document.getElementById("elevChange").value.trim() || "") + (document.getElementById("elevChange").value ? " m" : ""),
+        elevChange: parseFloat(document.getElementById("elevChange").value) || 0,
+        elevMax: parseFloat(document.getElementById("elevMax").value) || 0,
+        elevMin: parseFloat(document.getElementById("elevMin").value) || 0,
+        itinerary: document.getElementById("itinerary").value.trim(),
+        itineraryZh: document.getElementById("itineraryZh").value.trim(),
+        author: document.getElementById("author").value.trim() || "TrailWatch",
+        date: document.getElementById("pubDate").value.trim(),
+        photos: document.getElementById("photos").value.split("\n").map((s) => s.trim()).filter(Boolean),
+        editorChoice: true,
         image: document.getElementById("image").value.trim() || "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=800&q=80",
         published: document.getElementById("published").checked,
         featured: document.getElementById("featured").checked,
@@ -343,8 +371,16 @@
       document.getElementById("descZh").value = r.descZh || "";
       document.getElementById("trailLib").value = r.trailId || "";
       document.getElementById("district").value = r.district || "sai-kung";
-      document.getElementById("distance").value = r.distance || "";
-      document.getElementById("duration").value = r.duration || "";
+      document.getElementById("distance").value = r.distanceKm != null ? r.distanceKm : r.distance || "";
+      document.getElementById("duration").value = r.durationClock || r.duration || "";
+      document.getElementById("elevChange").value = r.elevChange != null ? r.elevChange : "";
+      document.getElementById("elevMax").value = r.elevMax != null ? r.elevMax : "";
+      document.getElementById("elevMin").value = r.elevMin != null ? r.elevMin : "";
+      document.getElementById("itinerary").value = r.itinerary || "";
+      document.getElementById("itineraryZh").value = r.itineraryZh || "";
+      document.getElementById("author").value = r.author || "TrailWatch";
+      document.getElementById("pubDate").value = r.date || "";
+      document.getElementById("photos").value = (r.photos || []).join("\n");
       document.getElementById("difficulty").value = r.difficulty || 2;
       document.getElementById("image").value = r.image || "";
       document.getElementById("month").value = r.month || "";

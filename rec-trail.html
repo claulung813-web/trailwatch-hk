@@ -3,96 +3,120 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Recommended Trail — TrailWatch HK</title>
+  <title>Editor’s Choice — TrailWatch HK</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="css/styles.css" />
-  <style>
-    #recMap { height: 380px; border-radius: var(--radius); border: 1px solid var(--border); }
-    .rec-hero { width: 100%; max-height: 240px; object-fit: cover; border-radius: var(--radius); margin-bottom: 1.25rem; }
-  </style>
 </head>
 <body>
   <div id="app-header"></div>
   <main class="page">
-    <div class="container" style="max-width:800px">
-      <a href="explore.html" class="link-more" style="display:inline-block;margin-bottom:1rem" data-i18n="recommended_staff"></a>
-      <img class="rec-hero" id="recImg" alt="" />
+    <div class="container route-share">
+      <nav class="crumbs" aria-label="Breadcrumb">
+        <a href="explore.html" data-i18n="explore_view_editors"></a>
+        <span>›</span>
+        <span id="crumbTitle"></span>
+        <span>›</span>
+        <a href="plan.html" data-i18n="nav_plan"></a>
+      </nav>
       <h1 class="page-title" id="recTitle"></h1>
-      <p class="page-sub" id="recDesc"></p>
-      <div class="trail-meta" id="recMeta" style="margin-bottom:1.25rem"></div>
-      <div class="section-head"><h2 data-i18n="hikes_route">Route</h2></div>
-      <div id="recMap"></div>
-      <div style="margin-top:1.25rem;display:flex;flex-wrap:wrap;gap:0.5rem" class="detail-next-steps">
+      <p class="route-share-story" id="recDesc"></p>
+      <p class="route-share-itinerary" id="recItinerary"></p>
+      <div class="route-share-byline">
+        <strong id="recAuthor">TrailWatch</strong>
+        <span id="recDate"></span>
+      </div>
+      <div id="recMap" class="route-share-map"></div>
+      <section class="route-share-block">
+        <h2 id="lblPlanData"></h2>
+        <div class="route-share-stats" id="planStats"></div>
+      </section>
+      <section class="route-share-block">
+        <h2 id="lblElev"></h2>
+        <p class="route-share-elev" id="elevLine"></p>
+      </section>
+      <section class="route-share-block">
+        <h2 id="lblPhotos"></h2>
+        <div class="rec-photo-grid" id="photoGrid"></div>
+      </section>
+      <div class="detail-next-steps">
         <a class="btn btn-primary" id="recPlan" href="plan.html" data-i18n="mark_plan"></a>
         <button type="button" class="btn btn-secondary bookmark-btn" id="recBookmark" data-i18n="rec_bookmark"></button>
-        <button type="button" class="btn btn-secondary dup-btn" id="recDup" data-i18n="route_duplicate"></button>
-        <a class="btn btn-secondary" href="app/index.html" data-i18n="cta_open_app_track"></a>
-        <a class="btn btn-secondary" href="reports.html" data-i18n="cta_report_nearby"></a>
+        <button type="button" class="btn btn-secondary dup-btn" id="recDup" data-i18n="rec_duplicate_edit"></button>
       </div>
-      <p class="meta detail-loop-hint" data-i18n="cta_route_loop_hint" style="margin-top:0.75rem"></p>
     </div>
   </main>
   <div id="app-footer"></div>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="js/i18n.js"></script>
   <script src="js/data.js"></script>
+  <script src="js/live-routes.js"></script>
   <script src="js/cms-store.js"></script>
   <script src="js/app.js"></script>
   <script>
     document.documentElement.lang = TW.getLang() === "zh" ? "zh-Hant" : "en";
     initShell("explore");
+    const t = TW.t;
+    document.getElementById("lblPlanData").textContent = t("rec_planned_data");
+    document.getElementById("lblElev").textContent = t("rec_elev_stat");
+    document.getElementById("lblPhotos").textContent = t("rec_photos");
 
     const id = new URLSearchParams(location.search).get("id");
     const r =
-      (typeof TW.resolveTrailSource === "function" && TW.resolveTrailSource(id)) ||
       (typeof TW.getRecommendedTrail === "function" && TW.getRecommendedTrail(id)) ||
-      (TW.trails || []).find((t) => t.id === id);
+      (typeof TW.resolveTrailSource === "function" && TW.resolveTrailSource(id)) ||
+      (TW.trails || []).find((x) => x.id === id);
     if (!r) {
       location.href = "explore.html";
     } else {
-      document.getElementById("recTitle").textContent = TW.tt(r, "title");
+      const title = TW.tt(r, "title");
+      document.title = title + " — TrailWatch HK";
+      document.getElementById("recTitle").textContent = title;
+      document.getElementById("crumbTitle").textContent = title;
       document.getElementById("recDesc").textContent = TW.tt(r, "desc") || "";
-      document.getElementById("recImg").src = r.image || "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1200&q=60";
-      document.getElementById("recMeta").innerHTML =
-        `<span>📍 ${TW.districtName(r.district)}</span>` +
-        `<span>📏 ${r.distance || (r.distanceKm != null ? r.distanceKm + " km" : "—")}</span>` +
-        `<span>⏱ ${r.duration || "—"}</span>` +
-        `<span>L${r.difficulty || 2}</span>`;
+      const it = TW.getLang() === "zh" ? r.itineraryZh || r.itinerary : r.itinerary || r.itineraryZh;
+      document.getElementById("recItinerary").textContent = it ? t("rec_itinerary") + "：" + it : "";
+      document.getElementById("recAuthor").textContent = r.author || "TrailWatch";
+      document.getElementById("recDate").textContent = r.date || "";
+
+      const dist = r.distanceKm != null ? Number(r.distanceKm).toFixed(2) : (r.distance || "—");
+      const dur = r.durationClock || r.duration || "—";
+      const elev = r.elevChange != null ? r.elevChange : r.elevation || "—";
+      document.getElementById("planStats").innerHTML = [
+        [dur, t("rec_duration_lbl")],
+        [dist, t("rec_distance_km")],
+        [elev, t("rec_elev_changes")],
+      ].map((s) => `<div><strong>${s[0]}</strong><span>${s[1]}</span></div>`).join("");
+      document.getElementById("elevLine").textContent =
+        t("rec_elev_max") + " " + (r.elevMax != null ? r.elevMax + "m" : "—") +
+        " · " + t("rec_elev_min") + " " + (r.elevMin != null ? r.elevMin + "m" : "—");
+
+      const photos = r.photos && r.photos.length ? r.photos : r.image ? [r.image] : [];
+      document.getElementById("photoGrid").innerHTML = photos
+        .map((p) => `<img src="${p}" alt="" loading="lazy" />`)
+        .join("");
 
       const planId = r.trailId || r.id;
-      if (planId) {
-        document.getElementById("recPlan").href = "plan.html";
-        document.getElementById("recPlan").addEventListener("click", (e) => {
-          e.preventDefault();
-          if (!TW.requireLogin({ messageKey: "login_to_save" })) return;
-          if (!TW.isPlanned(planId)) TW.togglePlan(planId);
-          showToast(TW.t("toast_planned"));
-        });
-      }
-
+      document.getElementById("recPlan").addEventListener("click", (e) => {
+        e.preventDefault();
+        if (!TW.requireLogin({ messageKey: "login_to_save" })) return;
+        if (!TW.isPlanned(planId)) TW.togglePlan(planId);
+        showToast(TW.t("toast_planned"));
+      });
       const bm = document.getElementById("recBookmark");
       bm.dataset.trail = planId;
-      if (TW.isBookmarked(bm.dataset.trail)) {
+      if (TW.isBookmarked(planId)) {
         bm.classList.add("active");
         bm.textContent = TW.t("rec_bookmark") + " ✓";
       }
+      document.getElementById("recDup").dataset.trail = planId;
 
-      const dup = document.getElementById("recDup");
-      dup.dataset.trail = planId;
-
-      const rawPath = r.path && r.path.length ? r.path : null;
-      let path = rawPath
-        ? rawPath.map((p) => [Number(p[0]), Number(p[1])])
-        : r.lat != null && typeof TW.demoPathAround === "function"
-          ? TW.demoPathAround(r.lat, r.lng)
-          : [[22.32, 114.17]];
+      const path = (r.path && r.path.length ? r.path : TW.demoPathAround ? TW.demoPathAround(r.lat, r.lng) : [[22.32, 114.17]])
+        .map((p) => [Number(p[0]), Number(p[1])]);
       const map = L.map("recMap").setView(path[0], 13);
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution: "© OpenStreetMap",
-      }).addTo(map);
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "© OpenStreetMap" }).addTo(map);
       if (path.length > 1) {
         const line = L.polyline(path, { color: "#2563eb", weight: 5 }).addTo(map);
         map.fitBounds(line.getBounds().pad(0.15));

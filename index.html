@@ -83,6 +83,7 @@
 
   <script src="js/i18n.js?v=20260821b"></script>
   <script src="js/data.js?v=20260821b"></script>
+  <script src="js/live-routes.js"></script>
   <script src="js/cms-store.js?v=20260821b"></script>
   <script src="js/app.js?v=20260821b"></script>
   <script>
@@ -130,14 +131,12 @@
       return `<article class="hero ${b.showDevice ? "hero--app" : ""} home-slide${i === 0 ? " is-active" : ""}" data-slide="${i}"${i === 0 ? "" : " hidden"}>
         <div class="hero-bg" role="img" aria-label="${esc(title)}" style="background-image:linear-gradient(to top, rgba(11, 66, 26, 0.78) 0%, rgba(11, 66, 26, 0.28) 45%, rgba(11, 66, 26, 0.12) 100%), url('${esc(img)}')"></div>
         <div class="hero-content">
-          ${badge ? `<div class="hero-badge">${esc(badge)}</div>` : ""}
-          ${seo ? `<p class="hero-seo-kws">${esc(seo)}</p>` : ""}
+          ${badge ? "" : ""}
           <h1>${esc(title)}</h1>
           ${body ? `<p>${esc(body)}</p>` : ""}
           ${stores}
           <div class="hero-actions">
             ${cta ? `<a class="btn btn-ghost" href="${esc(b.ctaHref || "get-app.html")}">${esc(cta)}</a>` : ""}
-            ${cta2 ? `<a class="btn btn-ghost" href="${esc(b.cta2Href || "explore.html")}">${esc(cta2)}</a>` : ""}
           </div>
         </div>
         ${deviceHtml}
@@ -255,7 +254,8 @@
 
     function recAsTrail(r) {
       return {
-        id: r.trailId || r.id,
+        id: r.id,
+        trailId: r.trailId || r.id,
         title: r.title || r.name,
         titleZh: r.titleZh || r.nameZh,
         desc: r.desc || "",
@@ -263,11 +263,12 @@
         district: r.district || "sai-kung",
         difficulty: r.difficulty || 2,
         distance: r.distanceKm != null ? r.distanceKm + " km" : (r.distance || "—"),
-        duration: r.duration || "—",
-        elevation: r.elevation || "—",
+        duration: r.durationClock || r.duration || "—",
+        elevation: r.elevation || (r.elevChange != null ? r.elevChange + " m" : "—"),
         rating: r.rating || 4.5,
         image: r.image || "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=600&q=60",
         tags: r.tags || r.categories || [],
+        editorChoice: true,
       };
     }
     const cmsRecs = typeof TW.getRecommendedTrails === "function" ? TW.getRecommendedTrails() : [];

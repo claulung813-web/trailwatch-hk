@@ -5342,3 +5342,24 @@ a.record-item {
   border-radius: var(--radius-sm);
   border: 1px solid var(--border);
 }
+
+.route-share { max-width: 760px; }
+.crumbs { font-size: 0.82rem; color: var(--text-muted); margin: 0 0 1rem; display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.crumbs a { color: var(--green-800); font-weight: 600; }
+.route-share-story { white-space: pre-wrap; line-height: 1.6; margin: 0 0 0.85rem; }
+.route-share-itinerary { font-size: 0.9rem; color: var(--text-muted); margin: 0 0 0.85rem; }
+.route-share-byline { display: flex; gap: 1rem; align-items: baseline; margin-bottom: 1rem; font-size: 0.9rem; }
+.route-share-byline span { color: var(--text-muted); }
+.route-share-map { height: 360px; border-radius: var(--radius); border: 1px solid var(--border); margin-bottom: 1.25rem; }
+.route-share-block { margin-bottom: 1.35rem; }
+.route-share-block h2 { font-size: 1.05rem; color: var(--green-900); margin: 0 0 0.75rem; }
+.route-share-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; }
+.route-share-stats--6 { grid-template-columns: repeat(3, 1fr); }
+.route-share-stats div { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 0.75rem 0.65rem; text-align: center; }
+.route-share-stats strong { display: block; font-size: 1.15rem; }
+.route-share-stats span { font-size: 0.72rem; color: var(--text-muted); }
+.route-share-elev { font-weight: 700; }
+.route-share-privacy { font-size: 0.78rem; font-weight: 700; color: var(--green-800); margin: 0 0 0.35rem; }
+.rec-photo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.5rem; }
+.rec-photo-grid img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 10px; border: 1px solid var(--border); }
+.trail-card-body h3 a:hover { text-decoration: underline; }

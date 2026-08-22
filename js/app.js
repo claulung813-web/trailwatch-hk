@@ -702,6 +702,10 @@ TW.resolveTrailSource = function (id) {
     const rec = TW.getRecommendedTrail(id);
     if (rec) return rec;
   }
+  if (typeof TW.getUserRoute === "function") {
+    const ur = TW.getUserRoute(id);
+    if (ur) return ur;
+  }
   const draft = TW.getRouteDraft(id);
   if (draft) {
     return {
@@ -1083,6 +1087,7 @@ function renderFooter() {
           <h4><a href="get-app.html#premium">${t("footer_premium")}</a></h4>
           <a href="terms.html">${t("footer_terms")}</a>
           <a href="privacy.html">${t("footer_privacy")}</a>
+          <a href="map-credits.html">${t("footer_map_credits")}</a>
         </div>
         <div>
           <h4>${t("footer_social")}</h4>
@@ -1098,6 +1103,7 @@ function renderFooter() {
         <span class="footer-bottom-links">
           <a href="terms.html">${t("footer_terms")}</a>
           <a href="privacy.html">${t("footer_privacy")}</a>
+          <a href="map-credits.html">${t("footer_map_credits")}</a>
         </span>
       </div>
     </div>
@@ -1648,7 +1654,6 @@ function renderTrailCard(t, opts) {
       <img src="${t.image}" alt="${title}" loading="lazy" />
       ${bookmarkBtn}
       <span class="rating">${twIcon("star")} ${t.rating}</span>
-      <span class="diff-badge">L${t.difficulty} · ${difficultyLabel(t.difficulty)}</span>
     </div>
     <div class="trail-card-body">
       <div class="feature-icons">
@@ -1658,7 +1663,7 @@ function renderTrailCard(t, opts) {
         ${difficultyPips(t.difficulty)}
         <span class="trail-diff-label">L${t.difficulty} · ${difficultyLabel(t.difficulty)}</span>
       </div>
-      <h3>${title}</h3>
+      <h3><a href="${TW.routeDetailHref ? TW.routeDetailHref(t) : "rec-trail.html?id=" + encodeURIComponent(t.id)}">${title}</a></h3>
       <p class="desc">${desc}</p>
       <div class="trail-meta">
         <span>📏 ${t.distance}</span>
@@ -1676,10 +1681,15 @@ function renderTrailCard(t, opts) {
 function renderRecordItem(r, detailHref) {
   const id = r.id || "";
   const inApp = /\/app(?:\/|$)/.test((location.pathname || "").replace(/\\/g, "/"));
+  const isUser = !!(r.kind === "user" || r.userRoute || String(id).indexOf("ur_") === 0);
   const href =
     detailHref ||
     (id
-      ? (inApp ? "record-detail.html" : "record-detail.html") + "?id=" + encodeURIComponent(id)
+      ? (isUser
+          ? (inApp ? "record-detail.html" : "user-route.html")
+          : (inApp ? "record-detail.html" : "record-detail.html")) +
+        "?id=" +
+        encodeURIComponent(id)
       : "#");
   const date = TW.getLang() === "zh" && r.dateZh ? r.dateZh : r.date;
   return `
@@ -1700,7 +1710,10 @@ function renderRecordItem(r, detailHref) {
 
 TW.getRecord = function (id) {
   if (!id) return null;
-  return (TW.records || []).find((r) => r.id === id) || null;
+  return (
+    (TW.records || []).find((r) => r.id === id) ||
+    (typeof TW.getUserRoute === "function" ? TW.getUserRoute(id) : null)
+  );
 };
 
 /** Resolve photo URLs for records/hikes relative to current page (app vs root) */

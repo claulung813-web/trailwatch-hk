@@ -10,55 +10,30 @@
 <body class="cms-body">
   <div id="cmsShell">
     <h1>Static pages</h1>
-    <p class="sub">Full documents: terms, privacy, map credits. Short site-wide strings are on <a href="content.html">Site snippets</a>.</p>
-
-    <form class="cms-form cms-card" id="form">
-      <h3 style="margin-top:0">Terms of use</h3>
-      <label>English</label><textarea id="termsEn" rows="4"></textarea>
-      <label>繁體中文</label><textarea id="termsZh" rows="4"></textarea>
-
-      <h3>Privacy policy</h3>
-      <label>English</label><textarea id="privacyEn" rows="4"></textarea>
-      <label>繁體中文</label><textarea id="privacyZh" rows="4"></textarea>
-
-      <h3>FAQ (optional override)</h3>
-      <label>English</label><textarea id="faqEn" rows="3" placeholder="Leave blank to keep site FAQ accordion"></textarea>
-      <label>繁體中文</label><textarea id="faqZh" rows="3"></textarea>
-
-      <h3>Map credits</h3>
-      <label>English</label><textarea id="mapCreditsEn" rows="2"></textarea>
-      <label>繁體中文</label><textarea id="mapCreditsZh" rows="2"></textarea>
-
-      <div class="cms-toolbar" style="margin-top:1rem">
-        <button type="submit" class="cms-btn cms-btn-primary">Save static pages</button>
-      </div>
-    </form>
+    <p class="sub">Each document is its own editor. Open a page to see the live website copy, then edit and save.</p>
+    <div class="cms-page-cards">
+      <a href="page-terms.html">
+        <strong>Terms &amp; Conditions</strong>
+        <p class="cms-muted">Rich text — titles, bold, italic, font size</p>
+      </a>
+      <a href="page-privacy.html">
+        <strong>Privacy policy</strong>
+        <p class="cms-muted">Rich text — same editing tools</p>
+      </a>
+      <a href="page-faq.html">
+        <strong>FAQ</strong>
+        <p class="cms-muted">Add and edit questions and answers</p>
+      </a>
+      <a href="page-map-credits.html">
+        <strong>Map credits</strong>
+        <p class="cms-muted">OpenStreetMap and map attribution</p>
+      </a>
+    </div>
   </div>
   <script src="../js/data.js"></script>
+  <script src="../js/live-routes.js"></script>
   <script src="../js/cms-store.js"></script>
   <script src="js/cms-ui.js"></script>
-  <script>
-    cmsInitShell("static");
-    const p = CMS.getStore().staticPages || CMS.seedStaticPages();
-    ["termsEn", "termsZh", "privacyEn", "privacyZh", "faqEn", "faqZh", "mapCreditsEn", "mapCreditsZh"].forEach((k) => {
-      document.getElementById(k).value = p[k] || "";
-    });
-    document.getElementById("form").addEventListener("submit", (e) => {
-      e.preventDefault();
-      const s = CMS.getStore();
-      s.staticPages = Object.assign({}, s.staticPages || {}, {
-        termsEn: document.getElementById("termsEn").value,
-        termsZh: document.getElementById("termsZh").value,
-        privacyEn: document.getElementById("privacyEn").value,
-        privacyZh: document.getElementById("privacyZh").value,
-        faqEn: document.getElementById("faqEn").value,
-        faqZh: document.getElementById("faqZh").value,
-        mapCreditsEn: document.getElementById("mapCreditsEn").value,
-        mapCreditsZh: document.getElementById("mapCreditsZh").value,
-      });
-      CMS.setStore(s);
-      cmsToast("Static pages saved");
-    });
-  </script>
+  <script>cmsInitShell("static");</script>
 </body>
 </html>

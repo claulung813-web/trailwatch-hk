@@ -447,6 +447,45 @@ body.cms-body {
   font-size: 12px;
   line-height: 1;
 }
+
+.cms-rich-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+.cms-rich-bar button, .cms-rich-size select {
+  border: 1px solid var(--cms-border);
+  background: #fff;
+  border-radius: 8px;
+  padding: 0.3rem 0.55rem;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+.cms-rich-size { font-size: 0.78rem; color: var(--text-muted); display: flex; gap: 0.35rem; align-items: center; }
+.cms-rich-editor {
+  min-height: 280px;
+  max-height: 70vh;
+  overflow: auto;
+  background: #fff;
+  border: 1px solid var(--cms-border);
+  border-radius: 10px;
+  padding: 1rem 1.1rem;
+}
+.cms-lang-tabs { display: flex; gap: 0.35rem; margin: 0.5rem 0 0.75rem; }
+.cms-lang-tabs button.active { background: var(--green-800); color: #fff; border-color: var(--green-800); }
+.cms-page-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 0.85rem; }
+.cms-page-cards a {
+  display: block;
+  background: #fff;
+  border: 1px solid var(--cms-border);
+  border-radius: 12px;
+  padding: 1rem;
+  color: inherit;
+}
+.cms-page-cards a:hover { border-color: var(--green-600); }
+.cms-faq-item { border: 1px solid var(--cms-border); border-radius: 10px; padding: 0.75rem; margin-bottom: 0.65rem; background: #fff; }
 .cms-drag:active { cursor: grabbing; }
 .cms-arrow-hidden { display: none !important; }
 .is-dragging { opacity: 0.5; }

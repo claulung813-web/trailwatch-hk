@@ -44,6 +44,7 @@ function cmsSidebar(active) {
     cmsNavLink("homepage.html", "homepage", "Homepage", active) +
     cmsNavLink("banners.html", "banners", "Banners", active) +
     cmsNavLink("trails.html", "trails", "Editor's Choice", active) +
+    cmsNavLink("user-routes.html", "user-routes", "User routes", active) +
     cmsNavLink("articles.html", "articles", "Articles", active);
 
   const people =
@@ -54,7 +55,11 @@ function cmsSidebar(active) {
     cmsNavLink("transactions.html", "transactions", "Transactions", active) +
     cmsNavLink("notifications.html", "notifications", "Notifications", active) +
     cmsNavLink("popups.html", "popups", "Pop-ups", active) +
-    cmsNavLink("static-pages.html", "static", "Static pages", active);
+    cmsNavLink("static-pages.html", "static", "Static pages", active) +
+    cmsNavLink("page-terms.html", "terms", "Terms", active) +
+    cmsNavLink("page-privacy.html", "privacy", "Privacy", active) +
+    cmsNavLink("page-faq.html", "faq", "FAQ", active) +
+    cmsNavLink("page-map-credits.html", "mapcredits", "Map credits", active);
 
   const more =
     cmsNavLink("gallery.html", "gallery", "Gallery", active) +
@@ -213,10 +218,15 @@ function cmsPreviewHref(kind, id) {
     article: "../articles.html",
     incident: "../reports.html",
     trail: "../rec-trail.html?id=" + encodeURIComponent(id || ""),
+    userRoute: "../user-route.html?id=" + encodeURIComponent(id || ""),
     group: "../group-hike-detail.html?id=" + encodeURIComponent(id || ""),
     feed: "../feed.html",
     gallery: "../gallery.html",
     static: "../legal.html",
+    terms: "../terms.html",
+    privacy: "../privacy.html",
+    faq: "../faq.html",
+    mapcredits: "../map-credits.html",
   };
   return map[kind] || "../index.html";
 }

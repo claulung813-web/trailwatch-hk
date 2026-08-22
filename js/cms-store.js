@@ -230,18 +230,44 @@ CMS.seedPopups = function () {
   ];
 };
 
+CMS.seedFaqItems = function () {
+  const en = (window.TW && TW.i18n && TW.i18n.en) || {};
+  const zh = (window.TW && TW.i18n && TW.i18n.zh) || {};
+  const n = parseInt(en.faq_count, 10) || 15;
+  const items = [];
+  for (let i = 1; i <= n; i++) {
+    const q = en["faq_" + i + "_q"];
+    if (!q) continue;
+    items.push({
+      id: "faq_" + i,
+      qEn: q,
+      aEn: en["faq_" + i + "_a"] || "",
+      qZh: zh["faq_" + i + "_q"] || "",
+      aZh: zh["faq_" + i + "_a"] || "",
+    });
+  }
+  return items;
+};
+
 CMS.seedStaticPages = function () {
   return {
     aboutEn: "",
     aboutZh: "",
-    termsEn: "Terms of use (demo — edit in CMS).",
-    termsZh: "使用條款（示範 — 可於 CMS 編輯）。",
-    privacyEn: "Privacy policy (demo — edit in CMS).",
-    privacyZh: "私隱政策（示範 — 可於 CMS 編輯）。",
+    termsEn: "",
+    termsZh: "",
+    termsHtmlEn: "",
+    termsHtmlZh: "",
+    privacyEn: "",
+    privacyZh: "",
+    privacyHtmlEn: "",
+    privacyHtmlZh: "",
     faqEn: "",
     faqZh: "",
+    faqItems: null,
     mapCreditsEn: "Map data © OpenStreetMap contributors. Trails curated by TrailWatch.",
     mapCreditsZh: "地圖資料 © OpenStreetMap 貢獻者。路線由 TrailWatch 整理。",
+    mapCreditsHtmlEn: "<p>Map data © OpenStreetMap contributors. Trails curated by TrailWatch.</p>",
+    mapCreditsHtmlZh: "<p>地圖資料 © OpenStreetMap 貢獻者。路線由 TrailWatch 整理。</p>",
   };
 };
 
@@ -278,6 +304,7 @@ CMS.canAccess = function (section) {
 CMS.defaultStore = function () {
   return {
     recommended: [],
+    userRoutes: [],
     incidents: [],
     challenges: null,
     members: [],
@@ -510,10 +537,10 @@ CMS.seedBanners = function () {
       badgeZh: "香港行山 App",
       seo: "Hong Kong hiking · GPS tracking · trail planning · incident report · offline maps · group hike",
       seoZh: "香港行山 · GPS 追蹤 · 路線規劃 · 事故舉報 · 離線地圖 · 聯誼行山",
-      title: "Empower hikers for easy nature access and stewardship",
-      titleZh: "賦能行山友，輕鬆走進自然並守護郊野",
-      body: "GPS route tracking, trail planning, incident reports, offline maps, group hikes, and country-park stewardship. Plan on the web. Track on the TrailWatch app.",
-      bodyZh: "GPS 路線追蹤、路線規劃、事故舉報、離線地圖、聯誼行山，守護郊野公園。網頁規劃，TrailWatch App 追蹤。",
+      title: "Get the TrailWatch app",
+      titleZh: "下載 TrailWatch App",
+      body: "Plan on the web. Track on your phone.",
+      bodyZh: "網頁規劃路線，手機追蹤行程。",
       image: "assets/brand/homepage-hero.jpeg",
       deviceImage: "assets/brand/device.webp",
       ctaLabel: "Get the app",
@@ -535,10 +562,10 @@ CMS.seedBanners = function () {
       badgeZh: "推薦路線",
       seo: "Hong Kong country parks · trail exploration · Dragon's Back · Sai Kung · Lantau",
       seoZh: "香港郊野公園 · 路線探索 · 龍脊 · 西貢 · 大嶼山",
-      title: "Discover staff-picked trails across Hong Kong",
-      titleZh: "探索職員精選的香港路線",
-      body: "Browse recommended routes by district, difficulty, and season — then plan your next hike on the web or in the app.",
-      bodyZh: "按地區、難度與季節瀏覽推薦路線，然後在網頁或 App 規劃下一次行山。",
+      title: "Explore trails",
+      titleZh: "探索路線",
+      body: "Staff-picked walks across Hong Kong country parks.",
+      bodyZh: "香港郊野公園的編輯精選路線。",
       image: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1400&q=80",
       deviceImage: "",
       ctaLabel: "Recommended routes",
@@ -560,10 +587,10 @@ CMS.seedBanners = function () {
       badgeZh: "關懷自然",
       seo: "Incident report · photo gallery · group hike · hiking insights · TrailWatch Premium",
       seoZh: "事故舉報 · 相片相簿 · 聯誼行山 · 行山洞察 · TrailWatch Premium",
-      title: "Report incidents, share photos, hike together",
-      titleZh: "舉報事故、分享相片、一起行山",
-      body: "Help keep country parks safe. Log incidents, join group hikes, and unlock insights with TrailWatch Premium.",
-      bodyZh: "協助守護郊野公園安全。舉報事故、參加聯誼，並以 TrailWatch Premium 解鎖洞察。",
+      title: "Report an incident",
+      titleZh: "舉報事故",
+      body: "Help keep country parks safe for everyone.",
+      bodyZh: "協助守護郊野公園，讓大家安心行山。",
       image: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=1400&q=80",
       deviceImage: "",
       ctaLabel: "Report an incident",
@@ -948,12 +975,16 @@ CMS.getStore = function () {
     const raw = localStorage.getItem(CMS.STORE_KEY);
     if (!raw) {
       const s = CMS.defaultStore();
-      // seed recommended from published monthly trails
-      if (window.TW && TW.trails) {
+      if (window.TW && TW.LIVE_EDITORS_CHOICE && TW.LIVE_EDITORS_CHOICE.length) {
+        s.recommended = JSON.parse(JSON.stringify(TW.LIVE_EDITORS_CHOICE));
+      } else if (window.TW && TW.trails) {
         s.recommended = TW.trails
-          .filter((t) => t.monthly === "2026-07")
-          .slice(0, 3)
+          .filter((t) => t.monthly === "2026-07" || t.editorChoice)
+          .slice(0, 12)
           .map((t, i) => CMS.trailToRecommended(t, i));
+      }
+      if (window.TW && TW.LIVE_USER_ROUTES && TW.LIVE_USER_ROUTES.length) {
+        s.userRoutes = JSON.parse(JSON.stringify(TW.LIVE_USER_ROUTES));
       }
       // seed incidents from TW.reports
       if (window.TW && TW.reports) {
@@ -966,7 +997,7 @@ CMS.getStore = function () {
       s.badgeCatalog = CMS.defaultBadgeCatalog();
       s.badgeAssignments = CMS.seedBadgeAssignments();
       s.admins = CMS.seedAdmins();
-      s.featuredRouteIds = window.TW && TW.trails ? TW.trails.slice(0, 6).map((t) => t.id) : [];
+      s.featuredRouteIds = (s.recommended || []).slice(0, 6).map((t) => t.id);
       s.featuredArticleIds = window.TW && TW.articles ? TW.articles.slice(0, 4).map((a) => a.id) : [];
       s.appFunctions = CMS.seedAppFunctions();
       s.editorsChoiceCategories = CMS.seedEditorsChoiceCategories();
@@ -1077,6 +1108,51 @@ CMS.getStore = function () {
     }
     if (!Array.isArray(store.banners) || !store.banners.length) {
       store.banners = CMS.seedBanners();
+      migrated = true;
+    } else if (store.banners.some((b) => b && (b.seo || b.badge))) {
+      const fresh = CMS.seedBanners();
+      store.banners = store.banners.slice(0, 3).map((b, i) => {
+        const f = fresh[i] || {};
+        return Object.assign({}, b, {
+          title: f.title || b.title,
+          titleZh: f.titleZh || b.titleZh,
+          body: f.body || b.body,
+          bodyZh: f.bodyZh || b.bodyZh,
+          badge: "",
+          badgeZh: "",
+          seo: "",
+          seoZh: "",
+          cta2Label: "",
+          cta2LabelZh: "",
+          cta2Href: "",
+        });
+      });
+      migrated = true;
+    }
+    if (!Array.isArray(store.userRoutes)) {
+      store.userRoutes = window.TW && TW.LIVE_USER_ROUTES ? JSON.parse(JSON.stringify(TW.LIVE_USER_ROUTES)) : [];
+      migrated = true;
+    } else if (
+      !store.userRoutes.length &&
+      window.TW &&
+      TW.LIVE_USER_ROUTES &&
+      TW.LIVE_USER_ROUTES.length
+    ) {
+      store.userRoutes = JSON.parse(JSON.stringify(TW.LIVE_USER_ROUTES));
+      migrated = true;
+    }
+    if (
+      window.TW &&
+      TW.LIVE_EDITORS_CHOICE &&
+      TW.LIVE_EDITORS_CHOICE.length &&
+      !(store.recommended || []).some((r) => r && r.sourceId === 278107)
+    ) {
+      const live = JSON.parse(JSON.stringify(TW.LIVE_EDITORS_CHOICE));
+      const extra = (store.recommended || []).filter((r) => r && String(r.id || "").indexOf("rec_") !== 0);
+      store.recommended = live.concat(extra);
+      if (!(store.featuredRouteIds || []).length) {
+        store.featuredRouteIds = live.slice(0, 6).map((t) => t.id);
+      }
       migrated = true;
     }
     const ensureArr = (key, seedFn) => {
@@ -1569,7 +1645,7 @@ TW.getHomeBanners = function () {
   const list = (store && store.banners) || [];
   const published = list.filter((b) => b && b.published !== false);
   const source = published.length ? published : CMS.seedBanners();
-  return source.slice().sort((a, b) => (a.order || 0) - (b.order || 0)).slice(0, 4);
+  return source.slice().sort((a, b) => (a.order || 0) - (b.order || 0)).slice(0, 3);
 };
 
 TW.getChallenges = function () {
@@ -1579,7 +1655,33 @@ TW.getChallenges = function () {
 };
 
 TW.getRecommendedTrail = function (id) {
-  return (CMS.getStore().recommended || []).find((r) => r.id === id && r.published) || null;
+  if (!id) return null;
+  const list = (CMS.getStore().recommended || []).concat(TW.LIVE_EDITORS_CHOICE || []);
+  return (
+    list.find((r) => r.id === id || String(r.sourceId) === String(id) || r.trailId === id) || null
+  );
+};
+
+TW.getUserRoutes = function () {
+  const store = typeof CMS !== "undefined" && CMS.getStore ? CMS.getStore() : null;
+  let list = (store && store.userRoutes) || [];
+  if (!list.length && TW.LIVE_USER_ROUTES) list = TW.LIVE_USER_ROUTES;
+  return list.filter((r) => r && r.published !== false);
+};
+
+TW.getUserRoute = function (id) {
+  if (!id) return null;
+  const list = ((typeof CMS !== "undefined" && CMS.getStore ? CMS.getStore().userRoutes : null) || [])
+    .concat(TW.LIVE_USER_ROUTES || []);
+  return list.find((r) => r.id === id || String(r.sourceId) === String(id)) || null;
+};
+
+TW.routeDetailHref = function (t, inApp) {
+  const id = (t && (t.trailId || t.id)) || "";
+  if (!id) return inApp ? "explore.html" : "explore.html";
+  const user = t && (t.kind === "user" || t.userRoute);
+  if (inApp) return (user ? "record-detail.html" : "route-detail.html") + "?id=" + encodeURIComponent(id);
+  return (user ? "user-route.html" : "rec-trail.html") + "?id=" + encodeURIComponent(id);
 };
 
 /** Apply CMS translation snippets onto hero / footer when present */
@@ -1601,15 +1703,30 @@ TW.applyCmsCopy = function () {
     }
   }
   const staticEl = document.getElementById("legalCmsCopy");
-  if (staticEl && typeof CMS !== "undefined" && CMS.getStore) {
+  const prose = document.querySelector(".legal-prose");
+  if ((staticEl || prose) && typeof CMS !== "undefined" && CMS.getStore) {
     const pages = CMS.getStore().staticPages || {};
-    const kind = staticEl.getAttribute("data-legal") || "terms";
-    const text = zh ? pages[kind + "Zh"] : pages[kind + "En"];
-    if (text && String(text).trim()) {
-      staticEl.hidden = false;
-      staticEl.textContent = text;
-      const fallback = document.querySelector(".legal-prose");
-      if (zh && fallback && String(text).length > 40) fallback.hidden = true;
+    const kind = (staticEl && staticEl.getAttribute("data-legal")) || (prose && prose.getAttribute("data-legal")) || "terms";
+    const html = zh ? pages[kind + "HtmlZh"] || pages[kind + "HtmlEn"] : pages[kind + "HtmlEn"] || pages[kind + "HtmlZh"];
+    const plain = zh ? pages[kind + "Zh"] : pages[kind + "En"];
+    if (html && String(html).trim()) {
+      if (prose) {
+        prose.innerHTML = html;
+        prose.hidden = false;
+      }
+      if (staticEl) staticEl.hidden = true;
+    } else if (plain && String(plain).trim() && String(plain).toLowerCase().indexOf("edit in cms") < 0) {
+      if (staticEl) {
+        staticEl.hidden = false;
+        staticEl.innerHTML = String(plain).replace(/\n/g, "<br>");
+      }
+      if (prose && zh && String(plain).length > 40) prose.hidden = true;
     }
   }
+};
+
+TW.getFaqItems = function () {
+  const pages = typeof CMS !== "undefined" && CMS.getStore ? CMS.getStore().staticPages || {} : {};
+  if (Array.isArray(pages.faqItems) && pages.faqItems.length) return pages.faqItems;
+  return typeof CMS !== "undefined" && CMS.seedFaqItems ? CMS.seedFaqItems() : [];
 };

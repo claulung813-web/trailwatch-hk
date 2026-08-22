@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CMS — Map credits</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/styles.css" />
+  <link rel="stylesheet" href="css/cms.css" />
+</head>
+<body class="cms-body">
+  <div id="cmsShell">
+    <h1>Map credits</h1>
+    <p class="sub">Attribution for maps shown on Explore, Plan, and route pages. <a href="../map-credits.html" target="_blank" rel="noopener">View website ↗</a></p>
+    <div class="cms-lang-tabs">
+      <button type="button" class="cms-btn cms-btn-secondary" data-lang="en">English</button>
+      <button type="button" class="cms-btn cms-btn-secondary" data-lang="zh">繁體中文</button>
+    </div>
+    <div id="paneEn"><div id="richEn"></div></div>
+    <div id="paneZh" hidden><div id="richZh"></div></div>
+    <div class="cms-toolbar" style="margin-top:1rem">
+      <button type="button" class="cms-btn cms-btn-primary" id="saveLegal">Save map credits</button>
+    </div>
+  </div>
+  <script src="../js/data.js"></script>
+  <script src="../js/live-routes.js"></script>
+  <script src="../js/cms-store.js"></script>
+  <script src="js/cms-ui.js"></script>
+  <script src="js/cms-rich.js"></script>
+  <script>
+    cmsInitShell("mapcredits");
+    cmsBindBilingualLegal({ key: "mapCredits", liveUrl: "../map-credits.html" });
+  </script>
+</body>
+</html>

@@ -157,6 +157,7 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="js/i18n.js"></script>
   <script src="js/data.js"></script>
+  <script src="js/live-routes.js"></script>
   <script src="js/cms-store.js"></script>
   <script src="js/hikes.js"></script>
   <script src="js/app.js"></script>
@@ -186,8 +187,7 @@
     let incMarkers = [];
 
     function routeDetailHref(t) {
-      const id = (t && (t.trailId || t.id)) || "";
-      return id ? "rec-trail.html?id=" + encodeURIComponent(id) : "explore.html";
+      return TW.routeDetailHref ? TW.routeDetailHref(t) : "rec-trail.html?id=" + encodeURIComponent((t && (t.trailId || t.id)) || "");
     }
 
     function recAsTrail(r) {
@@ -204,7 +204,7 @@
         difficulty: r.difficulty || 2,
         distance: r.distanceKm != null ? r.distanceKm + " km" : r.distance || "—",
         duration: r.duration || "—",
-        elevation: r.elevation || "—",
+        elevation: r.elevation || (r.elevChange != null ? r.elevChange + " m" : "—"),
         rating: r.rating || 4.5,
         image: r.image,
         tags: r.tags || r.categories || [],
@@ -212,7 +212,9 @@
         lng: lng,
         path: r.path,
         monthly: r.monthly,
-        editorChoice: !!(r.editorChoice || r.featured || r.monthly),
+        editorChoice: true,
+        itinerary: r.itinerary,
+        itineraryZh: r.itineraryZh,
         isPlan: !!r.isPlan,
       };
     }
@@ -283,13 +285,7 @@
     }
 
     function editorsRoutes() {
-      const recs = (typeof TW.getRecommendedTrails === "function" ? TW.getRecommendedTrails() : []).map(recAsTrail);
-      const picks = (TW.trails || []).filter((t) => t.monthly || t.editorChoice).map(recAsTrail);
-      const byId = {};
-      recs.concat(picks).forEach((t) => {
-        byId[t.id] = t;
-      });
-      return Object.keys(byId).map((k) => byId[k]);
+      return (typeof TW.getRecommendedTrails === "function" ? TW.getRecommendedTrails() : []).map(recAsTrail);
     }
 
     function parseHours(t) {
@@ -602,7 +598,7 @@
     function filteredRecords() {
       const names = friendNames();
       const q = query.trim().toLowerCase();
-      return (TW.records || []).filter((r) => {
+      return (TW.getUserRoutes ? TW.getUserRoutes() : []).concat(TW.records || []).filter((r) => {
         const hay = (TW.tt(r, "title") + " " + TW.tt(r, "snippet") + " " + (r.user || "")).toLowerCase();
         if (q && hay.indexOf(q) < 0) return false;
         if (recPeople === "friends") {

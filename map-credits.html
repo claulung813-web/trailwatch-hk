@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Map credits — TrailWatch HK</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div id="app-header"></div>
+  <main class="page">
+    <div class="container legal-page">
+      <h1 class="page-title" data-i18n="footer_map_credits"></h1>
+      <div class="legal-prose" data-legal="mapCredits"></div>
+    </div>
+  </main>
+  <div id="app-footer"></div>
+  <script src="js/i18n.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/live-routes.js"></script>
+  <script src="js/cms-store.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    document.documentElement.lang = TW.getLang() === "zh" ? "zh-Hant" : "en";
+    initShell("about");
+    const prose = document.querySelector(".legal-prose");
+    if (prose && !prose.innerHTML.trim()) {
+      const zh = TW.getLang() === "zh";
+      const p = CMS.getStore().staticPages || {};
+      prose.innerHTML = zh
+        ? p.mapCreditsHtmlZh || p.mapCreditsZh || p.mapCreditsHtmlEn || p.mapCreditsEn || ""
+        : p.mapCreditsHtmlEn || p.mapCreditsEn || "";
+    }
+  </script>
+</body>
+</html>

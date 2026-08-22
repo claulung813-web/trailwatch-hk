@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CMS — FAQ</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/cms.css" />
+</head>
+<body class="cms-body">
+  <div id="cmsShell">
+    <h1>FAQ</h1>
+    <p class="sub">Add questions and answers (English and 繁). These appear on the public FAQ page. <a href="../faq.html" target="_blank" rel="noopener">View website ↗</a></p>
+    <div class="cms-toolbar">
+      <button type="button" class="cms-btn cms-btn-primary" id="btnAdd">Add question</button>
+      <button type="button" class="cms-btn cms-btn-secondary" id="btnSave">Save FAQ</button>
+    </div>
+    <div id="list"></div>
+  </div>
+  <script src="../js/i18n.js"></script>
+  <script src="../js/data.js"></script>
+  <script src="../js/live-routes.js"></script>
+  <script src="../js/cms-store.js"></script>
+  <script src="js/cms-ui.js"></script>
+  <script>
+    cmsInitShell("faq");
+    let items = (TW.getFaqItems ? TW.getFaqItems() : []).map((x) => Object.assign({}, x));
+
+    function render() {
+      document.getElementById("list").innerHTML = items
+        .map(
+          (it, i) => `
+        <div class="cms-faq-item" data-i="${i}">
+          <div class="cms-toolbar">
+            <strong>Q${i + 1}</strong>
+            <button type="button" class="cms-btn cms-btn-secondary cms-btn-sm" data-up="${i}">↑</button>
+            <button type="button" class="cms-btn cms-btn-secondary cms-btn-sm" data-dn="${i}">↓</button>
+            <button type="button" class="cms-btn cms-btn-danger cms-btn-sm" data-rm="${i}">Remove</button>
+          </div>
+          <label>Question (EN)</label>
+          <input data-f="qEn" value="${cmsEsc(it.qEn || "")}" />
+          <label>Answer (EN)</label>
+          <textarea data-f="aEn" rows="3">${cmsEsc(it.aEn || "")}</textarea>
+          <label>問題（繁）</label>
+          <input data-f="qZh" value="${cmsEsc(it.qZh || "")}" />
+          <label>回答（繁）</label>
+          <textarea data-f="aZh" rows="3">${cmsEsc(it.aZh || "")}</textarea>
+        </div>`
+        )
+        .join("") || '<p class="cms-muted">No questions yet. Click Add question.</p>';
+    }
+
+    function readDom() {
+      document.querySelectorAll(".cms-faq-item").forEach((el, i) => {
+        if (!items[i]) return;
+        el.querySelectorAll("[data-f]").forEach((inp) => {
+          items[i][inp.dataset.f] = inp.value;
+        });
+      });
+    }
+
+    document.getElementById("list").addEventListener("click", (e) => {
+      const up = e.target.closest("[data-up]");
+      const dn = e.target.closest("[data-dn]");
+      const rm = e.target.closest("[data-rm]");
+      if (up || dn || rm) readDom();
+      if (up) {
+        const i = +up.dataset.up;
+        if (i < 1) return;
+        const t = items[i - 1];
+        items[i - 1] = items[i];
+        items[i] = t;
+        render();
+      }
+      if (dn) {
+        const i = +dn.dataset.dn;
+        if (i >= items.length - 1) return;
+        const t = items[i + 1];
+        items[i + 1] = items[i];
+        items[i] = t;
+        render();
+      }
+      if (rm) {
+        items.splice(+rm.dataset.rm, 1);
+        render();
+      }
+    });
+
+    document.getElementById("btnAdd").addEventListener("click", () => {
+      readDom();
+      items.push({ id: "faq_" + Date.now(), qEn: "", aEn: "", qZh: "", aZh: "" });
+      render();
+    });
+
+    document.getElementById("btnSave").addEventListener("click", () => {
+      readDom();
+      const s = CMS.getStore();
+      s.staticPages = Object.assign({}, s.staticPages || {});
+      s.staticPages.faqItems = items.map((it, i) => Object.assign({}, it, { id: it.id || "faq_" + (i + 1) }));
+      CMS.setStore(s);
+      cmsToast("FAQ saved — view the live FAQ page");
+    });
+
+    render();
+  </script>
+</body>
+</html>
