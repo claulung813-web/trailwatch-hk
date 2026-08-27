@@ -3,50 +3,75 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>My Plans — TrailWatch HK</title>
+  <title>Plan a route — TrailWatch HK</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="css/styles.css" />
   <style>
-    #planMap {
-      height: 460px;
-      border-radius: var(--radius);
+    .page-plan .container.plan-page {
+      max-width: 1280px;
+    }
+    .plan-studio {
+      margin-bottom: 2rem;
+    }
+    .plan-studio-shell {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
+      gap: 0;
+      min-height: min(78vh, 720px);
       border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      background: #fff;
+      position: relative;
+    }
+    .plan-map-pane {
+      position: relative;
+      min-width: 0;
+      min-height: 420px;
+      border-right: 1px solid var(--border);
+    }
+    #planMap {
+      width: 100%;
+      height: 100%;
+      min-height: min(78vh, 720px);
       background: var(--green-50);
+    }
+    .plan-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+      padding: 1rem 1.05rem 1.15rem;
+      overflow-y: auto;
+      max-height: min(78vh, 720px);
+      background: #fff;
+    }
+    .plan-panel-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 0.5rem;
+    }
+    .plan-panel-head h2 {
+      margin: 0;
+      font-size: 1.05rem;
+      color: var(--green-900);
     }
     .plan-meta-row {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 0.85rem;
-      margin-bottom: 0.85rem;
+      gap: 0.65rem;
     }
-    @media (max-width: 640px) {
-      .plan-meta-row { grid-template-columns: 1fr; }
-      #planMap { height: 340px; }
-    }
-    .plan-draw-toolbar {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-      align-items: center;
-      margin: 0.65rem 0 0.85rem;
-    }
-    .plan-draw-toolbar .chip.active {
-      background: var(--green-900);
-      color: #fff;
-      border-color: var(--green-900);
-    }
+    .plan-meta-row .form-group { margin: 0; }
     .plan-legend {
       display: flex;
       flex-wrap: wrap;
-      gap: 0.75rem;
-      font-size: 0.75rem;
+      gap: 0.55rem 0.75rem;
+      font-size: 0.72rem;
       color: var(--text-muted);
-      margin-bottom: 0.65rem;
     }
-    .plan-legend span { display: inline-flex; align-items: center; gap: 0.35rem; }
+    .plan-legend span { display: inline-flex; align-items: center; gap: 0.3rem; }
     .plan-dot {
       width: 14px; height: 14px; border-radius: 50%;
       border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,0.2);
@@ -57,6 +82,97 @@
     .plan-dot.end { background: #d64545; border-radius: 3px; }
     .plan-dot.via { background: #003229; box-shadow: 0 0 0 2px #33897a; }
     .plan-dot.poi { background: #f1a637; }
+    .plan-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.45rem;
+    }
+    .plan-stat {
+      background: var(--green-50);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.45rem 0.55rem;
+    }
+    .plan-stat .lbl {
+      display: block;
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      margin-bottom: 0.1rem;
+    }
+    .plan-stat strong {
+      font-size: 0.9rem;
+      color: var(--green-900);
+    }
+    .plan-panel-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+    .plan-panel-actions .btn {
+      flex: 1 1 auto;
+      min-width: 0;
+      padding: 0.42rem 0.55rem;
+      font-size: 0.8rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.3rem;
+    }
+    .plan-panel-actions .btn-primary { flex: 1.2 1 auto; }
+    .plan-via-panel {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 0.65rem 0.75rem 0.45rem;
+      background: #fff;
+    }
+    .plan-via-panel h3 {
+      font-size: 0.82rem;
+      margin: 0 0 0.2rem;
+      color: var(--green-900);
+    }
+    .plan-via-seq {
+      list-style: none;
+      margin: 0.4rem 0 0;
+      padding: 0;
+    }
+    .plan-via-seq li {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.35rem 0.2rem;
+      border-bottom: 1px solid #f4f4f5;
+      font-size: 0.78rem;
+    }
+    .plan-via-seq li:last-child { border-bottom: 0; }
+    .plan-via-seq .via-label { flex: 1; min-width: 0; }
+    .plan-via-seq .via-coord {
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      font-variant-numeric: tabular-nums;
+    }
+    .plan-via-seq .via-grip {
+      color: #a1a1aa;
+      cursor: grab;
+      font-size: 0.7rem;
+      letter-spacing: -0.1em;
+    }
+    .plan-via-seq .via-actions button {
+      width: 26px;
+      height: 26px;
+      border: 1px solid var(--border);
+      background: #fff;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 700;
+      color: var(--green-900);
+    }
+    .plan-via-seq li.via-dragging { opacity: 0.5; }
+    .plan-via-seq li.via-drop-target { background: var(--green-50); }
+    .plan-via-seq li.empty {
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      border: 0;
+    }
     .plan-ctx {
       position: absolute;
       z-index: 1000;
@@ -82,7 +198,6 @@
       cursor: pointer;
     }
     .plan-ctx button:hover { color: var(--green-900); }
-    .plan-ctx button[hidden] { display: none; }
     .plan-ctx hr {
       border: 0;
       border-top: 1px solid #f4f4f5;
@@ -93,10 +208,7 @@
       color: var(--text-muted);
       padding-top: 0.15rem;
     }
-    .marker-label {
-      background: transparent !important;
-      border: 0 !important;
-    }
+    .marker-label { background: transparent !important; border: 0 !important; }
     .mk {
       border: 2px solid #fff;
       box-shadow: 0 1px 4px rgba(0,0,0,0.35);
@@ -127,10 +239,7 @@
       transform: rotate(-45deg);
       font-size: 11px;
     }
-    .mk-poi span {
-      transform: rotate(45deg);
-      display: block;
-    }
+    .mk-poi span { transform: rotate(45deg); display: block; }
     .leaflet-marker-draggable { cursor: grab; }
     .leaflet-marker-draggable:active { cursor: grabbing; }
     .mk-poi-tip {
@@ -156,108 +265,91 @@
     }
     .draft-list-item strong { color: var(--green-900); }
     .draft-list-item .meta { font-size: 0.78rem; color: var(--text-muted); }
-    .plan-stats {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 0.55rem;
-      margin: 0 0 0.85rem;
-    }
-    .plan-stat {
-      background: var(--green-50);
-      border: 1px solid var(--border);
+
+    .plan-map-btn {
+      position: absolute;
+      z-index: 500;
+      width: 38px;
+      height: 38px;
+      border: none;
       border-radius: 10px;
-      padding: 0.55rem 0.7rem;
-    }
-    .plan-stat .lbl {
-      display: block;
-      font-size: 0.7rem;
-      color: var(--text-muted);
-      margin-bottom: 0.15rem;
-    }
-    .plan-stat strong {
-      font-size: 0.95rem;
-      color: var(--green-900);
-    }
-    .plan-via-panel {
-      margin-top: 0.9rem;
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 0.75rem 0.9rem 0.55rem;
       background: #fff;
-    }
-    .plan-via-panel h3 {
-      font-size: 0.88rem;
-      margin: 0 0 0.25rem;
       color: var(--green-900);
-    }
-    .plan-via-seq {
-      list-style: none;
-      margin: 0.5rem 0 0;
-      padding: 0;
-    }
-    .plan-via-seq li {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 0.4rem 0.15rem;
-      border-bottom: 1px solid #f4f4f5;
-      font-size: 0.85rem;
-    }
-    .plan-via-seq li[draggable="true"] {
-      cursor: grab;
-      user-select: none;
-    }
-    .plan-via-seq li[draggable="true"]:active { cursor: grabbing; }
-    .plan-via-seq li.via-dragging {
-      opacity: 0.45;
-      background: #f3faf5;
-    }
-    .plan-via-seq li.via-drop-target {
-      box-shadow: inset 0 2px 0 var(--green-700);
-    }
-    .plan-via-seq .via-grip {
-      color: #9ca3af;
-      font-size: 0.95rem;
-      letter-spacing: -1px;
-      line-height: 1;
-      padding: 0 0.15rem;
-      flex-shrink: 0;
-    }
-    .plan-via-seq li:last-child { border-bottom: 0; }
-    .plan-via-seq li.empty {
-      color: var(--text-muted);
-      font-size: 0.8rem;
-      border: 0;
-    }
-    .plan-via-seq li.locked { color: var(--text-muted); }
-    .plan-via-seq .via-label { font-weight: 700; color: var(--green-900); }
-    .plan-via-seq .via-coord {
-      margin-left: auto;
-      font-size: 0.72rem;
-      color: var(--text-muted);
-      font-variant-numeric: tabular-nums;
-    }
-    .plan-via-seq .via-actions {
-      display: flex;
-      gap: 0.2rem;
-      flex-shrink: 0;
-    }
-    .plan-via-seq .via-actions button {
-      width: 28px;
-      height: 28px;
-      border: 1px solid var(--border);
-      background: #fff;
-      border-radius: 6px;
+      box-shadow: 0 2px 10px rgba(0,0,0,.16);
       cursor: pointer;
+      display: grid;
+      place-items: center;
+    }
+    .plan-map-btn:hover { background: var(--green-50); }
+    .plan-map-fs { top: 0.65rem; right: 0.65rem; }
+    .plan-map-close { top: 0.65rem; right: 0.65rem; display: none; }
+    .plan-panel-toggle {
+      top: 50%;
+      right: 0;
+      transform: translateY(-50%);
+      width: 28px;
+      height: 56px;
+      border-radius: 10px 0 0 10px;
+      display: none;
+      font-size: 1rem;
       font-weight: 700;
-      color: var(--green-900);
     }
-    .plan-via-seq .via-actions button:disabled {
-      opacity: 0.35;
-      cursor: default;
+
+    /* Fullscreen map */
+    .plan-studio-shell.is-fullscreen {
+      position: fixed;
+      top: var(--nav-h, 64px);
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 1500;
+      min-height: 0;
+      border-radius: 0;
+      border: 0;
+      grid-template-columns: 1fr;
     }
-    @media (max-width: 720px) {
-      .plan-stats { grid-template-columns: 1fr 1fr; }
+    .plan-studio-shell.is-fullscreen .plan-map-pane {
+      border-right: 0;
+      min-height: 100%;
+    }
+    .plan-studio-shell.is-fullscreen #planMap {
+      min-height: 100%;
+      height: 100%;
+    }
+    .plan-studio-shell.is-fullscreen .plan-map-fs { display: none; }
+    .plan-studio-shell.is-fullscreen .plan-map-close { display: grid; }
+    .plan-studio-shell.is-fullscreen .plan-panel {
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      width: min(340px, 92vw);
+      max-height: none;
+      z-index: 600;
+      box-shadow: -8px 0 24px rgba(0,0,0,0.18);
+      transform: translateX(0);
+      transition: transform 0.22s ease;
+    }
+    .plan-studio-shell.is-fullscreen.panel-collapsed .plan-panel {
+      transform: translateX(100%);
+      pointer-events: none;
+    }
+    .plan-studio-shell.is-fullscreen .plan-panel-toggle {
+      display: grid;
+      right: 0;
+    }
+    .plan-studio-shell.is-fullscreen:not(.panel-collapsed) .plan-panel-toggle {
+      right: min(340px, 92vw);
+    }
+
+    @media (max-width: 900px) {
+      .plan-studio-shell {
+        grid-template-columns: 1fr;
+        min-height: 0;
+      }
+      .plan-map-pane { border-right: 0; border-bottom: 1px solid var(--border); }
+      #planMap { min-height: 52vh; }
+      .plan-panel { max-height: none; }
       .plan-via-seq .via-coord { display: none; }
     }
   </style>
@@ -265,96 +357,106 @@
 <body>
   <div id="app-header"></div>
 
-  <main class="page">
-    <div class="container">
+  <main class="page page-plan">
+    <div class="container plan-page">
       <h1 class="page-title" data-i18n="plan_title"></h1>
-      <p class="page-sub" data-i18n="plan_sub"></p>
+      <p class="meta" style="margin:-0.35rem 0 1.1rem;max-width:42rem" data-i18n="plan_sub"></p>
 
-      <div class="app-cta-banner">
-        <div>
-          <h3 data-i18n="plan_banner_title"></h3>
-          <p data-i18n="plan_banner_body"></p>
-        </div>
-        <div class="actions">
-          <a class="btn btn-ghost" href="app/index.html" data-i18n="plan_open_app"></a>
-          <a class="btn" style="background:white;color:var(--green-900)" href="explore.html" data-i18n="plan_go_explore"></a>
-        </div>
-      </div>
-
-      <section class="card" style="padding:1.25rem;margin-bottom:1.75rem;position:relative">
-        <div class="section-head" style="margin-bottom:0.35rem">
-          <h2 data-i18n="plan_draw_title"></h2>
-          <button type="button" class="btn btn-secondary" style="padding:0.35rem 0.75rem;font-size:0.8rem" id="btnNewDraw" data-i18n="plan_new_draw"></button>
-        </div>
-        <p class="page-sub" style="margin-bottom:0.5rem" data-i18n="plan_ctx_hint"></p>
-        <p style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.75rem" data-i18n="plan_draw_sub"></p>
-        <p id="planLoadHint" class="meta" style="display:none;margin-bottom:0.65rem;color:var(--green-800)"></p>
-
-        <div class="plan-meta-row">
-          <div class="form-group" style="margin:0">
-            <label for="routeName" data-i18n="plan_route_name"></label>
-            <input class="form-input" id="routeName" type="text" />
+      <section class="plan-studio" aria-label="Route planner">
+        <div class="plan-studio-shell" id="planStudio">
+          <div class="plan-map-pane" id="planMapPane">
+            <div id="planMap"></div>
+            <div class="plan-ctx" id="planCtx" role="menu">
+              <button type="button" data-type="start"><span class="plan-dot start">A</span><span data-i18n="plan_ctx_start"></span></button>
+              <button type="button" data-type="end"><span class="plan-dot end">B</span><span data-i18n="plan_ctx_end"></span></button>
+              <button type="button" data-type="via"><span class="plan-dot via">V</span><span data-i18n="plan_ctx_via"></span></button>
+              <button type="button" data-type="poi"><span class="plan-dot poi">★</span><span data-i18n="plan_ctx_poi"></span></button>
+              <hr />
+              <button type="button" class="cancel" data-type="cancel" data-i18n="plan_ctx_cancel"></button>
+            </div>
+            <button type="button" class="plan-map-btn plan-map-fs" id="btnMapFs" title="" aria-label="">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"/></svg>
+            </button>
+            <button type="button" class="plan-map-btn plan-map-close" id="btnMapExitFs" hidden title="" aria-label="">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 9H4V4M15 9h5V4M9 15H4v5M15 15h5v5"/></svg>
+            </button>
+            <button type="button" class="plan-map-btn plan-panel-toggle" id="btnPanelToggle" aria-label="" title="">‹</button>
           </div>
-          <div class="form-group" style="margin:0">
-            <label for="routeNotes" data-i18n="plan_route_notes"></label>
-            <input class="form-input" id="routeNotes" type="text" data-i18n-placeholder="plan_route_notes_ph" />
-          </div>
-        </div>
 
-        <div class="plan-legend">
-          <span><i class="plan-dot start">A</i> <span data-i18n="plan_legend_start"></span></span>
-          <span><i class="plan-dot end">B</i> <span data-i18n="plan_legend_end"></span></span>
-          <span><i class="plan-dot via">1</i> <span data-i18n="plan_legend_via"></span></span>
-          <span><i class="plan-dot poi">★</i> <span data-i18n="plan_legend_poi"></span></span>
-        </div>
+          <aside class="plan-panel" id="planPanel">
+            <div class="plan-panel-head">
+              <div>
+                <h2 data-i18n="plan_draw_title"></h2>
+                <p id="planLoadHint" class="meta" style="display:none;margin:0.25rem 0 0;color:var(--green-800);font-size:0.78rem"></p>
+              </div>
+              <button type="button" class="btn btn-secondary" style="padding:0.3rem 0.65rem;font-size:0.75rem;flex-shrink:0" id="btnNewDraw" data-i18n="plan_new_draw"></button>
+            </div>
 
-        <div class="plan-draw-toolbar">
-          <button type="button" class="chip active" data-draw="menu" id="modeMenu" data-i18n="plan_mode_menu"></button>
-          <button type="button" class="chip" data-draw="click" id="modeClick" data-i18n="plan_mode_click"></button>
-          <button type="button" class="chip" data-draw="freehand" id="modeFree" data-i18n="plan_mode_freehand"></button>
-          <button type="button" class="btn btn-secondary" style="padding:0.35rem 0.75rem;font-size:0.8rem" id="btnUndo" data-i18n="plan_undo"></button>
-          <button type="button" class="btn btn-secondary" style="padding:0.35rem 0.75rem;font-size:0.8rem" id="btnClear" data-i18n="plan_clear"></button>
-          <span class="meta" id="pointCount"></span>
-          <button type="button" class="btn btn-primary" style="margin-left:auto;padding:0.4rem 0.9rem;font-size:0.85rem" id="btnSaveDraft" data-i18n="plan_save_draft"></button>
-        </div>
+            <div class="plan-legend">
+              <span><i class="plan-dot start">A</i> <span data-i18n="plan_legend_start"></span></span>
+              <span><i class="plan-dot end">B</i> <span data-i18n="plan_legend_end"></span></span>
+              <span><i class="plan-dot via">1</i> <span data-i18n="plan_legend_via"></span></span>
+              <span><i class="plan-dot poi">★</i> <span data-i18n="plan_legend_poi"></span></span>
+            </div>
 
-        <div class="plan-stats" id="planStats">
-          <div class="plan-stat">
-            <span class="lbl" data-i18n="plan_est_distance"></span>
-            <strong id="statDist">—</strong>
-          </div>
-          <div class="plan-stat">
-            <span class="lbl" data-i18n="plan_est_duration"></span>
-            <strong id="statDur">—</strong>
-          </div>
-          <div class="plan-stat">
-            <span class="lbl" data-i18n="plan_est_gain"></span>
-            <strong id="statGain">—</strong>
-          </div>
-          <div class="plan-stat">
-            <span class="lbl" data-i18n="plan_est_loss"></span>
-            <strong id="statLoss">—</strong>
-          </div>
-        </div>
+            <div class="plan-meta-row">
+              <div class="form-group">
+                <label for="routeName" data-i18n="plan_route_name"></label>
+                <input class="form-input" id="routeName" type="text" />
+              </div>
+              <div class="form-group">
+                <label for="routeNotes" data-i18n="plan_route_notes"></label>
+                <input class="form-input" id="routeNotes" type="text" data-i18n-placeholder="plan_route_notes_ph" />
+              </div>
+              <div class="form-group">
+                <label for="routeProfile" data-i18n="plan_gps_profile"></label>
+                <select class="form-input" id="routeProfile">
+                  <option value="hiking" data-i18n="plan_gps_hiking"></option>
+                  <option value="walking" data-i18n="plan_gps_walking"></option>
+                  <option value="cycling" data-i18n="plan_gps_cycling"></option>
+                  <option value="driving" data-i18n="plan_gps_driving"></option>
+                </select>
+              </div>
+            </div>
 
-        <div class="plan-workspace">
-        <div style="position:relative">
-          <div id="planMap"></div>
-          <div class="plan-ctx" id="planCtx" role="menu">
-            <button type="button" data-type="start"><span class="plan-dot start">A</span><span data-i18n="plan_ctx_start"></span></button>
-            <button type="button" data-type="end"><span class="plan-dot end">B</span><span data-i18n="plan_ctx_end"></span></button>
-            <button type="button" data-type="via"><span class="plan-dot via">V</span><span data-i18n="plan_ctx_via"></span></button>
-            <button type="button" data-type="poi"><span class="plan-dot poi">★</span><span data-i18n="plan_ctx_poi"></span></button>
-            <hr />
-            <button type="button" class="cancel" data-type="cancel" data-i18n="plan_ctx_cancel"></button>
-          </div>
-        </div>
+            <div class="plan-stats" id="planStats">
+              <div class="plan-stat">
+                <span class="lbl" data-i18n="plan_est_distance"></span>
+                <strong id="statDist">—</strong>
+              </div>
+              <div class="plan-stat">
+                <span class="lbl" data-i18n="plan_est_duration"></span>
+                <strong id="statDur">—</strong>
+              </div>
+              <div class="plan-stat">
+                <span class="lbl" data-i18n="plan_est_gain"></span>
+                <strong id="statGain">—</strong>
+              </div>
+              <div class="plan-stat">
+                <span class="lbl" data-i18n="plan_est_loss"></span>
+                <strong id="statLoss">—</strong>
+              </div>
+            </div>
 
-        <div class="plan-via-panel">
-          <h3 data-i18n="plan_via_order"></h3>
-          <p class="meta" style="margin:0 0 0.25rem;font-size:0.75rem" data-i18n="plan_via_hint"></p>
-          <ol class="plan-via-seq" id="viaOrderList"></ol>
-        </div>
+            <div class="plan-panel-actions">
+              <button type="button" class="btn btn-secondary" id="btnUndo" title="">
+                <span aria-hidden="true">↺</span> <span data-i18n="plan_undo_short"></span>
+              </button>
+              <button type="button" class="btn btn-secondary" id="btnClear">
+                <span aria-hidden="true">✕</span> <span data-i18n="plan_reset"></span>
+              </button>
+              <button type="button" class="btn btn-primary" id="btnSaveDraft">
+                <span aria-hidden="true">✓</span> <span data-i18n="plan_save"></span>
+              </button>
+            </div>
+            <p class="meta" id="pointCount" style="margin:0;font-size:0.75rem"></p>
+
+            <div class="plan-via-panel">
+              <h3 data-i18n="plan_via_order"></h3>
+              <p class="meta" style="margin:0 0 0.25rem;font-size:0.72rem" data-i18n="plan_via_hint"></p>
+              <ol class="plan-via-seq" id="viaOrderList"></ol>
+            </div>
+          </aside>
         </div>
       </section>
 
@@ -371,7 +473,13 @@
       <div class="section-head">
         <h2 data-i18n="plan_marked_trails"></h2>
       </div>
-      <div class="trail-grid" id="planGrid"></div>
+      <div class="trail-grid" id="planGrid" style="margin-bottom:1.75rem"></div>
+
+      <div class="section-head">
+        <h2 data-i18n="plan_bookmarked_routes"></h2>
+      </div>
+      <div class="trail-grid" id="bookmarkGrid"></div>
+      <p id="bookmarkEmpty" class="meta" style="display:none;margin-top:0.5rem" data-i18n="plan_bookmarks_empty"></p>
     </div>
   </main>
 
@@ -388,18 +496,18 @@
     initShell("plan");
 
     /**
-     * Click / right-click / long-press → Start here, End here, Via here, Add POI.
-     * Drawing order: start → numbered vias → end. Drag waypoints to reshape.
+     * Pin menu only: click / right-click / long-press → Start, End, Via, POI.
+     * GPS path follows selected profile (default 山路 / hiking → Mapbox walking).
      */
     let draftId = new URLSearchParams(location.search).get("edit") || TW.getActiveDraftId() || "";
-    let start = null; // [lat,lng]
+    let start = null;
     let end = null;
-    let vias = []; // [[lat,lng], ...]
-    let pois = []; // [{lat,lng,label}, ...]
-    let drawMode = "menu"; // menu | click | freehand
+    let vias = [];
+    let pois = [];
+    let routeProfile = "hiking";
+    let routedPath = null;
     let line = null;
     let markers = [];
-    let freehand = false;
     let pendingLatLng = null;
     let longPressTimer = null;
     let longPressMoved = false;
@@ -407,14 +515,21 @@
     let lastElev = { gain: 0, loss: 0 };
     let elevTimer = null;
     let elevFetchId = 0;
+    let routeFetchId = 0;
+    let lastRouteKm = 0;
+
+    const PROFILE_API = {
+      hiking: "walking",
+      walking: "walking",
+      cycling: "cycling",
+      driving: "driving",
+    };
 
     const mapEl = document.getElementById("planMap");
     const ctx = document.getElementById("planCtx");
+    const studio = document.getElementById("planStudio");
     const map = L.map("planMap", { doubleClickZoom: false, scrollWheelZoom: false }).setView(TW.hkCenter, 12);
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      attribution: "© OpenStreetMap",
-      maxZoom: 19,
-    }).addTo(map);
+    TW.addMapTiles(map, { maxZoom: 19 });
     if (TW.prepareLeafletMap) TW.prepareLeafletMap(map);
 
     function spinePoints() {
@@ -423,6 +538,11 @@
       vias.forEach((v) => pts.push(v));
       if (end) pts.push(end);
       return pts;
+    }
+
+    function displayPath() {
+      if (routedPath && routedPath.length >= 2) return routedPath;
+      return spinePoints();
     }
 
     function syncFromPath(path) {
@@ -495,19 +615,12 @@
     }
 
     function distPointToSeg(p, a, b) {
-      const ax = a[1];
-      const ay = a[0];
-      const bx = b[1];
-      const by = b[0];
-      const px = p[1];
-      const py = p[0];
-      const dx = bx - ax;
-      const dy = by - ay;
+      const ax = a[1], ay = a[0], bx = b[1], by = b[0], px = p[1], py = p[0];
+      const dx = bx - ax, dy = by - ay;
       const len2 = dx * dx + dy * dy;
       let t = len2 ? ((px - ax) * dx + (py - ay) * dy) / len2 : 0;
       t = Math.max(0, Math.min(1, t));
-      const qx = ax + t * dx;
-      const qy = ay + t * dy;
+      const qx = ax + t * dx, qy = ay + t * dy;
       return (py - qy) * (py - qy) + (px - qx) * (px - qx);
     }
 
@@ -517,8 +630,7 @@
         return;
       }
       const spine = [start].concat(vias, [end]);
-      let bestI = 1;
-      let bestD = Infinity;
+      let bestI = 1, bestD = Infinity;
       for (let i = 0; i < spine.length - 1; i++) {
         const d = distPointToSeg(pt, spine[i], spine[i + 1]);
         if (d < bestD) {
@@ -548,9 +660,7 @@
           '<li class="locked"><span class="plan-dot start">A</span><span class="via-label">' +
             TW.t("plan_legend_start") +
             '</span><span class="via-coord">' +
-            Number(start[0]).toFixed(4) +
-            ", " +
-            Number(start[1]).toFixed(4) +
+            Number(start[0]).toFixed(4) + ", " + Number(start[1]).toFixed(4) +
             "</span></li>"
         );
       }
@@ -560,22 +670,14 @@
       }
       vias.forEach((v, i) => {
         rows.push(
-          '<li data-via-i="' +
-            i +
-            '" draggable="true"><span class="via-grip" aria-hidden="true">⋮⋮</span><span class="plan-dot via">' +
+          '<li data-via-i="' + i + '" draggable="true"><span class="via-grip" aria-hidden="true">⋮⋮</span><span class="plan-dot via">' +
             (i + 1) +
             '</span><span class="via-label">' +
             TW.t("plan_via_n").replace("{n}", String(i + 1)) +
             '</span><span class="via-coord">' +
-            Number(v[0]).toFixed(4) +
-            ", " +
-            Number(v[1]).toFixed(4) +
-            '</span><span class="via-actions">' +
-            '<button type="button" data-via-del="' +
-            i +
-            '" title="' +
-            TW.t("plan_ctx_remove") +
-            '">×</button></span></li>'
+            Number(v[0]).toFixed(4) + ", " + Number(v[1]).toFixed(4) +
+            '</span><span class="via-actions"><button type="button" data-via-del="' +
+            i + '" title="' + TW.t("plan_ctx_remove") + '">×</button></span></li>'
         );
       });
       if (end) {
@@ -583,18 +685,92 @@
           '<li class="locked"><span class="plan-dot end">B</span><span class="via-label">' +
             TW.t("plan_legend_end") +
             '</span><span class="via-coord">' +
-            Number(end[0]).toFixed(4) +
-            ", " +
-            Number(end[1]).toFixed(4) +
+            Number(end[0]).toFixed(4) + ", " + Number(end[1]).toFixed(4) +
             "</span></li>"
         );
       }
       el.innerHTML = rows.join("");
     }
 
+    function setLineLatLngs(path) {
+      if (!path || path.length < 2) {
+        if (line) {
+          map.removeLayer(line);
+          line = null;
+        }
+        return;
+      }
+      if (line) line.setLatLngs(path);
+      else line = L.polyline(path, { color: "#2563eb", weight: 5, opacity: 0.9 }).addTo(map);
+    }
+
+    function fetchRoutedPath(spine, cb) {
+      if (!spine || spine.length < 2 || !TW.MAPBOX_TOKEN) {
+        cb(null, null);
+        return;
+      }
+      const limited = spine.slice(0, 25);
+      const profile = PROFILE_API[routeProfile] || "walking";
+      const coords = limited.map((p) => Number(p[1]).toFixed(6) + "," + Number(p[0]).toFixed(6)).join(";");
+      const url =
+        "https://api.mapbox.com/directions/v5/mapbox/" +
+        profile +
+        "/" +
+        coords +
+        "?geometries=geojson&overview=full&access_token=" +
+        encodeURIComponent(TW.MAPBOX_TOKEN);
+      const id = ++routeFetchId;
+      fetch(url)
+        .then((r) => r.json())
+        .then((data) => {
+          if (id !== routeFetchId) return;
+          if (!data || !data.routes || !data.routes[0] || !data.routes[0].geometry) {
+            cb(null, null);
+            return;
+          }
+          const geom = data.routes[0].geometry.coordinates.map((c) => [c[1], c[0]]);
+          const km = (data.routes[0].distance || 0) / 1000;
+          cb(geom, km);
+        })
+        .catch(() => {
+          if (id !== routeFetchId) return;
+          cb(null, null);
+        });
+    }
+
+    function refreshRoute(opts) {
+      opts = opts || {};
+      const spine = spinePoints();
+      if (spine.length < 2) {
+        routedPath = null;
+        lastRouteKm = 0;
+        setLineLatLngs(null);
+        updateStats(opts);
+        return;
+      }
+      if (opts.previewOnly) {
+        setLineLatLngs(spine);
+        updateStats(Object.assign({}, opts, { skipElev: true, useSpine: true }));
+        return;
+      }
+      fetchRoutedPath(spine, (geom, km) => {
+        if (geom && geom.length >= 2) {
+          routedPath = geom;
+          lastRouteKm = km || TW.pathDistanceKm(geom);
+        } else {
+          routedPath = null;
+          lastRouteKm = TW.pathDistanceKm(spine);
+        }
+        setLineLatLngs(displayPath());
+        updateStats(opts);
+        if (!opts.skipPersist) persistSoft();
+      });
+    }
+
     function updateStats(opts) {
       opts = opts || {};
-      const path = spinePoints();
+      const spine = spinePoints();
+      const path = opts.useSpine ? spine : displayPath();
       document.getElementById("pointCount").textContent =
         TW.t("plan_points") +
         ": " +
@@ -614,20 +790,19 @@
         document.getElementById("statLoss").textContent = "—";
         return;
       }
-      const km = TW.pathDistanceKm(path);
+      const km = lastRouteKm && !opts.useSpine ? lastRouteKm : TW.pathDistanceKm(path);
       const fallback = TW.estimateElevFallback(km);
-      const elev =
-        lastElev.gain || lastElev.loss ? lastElev : fallback;
+      const elev = lastElev.gain || lastElev.loss ? lastElev : fallback;
       applyElevDisplay(km, elev);
       if (opts.skipElev) return;
       if (elevTimer) clearTimeout(elevTimer);
       elevTimer = setTimeout(() => {
         const id = ++elevFetchId;
-        const snap = spinePoints().slice();
+        const snap = displayPath().slice();
         TW.fetchPathElevation(snap, (res) => {
           if (id !== elevFetchId) return;
           lastElev = res || TW.estimateElevFallback(TW.pathDistanceKm(snap));
-          applyElevDisplay(TW.pathDistanceKm(snap), lastElev);
+          applyElevDisplay(lastRouteKm || TW.pathDistanceKm(snap), lastElev);
           persistSoft();
         });
       }, 350);
@@ -661,21 +836,16 @@
       m._twIndex = index;
       m.on("drag", () => {
         applyMarkerPos(m);
-        const path = spinePoints();
-        if (path.length >= 2) {
-          if (line) line.setLatLngs(path);
-          else line = L.polyline(path, { color: "#2563eb", weight: 5, opacity: 0.9 }).addTo(map);
-        }
-        if (type !== "poi") updateStats({ skipElev: true });
+        routedPath = null;
+        lastRouteKm = 0;
+        if (type !== "poi") refreshRoute({ previewOnly: true, skipPersist: true });
       });
       m.on("dragend", () => {
         applyMarkerPos(m);
         redraw();
-        persistSoft();
       });
       m.on("click", (e) => {
         L.DomEvent.stop(e);
-        if (drawMode === "freehand") return;
         showCtx(e.latlng, map.latLngToContainerPoint(e.latlng));
       });
       m.on("contextmenu", (e) => {
@@ -691,7 +861,6 @@
           if (type === "via") vias.splice(index, 1);
           else pois.splice(index, 1);
           redraw();
-          persistSoft();
         });
         if (type === "poi") m.bindTooltip(TW.t("plan_ctx_remove"), { direction: "top" });
       }
@@ -709,15 +878,11 @@
 
     function redraw() {
       clearLayers();
-      const path = spinePoints();
-      if (path.length >= 2) {
-        line = L.polyline(path, { color: "#2563eb", weight: 5, opacity: 0.9 }).addTo(map);
-      }
       if (start) addDraggable(start, "start");
       vias.forEach((v, i) => addDraggable(v, "via", i));
       if (end) addDraggable(end, "end");
       pois.forEach((p, i) => addDraggable([p.lat, p.lng], "poi", i));
-      updateStats();
+      refreshRoute();
     }
 
     function persistSoft() {
@@ -725,18 +890,21 @@
       const nameEl = document.getElementById("routeName");
       const notesEl = document.getElementById("routeNotes");
       if (!draftId) draftId = "draft_" + Date.now();
-      const path = spinePoints();
-      const km = TW.pathDistanceKm(path);
+      const spine = spinePoints();
+      const path = displayPath();
+      const km = lastRouteKm || TW.pathDistanceKm(path);
       TW.saveRouteDraft({
         id: draftId,
         name: nameEl.value.trim() || (TW.getLang() === "zh" ? "未命名路線" : "Untitled route"),
         nameZh: nameEl.value.trim() || "未命名路線",
         notes: notesEl.value.trim(),
         path: path,
+        spine: spine,
         start: start,
         end: end,
         vias: vias,
         pois: pois,
+        routeProfile: routeProfile,
         distanceKm: km,
         elevGain: lastElev.gain || 0,
         elevLoss: lastElev.loss || 0,
@@ -770,6 +938,8 @@
       document.getElementById("routeName").value =
         TW.getLang() === "zh" ? d.nameZh || d.name : d.name || "";
       document.getElementById("routeNotes").value = d.notes || "";
+      routeProfile = d.routeProfile || "hiking";
+      document.getElementById("routeProfile").value = routeProfile;
       start = d.start ? [Number(d.start[0]), Number(d.start[1])] : null;
       end = d.end ? [Number(d.end[0]), Number(d.end[1])] : null;
       vias = Array.isArray(d.vias) ? d.vias.map((p) => [Number(p[0]), Number(p[1])]) : [];
@@ -779,34 +949,22 @@
         loss: Number(d.elevLoss) || 0,
       };
       if (!start && !end && Array.isArray(d.path) && d.path.length >= 1) {
-        syncFromPath(d.path);
+        if (Array.isArray(d.spine) && d.spine.length >= 1) syncFromPath(d.spine);
+        else if (d.path.length <= 30) syncFromPath(d.path);
+        else {
+          start = [Number(d.path[0][0]), Number(d.path[0][1])];
+          end = [Number(d.path[d.path.length - 1][0]), Number(d.path[d.path.length - 1][1])];
+          vias = [];
+          routedPath = d.path.map((p) => [Number(p[0]), Number(p[1])]);
+        }
       }
       redraw();
-      const fit = spinePoints().concat(pois.map((p) => [p.lat, p.lng]));
+      const fit = displayPath().concat(pois.map((p) => [p.lat, p.lng]));
       if (fit.length) map.fitBounds(L.latLngBounds(fit).pad(0.2));
       const hint = document.getElementById("planLoadHint");
       hint.style.display = "block";
       hint.textContent = TW.t("plan_load_hint");
       return true;
-    }
-
-    function setDrawMode(mode) {
-      drawMode = mode;
-      document.querySelectorAll("[data-draw]").forEach((c) => {
-        c.classList.toggle("active", c.dataset.draw === mode);
-      });
-      map.getContainer().style.cursor =
-        mode === "freehand" ? "crosshair" : mode === "click" ? "pointer" : "crosshair";
-      hideCtx();
-    }
-
-    function addClickPoint(latlng) {
-      const pt = [latlng.lat, latlng.lng];
-      if (!start) start = pt;
-      else if (!end) end = pt;
-      else insertVia(pt);
-      redraw();
-      persistSoft();
     }
 
     function applyMenuAction(type) {
@@ -827,7 +985,6 @@
       }
       hideCtx();
       redraw();
-      persistSoft();
     }
 
     map.on("click", (e) => {
@@ -835,13 +992,6 @@
         suppressClick = false;
         return;
       }
-      if (drawMode === "freehand") return;
-      if (drawMode === "click") {
-        hideCtx();
-        addClickPoint(e.latlng);
-        return;
-      }
-      // menu mode — same as live plan-route click menu
       showCtx(e.latlng, e.containerPoint);
     });
 
@@ -850,7 +1000,6 @@
       showCtx(e.latlng, e.containerPoint);
     });
 
-    // Long-press for touch (≈ live mobile tap-hold)
     map.getContainer().addEventListener(
       "touchstart",
       (ev) => {
@@ -890,38 +1039,6 @@
       { passive: true }
     );
 
-    map.on("mousedown", (e) => {
-      if (drawMode !== "freehand") return;
-      freehand = true;
-      map.dragging.disable();
-      hideCtx();
-      const path = spinePoints();
-      path.push([e.latlng.lat, e.latlng.lng]);
-      syncFromPath(path);
-      redraw();
-    });
-    map.on("mousemove", (e) => {
-      if (!freehand || drawMode !== "freehand") return;
-      const path = spinePoints();
-      const last = path[path.length - 1];
-      if (!last) return;
-      const dlat = Math.abs(last[0] - e.latlng.lat);
-      const dlng = Math.abs(last[1] - e.latlng.lng);
-      if (dlat + dlng < 0.00035) return;
-      path.push([e.latlng.lat, e.latlng.lng]);
-      syncFromPath(path);
-      if (line) line.setLatLngs(path);
-      else redraw();
-      updateStats({ skipElev: true });
-    });
-    map.on("mouseup", () => {
-      if (!freehand) return;
-      freehand = false;
-      map.dragging.enable();
-      redraw();
-      persistSoft();
-    });
-
     ctx.addEventListener("click", (e) => {
       const btn = e.target.closest("button[data-type]");
       if (!btn) return;
@@ -930,7 +1047,10 @@
     });
 
     document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape") hideCtx();
+      if (e.key === "Escape") {
+        if (studio.classList.contains("is-fullscreen")) setFullscreen(false);
+        else hideCtx();
+      }
     });
     document.addEventListener("click", (e) => {
       if (!ctx.contains(e.target) && !mapEl.contains(e.target)) hideCtx();
@@ -942,7 +1062,6 @@
       if (del) {
         vias.splice(Number(del.dataset.viaDel), 1);
         redraw();
-        persistSoft();
         return;
       }
       if (row && vias[Number(row.dataset.viaI)]) {
@@ -989,12 +1108,13 @@
         const moved = vias.splice(dragFrom, 1)[0];
         vias.splice(to, 0, moved);
         redraw();
-        persistSoft();
       });
     })();
 
-    document.querySelectorAll("[data-draw]").forEach((btn) => {
-      btn.addEventListener("click", () => setDrawMode(btn.dataset.draw));
+    document.getElementById("routeProfile").addEventListener("change", (e) => {
+      routeProfile = e.target.value || "hiking";
+      routedPath = null;
+      redraw();
     });
 
     document.getElementById("btnUndo").addEventListener("click", () => {
@@ -1004,17 +1124,17 @@
       else if (pois.length) pois.pop();
       hideCtx();
       redraw();
-      persistSoft();
     });
 
     document.getElementById("btnClear").addEventListener("click", () => {
       start = end = null;
       vias = [];
       pois = [];
+      routedPath = null;
+      lastRouteKm = 0;
       lastElev = { gain: 0, loss: 0 };
       hideCtx();
       redraw();
-      persistSoft();
     });
 
     document.getElementById("btnSaveDraft").addEventListener("click", () => {
@@ -1033,7 +1153,11 @@
       start = end = null;
       vias = [];
       pois = [];
+      routedPath = null;
+      lastRouteKm = 0;
       lastElev = { gain: 0, loss: 0 };
+      routeProfile = "hiking";
+      document.getElementById("routeProfile").value = "hiking";
       document.getElementById("routeName").value = "";
       document.getElementById("routeNotes").value = "";
       document.getElementById("planLoadHint").style.display = "none";
@@ -1043,6 +1167,44 @@
       map.setView(TW.hkCenter, 12);
       history.replaceState(null, "", "plan.html?edit=" + encodeURIComponent(draftId));
     });
+
+    function setFullscreen(on) {
+      studio.classList.toggle("is-fullscreen", on);
+      document.body.classList.toggle("map-fs-open", on);
+      document.getElementById("btnMapFs").hidden = on;
+      document.getElementById("btnMapExitFs").hidden = !on;
+      if (on) studio.classList.add("panel-collapsed");
+      else studio.classList.remove("panel-collapsed");
+      syncPanelToggleLabel();
+      setTimeout(() => map.invalidateSize(), 80);
+    }
+
+    function syncPanelToggleLabel() {
+      const collapsed = studio.classList.contains("panel-collapsed");
+      const btn = document.getElementById("btnPanelToggle");
+      btn.textContent = collapsed ? "‹" : "›";
+      btn.title = TW.t(collapsed ? "plan_panel_show" : "plan_panel_hide");
+      btn.setAttribute("aria-label", btn.title);
+    }
+
+    document.getElementById("btnMapFs").addEventListener("click", () => setFullscreen(true));
+    document.getElementById("btnMapExitFs").addEventListener("click", () => setFullscreen(false));
+    document.getElementById("btnPanelToggle").addEventListener("click", () => {
+      if (!studio.classList.contains("is-fullscreen")) return;
+      studio.classList.toggle("panel-collapsed");
+      syncPanelToggleLabel();
+      setTimeout(() => map.invalidateSize(), 80);
+    });
+
+    (function labelMapBtns() {
+      const fs = document.getElementById("btnMapFs");
+      const ex = document.getElementById("btnMapExitFs");
+      fs.title = TW.t("plan_map_fullscreen");
+      fs.setAttribute("aria-label", fs.title);
+      ex.title = TW.t("plan_map_exit_fs");
+      ex.setAttribute("aria-label", ex.title);
+      syncPanelToggleLabel();
+    })();
 
     function renderDrafts() {
       const list = TW.getRouteDrafts();
@@ -1054,12 +1216,12 @@
       el.innerHTML = list
         .map((d) => {
           const title = TW.getLang() === "zh" ? d.nameZh || d.name : d.name;
-          const km = TW.pathDistanceKm(d.path || []);
+          const km = d.distanceKm || TW.pathDistanceKm(d.path || []);
           const poiN = Array.isArray(d.pois) ? d.pois.length : 0;
           return `<div class="draft-list-item">
             <div>
               <strong>${twEsc(title)}</strong>
-              <div class="meta">${(d.path || []).length} ${TW.t("plan_points")}${poiN ? " · " + poiN + " " + TW.t("plan_legend_poi") : ""}${km ? " · " + km + " km" : ""}${d.notes ? " · " + twEsc(d.notes) : ""}</div>
+              <div class="meta">${(d.spine || d.path || []).length} ${TW.t("plan_points")}${poiN ? " · " + poiN + " " + TW.t("plan_legend_poi") : ""}${km ? " · " + Number(km).toFixed(1) + " km" : ""}${d.notes ? " · " + twEsc(d.notes) : ""}</div>
             </div>
             <div style="display:flex;gap:0.4rem">
               <button type="button" class="btn btn-primary" style="padding:0.35rem 0.75rem;font-size:0.8rem" data-edit="${d.id}">${TW.t("plan_edit_draft")}</button>
@@ -1083,6 +1245,7 @@
             start = end = null;
             vias = [];
             pois = [];
+            routedPath = null;
             redraw();
           }
           renderDrafts();
@@ -1101,35 +1264,42 @@
         return;
       }
       empty.style.display = "none";
-      grid.innerHTML = trails
-        .map(
-          (t) => `
-        <div>
-          ${renderTrailCard(t, { hidePlan: true })}
-          <div style="display:flex;gap:0.5rem;margin-top:0.5rem">
-            <button class="btn btn-secondary" style="flex:1;font-size:0.8rem" data-remove="${t.id}">${TW.t("plan_remove")}</button>
-            <a class="btn btn-primary" style="flex:1;font-size:0.8rem" href="app/index.html?trail=${t.id}">${TW.t("plan_open_app")}</a>
-          </div>
-        </div>`
-        )
-        .join("");
-      grid.querySelectorAll("[data-remove]").forEach((btn) => {
-        btn.addEventListener("click", () => {
-          TW.togglePlan(btn.dataset.remove);
-          showToast(TW.t("toast_unplanned"));
-          renderPlans();
-        });
-      });
+      grid.innerHTML = trails.map((t) => renderTrailCard(t, { hidePlan: true })).join("");
+    }
+
+    function renderBookmarks() {
+      const grid = document.getElementById("bookmarkGrid");
+      const empty = document.getElementById("bookmarkEmpty");
+      const items =
+        typeof TW.resolveBookmarkItems === "function"
+          ? TW.resolveBookmarkItems().filter((x) => x && x.type === "route")
+          : [];
+      const trails = items
+        .map((item) => (TW.trails || []).find((t) => t.id === item.id))
+        .filter(Boolean);
+      if (!trails.length) {
+        grid.innerHTML = "";
+        empty.style.display = "block";
+        return;
+      }
+      empty.style.display = "none";
+      grid.innerHTML = trails.map((t) => renderTrailCard(t, { hidePlan: true })).join("");
     }
 
     const ph = document.getElementById("routeNotes");
     if (ph && ph.dataset.i18nPlaceholder) ph.placeholder = TW.t(ph.dataset.i18nPlaceholder);
 
+    document.querySelectorAll("#routeProfile option[data-i18n]").forEach((opt) => {
+      opt.textContent = TW.t(opt.dataset.i18n);
+    });
+
+    document.getElementById("routeProfile").value = "hiking";
+
     if (draftId) loadDraft(draftId);
     else updateStats();
-    setDrawMode("menu");
     renderDrafts();
     renderPlans();
+    renderBookmarks();
     setTimeout(() => map.invalidateSize(), 200);
   </script>
 </body>

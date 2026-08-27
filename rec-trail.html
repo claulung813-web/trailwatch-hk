@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="css/styles.css?v=20260828c" />
 </head>
 <body>
   <div id="app-header"></div>
@@ -22,39 +22,38 @@
         <a href="plan.html" data-i18n="nav_plan"></a>
       </nav>
       <h1 class="page-title" id="recTitle"></h1>
-      <p class="route-share-story" id="recDesc"></p>
-      <p class="route-share-itinerary" id="recItinerary"></p>
       <div class="route-share-byline">
         <strong id="recAuthor">TrailWatch</strong>
         <span id="recDate"></span>
       </div>
       <div id="recMap" class="route-share-map"></div>
+      <p class="route-share-story" id="recDesc"></p>
+      <p class="route-share-itinerary" id="recItinerary"></p>
       <section class="route-share-block">
         <h2 id="lblPlanData"></h2>
         <div class="route-share-stats" id="planStats"></div>
       </section>
       <section class="route-share-block">
         <h2 id="lblElev"></h2>
-        <p class="route-share-elev" id="elevLine"></p>
+        <div id="elevChart"></div>
       </section>
       <section class="route-share-block">
         <h2 id="lblPhotos"></h2>
         <div class="rec-photo-grid" id="photoGrid"></div>
       </section>
       <div class="detail-next-steps">
-        <a class="btn btn-primary" id="recPlan" href="plan.html" data-i18n="mark_plan"></a>
-        <button type="button" class="btn btn-secondary bookmark-btn" id="recBookmark" data-i18n="rec_bookmark"></button>
-        <button type="button" class="btn btn-secondary dup-btn" id="recDup" data-i18n="rec_duplicate_edit"></button>
+        <button type="button" class="btn btn-secondary bookmark-btn icon-only" id="recBookmark" aria-label="Bookmark" title=""></button>
+        <button type="button" class="btn btn-primary dup-btn" id="recDup" data-i18n="rec_duplicate_edit"></button>
       </div>
     </div>
   </main>
   <div id="app-footer"></div>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="js/i18n.js"></script>
-  <script src="js/data.js"></script>
-  <script src="js/live-routes.js"></script>
-  <script src="js/cms-store.js"></script>
-  <script src="js/app.js"></script>
+  <script src="js/i18n.js?v=20260828c"></script>
+  <script src="js/data.js?v=20260828c"></script>
+  <script src="js/live-routes.js?v=20260828c"></script>
+  <script src="js/cms-store.js?v=20260828c"></script>
+  <script src="js/app.js?v=20260828c"></script>
   <script>
     document.documentElement.lang = TW.getLang() === "zh" ? "zh-Hant" : "en";
     initShell("explore");
@@ -89,9 +88,13 @@
         [dist, t("rec_distance_km")],
         [elev, t("rec_elev_changes")],
       ].map((s) => `<div><strong>${s[0]}</strong><span>${s[1]}</span></div>`).join("");
-      document.getElementById("elevLine").textContent =
-        t("rec_elev_max") + " " + (r.elevMax != null ? r.elevMax + "m" : "—") +
-        " · " + t("rec_elev_min") + " " + (r.elevMin != null ? r.elevMin + "m" : "—");
+
+      document.getElementById("elevChart").innerHTML = TW.elevChartHtml({
+        elevMax: r.elevMax,
+        elevMin: r.elevMin,
+        elevProfile: r.elevProfile,
+        showPace: false,
+      });
 
       const photos = r.photos && r.photos.length ? r.photos : r.image ? [r.image] : [];
       document.getElementById("photoGrid").innerHTML = photos
@@ -99,29 +102,27 @@
         .join("");
 
       const planId = r.trailId || r.id;
-      document.getElementById("recPlan").addEventListener("click", (e) => {
-        e.preventDefault();
-        if (!TW.requireLogin({ messageKey: "login_to_save" })) return;
-        if (!TW.isPlanned(planId)) TW.togglePlan(planId);
-        showToast(TW.t("toast_planned"));
-      });
       const bm = document.getElementById("recBookmark");
       bm.dataset.trail = planId;
+      bm.setAttribute("aria-label", t("rec_bookmark"));
+      bm.title = t("rec_bookmark");
+      bm.innerHTML = typeof twIcon === "function" ? twIcon("bookmarks") : "🔖";
       if (TW.isBookmarked(planId)) {
         bm.classList.add("active");
-        bm.textContent = TW.t("rec_bookmark") + " ✓";
+        bm.setAttribute("aria-pressed", "true");
+      } else {
+        bm.setAttribute("aria-pressed", "false");
       }
       document.getElementById("recDup").dataset.trail = planId;
 
       const path = (r.path && r.path.length ? r.path : TW.demoPathAround ? TW.demoPathAround(r.lat, r.lng) : [[22.32, 114.17]])
         .map((p) => [Number(p[0]), Number(p[1])]);
       const map = L.map("recMap").setView(path[0], 13);
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "© OpenStreetMap" }).addTo(map);
+      TW.addMapTiles(map);
       if (path.length > 1) {
         const line = L.polyline(path, { color: "#2563eb", weight: 5 }).addTo(map);
         map.fitBounds(line.getBounds().pad(0.15));
-        L.circleMarker(path[0], { radius: 7, color: "#fff", weight: 2, fillColor: "#2d8a45", fillOpacity: 1 }).addTo(map);
-        L.circleMarker(path[path.length - 1], { radius: 7, color: "#fff", weight: 2, fillColor: "#d64545", fillOpacity: 1 }).addTo(map);
+        if (typeof TW.addRouteEndpoints === "function") TW.addRouteEndpoints(map, path);
       }
     }
   </script>

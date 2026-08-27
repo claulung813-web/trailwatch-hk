@@ -151,9 +151,7 @@
 
       const path = hike.path && hike.path.length ? hike.path : [[22.35, 114.25]];
       const map = L.map("hikeMap").setView(path[0], 13);
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution: "© OpenStreetMap",
-      }).addTo(map);
+      TW.addMapTiles(map);
       const line = L.polyline(path, { color: "#2563eb", weight: 5 }).addTo(map);
       TW.addRouteEndpoints(map, path);
       map.fitBounds(line.getBounds().pad(0.2));

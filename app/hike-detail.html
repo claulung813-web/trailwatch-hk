@@ -172,7 +172,7 @@
 
       const path = hike.path && hike.path.length ? hike.path : [[22.35, 114.25]];
       const map = L.map("detailMap", { zoomControl: false }).setView(path[0], 13);
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 18 }).addTo(map);
+      TW.addMapTiles(map, { maxZoom: 18 });
       const line = L.polyline(path, { color: "#2563eb", weight: 5 }).addTo(map);
       TW.addRouteEndpoints(map, path);
       setTimeout(() => { map.invalidateSize(); map.fitBounds(line.getBounds().pad(0.25)); }, 100);

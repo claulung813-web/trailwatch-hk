@@ -22,10 +22,7 @@ TW.createRouteMapEditor = function (opts) {
   let onChange = typeof opts.onChange === "function" ? opts.onChange : function () {};
 
   const map = L.map(mapEl, { doubleClickZoom: false }).setView(TW.hkCenter, 12);
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    attribution: "© OpenStreetMap",
-    maxZoom: 19,
-  }).addTo(map);
+  TW.addMapTiles(map, { maxZoom: 19 });
 
   function spinePoints() {
     const pts = [];

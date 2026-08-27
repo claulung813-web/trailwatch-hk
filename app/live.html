@@ -75,7 +75,7 @@
       : "";
     document.getElementById("liveHint").textContent = t("app_live_planned");
     const map = L.map("liveMap", { zoomControl: false }).setView([session.lat, session.lng], 14);
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 18 }).addTo(map);
+    TW.addMapTiles(map, { maxZoom: 18 });
     if (session.path && session.path.length > 1) {
       L.polyline(session.path, { color: "#f5a623", weight: 4, dashArray: "6 6" }).addTo(map);
     }

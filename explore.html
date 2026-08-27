@@ -8,146 +8,169 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <link rel="stylesheet" href="css/styles.css?v=20260821e" />
+  <link rel="stylesheet" href="css/styles.css?v=20260828f" />
 </head>
-<body>
+<body class="page-explore">
   <div id="app-header"></div>
 
   <main class="page">
     <div class="container">
-      <h1 class="page-title" data-i18n="explore_title"></h1>
-      <p class="page-sub" data-i18n="explore_sub"></p>
 
       <div class="tw-toolbar">
-      <div class="explore-search-row">
-        <div class="search-bar explore-search">
-          <input type="search" id="trailSearch" data-i18n-placeholder="search_placeholder" />
-        </div>
-        <button type="button" class="btn btn-primary explore-map-btn" id="toggleMapView" data-i18n="explore_map_view"></button>
-      </div>
-
-      <div class="tabs" id="exploreTabs">
-        <button class="tab active" data-tab="routes" data-i18n="tab_routes"></button>
-        <button class="tab" data-tab="records" data-i18n="tab_records"></button>
-        <button class="tab" data-tab="incidents" data-i18n="tab_incidents"></button>
-      </div>
-
-      <div class="explore-advanced" id="advancedPanel">
-        <div class="filter-bar" id="routeAdvanced">
-          <div>
-            <label data-i18n="filter_district"></label>
-            <select class="form-select" id="districtFilter"></select>
+        <div class="explore-search-row">
+          <div class="tabs explore-tabs" id="exploreTabs">
+            <button class="tab active" data-tab="routes" data-i18n="tab_routes"></button>
+            <button class="tab" data-tab="records" data-i18n="tab_records"></button>
+            <button class="tab" data-tab="incidents" data-i18n="tab_incidents"></button>
           </div>
-          <div>
-            <label data-i18n="filter_difficulty"></label>
-            <div class="diff-chips" id="diffFilter">
-              <button type="button" class="chip active" data-diff="all" data-i18n="all_levels"></button>
-              <button type="button" class="chip" data-diff="1">1</button>
-              <button type="button" class="chip" data-diff="2">2</button>
-              <button type="button" class="chip" data-diff="3">3</button>
-              <button type="button" class="chip" data-diff="4">4</button>
-              <button type="button" class="chip" data-diff="5">5</button>
+          <div class="search-bar explore-search">
+            <input type="search" id="trailSearch" data-i18n-placeholder="search_placeholder" />
+          </div>
+        </div>
+
+        <div class="explore-view-row" id="viewModes" role="tablist"></div>
+        <div class="chip-row explore-subchips" id="subChips"></div>
+
+        <details class="tw-advanced" id="advancedPanel">
+          <summary data-i18n="toolbar_advanced"></summary>
+          <div class="tw-advanced-body">
+            <div class="filter-bar" id="routeAdvanced">
+              <div>
+                <label data-i18n="filter_district"></label>
+                <select class="form-select" id="districtFilter"></select>
+              </div>
+              <div>
+                <label data-i18n="filter_difficulty"></label>
+                <div class="diff-chips" id="diffFilter">
+                  <button type="button" class="chip active" data-diff="all" data-i18n="all_levels"></button>
+                  <button type="button" class="chip" data-diff="1">1</button>
+                  <button type="button" class="chip" data-diff="2">2</button>
+                  <button type="button" class="chip" data-diff="3">3</button>
+                  <button type="button" class="chip" data-diff="4">4</button>
+                  <button type="button" class="chip" data-diff="5">5</button>
+                </div>
+                <p id="diffHint" style="font-size:0.75rem;color:var(--text-muted);margin-top:0.4rem"></p>
+              </div>
+              <div>
+                <label data-i18n="explore_duration"></label>
+                <select class="form-select" id="durationFilter">
+                  <option value="all" data-i18n="explore_duration_any"></option>
+                  <option value="short" data-i18n="explore_duration_short"></option>
+                  <option value="mid" data-i18n="explore_duration_mid"></option>
+                  <option value="long" data-i18n="explore_duration_long"></option>
+                </select>
+              </div>
+              <div>
+                <label data-i18n="explore_distance"></label>
+                <select class="form-select" id="distanceFilter">
+                  <option value="all" data-i18n="explore_distance_any"></option>
+                  <option value="short" data-i18n="explore_distance_short"></option>
+                  <option value="mid" data-i18n="explore_distance_mid"></option>
+                  <option value="long" data-i18n="explore_distance_long"></option>
+                </select>
+              </div>
             </div>
-            <p id="diffHint" style="font-size:0.75rem;color:var(--text-muted);margin-top:0.4rem"></p>
-          </div>
-          <div>
-            <label data-i18n="explore_duration"></label>
-            <select class="form-select" id="durationFilter">
-              <option value="all" data-i18n="explore_duration_any"></option>
-              <option value="short" data-i18n="explore_duration_short"></option>
-              <option value="mid" data-i18n="explore_duration_mid"></option>
-              <option value="long" data-i18n="explore_duration_long"></option>
-            </select>
-          </div>
-          <div>
-            <label data-i18n="explore_distance"></label>
-            <select class="form-select" id="distanceFilter">
-              <option value="all" data-i18n="explore_distance_any"></option>
-              <option value="short" data-i18n="explore_distance_short"></option>
-              <option value="mid" data-i18n="explore_distance_mid"></option>
-              <option value="long" data-i18n="explore_distance_long"></option>
-            </select>
-          </div>
-        </div>
 
-        <div class="filter-bar is-hidden" id="recordFilters" hidden>
-          <div>
-            <label data-i18n="rec_filter_friends"></label>
-            <div class="chip-row" id="recordPeople">
-              <button type="button" class="chip active" data-people="all" data-i18n="rec_filter_all_people"></button>
-              <button type="button" class="chip" data-people="friends" data-i18n="rec_filter_friends"></button>
+            <div class="filter-bar is-hidden" id="recordFilters" hidden>
+              <div>
+                <label data-i18n="rec_filter_user"></label>
+                <div class="chip-row" id="recordPeople">
+                  <button type="button" class="chip active" data-people="public" data-i18n="rec_filter_public"></button>
+                  <button type="button" class="chip" data-people="friends" data-i18n="rec_filter_friends"></button>
+                </div>
+              </div>
+              <div style="grid-column:1 / -1">
+                <label data-i18n="filter_category"></label>
+                <div class="chip-row" id="recordTags"></div>
+              </div>
+              <div>
+                <label data-i18n="filter_difficulty"></label>
+                <div class="diff-chips" id="recordDiff">
+                  <button type="button" class="chip active" data-diff="all" data-i18n="all_levels"></button>
+                  <button type="button" class="chip" data-diff="1">1</button>
+                  <button type="button" class="chip" data-diff="2">2</button>
+                  <button type="button" class="chip" data-diff="3">3</button>
+                  <button type="button" class="chip" data-diff="4">4</button>
+                  <button type="button" class="chip" data-diff="5">5</button>
+                </div>
+              </div>
+              <div>
+                <label data-i18n="explore_distance"></label>
+                <select class="form-select" id="recordDistance">
+                  <option value="all" data-i18n="explore_distance_any"></option>
+                  <option value="short" data-i18n="explore_distance_short"></option>
+                  <option value="mid" data-i18n="explore_distance_mid"></option>
+                  <option value="long" data-i18n="explore_distance_long"></option>
+                </select>
+              </div>
+              <div>
+                <label data-i18n="explore_duration"></label>
+                <select class="form-select" id="recordDuration">
+                  <option value="all" data-i18n="explore_duration_any"></option>
+                  <option value="short" data-i18n="explore_duration_short"></option>
+                  <option value="mid" data-i18n="explore_duration_mid"></option>
+                  <option value="long" data-i18n="explore_duration_long"></option>
+                </select>
+              </div>
+              <div>
+                <label data-i18n="app_filter_from"></label>
+                <input class="form-select" type="date" id="recordFrom" />
+              </div>
+              <div>
+                <label data-i18n="app_filter_to"></label>
+                <input class="form-select" type="date" id="recordTo" />
+              </div>
+            </div>
+
+            <div class="filter-bar reports-filters is-hidden" id="incidentFilters" hidden style="margin-bottom:0">
+              <div>
+                <label for="exploreIncDate" data-i18n="reports_filter_date"></label>
+                <select class="form-select" id="exploreIncDate">
+                  <option value="all" selected data-i18n="reports_date_all"></option>
+                  <option value="6m" data-i18n="reports_date_6m"></option>
+                  <option value="30d" data-i18n="reports_date_30d"></option>
+                  <option value="90d" data-i18n="reports_date_90d"></option>
+                  <option value="year" data-i18n="reports_date_year"></option>
+                </select>
+              </div>
+              <div>
+                <label for="exploreIncStatus" data-i18n="reports_filter_status"></label>
+                <select class="form-select" id="exploreIncStatus">
+                  <option value="all" selected data-i18n="reports_status_all"></option>
+                  <option value="new" data-i18n="status_new"></option>
+                  <option value="update" data-i18n="status_updated"></option>
+                  <option value="closed" data-i18n="status_closed"></option>
+                </select>
+              </div>
             </div>
           </div>
-          <div>
-            <label data-i18n="explore_duration"></label>
-            <select class="form-select" id="recordDuration">
-              <option value="all" data-i18n="explore_duration_any"></option>
-              <option value="short" data-i18n="explore_duration_short"></option>
-              <option value="mid" data-i18n="explore_duration_mid"></option>
-              <option value="long" data-i18n="explore_duration_long"></option>
-            </select>
-          </div>
-          <div>
-            <label data-i18n="app_filter_from"></label>
-            <input class="form-select" type="date" id="recordFrom" />
-          </div>
-          <div>
-            <label data-i18n="app_filter_to"></label>
-            <input class="form-select" type="date" id="recordTo" />
-          </div>
-        </div>
-
-        <div class="filter-bar reports-filters is-hidden" id="incidentFilters" hidden style="margin-bottom:0">
-          <div>
-            <label for="exploreIncDate" data-i18n="reports_filter_date"></label>
-            <select class="form-select" id="exploreIncDate">
-              <option value="6m" selected data-i18n="reports_date_6m"></option>
-              <option value="30d" data-i18n="reports_date_30d"></option>
-              <option value="90d" data-i18n="reports_date_90d"></option>
-              <option value="year" data-i18n="reports_date_year"></option>
-              <option value="all" data-i18n="reports_date_all"></option>
-            </select>
-          </div>
-          <div class="reports-cat-wrap" style="grid-column:1 / -1">
-            <span class="reports-filter-label" data-i18n="reports_filter_category"></span>
-            <div class="chip-row" id="exploreIncCats"></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="explore-view-row" id="viewModes" role="tablist"></div>
-      <div class="chip-row explore-subchips" id="subChips"></div>
-
+        </details>
       </div>
 
       <div id="view-routes">
         <div class="explore-toolbar">
           <h2 class="explore-count" id="listCount"></h2>
+          <button type="button" class="btn btn-primary explore-map-btn" id="toggleMapView" data-i18n="explore_map_view"></button>
         </div>
-        <div class="explore-split">
-        <div id="exploreMapWrap" class="explore-map-wrap" hidden>
-          <div id="exploreMap"></div>
-        </div>
-        <div class="trail-grid" id="trailGrid"></div>
+        <div class="explore-split" id="exploreSplit">
+          <div id="exploreMapWrap" class="explore-map-wrap" hidden>
+            <div id="exploreMap"></div>
+          </div>
+          <div class="trail-grid" id="trailGrid"></div>
         </div>
       </div>
 
       <div id="view-records" class="hidden">
-        <div class="explore-toolbar">
-          <h2 class="explore-count" id="recordCount"></h2>
-        </div>
-        <div class="record-list" id="exploreRecords"></div>
+        <div class="record-list record-grid" id="exploreRecords"></div>
       </div>
 
       <div id="view-incidents" class="hidden">
-        <div class="explore-toolbar">
-          <h2 class="explore-count" id="incCount"></h2>
-          <a class="btn btn-secondary" href="reports.html" data-i18n="report_incident_btn"></a>
+        <div class="reports-cat-wrap explore-inc-cats">
+          <span class="reports-filter-label" data-i18n="reports_filter_category"></span>
+          <div class="chip-row" id="exploreIncCats"></div>
         </div>
-        <div class="report-layout">
-          <div class="report-map report-map--tall" id="exploreIncMap"></div>
-          <div class="report-list" id="exploreIncList"></div>
-        </div>
+        <div class="report-map report-map--tall" id="exploreIncMap"></div>
+        <div class="report-list report-grid" id="exploreIncList"></div>
       </div>
     </div>
   </main>
@@ -155,12 +178,12 @@
   <div id="app-footer"></div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="js/i18n.js"></script>
-  <script src="js/data.js"></script>
-  <script src="js/live-routes.js"></script>
-  <script src="js/cms-store.js"></script>
-  <script src="js/hikes.js"></script>
-  <script src="js/app.js"></script>
+  <script src="js/i18n.js?v=20260828d"></script>
+  <script src="js/data.js?v=20260828d"></script>
+  <script src="js/live-routes.js?v=20260828d"></script>
+  <script src="js/cms-store.js?v=20260828d"></script>
+  <script src="js/hikes.js?v=20260828d"></script>
+  <script src="js/app.js?v=20260828d"></script>
   <script>
     document.documentElement.lang = TW.getLang() === "zh" ? "zh-Hant" : "en";
     initShell("explore");
@@ -177,12 +200,16 @@
     let exploreMap = null;
     let exploreLayer = null;
     let activeTab = "routes";
-    let recPeople = "all";
+    let recPeople = "public";
     let recDuration = "all";
+    let recDistance = "all";
+    let recDiff = "all";
+    let recTag = "all";
     let recFrom = "";
     let recTo = "";
-    let incDate = "6m";
+    let incDate = "all";
     let incCat = "all";
+    let incStatus = "all";
     let incMap = null;
     let incMarkers = [];
 
@@ -317,8 +344,7 @@
           (distanceBand === "mid" && km >= 8 && km <= 15) ||
           (distanceBand === "long" && km > 15);
         const tags = t.tags || [];
-        const matchTheme =
-          (view !== "categories" && view !== "themes") || theme === "all" || tags.indexOf(theme) >= 0;
+        const matchTheme = theme === "all" || tags.indexOf(theme) >= 0;
         const matchArea = view !== "themes" || area === "all" || t.district === area;
         const q = query.trim().toLowerCase();
         const hay = (
@@ -337,7 +363,7 @@
 
     function baseForView() {
       if (view === "editors") return editorsRoutes();
-      if (view === "plans") return myPlanRoutes();
+      if (view === "plans" || view === "categories") view = "all";
       return allRoutes();
     }
 
@@ -346,26 +372,19 @@
       const viewLabel =
         view === "editors"
           ? TW.t("explore_view_editors")
-          : view === "categories"
-            ? TW.t("explore_view_categories")
-            : view === "themes"
-              ? TW.t("explore_view_themes")
-              : view === "plans"
-                ? TW.t("explore_view_plans")
-                : TW.t("explore_view_all");
+          : view === "themes"
+            ? TW.t("explore_view_themes")
+            : TW.t("explore_view_all");
       return n + " " + unit + " · " + viewLabel;
     }
 
     function renderViewModes() {
       const allN = applySearch(allRoutes()).length;
       const edN = applySearch(editorsRoutes()).length;
-      const planN = applySearch(myPlanRoutes()).length;
       const modes = [
         { id: "all", label: TW.t("explore_view_all"), n: allN },
         { id: "editors", label: TW.t("explore_view_editors"), n: edN },
-        { id: "categories", label: TW.t("explore_view_categories"), n: allN },
         { id: "themes", label: TW.t("explore_view_themes"), n: allN },
-        { id: "plans", label: TW.t("explore_view_plans"), n: planN },
       ];
       document.getElementById("viewModes").innerHTML = modes
         .map(
@@ -379,28 +398,17 @@
 
     function renderSubChips(pool) {
       const row = document.getElementById("subChips");
-      if (view === "categories") {
-        const filters = (TW.trailFilters || []).filter((f) => f.id !== "all");
-        row.innerHTML =
-          `<button type="button" class="chip${theme === "all" ? " active" : ""}" data-theme="all">${TW.t("filter_all")} (${pool.length})</button>` +
-          filters
-            .map((f) => {
-              const n = pool.filter((t) => (t.tags || []).indexOf(f.id) >= 0).length;
-              return `<button type="button" class="chip${theme === f.id ? " active" : ""}" data-theme="${f.id}">${TW.t(f.labelKey)} (${n})</button>`;
-            })
-            .join("");
-        row.hidden = false;
-      } else if (view === "themes") {
-        const filters = (TW.trailFilters || []).filter((f) => f.id !== "all");
-        row.innerHTML =
-          `<p class="explore-chip-label">${TW.t("filter_category")}</p>` +
-          `<button type="button" class="chip${theme === "all" ? " active" : ""}" data-theme="all">${TW.t("filter_all")} (${pool.length})</button>` +
-          filters
-            .map((f) => {
-              const n = pool.filter((t) => (t.tags || []).indexOf(f.id) >= 0).length;
-              return `<button type="button" class="chip${theme === f.id ? " active" : ""}" data-theme="${f.id}">${TW.t(f.labelKey)} (${n})</button>`;
-            })
-            .join("") +
+      const filters = (TW.trailFilters || []).filter((f) => f.id !== "all");
+      let html =
+        `<button type="button" class="chip${theme === "all" ? " active" : ""}" data-theme="all">${TW.t("filter_all")} (${pool.length})</button>` +
+        filters
+          .map((f) => {
+            const n = pool.filter((t) => (t.tags || []).indexOf(f.id) >= 0).length;
+            return `<button type="button" class="chip${theme === f.id ? " active" : ""}" data-theme="${f.id}">${TW.t(f.labelKey)} (${n})</button>`;
+          })
+          .join("");
+      if (view === "themes") {
+        html +=
           `<p class="explore-chip-label">${TW.t("explore_theme_areas")}</p>` +
           `<button type="button" class="chip${area === "all" ? " active" : ""}" data-area="all">${TW.t("all_districts")} (${pool.length})</button>` +
           TW.districts
@@ -410,32 +418,26 @@
               return `<button type="button" class="chip${area === d.id ? " active" : ""}" data-area="${d.id}">${name} (${n})</button>`;
             })
             .join("");
-        row.hidden = false;
-      } else {
-        row.innerHTML = "";
-        row.hidden = true;
       }
-    }
-
-    function desktopSplit() {
-      return window.matchMedia("(min-width: 960px)").matches;
+      row.innerHTML = html;
+      row.hidden = false;
     }
 
     function renderMap(list) {
       const wrap = document.getElementById("exploreMapWrap");
-      const showMap = mapMode || desktopSplit();
-      wrap.hidden = !showMap;
-      document.getElementById("trailGrid").hidden = mapMode && !desktopSplit();
+      const grid = document.getElementById("trailGrid");
+      const split = document.getElementById("exploreSplit");
       const btn = document.getElementById("toggleMapView");
-      btn.textContent = mapMode ? TW.t("explore_list_view") : TW.t("explore_map_view");
+      wrap.hidden = !mapMode;
+      grid.hidden = !!mapMode;
+      if (split) split.classList.toggle("is-map", mapMode);
+      btn.textContent = mapMode ? TW.t("explore_grid_view") : TW.t("explore_map_view");
       btn.classList.toggle("btn-secondary", mapMode);
       btn.classList.toggle("btn-primary", !mapMode);
-      if (!showMap) return;
+      if (!mapMode) return;
       if (!exploreMap) {
         exploreMap = L.map("exploreMap", { scrollWheelZoom: false }).setView(TW.hkCenter || [22.32, 114.17], 11);
-        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-          attribution: "© OpenStreetMap",
-        }).addTo(exploreMap);
+        TW.addMapTiles(exploreMap);
         if (TW.prepareLeafletMap) TW.prepareLeafletMap(exploreMap);
       }
       if (exploreLayer) exploreLayer.remove();
@@ -472,7 +474,7 @@
 
       document.getElementById("listCount").textContent = resultCountLabel(searched.length);
       document.getElementById("trailGrid").innerHTML = searched.length
-        ? searched.map((t) => renderTrailCard(t)).join("")
+        ? searched.map((t) => renderTrailCard(t, { hidePlan: true })).join("")
         : TW.emptyStateHtml(TW.t("no_trails"), TW.t("explore_clear_filters"), 'id="exploreClear"');
       const clearEx = document.getElementById("exploreClear");
       if (clearEx) {
@@ -564,12 +566,14 @@
       query = "";
       renderAll();
     });
-    window.addEventListener("resize", () => {
-      if (activeTab === "routes") renderMap(applySearch(baseForView()));
-    });
     document.getElementById("toggleMapView").addEventListener("click", () => {
       mapMode = !mapMode;
       renderAll();
+    });
+    window.addEventListener("resize", () => {
+      if (activeTab === "routes" && mapMode && exploreMap) {
+        setTimeout(() => exploreMap.invalidateSize(), 80);
+      }
     });
 
     function parseRecordHours(r) {
@@ -591,22 +595,62 @@
       return "";
     }
 
-    function friendNames() {
-      return (TW.demoFriends || []).map((f) => String(f.name || "").toLowerCase());
+    function recordKm(r) {
+      if (r.distanceKm != null) return +r.distanceKm;
+      const m = /([\d.]+)\s*km/i.exec(String(r.distance || ""));
+      return m ? +m[1] : NaN;
+    }
+
+    function recordTags(r) {
+      return r.tags || r.categories || [];
+    }
+
+    function renderRecordTagChips() {
+      const row = document.getElementById("recordTags");
+      if (!row) return;
+      const filters = (TW.trailFilters || []).filter((f) => f.id !== "all");
+      row.innerHTML =
+        `<button type="button" class="chip${recTag === "all" ? " active" : ""}" data-tag="all">${TW.t("filter_all")}</button>` +
+        filters
+          .map(
+            (f) =>
+              `<button type="button" class="chip${recTag === f.id ? " active" : ""}" data-tag="${f.id}">${TW.t(f.labelKey)}</button>`
+          )
+          .join("");
     }
 
     function filteredRecords() {
-      const names = friendNames();
       const q = query.trim().toLowerCase();
       return (TW.getUserRoutes ? TW.getUserRoutes() : []).concat(TW.records || []).filter((r) => {
-        const hay = (TW.tt(r, "title") + " " + TW.tt(r, "snippet") + " " + (r.user || "")).toLowerCase();
+        const hay = (
+          TW.tt(r, "title") +
+          " " +
+          TW.tt(r, "snippet") +
+          " " +
+          (r.user || "") +
+          " " +
+          (r.region || "") +
+          " " +
+          recordTags(r).join(" ")
+        ).toLowerCase();
         if (q && hay.indexOf(q) < 0) return false;
-        if (recPeople === "friends") {
-          const u = String(r.user || "").toLowerCase();
-          if (typeof TW.recordIsFriend === "function") {
+
+        const privacy = String(r.privacy || "Public").toLowerCase();
+        if (recPeople === "public") {
+          if (privacy !== "public" && privacy !== "") return false;
+        } else if (recPeople === "friends") {
+          if (privacy === "friends" || privacy === "friend") {
+            /* ok */
+          } else if (typeof TW.recordIsFriend === "function") {
             if (!TW.recordIsFriend(r)) return false;
-          } else if (names.indexOf(u) < 0) return false;
+          } else {
+            return false;
+          }
         }
+
+        if (recTag !== "all" && recordTags(r).indexOf(recTag) < 0) return false;
+        if (recDiff !== "all" && String(r.difficulty || "") !== String(recDiff)) return false;
+
         const hrs = parseRecordHours(r);
         const matchDur =
           recDuration === "all" ||
@@ -614,6 +658,15 @@
           (recDuration === "mid" && hrs >= 2 && hrs <= 4) ||
           (recDuration === "long" && hrs > 4);
         if (!matchDur) return false;
+
+        const km = recordKm(r);
+        const matchDist =
+          recDistance === "all" ||
+          (recDistance === "short" && km < 8) ||
+          (recDistance === "mid" && km >= 8 && km <= 15) ||
+          (recDistance === "long" && km > 15);
+        if (!matchDist) return false;
+
         const iso = recordIsoDate(r);
         if (recFrom && iso && iso < recFrom) return false;
         if (recTo && iso && iso > recTo) return false;
@@ -622,9 +675,8 @@
     }
 
     function renderRecords() {
+      renderRecordTagChips();
       const list = filteredRecords();
-      document.getElementById("recordCount").textContent =
-        list.length + " · " + TW.t("community_records");
       document.getElementById("exploreRecords").innerHTML = list.length
         ? list.map(renderRecordItem).join("")
         : TW.emptyStateHtml(TW.t("explore_records_empty"), TW.t("explore_clear_filters"), 'id="recordClear"');
@@ -632,16 +684,23 @@
       if (clear) {
         clear.addEventListener("click", () => {
           query = "";
-          recPeople = "all";
+          recPeople = "public";
           recDuration = "all";
+          recDistance = "all";
+          recDiff = "all";
+          recTag = "all";
           recFrom = "";
           recTo = "";
           document.getElementById("trailSearch").value = "";
           document.getElementById("recordDuration").value = "all";
+          document.getElementById("recordDistance").value = "all";
           document.getElementById("recordFrom").value = "";
           document.getElementById("recordTo").value = "";
           document.querySelectorAll("#recordPeople .chip").forEach((c) =>
-            c.classList.toggle("active", c.dataset.people === "all")
+            c.classList.toggle("active", c.dataset.people === "public")
+          );
+          document.querySelectorAll("#recordDiff .chip").forEach((c) =>
+            c.classList.toggle("active", c.dataset.diff === "all")
           );
           renderRecords();
         });
@@ -652,18 +711,34 @@
       { id: "all", labelKey: "filter_all" },
       { id: "waste", labelKey: "cat_waste" },
       { id: "tree", labelKey: "cat_tree" },
+      { id: "carcass", labelKey: "cat_carcass" },
       { id: "vandalism", labelKey: "cat_vandalism" },
-      { id: "obstruction", labelKey: "cat_obstruction" },
+      { id: "suspicious", labelKey: "cat_suspicious" },
+      { id: "river", labelKey: "cat_river" },
+      { id: "concrete", labelKey: "cat_concrete" },
+      { id: "marine", labelKey: "cat_marine" },
+      { id: "danger", labelKey: "cat_danger" },
+      { id: "others", labelKey: "cat_others" },
     ];
 
     function incList() {
       const list = typeof TW.getCommunityReports === "function"
-        ? TW.getCommunityReports({ dateRange: incDate, category: incCat })
+        ? TW.getCommunityReports({ dateRange: incDate, category: incCat, status: incStatus })
         : [];
       const q = query.trim().toLowerCase();
       if (!q) return list;
       return list.filter((r) => {
-        const hay = (TW.tt(r, "title") + " " + (r.category || "")).toLowerCase();
+        const hay = (
+          TW.tt(r, "title") +
+          " " +
+          TW.tt(r, "desc") +
+          " " +
+          (r.category || "") +
+          " " +
+          (r.categoryLabel || "") +
+          " " +
+          (r.reporter || "")
+        ).toLowerCase();
         return hay.indexOf(q) >= 0;
       });
     }
@@ -674,31 +749,30 @@
         .map((c) => {
           const n =
             c.id === "all"
-              ? TW.getCommunityReports({ dateRange: incDate }).length
-              : TW.getCommunityReports({ dateRange: incDate, category: c.id }).length;
+              ? TW.getCommunityReports({ dateRange: incDate, status: incStatus }).length
+              : TW.getCommunityReports({ dateRange: incDate, category: c.id, status: incStatus }).length;
           return `<button type="button" class="chip${incCat === c.id ? " active" : ""}" data-cat="${c.id}">${TW.t(c.labelKey)} (${n})</button>`;
         })
         .join("");
-      document.getElementById("incCount").textContent = list.length + " " + TW.t("reports_count");
       document.getElementById("exploreIncList").innerHTML =
         list.map(renderReportItem).join("") ||
         TW.emptyStateHtml(TW.t("empty_incidents_district"), TW.t("empty_change_filter"), 'id="incReset"');
       const reset = document.getElementById("incReset");
       if (reset) {
         reset.addEventListener("click", () => {
-          incDate = "6m";
+          incDate = "all";
           incCat = "all";
+          incStatus = "all";
           query = "";
-          document.getElementById("exploreIncDate").value = "6m";
+          document.getElementById("exploreIncDate").value = "all";
+          document.getElementById("exploreIncStatus").value = "all";
           document.getElementById("trailSearch").value = "";
           renderIncidents();
         });
       }
       if (!incMap) {
         incMap = L.map("exploreIncMap", { scrollWheelZoom: false }).setView([22.32, 114.17], 11);
-        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-          attribution: "© OpenStreetMap",
-        }).addTo(incMap);
+        TW.addMapTiles(incMap);
         if (TW.prepareLeafletMap) TW.prepareLeafletMap(incMap);
       }
       incMarkers.forEach((m) => incMap.removeLayer(m));
@@ -712,10 +786,13 @@
           iconSize: [28, 28],
           iconAnchor: [14, 14],
         });
+        const href = "incident-detail.html?id=" + encodeURIComponent(r.id || r.sourceId || "");
         incMarkers.push(
           L.marker([r.lat, r.lng], { icon })
             .addTo(incMap)
-            .bindPopup(`<strong>${TW.escapeHtml(TW.tt(r, "title"))}</strong><br/>${TW.escapeHtml(r.date || "")}`)
+            .bindPopup(
+              `<a href="${href}"><strong>${TW.escapeHtml(TW.tt(r, "title"))}</strong></a><br/>${TW.escapeHtml(r.date || "")}`
+            )
         );
         bounds.push([r.lat, r.lng]);
       });
@@ -769,7 +846,7 @@
       if (tab === "routes" && mapMode && exploreMap) setTimeout(() => exploreMap.invalidateSize(), 80);
     }
 
-    ["recordDuration", "exploreIncDate"].forEach((id) => {
+    ["recordDuration", "recordDistance", "exploreIncDate", "exploreIncStatus"].forEach((id) => {
       const sel = document.getElementById(id);
       if (!sel) return;
       sel.querySelectorAll("option[data-i18n]").forEach((opt) => {
@@ -783,8 +860,25 @@
       document.querySelectorAll("#recordPeople .chip").forEach((c) => c.classList.toggle("active", c === btn));
       renderRecords();
     });
+    document.getElementById("recordTags").addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-tag]");
+      if (!btn) return;
+      recTag = btn.dataset.tag;
+      renderRecords();
+    });
+    document.getElementById("recordDiff").addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-diff]");
+      if (!btn) return;
+      recDiff = btn.dataset.diff;
+      document.querySelectorAll("#recordDiff .chip").forEach((c) => c.classList.toggle("active", c === btn));
+      renderRecords();
+    });
     document.getElementById("recordDuration").addEventListener("change", (e) => {
       recDuration = e.target.value;
+      renderRecords();
+    });
+    document.getElementById("recordDistance").addEventListener("change", (e) => {
+      recDistance = e.target.value;
       renderRecords();
     });
     document.getElementById("recordFrom").addEventListener("change", (e) => {
@@ -797,6 +891,10 @@
     });
     document.getElementById("exploreIncDate").addEventListener("change", (e) => {
       incDate = e.target.value || "6m";
+      renderIncidents();
+    });
+    document.getElementById("exploreIncStatus").addEventListener("change", (e) => {
+      incStatus = e.target.value || "all";
       renderIncidents();
     });
     document.getElementById("exploreIncCats").addEventListener("click", (e) => {

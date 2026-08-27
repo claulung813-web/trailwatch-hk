@@ -266,9 +266,7 @@
           Number(p[1]),
         ]);
         const map = L.map("ghMap").setView(path[0], 13);
-        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-          attribution: "© OpenStreetMap",
-        }).addTo(map);
+        TW.addMapTiles(map);
         if (path.length > 1) {
           const line = L.polyline(path, { color: "#2563eb", weight: 5 }).addTo(map);
           map.fitBounds(line.getBounds().pad(0.2));

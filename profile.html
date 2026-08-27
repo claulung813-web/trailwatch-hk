@@ -38,7 +38,6 @@
         <div class="section-head">
           <h2 data-i18n="dash_lifetime"></h2>
         </div>
-        <p class="page-sub" data-i18n="dash_lifetime_hint"></p>
         <div class="home-figures" style="margin-top:0">
           <div class="stat-box">
             <div class="value" id="lifeKm">—</div>
@@ -159,7 +158,6 @@
       <!-- My profile -->
       <section class="me-panel" id="profile" data-me-panel="profile" hidden>
         <h2 class="page-title" style="font-size:1.25rem;margin-bottom:0.35rem" data-i18n="nav_my_profile"></h2>
-        <p class="page-sub" data-i18n="activity_sub"></p>
         <div class="chip-row filters activity-type-filters" id="profileFilters" role="tablist">
           <button type="button" class="chip active" data-profile="badges" data-i18n="nav_badges"></button>
           <button type="button" class="chip" data-profile="records" data-i18n="nav_my_records"></button>
@@ -170,13 +168,11 @@
 
         <div class="activity-pane" data-profile-pane="badges" role="tabpanel">
           <h3 class="activity-pane-title" data-i18n="nav_badges"></h3>
-          <p class="page-sub" data-i18n="app_badge_criteria"></p>
           <div id="badgePicker"></div>
         </div>
 
         <div class="activity-pane" data-profile-pane="records" role="tabpanel" hidden>
           <h3 class="activity-pane-title" data-i18n="nav_my_records"></h3>
-          <p class="page-sub" data-i18n="footprint_sub"></p>
           <div class="footprint-wrap">
             <div id="footprintMap" class="footprint-map"></div>
             <div class="footprint-gate" id="footprintGate" hidden></div>
@@ -204,7 +200,6 @@
 
         <div class="activity-pane" data-profile-pane="plans" role="tabpanel" hidden>
           <h3 class="activity-pane-title" data-i18n="nav_my_plans"></h3>
-          <p class="page-sub" data-i18n="plan_sub"></p>
           <div class="me-filter-bar">
             <div>
               <label for="planSearch" data-i18n="me_search"></label>
@@ -232,7 +227,6 @@
 
         <div class="activity-pane" data-profile-pane="groups" role="tabpanel" hidden>
           <h3 class="activity-pane-title" data-i18n="nav_my_groups"></h3>
-          <p class="page-sub" data-i18n="groups_sub"></p>
           <div class="chip-row filters" id="groupFilters">
             <button type="button" class="chip active" data-f="all" data-i18n="groups_all_when"></button>
             <button type="button" class="chip" data-f="upcoming" data-i18n="groups_upcoming"></button>
@@ -258,7 +252,6 @@
 
         <div class="activity-pane" data-profile-pane="reports" role="tabpanel" hidden>
           <h3 class="activity-pane-title" data-i18n="nav_my_reports"></h3>
-          <p class="page-sub" data-i18n="reports_my_sub"></p>
           <div id="myReports"></div>
           <p style="margin-top:1rem"><a class="link-more" href="reports.html" data-i18n="nav_incidents"></a></p>
         </div>
@@ -267,7 +260,6 @@
       <!-- Friends -->
       <section class="me-panel" id="friends" data-me-panel="friends" hidden>
         <h2 class="page-title" style="font-size:1.25rem;margin-bottom:0.35rem" data-i18n="friends_title"></h2>
-        <p class="page-sub" data-i18n="friends_sub"></p>
         <div class="section-head"><h2 data-i18n="friends_list"></h2></div>
         <div class="record-list" id="friendList"></div>
         <div class="section-head mt-2"><h2 data-i18n="friends_pending"></h2></div>
@@ -277,7 +269,6 @@
       <!-- Bookmarks -->
       <section class="me-panel" id="bookmarks" data-me-panel="bookmarks" hidden>
         <h2 class="page-title" style="font-size:1.25rem;margin-bottom:0.35rem" data-i18n="bookmarks_title"></h2>
-        <p class="page-sub" data-i18n="bookmarks_sub"></p>
         <div class="chip-row filters" id="bmFilters" role="tablist">
           <button type="button" class="chip active" data-bm="all" data-i18n="filter_all"></button>
           <button type="button" class="chip" data-bm="route" data-i18n="app_bm_routes"></button>
@@ -565,7 +556,7 @@
         return;
       }
       footprintMap = L.map(mapEl, { scrollWheelZoom: false, attributionControl: false }).setView([22.35, 114.15], 10);
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 18 }).addTo(footprintMap);
+      TW.addMapTiles(footprintMap, { maxZoom: 18 });
       const bounds = [];
       allMyRecords().forEach((item) => {
         const path = item.path;

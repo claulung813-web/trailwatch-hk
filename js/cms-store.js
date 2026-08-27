@@ -122,10 +122,17 @@ CMS.seedEditorsChoiceCategories = function () {
 
 CMS.seedIncidentCategories = function () {
   return [
-    { id: "waste", name: "Waste / litter", nameZh: "垃圾", icon: "🗑", order: 0 },
-    { id: "tree", name: "Fallen tree", nameZh: "塌樹", icon: "🌳", order: 1 },
-    { id: "vandalism", name: "Vandalism", nameZh: "破壞", icon: "⚠", order: 2 },
-    { id: "obstruction", name: "Obstruction / flood", nameZh: "阻塞／水浸", icon: "🚧", order: 3 },
+    { id: "waste", name: "Waste Dumping", nameZh: "廢物傾倒", icon: "🗑", order: 0 },
+    { id: "tree", name: "Tree Felling", nameZh: "樹木破壞", icon: "🌳", order: 1 },
+    { id: "carcass", name: "Carcass", nameZh: "動物屍體", icon: "🦴", order: 2 },
+    { id: "vandalism", name: "Vandalism", nameZh: "塗鴉情況", icon: "⚠", order: 3 },
+    { id: "suspicious", name: "Suspicious case", nameZh: "可疑情況", icon: "👁", order: 4 },
+    { id: "river", name: "River Pollution", nameZh: "河溪污染", icon: "💧", order: 5 },
+    { id: "concrete", name: "New concrete trail", nameZh: "新石屎化工程", icon: "🧱", order: 6 },
+    { id: "marine", name: "Marine Litter", nameZh: "海洋垃圾", icon: "🌊", order: 7 },
+    { id: "danger", name: "Danger", nameZh: "危險", icon: "⛔", order: 8 },
+    { id: "others", name: "Others", nameZh: "其它", icon: "•", order: 9 },
+    { id: "obstruction", name: "Path obstruction", nameZh: "路徑阻塞", icon: "🚧", order: 10 },
   ];
 };
 
@@ -340,6 +347,8 @@ CMS.defaultStore = function () {
     editorsChoiceCategories: CMS.seedEditorsChoiceCategories(),
     incidentCategories: CMS.seedIncidentCategories(),
     feedPosts: CMS.seedFeedPosts(),
+    feedPinIds: [],
+    feedUnpinIds: [],
     groupHikeModeration: [],
     articles: null,
     articleTags: CMS.seedArticleTags(),
@@ -1138,12 +1147,29 @@ CMS.getStore = function () {
     ) {
       store.userRoutes = JSON.parse(JSON.stringify(TW.LIVE_USER_ROUTES));
       migrated = true;
+    } else if (
+      window.TW &&
+      TW.LIVE_USER_ROUTES &&
+      TW.LIVE_USER_ROUTES.length &&
+      (!(store.userRoutes[0] || {}).tags ||
+        Number((store.userRoutes.find((x) => x && x.id === "ur_1122707") || {}).elevMax) !==
+          Number((TW.LIVE_USER_ROUTES.find((x) => x && x.id === "ur_1122707") || {}).elevMax))
+    ) {
+      const live = JSON.parse(JSON.stringify(TW.LIVE_USER_ROUTES));
+      const liveIds = {};
+      live.forEach((r) => {
+        liveIds[r.id] = true;
+      });
+      const extra = (store.userRoutes || []).filter((r) => r && !liveIds[r.id] && String(r.id || "").indexOf("ur_") !== 0);
+      store.userRoutes = live.concat(extra);
+      migrated = true;
     }
     if (
       window.TW &&
       TW.LIVE_EDITORS_CHOICE &&
       TW.LIVE_EDITORS_CHOICE.length &&
-      !(store.recommended || []).some((r) => r && r.sourceId === 278107)
+      (!(store.recommended || []).some((r) => r && r.sourceId === 278107) ||
+        !(store.recommended || []).some((r) => r && r.sourceId === 279438 && Array.isArray(r.elevProfile) && r.elevProfile.length))
     ) {
       const live = JSON.parse(JSON.stringify(TW.LIVE_EDITORS_CHOICE));
       const extra = (store.recommended || []).filter((r) => r && String(r.id || "").indexOf("rec_") !== 0);
@@ -1172,6 +1198,14 @@ CMS.getStore = function () {
     ensureArr("editorsChoiceCategories", CMS.seedEditorsChoiceCategories);
     ensureArr("incidentCategories", CMS.seedIncidentCategories);
     ensureArr("feedPosts", CMS.seedFeedPosts);
+    if (!Array.isArray(store.feedPinIds)) {
+      store.feedPinIds = [];
+      migrated = true;
+    }
+    if (!Array.isArray(store.feedUnpinIds)) {
+      store.feedUnpinIds = [];
+      migrated = true;
+    }
     if (!Array.isArray(store.groupHikeModeration)) {
       store.groupHikeModeration = [];
       migrated = true;
@@ -1205,43 +1239,50 @@ CMS.getStore = function () {
         migrated = true;
       }
     }
-    // Refresh community incident seed when demo data grew (keep user-submitted ids)
+    // Refresh community incident seed from live TW.reports (keep non-seed user submissions)
     if (window.TW && TW.reports && TW.reports.length) {
       const seeded = TW.reports.map((r, i) => CMS.reportToIncident(r, i));
+      const hasLive = (store.incidents || []).some((i) => i && i.sourceId === 7976);
       const existing = store.incidents || [];
-      const byId = {};
-      existing.forEach((inc) => {
-        byId[inc.id] = inc;
-      });
-      let incidentMigrated = false;
-      seeded.forEach((inc) => {
-        if (!byId[inc.id]) {
+      if (!hasLive && seeded.some((i) => i.sourceId === 7976)) {
+        const keep = existing.filter((i) => {
+          if (!i) return false;
+          const id = String(i.id || "");
+          if (i.sourceId) return false;
+          if (id.indexOf("ir_") === 0 || id.indexOf("rep_") === 0) return false;
+          return true;
+        });
+        store.incidents = seeded.concat(keep);
+        migrated = true;
+      } else {
+        const byId = {};
+        existing.forEach((inc) => {
           byId[inc.id] = inc;
-          incidentMigrated = true;
-        } else {
-          // Keep staff edits; backfill reporter/category if missing
-          const cur = byId[inc.id];
-          if (!cur.reporter && inc.reporter) {
-            cur.reporter = inc.reporter;
-            cur.reporterZh = inc.reporterZh;
+        });
+        let incidentMigrated = false;
+        seeded.forEach((inc) => {
+          if (!byId[inc.id]) {
+            byId[inc.id] = inc;
             incidentMigrated = true;
-          }
-          if (cur.category && /[A-Z]/.test(cur.category)) {
-            cur.category = String(cur.category).toLowerCase();
-            incidentMigrated = true;
-          }
-          if (cur.published === false && (cur.status === "received" || !cur.status)) {
-            // older seed hid "received" from public map — publish community demos
-            if (String(cur.id || "").indexOf("inc_") === 0 || String(cur.id || "").indexOf("rep_") === 0) {
-              cur.published = true;
+          } else {
+            const cur = byId[inc.id];
+            if (inc.sourceId && (!cur.desc || !cur.photos || !cur.photos.length || cur.status !== inc.status)) {
+              byId[inc.id] = Object.assign({}, cur, inc, {
+                staffNote: cur.staffNote || inc.staffNote,
+                staffNoteZh: cur.staffNoteZh || inc.staffNoteZh,
+              });
+              incidentMigrated = true;
+            } else if (!cur.reporter && inc.reporter) {
+              cur.reporter = inc.reporter;
+              cur.reporterZh = inc.reporterZh;
               incidentMigrated = true;
             }
           }
+        });
+        if (incidentMigrated || existing.length < seeded.length) {
+          store.incidents = Object.keys(byId).map((k) => byId[k]);
+          migrated = true;
         }
-      });
-      if (incidentMigrated || existing.length < seeded.length) {
-        store.incidents = Object.keys(byId).map((k) => byId[k]);
-        migrated = true;
       }
     }
     if (migrated) CMS.setStore(store);
@@ -1423,48 +1464,51 @@ CMS.reportToIncident = function (r, i) {
     tree: "tree",
     vandalism: "vandalism",
     obstruction: "obstruction",
+    carcass: "carcass",
+    suspicious: "suspicious",
+    river: "river",
+    concrete: "concrete",
+    marine: "marine",
+    danger: "danger",
+    others: "others",
     "fallen tree": "tree",
     "path obstruction": "obstruction",
+    "waste dumping": "waste",
+    "tree felling": "tree",
   };
   const category = catMap[cat] || cat.replace(/\s+/g, "_") || "waste";
-  const status =
-    r.status === "closed"
-      ? "handled"
-      : r.status === "updated"
-        ? "under_review"
-        : r.status === "received"
-          ? "received"
-          : r.status || "received";
+  const rawStatus = String(r.status || "new").toLowerCase();
+  let status = rawStatus;
+  if (rawStatus === "received") status = "new";
+  else if (rawStatus === "updated" || rawStatus === "under_review" || rawStatus === "reported_govt") status = "update";
+  else if (rawStatus === "handled" || rawStatus === "published") status = "closed";
+  else if (rawStatus === "update" || rawStatus === "new" || rawStatus === "closed" || rawStatus === "rejected") status = rawStatus;
+  else status = "new";
   return {
     id: r.id || "inc_" + i + "_" + (r.title || "x").replace(/\s+/g, "_").slice(0, 20),
+    sourceId: r.sourceId || null,
+    sourceUrl: r.sourceUrl || "",
     title: r.title,
     titleZh: r.titleZh,
     desc: r.desc,
     descZh: r.descZh,
     category: category,
+    categoryLabel: r.categoryLabel || "",
+    categoryLabelZh: r.categoryLabelZh || "",
     date: r.date,
     coords: r.coords,
     lat: r.lat,
     lng: r.lng,
     image: r.image,
+    photos: r.photos || (r.image ? [r.image] : []),
     reporter: r.reporter || "",
     reporterZh: r.reporterZh || r.reporter || "",
     status: status,
-    // Community map shows all seeded demo reports (incl. newly received)
     published: r.published !== false,
-    staffNote:
-      r.status === "closed"
-        ? "Reported to AFCD / relevant departments. Case closed after site follow-up."
-        : r.status === "updated"
-          ? "Under review by TrailWatch staff. Update forthcoming."
-          : "",
-    staffNoteZh:
-      r.status === "closed"
-        ? "已向漁護署／相關部門呈報，實地跟進後結案。"
-        : r.status === "updated"
-          ? "TrailWatch 職員審核中，稍後更新。"
-          : "",
-    updatedAt: new Date().toISOString(),
+    staffNote: r.staffNote || "",
+    staffNoteZh: r.staffNoteZh || "",
+    updatedAt: r.updatedAt || new Date().toISOString(),
+    createdAt: r.createdAt || "",
   };
 };
 
@@ -1572,8 +1616,7 @@ TW.parseReportDate = function (value) {
   if (!value) return null;
   if (value instanceof Date) return isNaN(value.getTime()) ? null : value;
   const s = String(value).trim();
-  const iso = Date.parse(s);
-  if (!isNaN(iso)) return new Date(iso);
+  /* Prefer DD/MM/YYYY (HK / TrailWatch) before Date.parse, which treats slashes as MM/DD */
   const m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?/.exec(s);
   if (m) {
     return new Date(
@@ -1585,22 +1628,42 @@ TW.parseReportDate = function (value) {
       m[6] ? +m[6] : 0
     );
   }
+  const iso = Date.parse(s);
+  if (!isNaN(iso)) return new Date(iso);
   return null;
 };
 
 TW.normalizeReportCategory = function (cat) {
   const c = String(cat || "").toLowerCase().trim();
   if (!c || c === "all") return "all";
-  if (c.indexOf("waste") >= 0) return "waste";
-  if (c.indexOf("tree") >= 0 || c.indexOf("fallen") >= 0) return "tree";
-  if (c.indexOf("vandal") >= 0) return "vandalism";
+  if (c.indexOf("waste") >= 0 || c.indexOf("dump") >= 0 || (c.indexOf("litter") >= 0 && c.indexOf("marine") < 0)) return "waste";
+  if (c.indexOf("marine") >= 0) return "marine";
+  if (c.indexOf("tree") >= 0 || c.indexOf("fallen") >= 0 || c.indexOf("felling") >= 0) return "tree";
+  if (c.indexOf("vandal") >= 0 || c.indexOf("graffiti") >= 0) return "vandalism";
   if (c.indexOf("obstruct") >= 0 || c.indexOf("flood") >= 0) return "obstruction";
+  if (c.indexOf("carcass") >= 0) return "carcass";
+  if (c.indexOf("suspicious") >= 0) return "suspicious";
+  if (c.indexOf("river") >= 0 || c.indexOf("pollution") >= 0) return "river";
+  if (c.indexOf("concrete") >= 0) return "concrete";
+  if (c.indexOf("danger") >= 0) return "danger";
+  if (c.indexOf("other") >= 0) return "others";
   return c;
+};
+
+/** Public incident status: new | update | closed */
+TW.normalizeReportStatus = function (status) {
+  const s = String(status || "").toLowerCase().trim();
+  if (!s || s === "all") return "all";
+  if (s === "new" || s === "received") return "new";
+  if (s === "update" || s === "updated" || s === "under_review" || s === "reported_govt") return "update";
+  if (s === "closed" || s === "handled" || s === "published") return "closed";
+  if (s === "rejected") return "rejected";
+  return s;
 };
 
 /**
  * Community incident list (everyone's published reports + my pending).
- * opts: { category, dateRange: '6m'|'30d'|'90d'|'year'|'all', from, to }
+ * opts: { category, status, dateRange: '6m'|'30d'|'90d'|'year'|'all', from, to }
  */
 TW.getCommunityReports = function (opts) {
   opts = opts || {};
@@ -1608,6 +1671,10 @@ TW.getCommunityReports = function (opts) {
   const cat = TW.normalizeReportCategory(opts.category || "all");
   if (cat !== "all") {
     list = list.filter((r) => TW.normalizeReportCategory(r.category) === cat);
+  }
+  const st = TW.normalizeReportStatus(opts.status || "all");
+  if (st !== "all") {
+    list = list.filter((r) => TW.normalizeReportStatus(r.status) === st);
   }
   const now = new Date();
   let from = opts.from ? TW.parseReportDate(opts.from) : null;
@@ -1633,10 +1700,26 @@ TW.getCommunityReports = function (opts) {
     });
   }
   return list.slice().sort((a, b) => {
-    const da = TW.parseReportDate(a.date) || new Date(0);
-    const db = TW.parseReportDate(b.date) || new Date(0);
+    const da = TW.parseReportDate(a.date || a.updatedAt || a.createdAt) || new Date(0);
+    const db = TW.parseReportDate(b.date || b.updatedAt || b.createdAt) || new Date(0);
     return db - da;
   });
+};
+
+TW.getIncidentReport = function (id) {
+  if (!id) return null;
+  const sid = String(id);
+  const list = typeof TW.getReportsForUser === "function" ? TW.getReportsForUser() : TW.reports || [];
+  return (
+    list.find(
+      (r) =>
+        r &&
+        (String(r.id) === sid ||
+          String(r.sourceId) === sid ||
+          String(r.id) === "ir_" + sid ||
+          String(r.id) === "rep_" + sid)
+    ) || null
+  );
 };
 
 TW.getSiteContent = function () {
@@ -1679,13 +1762,29 @@ TW.getUserRoutes = function () {
   const store = typeof CMS !== "undefined" && CMS.getStore ? CMS.getStore() : null;
   let list = (store && store.userRoutes) || [];
   if (!list.length && TW.LIVE_USER_ROUTES) list = TW.LIVE_USER_ROUTES;
+  // Prefer live seed fields (tags / elev / privacy) when CMS still has older copies
+  if (TW.LIVE_USER_ROUTES && TW.LIVE_USER_ROUTES.length) {
+    const byId = {};
+    list.forEach((r) => {
+      if (r && r.id) byId[r.id] = r;
+    });
+    TW.LIVE_USER_ROUTES.forEach((live) => {
+      const cur = byId[live.id];
+      if (!cur) byId[live.id] = live;
+      else if (!cur.tags || cur.elevMax !== live.elevMax || cur.privacy !== live.privacy) {
+        byId[live.id] = Object.assign({}, cur, live);
+      }
+    });
+    list = Object.keys(byId).map((k) => byId[k]);
+  }
   return list.filter((r) => r && r.published !== false);
 };
 
 TW.getUserRoute = function (id) {
   if (!id) return null;
-  const list = ((typeof CMS !== "undefined" && CMS.getStore ? CMS.getStore().userRoutes : null) || [])
-    .concat(TW.LIVE_USER_ROUTES || []);
+  const live = (TW.LIVE_USER_ROUTES || []).find((r) => r.id === id || String(r.sourceId) === String(id));
+  if (live) return live;
+  const list = (typeof CMS !== "undefined" && CMS.getStore ? CMS.getStore().userRoutes : null) || [];
   return list.find((r) => r.id === id || String(r.sourceId) === String(id)) || null;
 };
 

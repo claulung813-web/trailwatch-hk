@@ -1147,6 +1147,28 @@ TW.requireLogin = function (opts) {
   return false;
 };
 
+/** Mapbox raster tiles (same style as trailwatch.hk) — use instead of OSM */
+TW.MAPBOX_TOKEN = ["pk", "eyJ1IjoibmVtb3RzZSIsImEiOiJjbW5zaHRmd20wYWphMnJzZm84am82Mmx4In0", "6S614iOQEA4TFnMnHvl00g"].join(".");
+TW.MAPBOX_STYLE = "nemotse/cmhuo7m4z001301sfhvju0yc2";
+
+TW.addMapTiles = function (map, opts) {
+  opts = opts || {};
+  if (!map || typeof L === "undefined") return null;
+  const layer = L.tileLayer(
+    "https://api.mapbox.com/styles/v1/" + TW.MAPBOX_STYLE + "/tiles/{z}/{x}/{y}?access_token=" + TW.MAPBOX_TOKEN,
+    {
+      attribution:
+        '© <a href="https://www.mapbox.com/about/maps/">Mapbox</a> © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+      tileSize: 512,
+      zoomOffset: -1,
+      maxZoom: opts.maxZoom != null ? opts.maxZoom : 22,
+      minZoom: opts.minZoom != null ? opts.minZoom : 0,
+    }
+  );
+  layer.addTo(map);
+  return layer;
+};
+
 TW.prepareLeafletMap = function (map) {
   if (!map || !map.scrollWheelZoom) return map;
   map.scrollWheelZoom.disable();
@@ -1460,8 +1482,68 @@ TW.demoShareToFeed = function (kind, text) {
   return null;
 };
 
+TW.cmsFeedAsPosts = function () {
+  if (typeof CMS === "undefined" || !CMS.getStore) return [];
+  const zh = TW.getLang && TW.getLang() === "zh";
+  return (CMS.getStore().feedPosts || [])
+    .filter((p) => p && !p.removed)
+    .map((p) => ({
+      id: p.id,
+      type: "announcement",
+      channel: "official",
+      source: "cms",
+      pinned: !!p.pinned,
+      user: "TrailWatch",
+      avatar: null,
+      dateISO: String(p.createdAt || "").slice(0, 10),
+      createdAt: p.createdAt,
+      time: zh ? "職員" : "Staff",
+      timeZh: "職員",
+      tag: "Announcement",
+      tagZh: "公告",
+      title: p.title || "",
+      titleZh: p.titleZh || p.title || "",
+      body: p.blurb || p.body || "",
+      bodyZh: p.blurbZh || p.bodyZh || p.blurb || p.body || "",
+      more: p.body || "",
+      moreZh: p.bodyZh || p.body || "",
+      image: p.graphic || "",
+      likes: 0,
+      comments: 0,
+    }));
+};
+
+TW.applyFeedPinOverrides = function (post) {
+  if (!post || typeof CMS === "undefined" || !CMS.getStore) return post;
+  const store = CMS.getStore();
+  const id = TW.feedPostKey(post);
+  const pins = store.feedPinIds || [];
+  const unpins = store.feedUnpinIds || [];
+  let pinned = !!post.pinned;
+  if (pins.indexOf(id) >= 0) pinned = true;
+  if (unpins.indexOf(id) >= 0) pinned = false;
+  if (pinned === !!post.pinned) return post;
+  return Object.assign({}, post, { pinned: pinned });
+};
+
 TW.allFeedPosts = function () {
-  return TW.getUserFeedPosts().concat(TW.feed || []);
+  const cms = TW.cmsFeedAsPosts ? TW.cmsFeedAsPosts() : [];
+  const cmsIds = {};
+  cms.forEach((p) => {
+    cmsIds[TW.feedPostKey(p)] = true;
+  });
+  const catalog = (TW.feed || []).filter((p) => !cmsIds[TW.feedPostKey(p)]);
+  return TW.getUserFeedPosts()
+    .concat(cms)
+    .concat(catalog)
+    .map((p) => (TW.applyFeedPinOverrides ? TW.applyFeedPinOverrides(p) : p));
+};
+
+TW.isFeedOfficial = function (post) {
+  if (!post) return false;
+  if (post.channel === "official" || post.source === "cms") return true;
+  if (post.user === "TrailWatch") return true;
+  return /Announcement/i.test(post.tag || "") && !/Sponsored|Ad|Promo/i.test(post.tag || "");
 };
 
 TW.getFeedSocial = function () {
@@ -1498,12 +1580,13 @@ TW.addFeedComment = function (key, text) {
   return c;
 };
 
-function renderFeedCard(post) {
+function renderFeedCard(post, opts) {
+  opts = opts || {};
   let media = "";
   if (post.image) {
-    media = `<div class="feed-media"><img src="${post.image}" alt="" loading="lazy" onerror="this.closest('.feed-media')?.remove()" /></div>`;
+    media = `<div class="feed-media"><img src="${post.image}" alt="" loading="lazy" onerror="this.closest('.feed-media')?.classList.add('is-empty')" /></div>`;
   } else if (post.mapStyle) {
-    media = `<div class="feed-media" style="background:linear-gradient(135deg,#c8e6c9,#81c784);display:grid;place-items:center;color:#0b421a;font-weight:700;font-size:0.9rem">📍 GPS</div>`;
+    media = `<div class="feed-media feed-media--map" aria-hidden="true"><span>📍</span></div>`;
   }
 
   let stats = "";
@@ -1539,20 +1622,85 @@ function renderFeedCard(post) {
   const commentN = (post.comments || 0) + extras.length;
   const url = post.url || "";
   const urlLabel = TW.tt(post, "urlLabel") || post.urlLabel || TW.t("feed_external");
-  const expandable = !!(more || url || extras.length || post.image);
+  const expandable = !!(more || url || (!opts.hideComments && extras.length));
 
-  const channel = post.channel || (post.pinned || post.user === "TrailWatch" || /Sponsored|Promo|Ad/i.test(post.tag || "") ? "official" : "friends");
+  const isOfficial = typeof TW.isFeedOfficial === "function" ? TW.isFeedOfficial(post) : false;
+  const channel = post.channel || (isOfficial || post.pinned ? "official" : /Sponsored|Promo|Ad/i.test(post.tag || "") ? "ad" : "friends");
   const channelClass =
-    channel === "official" || post.pinned ? " feed-card--official" : channel === "ad" ? " feed-card--ad" : " feed-card--friends";
-  const pinBadge = post.pinned ? `<span class="feed-pin">${TW.t("feed_pinned")}</span>` : "";
-  const extraHtml = extras
-    .map((c) => `<div class="feed-comment"><strong>${TW.escapeHtml(c.name)}</strong> ${TW.escapeHtml(c.text)}</div>`)
-    .join("");
+    isOfficial || channel === "official"
+      ? " feed-card--official"
+      : channel === "ad"
+        ? " feed-card--ad"
+        : " feed-card--friends";
+  const pinBadge = post.pinned ? `<span class="feed-pin" title="${TW.escapeHtml(TW.t("feed_pinned"))}">📌</span>` : "";
+  const avatarHtml = isOfficial
+    ? `<img class="avatar-sm feed-tw-logo" src="${twAppBrandSrc("icon.svg")}" alt="TrailWatch" width="36" height="36" />`
+    : twAvatarHtml(post.avatar, "avatar-sm", "", post.user);
+  const extraHtml = opts.hideComments
+    ? ""
+    : extras
+        .map((c) => `<div class="feed-comment"><strong>${TW.escapeHtml(c.name)}</strong> ${TW.escapeHtml(c.text)}</div>`)
+        .join("");
+  const commentBlock = opts.hideComments
+    ? ""
+    : `${extraHtml}
+        <form class="feed-comment-form">
+          <input class="form-input" name="comment" maxlength="280" placeholder="${TW.escapeHtml(TW.t("feed_comment_ph"))}" />
+          <button type="submit" class="btn btn-secondary" style="padding:0.35rem 0.65rem;font-size:0.75rem">${TW.t("feed_comment_send")}</button>
+        </form>`;
+  const commentBtn = opts.hideComments
+    ? ""
+    : `<button type="button" data-feed-toggle="${TW.escapeHtml(key)}">💬 ${commentN}</button>`;
+  const linkBtn =
+    post.type === "group"
+      ? `<a class="feed-ig-link" href="${inApp ? "group-detail.html?id=0&stage=recruiting" : "group-hikes.html"}">${TW.t("join")}</a>`
+      : recHref
+        ? `<a class="feed-ig-link" href="${recHref}">${TW.t("rec_detail")}</a>`
+        : url
+          ? `<a class="feed-ig-link" href="${TW.escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${TW.escapeHtml(urlLabel)}</a>`
+          : "";
+
+  if (opts.layout === "ig" || opts.ig) {
+    if (!media) {
+      media = `<div class="feed-media feed-media--text" aria-hidden="true"><span>${TW.escapeHtml((title || body || "TW").slice(0, 1).toUpperCase())}</span></div>`;
+    }
+    const captionTitle = title ? `<span class="feed-ig-caption-title">${TW.escapeHtml(title)}</span>` : "";
+    const captionBody = body ? `<span class="feed-ig-caption-body">${TW.escapeHtml(body)}</span>` : "";
+    return `
+  <article class="feed-card feed-card--ig${channelClass}" data-feed-key="${TW.escapeHtml(key)}">
+    <div class="feed-card-header">
+      ${avatarHtml}
+      <div class="user-info">
+        <div class="name">${TW.escapeHtml(post.user || "")}${pinBadge}</div>
+        <div class="time">${TW.escapeHtml(time || "")}${tag ? ` · ${TW.escapeHtml(tag)}` : ""}</div>
+      </div>
+    </div>
+    ${media}
+    <div class="feed-actions feed-ig-actions">
+      <button type="button" class="like-btn${liked ? " liked" : ""}" data-likes="${post.likes || 0}" data-feed-like="${TW.escapeHtml(key)}" aria-label="Like">♥</button>
+      <span class="feed-ig-likes">${likeN}</span>
+      ${linkBtn}
+      ${expandable ? `<button type="button" class="feed-expand-btn" data-feed-toggle="${TW.escapeHtml(key)}">${TW.t("feed_expand")}</button>` : ""}
+    </div>
+    <div class="feed-ig-caption">
+      <strong>${TW.escapeHtml(post.user || "")}</strong>
+      ${captionTitle}${captionTitle && captionBody ? " " : ""}${captionBody}
+      ${stats}
+    </div>
+    <div class="feed-expand-body">
+      ${more ? `<p>${TW.escapeHtml(more)}</p>` : ""}
+      ${url && !linkBtn ? `<p><a href="${TW.escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${TW.escapeHtml(urlLabel)} →</a></p>` : ""}
+      ${commentBlock}
+    </div>
+  </article>`;
+  }
+
+  const compactClass = opts.compact ? " feed-card--compact" : "";
 
   return `
-  <article class="card feed-card${channelClass}" data-feed-key="${TW.escapeHtml(key)}">
+  <article class="card feed-card${channelClass}${compactClass}" data-feed-key="${TW.escapeHtml(key)}">
     <div class="feed-card-header">
-      ${twAvatarHtml(post.avatar, "avatar-sm", "", post.user)}
+      ${avatarHtml}
       <div class="user-info">
         <div class="name">${TW.escapeHtml(post.user || "")}${pinBadge}</div>
         <div class="time">${TW.escapeHtml(time || "")}</div>
@@ -1560,23 +1708,19 @@ function renderFeedCard(post) {
       <span class="tag ${tagClass(tag)}">${TW.escapeHtml(tag || "")}</span>
     </div>
     <div class="feed-card-body">
-      ${title ? `<strong style="display:block;margin-bottom:0.35rem">${TW.escapeHtml(title)}</strong>` : ""}
+      ${title ? `<strong class="feed-card-title">${TW.escapeHtml(title)}</strong>` : ""}
       ${body ? `<p>${TW.escapeHtml(body)}</p>` : ""}
       ${media}
       ${stats}
       <div class="feed-expand-body">
         ${more ? `<p>${TW.escapeHtml(more)}</p>` : ""}
         ${url ? `<p><a href="${TW.escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${TW.escapeHtml(urlLabel)} →</a></p>` : ""}
-        ${extraHtml}
-        <form class="feed-comment-form">
-          <input class="form-input" name="comment" maxlength="280" placeholder="${TW.escapeHtml(TW.t("feed_comment_ph"))}" />
-          <button type="submit" class="btn btn-secondary" style="padding:0.35rem 0.65rem;font-size:0.75rem">${TW.t("feed_comment_send")}</button>
-        </form>
+        ${commentBlock}
       </div>
     </div>
     <div class="feed-actions">
       <button type="button" class="like-btn${liked ? " liked" : ""}" data-likes="${post.likes || 0}" data-feed-like="${TW.escapeHtml(key)}">♥ ${likeN}</button>
-      <button type="button" data-feed-toggle="${TW.escapeHtml(key)}">💬 ${commentN}</button>
+      ${commentBtn}
       ${expandable ? `<button type="button" class="feed-expand-btn" data-feed-toggle="${TW.escapeHtml(key)}">${TW.t("feed_expand")}</button>` : ""}
       ${
         post.type === "group"
@@ -1740,11 +1884,165 @@ TW.addRouteEndpoints = function (map, path) {
   }).addTo(map);
   const endIcon = L.divIcon({
     className: "tw-end-marker",
-    html: '<span style="display:block;width:14px;height:14px;background:#e84a3c;border:2px solid #fff;box-shadow:0 0 0 1px #e84a3c;border-radius:2px"></span>',
-    iconSize: [14, 14],
-    iconAnchor: [7, 7],
+    html: '<span style="display:block;width:12px;height:12px;background:#d64545;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.35)"></span>',
+    iconSize: [12, 12],
+    iconAnchor: [6, 6],
   });
   L.marker(end, { icon: endIcon }).addTo(map);
+};
+
+/** Nice tick values for elevation y-axis (like trailwatch.hk Recharts) */
+TW._elevNiceTicks = function (lo, hi, count) {
+  count = count || 5;
+  const span = Math.max(1e-6, hi - lo);
+  const rough = span / (count - 1);
+  const pow = Math.pow(10, Math.floor(Math.log(rough) / Math.LN10));
+  const err = rough / pow;
+  let step = pow;
+  if (err >= 7.5) step = 10 * pow;
+  else if (err >= 3) step = 5 * pow;
+  else if (err >= 1.5) step = 2 * pow;
+  const niceLo = Math.floor(lo / step) * step;
+  const niceHi = Math.ceil(hi / step) * step;
+  const ticks = [];
+  for (let v = niceLo; v <= niceHi + step * 0.5; v += step) {
+    ticks.push(Math.round(v * 1000) / 1000);
+    if (ticks.length > 12) break;
+  }
+  if (ticks.length < 2) {
+    ticks.length = 0;
+    ticks.push(lo, hi);
+  }
+  return { lo: ticks[0], hi: ticks[ticks.length - 1], ticks };
+};
+
+/** Elevation (+ optional pace) profile SVG with left y-axis + dashed grid */
+TW.elevChartHtml = function (opts) {
+  opts = opts || {};
+  let max = Number(opts.elevMax);
+  let min = Number(opts.elevMin);
+  const pace = Number(opts.paceKmh);
+  const showPace = opts.showPace !== false && !isNaN(pace) && pace > 0;
+  const profile = Array.isArray(opts.elevProfile)
+    ? opts.elevProfile.map(Number).filter((v) => !isNaN(v))
+    : [];
+
+  let elevSeries = profile;
+  if (!elevSeries.length) {
+    const hi0 = !isNaN(max) ? max : 180;
+    const lo0 = !isNaN(min) ? min : Math.max(0, hi0 * 0.35);
+    const span0 = Math.max(1, hi0 - lo0);
+    const n = 36;
+    elevSeries = [];
+    for (let i = 0; i <= n; i++) {
+      const t = i / n;
+      const wave = Math.sin(t * Math.PI) * 0.72 + Math.sin(t * Math.PI * 2.4) * 0.18 + t * 0.1;
+      elevSeries.push(lo0 + span0 * Math.max(0, Math.min(1, wave)));
+    }
+  }
+
+  const dataMin = Math.min.apply(null, elevSeries);
+  const dataMax = Math.max.apply(null, elevSeries);
+  if (isNaN(min)) min = dataMin;
+  if (isNaN(max)) max = dataMax;
+  /* Prefer real profile range when stored max/min are missing or zeroed */
+  if ((min === 0 && max === 0 && dataMax > 0) || max < dataMax || min > dataMin) {
+    min = dataMin;
+    max = dataMax;
+  }
+
+  const axis = TW._elevNiceTicks(min, max, 5);
+  const lo = axis.lo;
+  const hi = axis.hi;
+  const span = Math.max(1e-6, hi - lo);
+
+  const w = 640;
+  const h = 160;
+  const padL = 36;
+  const padR = 12;
+  const padT = 10;
+  const padB = 10;
+  const plotW = w - padL - padR;
+  const plotH = h - padT - padB;
+
+  const elevXY = elevSeries.map((elev, i) => {
+    const t = elevSeries.length === 1 ? 0 : i / (elevSeries.length - 1);
+    const x = padL + t * plotW;
+    const y = padT + plotH - ((elev - lo) / span) * plotH;
+    return [x, y];
+  });
+
+  const paceVals = elevSeries.map((_, i) => {
+    const t = elevSeries.length === 1 ? 0 : i / (elevSeries.length - 1);
+    const paceWave = 0.82 + Math.sin(t * Math.PI * 1.6) * 0.12 + Math.sin(t * Math.PI * 3.1) * 0.06;
+    return pace * paceWave;
+  });
+  const paceMin = Math.min.apply(null, paceVals) * 0.85;
+  const paceMax = Math.max.apply(null, paceVals) * 1.1;
+  const paceSpan = Math.max(0.1, paceMax - paceMin);
+  const paceXY = paceVals.map((p, i) => {
+    const t = elevSeries.length === 1 ? 0 : i / (elevSeries.length - 1);
+    const x = padL + t * plotW;
+    const y = padT + plotH - ((p - paceMin) / paceSpan) * plotH;
+    return [x, y];
+  });
+
+  const elevLine = elevXY.map((p, i) => (i ? "L" : "M") + p[0].toFixed(1) + " " + p[1].toFixed(1)).join(" ");
+  const elevArea =
+    elevLine +
+    " L" +
+    (padL + plotW).toFixed(1) +
+    " " +
+    (padT + plotH).toFixed(1) +
+    " L" +
+    padL.toFixed(1) +
+    " " +
+    (padT + plotH).toFixed(1) +
+    " Z";
+  const paceLine = paceXY.map((p, i) => (i ? "L" : "M") + p[0].toFixed(1) + " " + p[1].toFixed(1)).join(" ");
+  const uid = "elevGrad" + Math.floor(Math.random() * 1e6);
+
+  const grid = axis.ticks
+    .map((v) => {
+      const y = padT + plotH - ((v - lo) / span) * plotH;
+      const label = Math.round(v) + "m";
+      return (
+        `<line class="elev-grid" x1="${padL}" y1="${y.toFixed(1)}" x2="${(padL + plotW).toFixed(1)}" y2="${y.toFixed(1)}" />` +
+        `<text class="elev-y-label" x="${padL - 6}" y="${y.toFixed(1)}" dy="0.35em">${label}</text>`
+      );
+    })
+    .join("");
+
+  const maxLabel = Math.round(max) + "m";
+  const minLabel = Math.round(min) + "m";
+  return `
+  <div class="route-share-elev-chart${showPace ? " has-pace" : ""}">
+    <div class="route-share-elev-legend">
+      <span class="leg-elev">${TW.t("rec_elev_label")}</span>
+      ${showPace ? `<span class="leg-pace">${TW.t("rec_avg_pace")}</span>` : ""}
+    </div>
+    <svg class="elev-chart" viewBox="0 0 ${w} ${h}" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+      <defs>
+        <linearGradient id="${uid}" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#8fbc7a" stop-opacity="0.55"/>
+          <stop offset="100%" stop-color="#8fbc7a" stop-opacity="0.08"/>
+        </linearGradient>
+        <clipPath id="${uid}clip">
+          <rect x="${padL}" y="${padT}" width="${plotW}" height="${plotH}"/>
+        </clipPath>
+      </defs>
+      ${grid}
+      <g clip-path="url(#${uid}clip)">
+        <path class="area" d="${elevArea}" style="fill:url(#${uid})"/>
+        <path class="line elev-line" d="${elevLine}"/>
+        ${showPace ? `<path class="line pace-line" d="${paceLine}"/>` : ""}
+      </g>
+    </svg>
+    <div class="route-share-elev-meta">
+      <span>${TW.t("rec_elev_max")} ${maxLabel}</span>
+      <span>${TW.t("rec_elev_min")} ${minLabel}</span>
+    </div>
+  </div>`;
 };
 
 document.addEventListener("click", (e) => {
@@ -1891,6 +2189,10 @@ function bindTabs(selector, onChange) {
 }
 
 function statusLabel(s) {
+  const pub = TW.normalizeReportStatus ? TW.normalizeReportStatus(s) : s;
+  if (pub === "new") return TW.t("status_new");
+  if (pub === "update") return TW.t("status_updated");
+  if (pub === "closed") return TW.t("status_closed");
   if (window.CMS && CMS.statusLabel) {
     const known = CMS.INCIDENT_STATUSES.some((x) => x.id === s);
     if (known) return CMS.statusLabel(s);
@@ -1899,40 +2201,53 @@ function statusLabel(s) {
 }
 
 function statusClass(s) {
+  const pub = TW.normalizeReportStatus ? TW.normalizeReportStatus(s) : s;
+  if (pub === "closed") return "status-closed";
+  if (pub === "update") return "status-updated";
+  if (pub === "new") return "status-received";
   if (s === "published" || s === "handled" || s === "closed") return "status-closed";
-  if (s === "reported_govt" || s === "updated" || s === "under_review") return "status-updated";
+  if (s === "reported_govt" || s === "updated" || s === "under_review" || s === "update") return "status-updated";
   if (s === "rejected") return "status-received";
-  return { closed: "status-closed", updated: "status-updated", received: "status-received" }[s] || "status-received";
+  return { closed: "status-closed", updated: "status-updated", received: "status-received", new: "status-received" }[s] || "status-received";
 }
 
 function renderReportItem(r) {
   const note = TW.getLang() === "zh" ? r.staffNoteZh || r.staffNote : r.staffNote;
   const reporter =
     TW.getLang() === "zh" ? r.reporterZh || r.reporter : r.reporter || r.reporterZh;
-  const catKey = "cat_" + (TW.normalizeReportCategory ? TW.normalizeReportCategory(r.category) : r.category);
-  const catLabel = TW.t(catKey) !== catKey ? TW.t(catKey) : r.category || "";
+  const catId = TW.normalizeReportCategory ? TW.normalizeReportCategory(r.category) : r.category;
+  const catKey = "cat_" + catId;
+  let catLabel = TW.t(catKey);
+  if (catLabel === catKey) {
+    catLabel =
+      TW.getLang() === "zh"
+        ? r.categoryLabelZh || r.categoryLabel || r.category || ""
+        : r.categoryLabel || r.categoryLabelZh || r.category || "";
+  }
+  const href =
+    "incident-detail.html?id=" + encodeURIComponent(r.id || r.sourceId || "");
+  const desc = TW.tt(r, "desc") || "";
   return `
-  <article class="report-item media-card">
+  <a class="report-item media-card" href="${href}">
     <div class="report-thumb-wrap">
-      <img class="report-thumb" src="${r.image || ""}" alt="${TW.escapeHtml(TW.tt(r, "title"))}" />
+      <img class="report-thumb" src="${r.image || ""}" alt="${TW.escapeHtml(TW.tt(r, "title"))}" loading="lazy" />
       <span class="status-badge ${statusClass(r.status)}">${statusLabel(r.status)}</span>
     </div>
     <div>
-      <h4>${TW.tt(r, "title")}</h4>
-      <p class="desc">${TW.tt(r, "desc")}</p>
+      <h4>${TW.escapeHtml(TW.tt(r, "title"))}</h4>
+      ${desc ? `<p class="desc">${TW.escapeHtml(desc)}</p>` : ""}
       ${
         note
-          ? `<p class="desc" style="color:var(--green-800);font-weight:500">${TW.t("staff_update")}: ${note}</p>`
+          ? `<p class="desc" style="color:var(--green-800);font-weight:500">${TW.t("staff_update")}: ${TW.escapeHtml(note)}</p>`
           : ""
       }
       <div class="meta">
-        <span>📅 ${r.date || ""}</span>
-        ${catLabel ? `<span>${catLabel}</span>` : ""}
-        ${reporter ? `<span>👤 ${reporter}</span>` : ""}
-        <span>📍 ${r.coords || ""}</span>
+        <span>📅 ${TW.escapeHtml(r.date || "")}</span>
+        ${catLabel ? `<span>${TW.escapeHtml(catLabel)}</span>` : ""}
+        ${reporter ? `<span>👤 ${TW.escapeHtml(reporter)}</span>` : ""}
       </div>
     </div>
-  </article>`;
+  </a>`;
 }
 
 document.addEventListener("DOMContentLoaded", () => {

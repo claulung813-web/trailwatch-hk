@@ -914,7 +914,7 @@
       [22.357, 114.255], [22.360, 114.258], [22.363, 114.262], [22.365, 114.268],
     ];
     const map = L.map("appMap", { zoomControl: false }).setView(route[0], 14);
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "© OSM", maxZoom: 18 }).addTo(map);
+    TW.addMapTiles(map, { maxZoom: 18 });
     const plannedRoute = L.polyline([[22.345, 114.24], [22.355, 114.25], [22.368, 114.27]], { color: "#f5a623", weight: 2, dashArray: "6 6", opacity: 0.7 }).addTo(map);
     let pathLine = null;
     let planLine = null;
@@ -1544,7 +1544,7 @@
       setTimeout(() => {
         if (!reportMap) {
           reportMap = L.map("reportMiniMap", { zoomControl: false }).setView(pos, 15);
-          L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 18 }).addTo(reportMap);
+          TW.addMapTiles(reportMap, { maxZoom: 18 });
           reportMarker = L.marker(pos, { draggable: true }).addTo(reportMap);
           reportMarker.on("dragend", () => {
             const p = reportMarker.getLatLng();

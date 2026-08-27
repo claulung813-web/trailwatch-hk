@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Incident report — TrailWatch HK</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="css/styles.css?v=20260828d" />
+</head>
+<body>
+  <div id="app-header"></div>
+  <main class="page">
+    <div class="container route-share">
+      <nav class="crumbs" aria-label="Breadcrumb">
+        <a href="explore.html?tab=incidents" data-i18n="incident_back"></a>
+        <span>›</span>
+        <span id="crumbTitle"></span>
+      </nav>
+      <div class="incident-detail-head">
+        <h1 class="page-title" id="incTitle"></h1>
+        <span class="status-badge status-inline" id="incStatus"></span>
+      </div>
+      <div class="route-share-byline">
+        <strong id="incReporter"></strong>
+        <span id="incDate"></span>
+        <span id="incCategory"></span>
+      </div>
+      <div id="incMap" class="route-share-map"></div>
+      <section class="route-share-block">
+        <h2 data-i18n="description"></h2>
+        <p class="route-share-story" id="incDesc"></p>
+      </section>
+      <section class="route-share-block" id="staffSection" hidden>
+        <h2 data-i18n="staff_update"></h2>
+        <p class="route-share-story" id="incStaff"></p>
+      </section>
+      <section class="route-share-block" id="photoSection" hidden>
+        <h2 data-i18n="rec_photos"></h2>
+        <div class="rec-photo-grid" id="photoGrid"></div>
+      </section>
+    </div>
+  </main>
+  <div id="app-footer"></div>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="js/i18n.js?v=20260828d"></script>
+  <script src="js/data.js?v=20260828d"></script>
+  <script src="js/live-routes.js?v=20260828d"></script>
+  <script src="js/cms-store.js?v=20260828d"></script>
+  <script src="js/app.js?v=20260828d"></script>
+  <script>
+    document.documentElement.lang = TW.getLang() === "zh" ? "zh-Hant" : "en";
+    initShell("explore");
+
+    const id = new URLSearchParams(location.search).get("id");
+    const r = typeof TW.getIncidentReport === "function" ? TW.getIncidentReport(id) : null;
+    if (!r) {
+      location.href = "explore.html?tab=incidents";
+    } else {
+      const title = TW.tt(r, "title");
+      document.title = title + " — TrailWatch HK";
+      document.getElementById("incTitle").textContent = title;
+      document.getElementById("crumbTitle").textContent = title;
+      const statusEl = document.getElementById("incStatus");
+      statusEl.textContent = statusLabel(r.status);
+      statusEl.className = "status-badge status-inline " + statusClass(r.status);
+
+      const reporter = TW.getLang() === "zh" ? r.reporterZh || r.reporter : r.reporter || r.reporterZh;
+      document.getElementById("incReporter").textContent = reporter || "TrailWatch";
+      document.getElementById("incDate").textContent = r.date || "";
+
+      const catId = TW.normalizeReportCategory ? TW.normalizeReportCategory(r.category) : r.category;
+      let catLabel = TW.t("cat_" + catId);
+      if (catLabel === "cat_" + catId) {
+        catLabel =
+          TW.getLang() === "zh"
+            ? r.categoryLabelZh || r.categoryLabel || r.category || ""
+            : r.categoryLabel || r.categoryLabelZh || r.category || "";
+      }
+      document.getElementById("incCategory").textContent = catLabel || "";
+
+      const desc = TW.tt(r, "desc");
+      document.getElementById("incDesc").textContent = desc || TW.t("incident_no_desc");
+
+      const note = TW.getLang() === "zh" ? r.staffNoteZh || r.staffNote : r.staffNote;
+      if (note && String(note).trim()) {
+        document.getElementById("staffSection").hidden = false;
+        document.getElementById("incStaff").textContent = note;
+      }
+
+      const photos = r.photos && r.photos.length ? r.photos : r.image ? [r.image] : [];
+      if (photos.length) {
+        document.getElementById("photoSection").hidden = false;
+        document.getElementById("photoGrid").innerHTML = photos
+          .map((p) => `<img src="${p}" alt="" loading="lazy" />`)
+          .join("");
+      }
+
+      if (r.lat != null && r.lng != null) {
+        const map = L.map("incMap").setView([r.lat, r.lng], 15);
+        TW.addMapTiles(map);
+        L.marker([r.lat, r.lng]).addTo(map);
+        if (TW.prepareLeafletMap) TW.prepareLeafletMap(map);
+        setTimeout(() => map.invalidateSize(), 100);
+      } else {
+        document.getElementById("incMap").style.display = "none";
+      }
+    }
+  </script>
+</body>
+</html>

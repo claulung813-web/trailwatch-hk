@@ -8,67 +8,102 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="css/styles.css?v=20260828c" />
 </head>
 <body>
   <div id="app-header"></div>
   <main class="page">
-    <div class="container route-share">
+    <div class="container route-share route-share--record">
       <nav class="crumbs" aria-label="Breadcrumb">
-        <a href="explore.html" data-i18n="tab_records"></a>
+        <a href="explore.html?tab=records" data-i18n="tab_records"></a>
         <span>›</span>
         <span id="crumbTitle"></span>
       </nav>
-      <p class="route-share-privacy" id="recPrivacy"></p>
-      <h1 class="page-title" id="recTitle"></h1>
-      <p class="page-sub" id="recRegion"></p>
-      <div class="route-share-byline">
-        <strong id="recAuthor"></strong>
-        <span id="recDate"></span>
+
+      <div class="route-share-head">
+        <div class="route-share-head-text">
+          <h1 class="page-title" id="recTitle"></h1>
+          <p class="route-share-district" id="recDistrict"></p>
+        </div>
+        <div class="detail-next-steps route-share-head-actions">
+          <button type="button" class="btn btn-secondary bookmark-btn icon-only" id="recBookmark" aria-label="Bookmark" title=""></button>
+          <button type="button" class="btn btn-primary dup-btn" id="recDup" data-i18n="rec_duplicate_edit"></button>
+        </div>
       </div>
-      <div id="recMap" class="route-share-map"></div>
-      <section class="route-share-block">
-        <h2 id="lblData"></h2>
-        <div class="route-share-stats route-share-stats--6" id="recStats"></div>
-      </section>
+
+      <div class="route-share-split">
+        <div class="route-share-map-col">
+          <div class="route-share-map-wrap" id="mapWrap">
+            <div id="recMap" class="route-share-map"></div>
+            <button type="button" class="route-map-expand" id="mapExpand" aria-label="Full screen map" title="Full screen">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3"/>
+              </svg>
+            </button>
+            <button type="button" class="route-map-expand route-map-close" id="mapClose" hidden aria-label="Exit full screen">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M18 6 6 18M6 6l12 12"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div class="route-share-info-col">
+          <p class="route-share-privacy" id="recPrivacy"></p>
+          <div class="route-share-byline">
+            <strong id="recAuthor"></strong>
+            <span id="recDate"></span>
+          </div>
+          <p class="route-share-story" id="recDesc"></p>
+          <section class="route-share-block">
+            <h2 id="lblData"></h2>
+            <div class="route-share-stats route-share-stats--6" id="recStats"></div>
+          </section>
+        </div>
+      </div>
+
       <section class="route-share-block">
         <h2 id="lblElev"></h2>
-        <p class="route-share-elev" id="elevLine"></p>
+        <div id="elevChart"></div>
       </section>
-      <div class="detail-next-steps">
-        <button type="button" class="btn btn-primary dup-btn" id="recDup" data-i18n="rec_duplicate_edit"></button>
-        <button type="button" class="btn btn-secondary bookmark-btn" id="recBookmark" data-i18n="rec_bookmark"></button>
-      </div>
+      <section class="route-share-block" id="photoSection" hidden>
+        <h2 id="lblPhotos"></h2>
+        <div class="rec-photo-grid" id="photoGrid"></div>
+      </section>
     </div>
   </main>
   <div id="app-footer"></div>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="js/i18n.js"></script>
-  <script src="js/data.js"></script>
-  <script src="js/live-routes.js"></script>
-  <script src="js/cms-store.js"></script>
-  <script src="js/app.js"></script>
+  <script src="js/i18n.js?v=20260828c"></script>
+  <script src="js/data.js?v=20260828c"></script>
+  <script src="js/live-routes.js?v=20260828c"></script>
+  <script src="js/cms-store.js?v=20260828c"></script>
+  <script src="js/app.js?v=20260828c"></script>
   <script>
     document.documentElement.lang = TW.getLang() === "zh" ? "zh-Hant" : "en";
     initShell("explore");
     const t = TW.t;
     document.getElementById("lblData").textContent = t("rec_record_data");
     document.getElementById("lblElev").textContent = t("rec_elev_stat_record");
-    document.getElementById("recPrivacy").textContent = t("rec_public");
+    document.getElementById("lblPhotos").textContent = t("rec_photos");
 
     const id = new URLSearchParams(location.search).get("id");
     const r =
       (typeof TW.getUserRoute === "function" && TW.getUserRoute(id)) ||
       (typeof TW.getRecord === "function" && TW.getRecord(id));
     if (!r) {
-      location.href = "explore.html";
+      location.href = "explore.html?tab=records";
     } else {
       const title = TW.tt(r, "title") || r.date || id;
+      const region =
+        TW.getLang() === "zh" ? r.regionZh || r.region || TW.districtName(r.district) : r.region || TW.districtName(r.district);
       document.title = title + " — TrailWatch HK";
       document.getElementById("recTitle").textContent = title;
       document.getElementById("crumbTitle").textContent = title;
-      document.getElementById("recRegion").textContent =
-        TW.getLang() === "zh" ? r.regionZh || r.region || TW.districtName(r.district) : r.region || TW.districtName(r.district);
+      document.getElementById("recDistrict").textContent = region || "";
+      document.getElementById("recPrivacy").textContent =
+        String(r.privacy || "").toLowerCase() === "friends" ? t("rec_filter_friends") : t("rec_public");
+      const desc = TW.tt(r, "desc") || TW.tt(r, "snippet") || "";
+      document.getElementById("recDesc").textContent = desc && desc !== region ? desc : "";
       document.getElementById("recAuthor").textContent = r.author || r.user || "";
       document.getElementById("recDate").textContent = r.date || "";
       const dist = r.distanceKm != null ? Number(r.distanceKm).toFixed(2) : r.distance || "—";
@@ -80,24 +115,62 @@
         [r.paceKmh != null ? Number(r.paceKmh).toFixed(2) : "—", t("rec_avg_pace_kmh")],
         [r.elevChange != null ? r.elevChange : "—", t("rec_elev_changes")],
       ].map((s) => `<div><strong>${s[0]}</strong><span>${s[1]}</span></div>`).join("");
-      document.getElementById("elevLine").textContent =
-        t("rec_elev_max") + " " + (r.elevMax != null ? r.elevMax + "m" : "—") +
-        " · " + t("rec_elev_min") + " " + (r.elevMin != null ? r.elevMin + "m" : "—");
+
+      document.getElementById("elevChart").innerHTML = TW.elevChartHtml({
+        elevMax: r.elevMax,
+        elevMin: r.elevMin,
+        elevProfile: r.elevProfile,
+        paceKmh: r.paceKmh,
+        showPace: true,
+      });
+
+      const photos = r.photos && r.photos.length ? r.photos : r.image ? [r.image] : [];
+      if (photos.length) {
+        document.getElementById("photoSection").hidden = false;
+        document.getElementById("photoGrid").innerHTML = photos
+          .map((p) => `<img src="${TW.recordPhotoSrc ? TW.recordPhotoSrc(p) : p}" alt="" loading="lazy" />`)
+          .join("");
+      }
 
       const planId = r.id;
       document.getElementById("recDup").dataset.trail = planId;
       const bm = document.getElementById("recBookmark");
       bm.dataset.trail = planId;
+      bm.setAttribute("aria-label", t("rec_bookmark"));
+      bm.title = t("rec_bookmark");
+      bm.innerHTML = typeof twIcon === "function" ? twIcon("bookmarks") : "🔖";
       if (TW.isBookmarked(planId)) {
         bm.classList.add("active");
-        bm.textContent = TW.t("rec_bookmark") + " ✓";
+        bm.setAttribute("aria-pressed", "true");
+      } else {
+        bm.setAttribute("aria-pressed", "false");
       }
 
       const path = (r.path && r.path.length ? r.path : [[22.35, 114.12]]).map((p) => [Number(p[0]), Number(p[1])]);
       const map = L.map("recMap").setView(path[0], 13);
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "© OpenStreetMap" }).addTo(map);
+      TW.addMapTiles(map);
       const line = L.polyline(path, { color: "#2563eb", weight: 5 }).addTo(map);
       map.fitBounds(line.getBounds().pad(0.15));
+      if (typeof TW.addRouteEndpoints === "function") TW.addRouteEndpoints(map, path);
+
+      const wrap = document.getElementById("mapWrap");
+      const expandBtn = document.getElementById("mapExpand");
+      const closeBtn = document.getElementById("mapClose");
+      function setFullscreen(on) {
+        wrap.classList.toggle("is-fullscreen", on);
+        document.body.classList.toggle("map-fs-open", on);
+        expandBtn.hidden = on;
+        closeBtn.hidden = !on;
+        setTimeout(() => {
+          map.invalidateSize();
+          map.fitBounds(line.getBounds().pad(0.12));
+        }, 80);
+      }
+      expandBtn.addEventListener("click", () => setFullscreen(true));
+      closeBtn.addEventListener("click", () => setFullscreen(false));
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && wrap.classList.contains("is-fullscreen")) setFullscreen(false);
+      });
     }
   </script>
 </body>

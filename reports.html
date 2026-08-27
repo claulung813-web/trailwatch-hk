@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="css/styles.css?v=20260828d" />
 </head>
 <body>
   <div id="app-header"></div>
@@ -18,162 +18,126 @@
       <div class="section-head">
         <div>
           <h1 class="page-title" style="margin:0" data-i18n="reports_title"></h1>
-          <p class="page-sub" style="margin-bottom:0" data-i18n="reports_sub"></p>
+          <p class="meta" style="margin:0.35rem 0 0" data-i18n="reports_sub"></p>
         </div>
-        <button class="btn btn-primary" id="openReport" data-i18n="report_incident_btn"></button>
       </div>
 
-      <div class="reports-filters tw-toolbar">
-        <div>
-          <label for="reportDateFilter" data-i18n="reports_filter_date"></label>
-          <select class="form-select" id="reportDateFilter">
-            <option value="6m" selected data-i18n="reports_date_6m"></option>
-            <option value="30d" data-i18n="reports_date_30d"></option>
-            <option value="90d" data-i18n="reports_date_90d"></option>
-            <option value="year" data-i18n="reports_date_year"></option>
-            <option value="all" data-i18n="reports_date_all"></option>
-          </select>
-        </div>
-        <div class="reports-cat-wrap">
-          <span class="reports-filter-label" data-i18n="reports_filter_category"></span>
-          <div class="chip-row" id="reportCatFilter"></div>
-        </div>
+      <div class="search-bar explore-search" style="margin:1rem 0 0.75rem">
+        <input type="search" id="reportSearch" data-i18n-placeholder="search_placeholder" />
       </div>
+
+      <div class="reports-cat-wrap explore-inc-cats">
+        <span class="reports-filter-label" data-i18n="reports_filter_category"></span>
+        <div class="chip-row" id="reportCatFilter"></div>
+      </div>
+
+      <details class="tw-advanced" id="reportAdvanced" style="margin:0.85rem 0 1rem">
+        <summary data-i18n="toolbar_advanced"></summary>
+        <div class="tw-advanced-body">
+          <div class="filter-bar reports-filters" style="margin-bottom:0">
+            <div>
+              <label for="reportDateFilter" data-i18n="reports_filter_date"></label>
+              <select class="form-select" id="reportDateFilter">
+                <option value="all" selected data-i18n="reports_date_all"></option>
+                <option value="6m" data-i18n="reports_date_6m"></option>
+                <option value="30d" data-i18n="reports_date_30d"></option>
+                <option value="90d" data-i18n="reports_date_90d"></option>
+                <option value="year" data-i18n="reports_date_year"></option>
+              </select>
+            </div>
+            <div>
+              <label for="reportStatusFilter" data-i18n="reports_filter_status"></label>
+              <select class="form-select" id="reportStatusFilter">
+                <option value="all" selected data-i18n="reports_status_all"></option>
+                <option value="new" data-i18n="status_new"></option>
+                <option value="update" data-i18n="status_updated"></option>
+                <option value="closed" data-i18n="status_closed"></option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </details>
 
       <div class="explore-toolbar" style="margin-top:0.25rem">
         <h2 class="explore-count" id="reportCount"></h2>
         <span class="meta" data-i18n="reports_map_hint"></span>
       </div>
 
-      <div class="report-layout">
-        <div>
-          <div class="report-map report-map--tall" id="reportMap"></div>
-        </div>
-        <div class="report-list" id="reportList"></div>
-      </div>
+      <div class="report-map report-map--tall" id="reportMap"></div>
+      <div class="report-list report-grid" id="reportList"></div>
     </div>
   </main>
-
-  <!-- Form sheet: map stays fully visible above / behind — separate picker UI -->
-  <div id="reportFormOverlay" class="report-form-overlay">
-    <div class="card" style="width:min(520px,100%);max-height:85vh;overflow:auto;padding:1.5rem;margin:0;border-radius:20px 20px 0 0" onclick="event.stopPropagation()">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
-        <h2 style="font-size:1.15rem;color:var(--green-900)" data-i18n="report_modal_title"></h2>
-        <button type="button" id="closeReport" style="font-size:1.25rem;color:var(--text-muted)">✕</button>
-      </div>
-      <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:1rem">
-        <strong style="color:var(--green-900)" data-i18n="report_unsure"></strong><br />
-        <span data-i18n="report_unsure_body"></span>
-      </p>
-      <div class="form-group">
-        <label data-i18n="report_photos"></label>
-        <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:0.5rem" data-i18n="report_photos_hint"></p>
-        <button type="button" class="btn btn-amber btn-block" data-toast="📷" data-i18n="add_photos"></button>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem">
-        <div class="form-group">
-          <label data-i18n="date"></label>
-          <input class="form-input" type="text" value="29/05/2026" />
-        </div>
-        <div class="form-group">
-          <label data-i18n="time"></label>
-          <input class="form-input" type="text" value="15:36:48" />
-        </div>
-      </div>
-      <div class="form-group">
-        <label data-i18n="category"></label>
-        <select class="form-select" id="reportCat">
-          <option value="waste"></option>
-          <option value="tree"></option>
-          <option value="vandalism"></option>
-          <option value="obstruction"></option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label data-i18n="location"></label>
-        <div class="loc-preview">
-          <div id="locAddress">Wing Wo Street 21, Central and Western, Hong Kong</div>
-          <div style="font-weight:700;color:var(--green-900);margin-top:0.25rem" id="locCoords">📍 22.285394, 114.153783</div>
-          <button type="button" id="openPicker" data-i18n="pick_on_map"></button>
-        </div>
-        <p style="font-size:0.75rem;color:var(--text-muted)" data-i18n="map_hint"></p>
-      </div>
-      <div class="form-group">
-        <label data-i18n="title_label"></label>
-        <input class="form-input" id="reportTitle" data-i18n-placeholder="add_title" />
-      </div>
-      <div class="form-group">
-        <label data-i18n="description"></label>
-        <textarea class="form-textarea" data-i18n-placeholder="tell_more"></textarea>
-      </div>
-      <p class="trust-note" data-i18n="report_after_submit"></p>
-      <button class="btn btn-primary btn-block btn-lg" id="confirmReport" data-i18n="confirm"></button>
-    </div>
-  </div>
-
-  <!-- Full-screen map picker — map is the hero, form sheet only at bottom -->
-  <div class="report-picker" id="reportPicker">
-    <div class="report-picker-map">
-      <div class="picker-map-hint" data-i18n="map_hint"></div>
-      <div id="pickerMap"></div>
-    </div>
-    <div class="report-picker-sheet">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem">
-        <strong style="color:var(--green-900)" data-i18n="pick_on_map"></strong>
-        <button type="button" id="closePicker" style="font-size:1.1rem">✕</button>
-      </div>
-      <div class="loc-preview" style="margin-bottom:1rem">
-        <div id="pickerCoords">📍 22.285394, 114.153783</div>
-      </div>
-      <button class="btn btn-primary btn-block" id="useLocation" data-i18n="confirm"></button>
-    </div>
-  </div>
 
   <div id="app-footer"></div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="js/i18n.js"></script>
-  <script src="js/data.js"></script>
-  <script src="js/live-routes.js"></script>
-  <script src="js/cms-store.js"></script>
-  <script src="js/env-badge.js"></script>
-  <script src="js/app.js"></script>
+  <script src="js/i18n.js?v=20260828d"></script>
+  <script src="js/data.js?v=20260828d"></script>
+  <script src="js/live-routes.js?v=20260828d"></script>
+  <script src="js/cms-store.js?v=20260828d"></script>
+  <script src="js/app.js?v=20260828d"></script>
   <script>
     document.documentElement.lang = TW.getLang() === "zh" ? "zh-Hant" : "en";
     initShell("reports");
 
-    let dateRange = "6m";
+    let dateRange = "all";
     let category = "all";
+    let status = "all";
+    let query = "";
     let mapMarkers = [];
 
     const map = L.map("reportMap", { scrollWheelZoom: false }).setView([22.32, 114.17], 11);
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      attribution: "© OpenStreetMap",
-    }).addTo(map);
+    TW.addMapTiles(map);
     if (TW.prepareLeafletMap) TW.prepareLeafletMap(map);
 
     const categories = [
       { id: "all", labelKey: "filter_all" },
       { id: "waste", labelKey: "cat_waste" },
       { id: "tree", labelKey: "cat_tree" },
+      { id: "carcass", labelKey: "cat_carcass" },
       { id: "vandalism", labelKey: "cat_vandalism" },
-      { id: "obstruction", labelKey: "cat_obstruction" },
+      { id: "suspicious", labelKey: "cat_suspicious" },
+      { id: "river", labelKey: "cat_river" },
+      { id: "concrete", labelKey: "cat_concrete" },
+      { id: "marine", labelKey: "cat_marine" },
+      { id: "danger", labelKey: "cat_danger" },
+      { id: "others", labelKey: "cat_others" },
     ];
+
+    function filteredList() {
+      let list = TW.getCommunityReports({ dateRange: dateRange, category: category, status: status });
+      const q = query.trim().toLowerCase();
+      if (!q) return list;
+      return list.filter((r) => {
+        const hay = (
+          TW.tt(r, "title") +
+          " " +
+          TW.tt(r, "desc") +
+          " " +
+          (r.category || "") +
+          " " +
+          (r.categoryLabel || "") +
+          " " +
+          (r.reporter || "")
+        ).toLowerCase();
+        return hay.indexOf(q) >= 0;
+      });
+    }
 
     function renderCatChips() {
       document.getElementById("reportCatFilter").innerHTML = categories
         .map((c) => {
           const n =
             c.id === "all"
-              ? TW.getCommunityReports({ dateRange: dateRange }).length
-              : TW.getCommunityReports({ dateRange: dateRange, category: c.id }).length;
+              ? TW.getCommunityReports({ dateRange: dateRange, status: status }).length
+              : TW.getCommunityReports({ dateRange: dateRange, category: c.id, status: status }).length;
           return `<button type="button" class="chip${category === c.id ? " active" : ""}" data-cat="${c.id}">${TW.t(c.labelKey)} (${n})</button>`;
         })
         .join("");
     }
 
     function refreshList() {
-      const list = TW.getCommunityReports({ dateRange: dateRange, category: category });
+      const list = filteredList();
       document.getElementById("reportCount").textContent = list.length + " " + TW.t("reports_count");
       document.getElementById("reportList").innerHTML =
         list.map(renderReportItem).join("") ||
@@ -181,9 +145,13 @@
       const reset = document.getElementById("reportReset");
       if (reset) {
         reset.addEventListener("click", () => {
-          dateRange = "6m";
+          dateRange = "all";
           category = "all";
-          dateSel.value = "6m";
+          status = "all";
+          query = "";
+          dateSel.value = "all";
+          statusSel.value = "all";
+          document.getElementById("reportSearch").value = "";
           refreshAll();
         });
       }
@@ -203,8 +171,9 @@
           iconAnchor: [14, 14],
         });
         const reporter = TW.getLang() === "zh" ? r.reporterZh || r.reporter : r.reporter;
+        const href = "incident-detail.html?id=" + encodeURIComponent(r.id || r.sourceId || "");
         const popup =
-          `<strong>${TW.escapeHtml(TW.tt(r, "title"))}</strong><br/>` +
+          `<a href="${href}"><strong>${TW.escapeHtml(TW.tt(r, "title"))}</strong></a><br/>` +
           `${TW.escapeHtml(r.date || "")}` +
           (reporter ? `<br/>👤 ${TW.escapeHtml(reporter)}` : "");
         mapMarkers.push(L.marker([r.lat, r.lng], { icon }).addTo(map).bindPopup(popup));
@@ -220,11 +189,18 @@
     }
 
     const dateSel = document.getElementById("reportDateFilter");
-    dateSel.querySelectorAll("option[data-i18n]").forEach((opt) => {
-      opt.textContent = TW.t(opt.getAttribute("data-i18n"));
+    const statusSel = document.getElementById("reportStatusFilter");
+    [dateSel, statusSel].forEach((sel) => {
+      sel.querySelectorAll("option[data-i18n]").forEach((opt) => {
+        opt.textContent = TW.t(opt.getAttribute("data-i18n"));
+      });
     });
     dateSel.addEventListener("change", () => {
       dateRange = dateSel.value || "6m";
+      refreshAll();
+    });
+    statusSel.addEventListener("change", () => {
+      status = statusSel.value || "all";
       refreshAll();
     });
     document.getElementById("reportCatFilter").addEventListener("click", (e) => {
@@ -233,101 +209,12 @@
       category = btn.dataset.cat;
       refreshAll();
     });
+    document.getElementById("reportSearch").addEventListener("input", (e) => {
+      query = e.target.value || "";
+      refreshAll();
+    });
 
     refreshAll();
-
-    const cat = document.getElementById("reportCat");
-    cat.options[0].text = "🗑 " + TW.t("cat_waste");
-    cat.options[1].text = "🌳 " + TW.t("cat_tree");
-    cat.options[2].text = "👎 " + TW.t("cat_vandalism");
-    cat.options[3].text = "🚧 " + TW.t("cat_obstruction");
-
-    let pinLat = 22.285394;
-    let pinLng = 114.153783;
-    let pickerMap, pickerMarker;
-
-    const formOverlay = document.getElementById("reportFormOverlay");
-    const picker = document.getElementById("reportPicker");
-
-    function openForm() { formOverlay.style.display = "flex"; }
-    function closeForm() { formOverlay.style.display = "none"; }
-
-    function openPicker() {
-      picker.classList.add("open");
-      setTimeout(() => {
-        if (!pickerMap) {
-          pickerMap = L.map("pickerMap", { scrollWheelZoom: false }).setView([pinLat, pinLng], 15);
-          L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-            attribution: "© OpenStreetMap",
-          }).addTo(pickerMap);
-          if (TW.prepareLeafletMap) TW.prepareLeafletMap(pickerMap);
-          pickerMarker = L.marker([pinLat, pinLng], { draggable: true }).addTo(pickerMap);
-          pickerMarker.on("dragend", () => {
-            const p = pickerMarker.getLatLng();
-            pinLat = p.lat; pinLng = p.lng; updateCoords();
-          });
-          pickerMap.on("click", (e) => {
-            pinLat = e.latlng.lat; pinLng = e.latlng.lng;
-            pickerMarker.setLatLng(e.latlng); updateCoords();
-          });
-        } else {
-          pickerMap.setView([pinLat, pinLng], 15);
-          pickerMarker.setLatLng([pinLat, pinLng]);
-          pickerMap.invalidateSize();
-        }
-        pickerMap.invalidateSize();
-        updateCoords();
-      }, 80);
-    }
-
-    function updateCoords() {
-      const text = "📍 " + pinLat.toFixed(6) + ", " + pinLng.toFixed(6);
-      document.getElementById("locCoords").textContent = text;
-      document.getElementById("pickerCoords").textContent = text;
-    }
-
-    document.getElementById("openReport").addEventListener("click", openForm);
-    document.getElementById("closeReport").addEventListener("click", closeForm);
-    formOverlay.addEventListener("click", (e) => { if (e.target === formOverlay) closeForm(); });
-    document.getElementById("openPicker").addEventListener("click", () => {
-      formOverlay.style.display = "none"; openPicker();
-    });
-    document.getElementById("closePicker").addEventListener("click", () => {
-      picker.classList.remove("open"); openForm();
-    });
-    document.getElementById("useLocation").addEventListener("click", () => {
-      picker.classList.remove("open"); updateCoords(); openForm();
-      showToast(TW.getLang() === "zh" ? "位置已更新" : "Location updated");
-    });
-    document.getElementById("confirmReport").addEventListener("click", () => {
-      const title =
-        document.getElementById("reportTitle").value.trim() ||
-        (TW.getLang() === "zh" ? "新事故舉報" : "New incident report");
-      const descEl = document.querySelector("#reportFormOverlay textarea");
-      const member = typeof TW.getMemberAuth === "function" ? TW.getMemberAuth() : null;
-      CMS.submitIncident({
-        title: title,
-        titleZh: title,
-        desc: (descEl && descEl.value.trim()) || "",
-        category: document.getElementById("reportCat").value,
-        lat: pinLat,
-        lng: pinLng,
-        coords: pinLat.toFixed(5) + ", " + pinLng.toFixed(5),
-        date: new Date().toLocaleString("en-GB"),
-        reporter: (member && (member.name || member.displayName || member.email)) || (TW.getLang() === "zh" ? "你" : "You"),
-        published: true,
-      });
-      closeForm();
-      refreshAll();
-      const result = TW.recordEnvAct("C", { note: "web_incident" });
-      if (result.ok) {
-        showToast(TW.t("env_toast_c") + " · " + TW.t("toast_report"));
-        if (result.leveledUp) {
-          setTimeout(() => showToast(TW.t("env_toast_level").replace("{n}", String(result.leveledUp))), 900);
-        }
-      } else showToast(TW.t("toast_report"));
-    });
-  </script>
   </script>
 </body>
 </html>

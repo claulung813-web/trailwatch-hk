@@ -10,11 +10,11 @@
 <body class="cms-body">
   <div id="cmsShell">
     <h1>Community feed</h1>
-    <p class="sub">Pin or remove items, and add staff posts (title, blurb, graphic, detailed text). Chronological log below. Phase 2: user-submitted trail feed posts with search/filter.</p>
+    <p class="sub">Add staff posts, pin any post to the top of the public feed, or remove CMS posts. Pinned posts appear first on the website.</p>
 
     <div class="cms-row">
       <div class="cms-card" style="flex:1">
-        <h3 style="margin-top:0">Add post</h3>
+        <h3 style="margin-top:0">Add / edit staff post</h3>
         <form class="cms-form" id="form">
           <input type="hidden" id="editId" />
           <label>Title</label><input id="title" required />
@@ -29,13 +29,21 @@
         </form>
       </div>
       <div class="cms-card" style="flex:1.4">
-        <h3 style="margin-top:0">Chronological log</h3>
+        <h3 style="margin-top:0">Staff posts (CMS)</h3>
         <table class="cms-table">
           <thead><tr><th>When</th><th>Post</th><th>Flags</th><th></th></tr></thead>
           <tbody id="list"></tbody>
         </table>
-        <p class="cms-muted" style="font-size:0.8rem;margin-top:0.75rem">Phase 2 — frontend: chronological log of posts added by users, with search and filter.</p>
       </div>
+    </div>
+
+    <div class="cms-card" style="margin-top:1rem">
+      <h3 style="margin-top:0">Catalog &amp; community posts — pin</h3>
+      <p class="cms-muted" style="font-size:0.85rem;margin-top:0">Toggle pin on seeded / community feed items. Official TrailWatch posts show the TW logo on the website.</p>
+      <table class="cms-table">
+        <thead><tr><th>When</th><th>Author</th><th>Post</th><th>Pinned</th><th></th></tr></thead>
+        <tbody id="catalog"></tbody>
+      </table>
     </div>
   </div>
   <script src="../js/data.js"></script>
@@ -44,6 +52,37 @@
   <script src="js/cms-ui.js"></script>
   <script>
     cmsInitShell("feed");
+
+    function feedKey(p) {
+      if (p && p.id) return String(p.id);
+      return ["fp", (p && p.user) || "", (p && p.dateISO) || "", (p && (p.title || p.body)) || ""].join("_").slice(0, 90);
+    }
+
+    function isPinnedEffective(p) {
+      const id = feedKey(p);
+      const s = CMS.getStore();
+      if ((s.feedUnpinIds || []).indexOf(id) >= 0) return false;
+      if ((s.feedPinIds || []).indexOf(id) >= 0) return true;
+      return !!p.pinned;
+    }
+
+    function toggleCatalogPin(id, currentlyPinned) {
+      const s = CMS.getStore();
+      let pins = (s.feedPinIds || []).slice();
+      let unpins = (s.feedUnpinIds || []).slice();
+      if (currentlyPinned) {
+        pins = pins.filter((x) => x !== id);
+        if (unpins.indexOf(id) < 0) unpins.push(id);
+      } else {
+        unpins = unpins.filter((x) => x !== id);
+        if (pins.indexOf(id) < 0) pins.push(id);
+      }
+      s.feedPinIds = pins;
+      s.feedUnpinIds = unpins;
+      CMS.setStore(s);
+      render();
+      cmsToast(currentlyPinned ? "Unpinned" : "Pinned to top of feed");
+    }
 
     function render() {
       const list = (CMS.getStore().feedPosts || []).slice().sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
@@ -62,7 +101,8 @@
             ${cmsPreviewBtn("feed", p.id, "View website")}
             <button type="button" class="cms-btn cms-btn-danger cms-btn-sm" data-rm="${cmsEsc(p.id)}">${p.removed ? "Restore" : "Remove"}</button>
           </td>
-        </tr>`).join("") || '<tr><td colspan="4">No posts</td></tr>';
+        </tr>`).join("") || '<tr><td colspan="4">No staff posts yet</td></tr>';
+
       document.querySelectorAll("[data-pin]").forEach((b) => b.addEventListener("click", () => {
         const s = CMS.getStore();
         s.feedPosts = (s.feedPosts || []).map((p) => p.id === b.dataset.pin ? Object.assign({}, p, { pinned: !p.pinned }) : p);
@@ -84,6 +124,27 @@
         document.getElementById("graphic").value = p.graphic || "";
         document.getElementById("body").value = p.body || "";
         document.getElementById("pinned").checked = !!p.pinned;
+      }));
+
+      const catalog = (TW.feed || []).slice().sort((a, b) => String(b.dateISO || "").localeCompare(String(a.dateISO || "")));
+      document.getElementById("catalog").innerHTML = catalog.map((p) => {
+        const id = feedKey(p);
+        const pinned = isPinnedEffective(p);
+        const title = p.title || p.body || id;
+        return `<tr>
+          <td class="cms-muted">${cmsEsc(p.dateISO || "—")}</td>
+          <td>${cmsEsc(p.user || "—")}</td>
+          <td><strong>${cmsEsc(String(title).slice(0, 80))}</strong><br/><span class="cms-muted">${cmsEsc(p.tag || p.type || "")}</span></td>
+          <td>${pinned ? '<span class="cms-badge pub">Pinned</span>' : "—"}</td>
+          <td>
+            <button type="button" class="cms-btn cms-btn-secondary cms-btn-sm" data-cat-pin="${cmsEsc(id)}" data-on="${pinned ? "1" : "0"}">${pinned ? "Unpin" : "Pin"}</button>
+            ${cmsPreviewBtn("feed", id, "View website")}
+          </td>
+        </tr>`;
+      }).join("") || '<tr><td colspan="5">No catalog posts</td></tr>';
+
+      document.querySelectorAll("[data-cat-pin]").forEach((b) => b.addEventListener("click", () => {
+        toggleCatalogPin(b.dataset.catPin, b.dataset.on === "1");
       }));
     }
 
