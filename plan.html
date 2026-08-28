@@ -242,6 +242,12 @@
     .mk-poi span { transform: rotate(45deg); display: block; }
     .leaflet-marker-draggable { cursor: grab; }
     .leaflet-marker-draggable:active { cursor: grabbing; }
+    .plan-line-handle {
+      width: 14px; height: 14px; border-radius: 50%;
+      background: #fff; border: 2px solid #2563eb;
+      box-shadow: 0 1px 4px rgba(0,0,0,.25); cursor: grab;
+    }
+    .plan-line-handle:active { cursor: grabbing; }
     .mk-poi-tip {
       background: #fff;
       color: var(--green-900);
@@ -417,6 +423,11 @@
                   <option value="driving" data-i18n="plan_gps_driving"></option>
                 </select>
               </div>
+              <div class="form-group" style="display:flex;align-items:center;gap:0.5rem;margin-top:0.35rem">
+                <input type="checkbox" id="followTrails" checked />
+                <label for="followTrails" style="margin:0;font-size:0.82rem;cursor:pointer" data-i18n="plan_follow_trails"></label>
+              </div>
+              <p class="meta" style="margin:0;font-size:0.72rem" data-i18n="plan_follow_trails_hint"></p>
             </div>
 
             <div class="plan-stats" id="planStats">
@@ -489,6 +500,7 @@
   <script src="js/i18n.js"></script>
   <script src="js/data.js"></script>
   <script src="js/live-routes.js"></script>
+  <script src="js/plan-route.js"></script>
   <script src="js/cms-store.js"></script>
   <script src="js/app.js"></script>
   <script>
@@ -505,8 +517,10 @@
     let vias = [];
     let pois = [];
     let routeProfile = "hiking";
+    let followTrails = true;
     let routedPath = null;
     let line = null;
+    let lineHandles = [];
     let markers = [];
     let pendingLatLng = null;
     let longPressTimer = null;
@@ -518,12 +532,76 @@
     let routeFetchId = 0;
     let lastRouteKm = 0;
 
-    const PROFILE_API = {
+    const PROFILE_API = TW.PLAN_PROFILE_API || {
       hiking: "walking",
       walking: "walking",
       cycling: "cycling",
       driving: "driving",
     };
+
+    function snapIfFollowing(pt) {
+      if (!followTrails || typeof TW.snapPointToTrails !== "function") return pt.slice();
+      return TW.snapPointToTrails(pt);
+    }
+
+    function clearLineHandles() {
+      lineHandles.forEach((m) => map.removeLayer(m));
+      lineHandles = [];
+    }
+
+    function bindLineHandles(path) {
+      clearLineHandles();
+      if (!path || path.length < 2) return;
+      const spine = spinePoints();
+      if (spine.length < 2) return;
+      for (let i = 0; i < spine.length - 1; i++) {
+        const a = spine[i];
+        const b = spine[i + 1];
+        const mid = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
+        const icon = L.divIcon({
+          className: "marker-label",
+          html: '<div class="plan-line-handle"></div>',
+          iconSize: [14, 14],
+          iconAnchor: [7, 7],
+        });
+        const m = L.marker(mid, { icon: icon, draggable: true, zIndexOffset: 400 }).addTo(map);
+        m._twSegIndex = i;
+        m._twViaIndex = null;
+        m.on("dragstart", () => {
+          followTrails = false;
+          document.getElementById("followTrails").checked = false;
+          insertVia(mid.slice(), i + 1);
+          m._twViaIndex = i + 1;
+        });
+        m.on("drag", () => {
+          const ll = m.getLatLng();
+          const idx = m._twViaIndex;
+          if (idx != null && vias[idx]) {
+            vias[idx] = [ll.lat, ll.lng];
+            routedPath = spinePoints();
+            setLineLatLngs(routedPath);
+          }
+        });
+        m.on("dragend", () => {
+          redraw();
+        });
+        lineHandles.push(m);
+      }
+    }
+
+    function bindLineClick() {
+      if (!line) return;
+      line.off("click");
+      line.on("click", (e) => {
+        if (!start || !end) return;
+        L.DomEvent.stop(e);
+        followTrails = false;
+        document.getElementById("followTrails").checked = false;
+        insertVia([e.latlng.lat, e.latlng.lng]);
+        routedPath = null;
+        redraw();
+      });
+    }
 
     const mapEl = document.getElementById("planMap");
     const ctx = document.getElementById("planCtx");
@@ -624,9 +702,14 @@
       return (py - qy) * (py - qy) + (px - qx) * (px - qx);
     }
 
-    function insertVia(pt) {
+    function insertVia(pt, atIndex) {
+      const point = pt.slice();
+      if (atIndex != null && atIndex >= 0 && atIndex <= vias.length) {
+        vias.splice(atIndex, 0, point);
+        return;
+      }
       if (!start || !end || !vias.length) {
-        vias.push(pt);
+        vias.push(point);
         return;
       }
       const spine = [start].concat(vias, [end]);
@@ -638,7 +721,7 @@
           bestI = i + 1;
         }
       }
-      vias.splice(bestI - 1, 0, pt);
+      vias.splice(bestI - 1, 0, point);
     }
 
     function applyElevDisplay(km, elev) {
@@ -698,44 +781,13 @@
           map.removeLayer(line);
           line = null;
         }
+        clearLineHandles();
         return;
       }
       if (line) line.setLatLngs(path);
       else line = L.polyline(path, { color: "#2563eb", weight: 5, opacity: 0.9 }).addTo(map);
-    }
-
-    function fetchRoutedPath(spine, cb) {
-      if (!spine || spine.length < 2 || !TW.MAPBOX_TOKEN) {
-        cb(null, null);
-        return;
-      }
-      const limited = spine.slice(0, 25);
-      const profile = PROFILE_API[routeProfile] || "walking";
-      const coords = limited.map((p) => Number(p[1]).toFixed(6) + "," + Number(p[0]).toFixed(6)).join(";");
-      const url =
-        "https://api.mapbox.com/directions/v5/mapbox/" +
-        profile +
-        "/" +
-        coords +
-        "?geometries=geojson&overview=full&access_token=" +
-        encodeURIComponent(TW.MAPBOX_TOKEN);
-      const id = ++routeFetchId;
-      fetch(url)
-        .then((r) => r.json())
-        .then((data) => {
-          if (id !== routeFetchId) return;
-          if (!data || !data.routes || !data.routes[0] || !data.routes[0].geometry) {
-            cb(null, null);
-            return;
-          }
-          const geom = data.routes[0].geometry.coordinates.map((c) => [c[1], c[0]]);
-          const km = (data.routes[0].distance || 0) / 1000;
-          cb(geom, km);
-        })
-        .catch(() => {
-          if (id !== routeFetchId) return;
-          cb(null, null);
-        });
+      bindLineClick();
+      if (!followTrails) bindLineHandles(path);
     }
 
     function refreshRoute(opts) {
@@ -749,16 +801,35 @@
         return;
       }
       if (opts.previewOnly) {
-        setLineLatLngs(spine);
-        updateStats(Object.assign({}, opts, { skipElev: true, useSpine: true }));
+        const preview = followTrails ? spine : (routedPath && routedPath.length >= 2 ? routedPath : spine);
+        setLineLatLngs(preview);
+        updateStats(Object.assign({}, opts, { skipElev: true, useSpine: !followTrails }));
         return;
       }
-      fetchRoutedPath(spine, (geom, km) => {
+      if (!followTrails) {
+        routedPath = spine.map((p) => [Number(p[0]), Number(p[1])]);
+        lastRouteKm = TW.pathDistanceKm(routedPath);
+        setLineLatLngs(routedPath);
+        updateStats(opts);
+        if (!opts.skipPersist) persistSoft();
+        return;
+      }
+      const fetchFn = typeof TW.fetchPlanRoute === "function" ? TW.fetchPlanRoute : null;
+      if (!fetchFn) {
+        routedPath = spine;
+        lastRouteKm = TW.pathDistanceKm(spine);
+        setLineLatLngs(routedPath);
+        updateStats(opts);
+        return;
+      }
+      const id = ++routeFetchId;
+      fetchFn(spine, { followTrails: true, profile: routeProfile }, (geom, km) => {
+        if (id !== routeFetchId) return;
         if (geom && geom.length >= 2) {
           routedPath = geom;
           lastRouteKm = km || TW.pathDistanceKm(geom);
         } else {
-          routedPath = null;
+          routedPath = spine;
           lastRouteKm = TW.pathDistanceKm(spine);
         }
         setLineLatLngs(displayPath());
@@ -809,6 +880,7 @@
     }
 
     function clearLayers() {
+      clearLineHandles();
       if (line) {
         map.removeLayer(line);
         line = null;
@@ -836,12 +908,24 @@
       m._twIndex = index;
       m.on("drag", () => {
         applyMarkerPos(m);
-        routedPath = null;
-        lastRouteKm = 0;
-        if (type !== "poi") refreshRoute({ previewOnly: true, skipPersist: true });
+        if (type !== "poi") {
+          if (followTrails) {
+            routedPath = null;
+            lastRouteKm = 0;
+            refreshRoute({ previewOnly: true, skipPersist: true });
+          } else {
+            routedPath = spinePoints();
+            lastRouteKm = TW.pathDistanceKm(routedPath);
+            setLineLatLngs(routedPath);
+            updateStats({ skipElev: true, useSpine: true, skipPersist: true });
+          }
+        }
       });
       m.on("dragend", () => {
         applyMarkerPos(m);
+        if (type !== "poi" && !followTrails) {
+          routedPath = spinePoints();
+        }
         redraw();
       });
       m.on("click", (e) => {
@@ -905,6 +989,7 @@
         vias: vias,
         pois: pois,
         routeProfile: routeProfile,
+        followTrails: followTrails,
         distanceKm: km,
         elevGain: lastElev.gain || 0,
         elevLoss: lastElev.loss || 0,
@@ -939,7 +1024,9 @@
         TW.getLang() === "zh" ? d.nameZh || d.name : d.name || "";
       document.getElementById("routeNotes").value = d.notes || "";
       routeProfile = d.routeProfile || "hiking";
+      followTrails = d.followTrails !== false;
       document.getElementById("routeProfile").value = routeProfile;
+      document.getElementById("followTrails").checked = followTrails;
       start = d.start ? [Number(d.start[0]), Number(d.start[1])] : null;
       end = d.end ? [Number(d.end[0]), Number(d.end[1])] : null;
       vias = Array.isArray(d.vias) ? d.vias.map((p) => [Number(p[0]), Number(p[1])]) : [];
@@ -972,7 +1059,7 @@
         hideCtx();
         return;
       }
-      const pt = pendingLatLng.slice();
+      const pt = snapIfFollowing(pendingLatLng.slice());
       if (type === "start") start = pt;
       else if (type === "end") end = pt;
       else if (type === "via") insertVia(pt);
@@ -1114,6 +1201,12 @@
     document.getElementById("routeProfile").addEventListener("change", (e) => {
       routeProfile = e.target.value || "hiking";
       routedPath = null;
+      if (followTrails) redraw();
+    });
+
+    document.getElementById("followTrails").addEventListener("change", (e) => {
+      followTrails = !!e.target.checked;
+      routedPath = null;
       redraw();
     });
 
@@ -1133,6 +1226,8 @@
       routedPath = null;
       lastRouteKm = 0;
       lastElev = { gain: 0, loss: 0 };
+      followTrails = true;
+      document.getElementById("followTrails").checked = true;
       hideCtx();
       redraw();
     });
@@ -1157,7 +1252,9 @@
       lastRouteKm = 0;
       lastElev = { gain: 0, loss: 0 };
       routeProfile = "hiking";
+      followTrails = true;
       document.getElementById("routeProfile").value = "hiking";
+      document.getElementById("followTrails").checked = true;
       document.getElementById("routeName").value = "";
       document.getElementById("routeNotes").value = "";
       document.getElementById("planLoadHint").style.display = "none";

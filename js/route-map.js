@@ -13,6 +13,9 @@ TW.createRouteMapEditor = function (opts) {
   let end = null;
   let vias = [];
   let drawMode = "menu";
+  let followTrails = true;
+  let routedPath = null;
+  let routeProfile = "hiking";
   let line = null;
   let markers = [];
   let pendingLatLng = null;
@@ -30,6 +33,16 @@ TW.createRouteMapEditor = function (opts) {
     vias.forEach((v) => pts.push(v));
     if (end) pts.push(end);
     return pts;
+  }
+
+  function displayPath() {
+    if (routedPath && routedPath.length >= 2) return routedPath;
+    return spinePoints();
+  }
+
+  function snapIfFollowing(pt) {
+    if (!followTrails || typeof TW.snapPointToTrails !== "function") return pt.slice();
+    return TW.snapPointToTrails(pt);
   }
 
   function syncFromPath(path) {
@@ -113,9 +126,42 @@ TW.createRouteMapEditor = function (opts) {
   function notifyChange() {
     onChange({
       draftId: draftId,
-      path: spinePoints(),
+      path: displayPath(),
       hasRoute: !!(start && end),
-      distanceKm: TW.pathDistanceKm(spinePoints()),
+      distanceKm: TW.pathDistanceKm(displayPath()),
+    });
+  }
+
+  function refreshRoute() {
+    const spine = spinePoints();
+    if (spine.length < 2) {
+      routedPath = null;
+      if (line) {
+        map.removeLayer(line);
+        line = null;
+      }
+      notifyChange();
+      return;
+    }
+    if (!followTrails) {
+      routedPath = spine.map((p) => [Number(p[0]), Number(p[1])]);
+      if (line) line.setLatLngs(routedPath);
+      else line = L.polyline(routedPath, { color: "#2563eb", weight: 5, opacity: 0.9 }).addTo(map);
+      notifyChange();
+      return;
+    }
+    if (typeof TW.fetchPlanRoute !== "function") {
+      routedPath = spine;
+      if (line) line.setLatLngs(spine);
+      else line = L.polyline(spine, { color: "#2563eb", weight: 5, opacity: 0.9 }).addTo(map);
+      notifyChange();
+      return;
+    }
+    TW.fetchPlanRoute(spine, { followTrails: true, profile: routeProfile }, (geom) => {
+      routedPath = geom && geom.length >= 2 ? geom : spine;
+      if (line) line.setLatLngs(routedPath);
+      else line = L.polyline(routedPath, { color: "#2563eb", weight: 5, opacity: 0.9 }).addTo(map);
+      notifyChange();
     });
   }
 
@@ -129,10 +175,16 @@ TW.createRouteMapEditor = function (opts) {
       if (type === "start") start = pt;
       else if (type === "end") end = pt;
       else if (type === "via") vias[index] = pt;
-      const path = spinePoints();
-      if (path.length >= 2) {
-        if (line) line.setLatLngs(path);
-        else line = L.polyline(path, { color: "#2563eb", weight: 5, opacity: 0.9 }).addTo(map);
+      if (followTrails) {
+        routedPath = null;
+        const path = spinePoints();
+        if (path.length >= 2) {
+          if (line) line.setLatLngs(path);
+          else line = L.polyline(path, { color: "#2563eb", weight: 5, opacity: 0.9 }).addTo(map);
+        }
+      } else {
+        routedPath = spinePoints();
+        if (line) line.setLatLngs(routedPath);
       }
       notifyChange();
     });
@@ -142,6 +194,7 @@ TW.createRouteMapEditor = function (opts) {
       if (type === "start") start = pt;
       else if (type === "end") end = pt;
       else if (type === "via") vias[index] = pt;
+      if (!followTrails) routedPath = spinePoints();
       redraw();
     });
     m.on("click", (e) => {
@@ -165,18 +218,14 @@ TW.createRouteMapEditor = function (opts) {
 
   function redraw() {
     clearLayers();
-    const path = spinePoints();
-    if (path.length >= 2) {
-      line = L.polyline(path, { color: "#2563eb", weight: 5, opacity: 0.9 }).addTo(map);
-    }
     if (start) addDraggable(start, "start");
     vias.forEach((v, i) => addDraggable(v, "via", i));
     if (end) addDraggable(end, "end");
-    notifyChange();
+    refreshRoute();
   }
 
   function addClickPoint(latlng) {
-    const pt = [latlng.lat, latlng.lng];
+    const pt = snapIfFollowing([latlng.lat, latlng.lng]);
     if (!start) start = pt;
     else if (!end) end = pt;
     else vias.push(pt);
@@ -188,7 +237,7 @@ TW.createRouteMapEditor = function (opts) {
       hideCtx();
       return;
     }
-    const pt = pendingLatLng.slice();
+    const pt = snapIfFollowing(pendingLatLng.slice());
     if (type === "start") start = pt;
     else if (type === "end") end = pt;
     else if (type === "via") vias.push(pt);
@@ -326,6 +375,12 @@ TW.createRouteMapEditor = function (opts) {
       start = d.start ? [Number(d.start[0]), Number(d.start[1])] : null;
       end = d.end ? [Number(d.end[0]), Number(d.end[1])] : null;
       vias = Array.isArray(d.vias) ? d.vias.map((p) => [Number(p[0]), Number(p[1])]) : [];
+      followTrails = d.followTrails !== false;
+      routeProfile = d.routeProfile || "hiking";
+      routedPath =
+        Array.isArray(d.path) && d.path.length >= 2 && followTrails
+          ? d.path.map((p) => [Number(p[0]), Number(p[1])])
+          : null;
       if (!start && !end && Array.isArray(d.path) && d.path.length >= 1) {
         syncFromPath(d.path);
       }
@@ -358,11 +413,13 @@ TW.createRouteMapEditor = function (opts) {
         name: label,
         nameZh: label,
         notes: "",
-        path: path,
+        path: displayPath(),
         start: start,
         end: end,
         vias: vias,
         pois: [],
+        followTrails: followTrails,
+        routeProfile: routeProfile,
         privacy: "private",
       };
       TW.saveRouteDraft(draft);
