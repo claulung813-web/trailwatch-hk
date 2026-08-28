@@ -7,125 +7,193 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="css/styles.css?v=20260828j" />
 </head>
 <body>
   <div id="app-header"></div>
 
-  <main class="page">
-    <div class="container donate-layout">
-      <div class="donate-main">
-        <h1 class="page-title" data-i18n="donate_hero"></h1>
+  <main class="page page-support">
+    <div class="container">
+      <h1 class="page-title" data-i18n="support_title"></h1>
 
-        <form class="donate-checkout" id="donateForm" novalidate>
-          <section class="donate-panel">
-            <h2 class="donate-panel-title" data-i18n="donate_section"></h2>
-            <div class="form-group">
-              <label for="donName" data-i18n="donate_name"></label>
-              <input class="form-input" id="donName" type="text" autocomplete="name" required />
-            </div>
-            <label class="donate-label" data-i18n="donate_amount"></label>
-            <div class="diff-chips" id="amtChips">
-              <button type="button" class="chip active" data-amt="100">$100</button>
-              <button type="button" class="chip" data-amt="200">$200</button>
-              <button type="button" class="chip" data-amt="500">$500</button>
-              <button type="button" class="chip" data-amt="1000">$1,000</button>
-            </div>
-            <div class="form-group">
-              <label for="customAmt" data-i18n="donate_custom"></label>
-              <div class="donate-amt-row">
-                <span class="donate-currency">HKD</span>
-                <input class="form-input" type="number" id="customAmt" min="1" step="1" placeholder="0" />
-              </div>
-            </div>
-            <div class="toggle-pills" id="freqToggle">
-              <button type="button" class="active" data-freq="once" data-i18n="donate_once"></button>
-              <button type="button" data-freq="monthly" data-i18n="donate_monthly"></button>
-            </div>
-          </section>
-
-          <section class="donate-panel">
-            <h2 class="donate-panel-title" data-i18n="donate_tax_title"></h2>
-            <p class="donate-hint" data-i18n="donate_tax_note"></p>
-            <div class="form-group">
-              <label for="receiptName" data-i18n="donate_receipt_name"></label>
-              <input class="form-input" id="receiptName" type="text" autocomplete="name" />
-            </div>
-            <div class="form-group">
-              <label for="receiptEmail" data-i18n="donate_receipt_email"></label>
-              <input class="form-input" id="receiptEmail" type="email" autocomplete="email" />
-            </div>
-          </section>
-
-          <section class="donate-panel">
-            <h2 class="donate-panel-title" data-i18n="donate_pay_title"></h2>
-            <div class="pay-methods" id="payMethods" role="radiogroup">
-              <button type="button" class="pay-method active" data-pay="card" aria-pressed="true">
-                <span class="pay-method-name" data-i18n="donate_pay_card"></span>
-                <span class="pay-method-icons" aria-hidden="true">Visa · Mastercard</span>
-              </button>
-              <button type="button" class="pay-method" data-pay="fps" aria-pressed="false">
-                <span class="pay-method-name" data-i18n="donate_pay_fps"></span>
-                <span class="pay-method-icons" aria-hidden="true">FPS</span>
-              </button>
-              <button type="button" class="pay-method" data-pay="payme" aria-pressed="false">
-                <span class="pay-method-name" data-i18n="donate_pay_payme"></span>
-                <span class="pay-method-icons" aria-hidden="true">PayMe</span>
-              </button>
-            </div>
-            <div id="cardFields" class="pay-card-fields">
-              <div class="form-group">
-                <label for="cardNumber" data-i18n="donate_card_number"></label>
-                <input class="form-input" id="cardNumber" type="text" inputmode="numeric" autocomplete="cc-number" placeholder="4242 4242 4242 4242" maxlength="19" />
-              </div>
-              <div class="donate-card-row">
-                <div class="form-group">
-                  <label for="cardExpiry" data-i18n="donate_card_expiry"></label>
-                  <input class="form-input" id="cardExpiry" type="text" inputmode="numeric" autocomplete="cc-exp" placeholder="MM/YY" maxlength="5" />
-                </div>
-                <div class="form-group">
-                  <label for="cardCvc" data-i18n="donate_card_cvc"></label>
-                  <input class="form-input" id="cardCvc" type="text" inputmode="numeric" autocomplete="cc-csc" placeholder="123" maxlength="4" />
-                </div>
-              </div>
-            </div>
-            <p class="donate-secure" data-i18n="donate_secure"></p>
-          </section>
-        </form>
+      <div class="support-tabs chip-row" id="supportTabs" role="tablist" aria-label="Support options">
+        <button type="button" class="chip active" data-tab="donate" role="tab" aria-selected="true" aria-controls="panel-donate" id="tab-donate">
+          <span aria-hidden="true">♥</span>
+          <span data-i18n="support_tab_donate"></span>
+        </button>
+        <button type="button" class="chip" data-tab="gift" role="tab" aria-selected="false" aria-controls="panel-gift" id="tab-gift">
+          <span aria-hidden="true">🎁</span>
+          <span data-i18n="support_tab_gift"></span>
+        </button>
+        <button type="button" class="chip" data-tab="volunteer" role="tab" aria-selected="false" aria-controls="panel-volunteer" id="tab-volunteer">
+          <span aria-hidden="true">🤝</span>
+          <span data-i18n="support_tab_volunteer"></span>
+        </button>
       </div>
 
-      <aside class="donate-side">
-        <div class="donate-summary card">
-          <h2 class="donate-panel-title" data-i18n="donate_summary"></h2>
-          <div class="donate-summary-row">
-            <span data-i18n="donate_section"></span>
-            <strong id="sumDonation">HKD 100</strong>
-          </div>
-          <div class="donate-summary-row donate-summary-total">
-            <span data-i18n="donate_total"></span>
-            <strong id="sumTotal">HKD 100</strong>
-          </div>
-          <button class="btn btn-primary btn-block btn-lg" type="submit" form="donateForm" id="donateBtn" data-i18n="donate_cta"></button>
-          <p class="donate-note" data-i18n="donate_note"></p>
-          <p class="trust-note" data-i18n="donate_after_submit"></p>
-        </div>
+      <section class="support-panel" id="panel-donate" role="tabpanel" aria-labelledby="tab-donate">
+        <h2 class="donate-panel-title" data-i18n="support_tab_donate"></h2>
+        <div class="support-option-intro" id="intro-donate"></div>
 
-        <div class="donate-contact card">
-          <h2 class="donate-panel-title" data-i18n="donate_contact_title"></h2>
-          <p data-i18n="donate_contact_body"></p>
-          <ul class="donate-contact-list" id="donateContactList"></ul>
-        </div>
+        <div class="donate-layout">
+          <div class="donate-main">
+            <form class="donate-checkout" id="donateForm" novalidate>
+              <section class="donate-panel">
+                <h3 class="donate-panel-title" data-i18n="donate_section"></h3>
+                <div class="form-group">
+                  <label for="donName" data-i18n="donate_name"></label>
+                  <input class="form-input" id="donName" type="text" autocomplete="name" required />
+                </div>
+                <label class="donate-label" data-i18n="donate_amount"></label>
+                <div class="diff-chips" id="amtChips">
+                  <button type="button" class="chip active" data-amt="100">$100</button>
+                  <button type="button" class="chip" data-amt="200">$200</button>
+                  <button type="button" class="chip" data-amt="500">$500</button>
+                  <button type="button" class="chip" data-amt="1000">$1,000</button>
+                </div>
+                <div class="form-group">
+                  <label for="customAmt" data-i18n="donate_custom"></label>
+                  <div class="donate-amt-row">
+                    <span class="donate-currency">HKD</span>
+                    <input class="form-input" type="number" id="customAmt" min="1" step="1" placeholder="0" />
+                  </div>
+                </div>
+                <div class="toggle-pills" id="freqToggle">
+                  <button type="button" class="active" data-freq="once" data-i18n="donate_once"></button>
+                  <button type="button" data-freq="monthly" data-i18n="donate_monthly"></button>
+                </div>
+              </section>
 
-        <div class="donate-impact">
-          <h2 class="donate-panel-title" data-i18n="donate_impact_title"></h2>
-          <ul class="highlight-list">
-            <li><span class="hl-icon">⚠</span><span class="hl-label" data-i18n="donate_impact_1"></span></li>
-            <li><span class="hl-icon">🌳</span><span class="hl-label" data-i18n="donate_impact_2"></span></li>
-            <li><span class="hl-icon">🌿</span><span class="hl-label" data-i18n="donate_impact_3"></span></li>
-            <li><span class="hl-icon">🧹</span><span class="hl-label" data-i18n="donate_impact_4"></span></li>
-          </ul>
+              <section class="donate-panel">
+                <h3 class="donate-panel-title" data-i18n="donate_tax_title"></h3>
+                <p class="donate-hint" data-i18n="donate_tax_note"></p>
+                <div class="form-group">
+                  <label for="receiptName" data-i18n="donate_receipt_name"></label>
+                  <input class="form-input" id="receiptName" type="text" autocomplete="name" />
+                </div>
+                <div class="form-group">
+                  <label for="receiptEmail" data-i18n="donate_receipt_email"></label>
+                  <input class="form-input" id="receiptEmail" type="email" autocomplete="email" />
+                </div>
+              </section>
+
+              <section class="donate-panel">
+                <h3 class="donate-panel-title" data-i18n="donate_pay_title"></h3>
+                <div class="pay-methods" id="payMethods" role="radiogroup">
+                  <button type="button" class="pay-method active" data-pay="card" aria-pressed="true">
+                    <span class="pay-method-name" data-i18n="donate_pay_card"></span>
+                    <span class="pay-method-icons" aria-hidden="true">Visa · Mastercard</span>
+                  </button>
+                  <button type="button" class="pay-method" data-pay="fps" aria-pressed="false">
+                    <span class="pay-method-name" data-i18n="donate_pay_fps"></span>
+                    <span class="pay-method-icons" aria-hidden="true">FPS</span>
+                  </button>
+                  <button type="button" class="pay-method" data-pay="payme" aria-pressed="false">
+                    <span class="pay-method-name" data-i18n="donate_pay_payme"></span>
+                    <span class="pay-method-icons" aria-hidden="true">PayMe</span>
+                  </button>
+                </div>
+                <div id="cardFields" class="pay-card-fields">
+                  <div class="form-group">
+                    <label for="cardNumber" data-i18n="donate_card_number"></label>
+                    <input class="form-input" id="cardNumber" type="text" inputmode="numeric" autocomplete="cc-number" placeholder="4242 4242 4242 4242" maxlength="19" />
+                  </div>
+                  <div class="donate-card-row">
+                    <div class="form-group">
+                      <label for="cardExpiry" data-i18n="donate_card_expiry"></label>
+                      <input class="form-input" id="cardExpiry" type="text" inputmode="numeric" autocomplete="cc-exp" placeholder="MM/YY" maxlength="5" />
+                    </div>
+                    <div class="form-group">
+                      <label for="cardCvc" data-i18n="donate_card_cvc"></label>
+                      <input class="form-input" id="cardCvc" type="text" inputmode="numeric" autocomplete="cc-csc" placeholder="123" maxlength="4" />
+                    </div>
+                  </div>
+                </div>
+                <p class="donate-secure" data-i18n="donate_secure"></p>
+              </section>
+            </form>
+          </div>
+
+          <aside class="donate-side">
+            <div class="donate-summary card">
+              <h3 class="donate-panel-title" data-i18n="donate_summary"></h3>
+              <div class="donate-summary-row">
+                <span data-i18n="donate_section"></span>
+                <strong id="sumDonation">HKD 100</strong>
+              </div>
+              <div class="donate-summary-row donate-summary-total">
+                <span data-i18n="donate_total"></span>
+                <strong id="sumTotal">HKD 100</strong>
+              </div>
+              <button class="btn btn-primary btn-block btn-lg" type="submit" form="donateForm" id="donateBtn" data-i18n="donate_cta"></button>
+              <p class="donate-note" data-i18n="donate_note"></p>
+              <p class="trust-note" data-i18n="donate_after_submit"></p>
+            </div>
+
+            <div class="donate-contact card">
+              <h3 class="donate-panel-title" data-i18n="donate_contact_title"></h3>
+              <p data-i18n="donate_contact_body"></p>
+              <ul class="donate-contact-list" id="donateContactList"></ul>
+            </div>
+
+            <div class="donate-impact">
+              <h3 class="donate-panel-title" data-i18n="donate_impact_title"></h3>
+              <ul class="highlight-list">
+                <li><span class="hl-icon">⚠</span><span class="hl-label" data-i18n="donate_impact_1"></span></li>
+                <li><span class="hl-icon">🌳</span><span class="hl-label" data-i18n="donate_impact_2"></span></li>
+                <li><span class="hl-icon">🌿</span><span class="hl-label" data-i18n="donate_impact_3"></span></li>
+                <li><span class="hl-icon">🧹</span><span class="hl-label" data-i18n="donate_impact_4"></span></li>
+              </ul>
+            </div>
+          </aside>
         </div>
-      </aside>
+      </section>
+
+      <section class="support-panel support-simple-panel" id="panel-gift" role="tabpanel" aria-labelledby="tab-gift" hidden>
+        <h2 class="donate-panel-title" data-i18n="support_tab_gift"></h2>
+        <div class="support-option-intro" id="intro-gift"></div>
+        <div class="support-action-card">
+          <p class="support-option-desc" data-i18n="support_gift_note"></p>
+          <form id="giftForm" class="cms-form" style="margin-top:1rem">
+            <div class="form-group">
+              <label for="giftFrom" data-i18n="donate_name"></label>
+              <input class="form-input" id="giftFrom" type="text" required />
+            </div>
+            <div class="form-group">
+              <label for="giftEmail" data-i18n="donate_receipt_email"></label>
+              <input class="form-input" id="giftEmail" type="email" required />
+            </div>
+            <div class="form-group">
+              <label for="giftRecipient" data-i18n="support_gift_recipient"></label>
+              <input class="form-input" id="giftRecipient" type="text" data-i18n-placeholder="support_gift_recipient" />
+            </div>
+            <button type="submit" class="btn btn-primary" data-i18n="support_gift_cta"></button>
+          </form>
+        </div>
+      </section>
+
+      <section class="support-panel support-simple-panel" id="panel-volunteer" role="tabpanel" aria-labelledby="tab-volunteer" hidden>
+        <h2 class="donate-panel-title" data-i18n="support_tab_volunteer"></h2>
+        <div class="support-option-intro" id="intro-volunteer"></div>
+        <div class="support-action-card">
+          <p class="support-option-desc" data-i18n="support_volunteer_note"></p>
+          <form id="volunteerForm" style="margin-top:1rem">
+            <div class="form-group">
+              <label for="volName" data-i18n="donate_name"></label>
+              <input class="form-input" id="volName" type="text" required />
+            </div>
+            <div class="form-group">
+              <label for="volEmail" data-i18n="donate_receipt_email"></label>
+              <input class="form-input" id="volEmail" type="email" required />
+            </div>
+            <div class="form-group">
+              <label for="volMessage" data-i18n="feedback_message"></label>
+              <textarea class="form-input" id="volMessage" rows="4" required></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary" data-i18n="support_volunteer_cta"></button>
+          </form>
+        </div>
+      </section>
     </div>
   </main>
 
@@ -135,10 +203,50 @@
   <script src="js/data.js"></script>
   <script src="js/live-routes.js"></script>
   <script src="js/cms-store.js"></script>
-  <script src="js/app.js"></script>
+  <script src="js/app.js?v=20260828j"></script>
   <script>
     document.documentElement.lang = TW.getLang() === "zh" ? "zh-Hant" : "en";
     initShell("donate");
+
+    function esc(s) {
+      return TW.escapeHtml ? TW.escapeHtml(s) : String(s == null ? "" : s);
+    }
+
+    function renderSupportIntro(id, targetId) {
+      const el = document.getElementById(targetId);
+      if (!el || typeof TW.getSupportOption !== "function") return;
+      const opt = TW.getSupportOption(id);
+      const bits = [];
+      if (opt.image) {
+        bits.push(`<div class="support-option-media"><img src="${esc(opt.image)}" alt="" loading="lazy" /></div>`);
+      }
+      if (opt.description) {
+        bits.push(`<p class="support-option-desc">${esc(opt.description)}</p>`);
+      }
+      el.innerHTML = bits.join("");
+    }
+
+    ["donate", "gift", "volunteer"].forEach((id) => renderSupportIntro(id, "intro-" + id));
+
+    let activeTab = "donate";
+    function setSupportTab(tab) {
+      activeTab = tab;
+      document.querySelectorAll("#supportTabs [data-tab]").forEach((btn) => {
+        const on = btn.dataset.tab === tab;
+        btn.classList.toggle("active", on);
+        btn.setAttribute("aria-selected", on ? "true" : "false");
+      });
+      document.querySelectorAll(".support-panel").forEach((panel) => {
+        panel.hidden = panel.id !== "panel-" + tab;
+      });
+    }
+    document.getElementById("supportTabs").addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-tab]");
+      if (!btn) return;
+      setSupportTab(btn.dataset.tab);
+    });
+    const hashTab = (location.hash || "").replace("#", "");
+    if (["donate", "gift", "volunteer"].indexOf(hashTab) >= 0) setSupportTab(hashTab);
 
     let amount = 100;
     let freq = "once";
@@ -149,8 +257,8 @@
     const phone = site.contactPhone || "";
     const contactList = document.getElementById("donateContactList");
     contactList.innerHTML =
-      `<li><a href="mailto:${email}">${email}</a></li>` +
-      (phone ? `<li><a href="tel:${phone.replace(/\s/g, "")}">${phone}</a></li>` : "") +
+      `<li><a href="mailto:${esc(email)}">${esc(email)}</a></li>` +
+      (phone ? `<li><a href="tel:${phone.replace(/\s/g, "")}">${esc(phone)}</a></li>` : "") +
       `<li><a href="https://www.trailwatch.hk/donate" target="_blank" rel="noopener">trailwatch.hk/donate</a></li>`;
 
     const nameInput = document.getElementById("donName");
@@ -160,6 +268,10 @@
       nameInput.value = TW.user.name || "";
       receiptName.value = TW.user.name || "";
       receiptEmail.value = TW.user.email || "";
+      document.getElementById("giftFrom").value = TW.user.name || "";
+      document.getElementById("giftEmail").value = TW.user.email || "";
+      document.getElementById("volName").value = TW.user.name || "";
+      document.getElementById("volEmail").value = TW.user.email || "";
     }
 
     function formatHkd(n) {
@@ -227,6 +339,32 @@
         source: "web",
       });
       showToast(TW.t("donate_thanks") + " · " + formatHkd(amount) + (freq === "monthly" ? " / mo" : ""));
+    });
+
+    document.getElementById("giftForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      CMS.submitFeedback({
+        name: document.getElementById("giftFrom").value.trim(),
+        email: document.getElementById("giftEmail").value.trim(),
+        subject: "Gift subscription",
+        message:
+          "Gift subscription request\nRecipient: " +
+          (document.getElementById("giftRecipient").value.trim() || "—"),
+      });
+      showToast(TW.t("support_gift_cta") + " · " + TW.t("feedback_thanks"));
+      e.target.reset();
+    });
+
+    document.getElementById("volunteerForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      CMS.submitFeedback({
+        name: document.getElementById("volName").value.trim(),
+        email: document.getElementById("volEmail").value.trim(),
+        subject: "Volunteer enquiry",
+        message: document.getElementById("volMessage").value.trim(),
+      });
+      showToast(TW.t("support_volunteer_cta") + " · " + TW.t("feedback_thanks"));
+      e.target.reset();
     });
   </script>
 </body>

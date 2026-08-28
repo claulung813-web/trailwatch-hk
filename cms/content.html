@@ -57,8 +57,41 @@
         <input id="figIncidents" type="number" min="0" />
       </div>
 
+      <div class="cms-card">
+        <h3 style="margin-top:0">Support page</h3>
+        <p style="font-size:0.85rem;color:#6b7280">Optional image and description below each tab title on <a href="../donate.html" target="_blank">Support</a>. Leave blank to use defaults or hide the image.</p>
+        <fieldset class="cms-fieldset">
+          <legend>Donate to TrailWatch</legend>
+          <label>Image URL</label>
+          <input id="support_donate_image" type="url" placeholder="https://…" />
+          <label>Description (EN)</label>
+          <textarea id="support_donate_descEn" rows="3"></textarea>
+          <label>Description (繁)</label>
+          <textarea id="support_donate_descZh" rows="3"></textarea>
+        </fieldset>
+        <fieldset class="cms-fieldset">
+          <legend>Gift a subscription</legend>
+          <label>Image URL</label>
+          <input id="support_gift_image" type="url" placeholder="https://…" />
+          <label>Description (EN)</label>
+          <textarea id="support_gift_descEn" rows="3"></textarea>
+          <label>Description (繁)</label>
+          <textarea id="support_gift_descZh" rows="3"></textarea>
+        </fieldset>
+        <fieldset class="cms-fieldset">
+          <legend>Volunteer</legend>
+          <label>Image URL</label>
+          <input id="support_volunteer_image" type="url" placeholder="https://…" />
+          <label>Description (EN)</label>
+          <textarea id="support_volunteer_descEn" rows="3"></textarea>
+          <label>Description (繁)</label>
+          <textarea id="support_volunteer_descZh" rows="3"></textarea>
+        </fieldset>
+      </div>
+
       <button type="submit" class="cms-btn cms-btn-primary">Save content</button>
       <a class="cms-btn cms-btn-secondary" href="../about.html" target="_blank" style="margin-left:0.5rem">Preview About ↗</a>
+      <a class="cms-btn cms-btn-secondary" href="../donate.html" target="_blank" style="margin-left:0.5rem">Preview Support ↗</a>
     </form>
   </div>
 
@@ -85,28 +118,49 @@
     document.getElementById("figKm").value = figs.distanceKm != null ? figs.distanceKm : 3256780;
     document.getElementById("figIncidents").value = figs.incidents != null ? figs.incidents : 2146;
 
+    const supportOpts = c.supportOptions || {};
+    ["donate", "gift", "volunteer"].forEach((id) => {
+      const opt = supportOpts[id] || {};
+      document.getElementById("support_" + id + "_image").value = opt.image || "";
+      document.getElementById("support_" + id + "_descEn").value = opt.descriptionEn || "";
+      document.getElementById("support_" + id + "_descZh").value = opt.descriptionZh || "";
+    });
+
+    function readSupportOption(id) {
+      return {
+        image: document.getElementById("support_" + id + "_image").value.trim(),
+        descriptionEn: document.getElementById("support_" + id + "_descEn").value.trim(),
+        descriptionZh: document.getElementById("support_" + id + "_descZh").value.trim(),
+      };
+    }
+
     document.getElementById("contentForm").addEventListener("submit", (e) => {
       e.preventDefault();
       const store = CMS.getStore();
-      store.content = {
+      store.content = Object.assign({}, store.content, {
         aboutEn: document.getElementById("aboutEn").value,
         aboutZh: document.getElementById("aboutZh").value,
         contactEmail: document.getElementById("contactEmail").value.trim(),
         contactPhone: document.getElementById("contactPhone").value.trim(),
         contactAddress: document.getElementById("contactAddress").value.trim(),
         contactAddressZh: document.getElementById("contactAddressZh").value.trim(),
-        translations: {
+        translations: Object.assign({}, (store.content && store.content.translations) || {}, {
           hero_tagline_en: document.getElementById("hero_en").value,
           hero_tagline_zh: document.getElementById("hero_zh").value,
           footer_extra_en: document.getElementById("footer_en").value,
           footer_extra_zh: document.getElementById("footer_zh").value,
-        },
+        }),
         figures: {
           routes: Number(document.getElementById("figRoutes").value) || 0,
           distanceKm: Number(document.getElementById("figKm").value) || 0,
           incidents: Number(document.getElementById("figIncidents").value) || 0,
         },
-      };
+        supportOptions: {
+          donate: readSupportOption("donate"),
+          gift: readSupportOption("gift"),
+          volunteer: readSupportOption("volunteer"),
+        },
+      });
       CMS.setStore(store);
       cmsToast("Site content saved");
     });

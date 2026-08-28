@@ -10,11 +10,11 @@
 <body class="cms-body">
   <div id="cmsShell">
     <h1>Articles</h1>
-    <p class="sub">Edit English and Chinese in the same post. Apply category tags and mark as homepage featured.</p>
+    <p class="sub">Articles live on the TrailWatch blog — add a link, type tag, and optional overrides only. Pin featured posts for the homepage.</p>
 
     <div class="cms-card" style="margin-bottom:1rem">
       <div class="cms-toolbar">
-        <h3 style="margin:0;flex:1">Category tags</h3>
+        <h3 style="margin:0;flex:1">Topic tags</h3>
         <input id="tagName" placeholder="Tag name (EN)" style="max-width:160px" />
         <input id="tagNameZh" placeholder="繁" style="max-width:120px" />
         <button type="button" class="cms-btn cms-btn-primary cms-btn-sm" id="btnAddTag">Add tag</button>
@@ -26,10 +26,10 @@
       <div class="cms-card" style="flex:1.2;overflow:auto">
         <div class="cms-toolbar">
           <input id="q" type="search" placeholder="Search articles…" style="flex:1" />
-          <button type="button" class="cms-btn cms-btn-primary cms-btn-sm" id="btnNew">New article</button>
+          <button type="button" class="cms-btn cms-btn-primary cms-btn-sm" id="btnNew">New link</button>
         </div>
         <table class="cms-table">
-          <thead><tr><th>Title</th><th>Tags</th><th>Featured</th><th></th></tr></thead>
+          <thead><tr><th>Title</th><th>Type tag</th><th>Featured</th><th></th></tr></thead>
           <tbody id="list"></tbody>
         </table>
       </div>
@@ -37,18 +37,30 @@
         <h3 style="margin-top:0" id="formTitle">Edit article</h3>
         <form class="cms-form" id="form">
           <input type="hidden" id="editId" />
-          <label>Title (EN)</label><input id="title" required />
-          <label>Title (繁)</label><input id="titleZh" />
-          <label>Summary (EN)</label><textarea id="summary" rows="2"></textarea>
-          <label>Summary (繁)</label><textarea id="summaryZh" rows="2"></textarea>
-          <label>Body (EN)</label><textarea id="body" rows="5"></textarea>
-          <label>Body (繁)</label><textarea id="bodyZh" rows="5"></textarea>
-          <label>Image URL</label><input id="image" />
-          <label>URL / slug</label><input id="url" />
-          <label>Tags</label>
+          <label>Blog URL <span class="cms-muted">(required)</span></label>
+          <input id="url" type="url" required placeholder="https://blog.trailwatch.hk/archives/…" />
+          <label>Type tag</label>
+          <select id="category">
+            <option value="blog">Blog</option>
+            <option value="features">Features</option>
+            <option value="hiking-tips">Hiking Tips</option>
+            <option value="activity-review">Activity Review</option>
+            <option value="whats-new">What's New</option>
+          </select>
+          <label>Title override (EN) <span class="cms-muted">optional</span></label>
+          <input id="title" placeholder="Leave blank to use blog title" />
+          <label>Title override (繁)</label>
+          <input id="titleZh" />
+          <label>Summary override (EN) <span class="cms-muted">optional, 1–2 lines</span></label>
+          <textarea id="summary" rows="2"></textarea>
+          <label>Summary override (繁)</label>
+          <textarea id="summaryZh" rows="2"></textarea>
+          <label>Image URL <span class="cms-muted">optional</span></label>
+          <input id="image" type="url" placeholder="https://…" />
+          <label>Topic tags</label>
           <div id="tagChecks" class="cms-checks" style="display:flex;flex-wrap:wrap;gap:0.5rem"></div>
           <label class="cms-checks" style="margin-top:0.75rem">
-            <input type="checkbox" id="featured" /> Featured on homepage
+            <input type="checkbox" id="featured" /> Featured (homepage + pin to top)
           </label>
           <div class="cms-toolbar" style="margin-top:0.75rem">
             <button type="submit" class="cms-btn cms-btn-primary">Save</button>
@@ -66,8 +78,16 @@
   <script>
     cmsInitShell("articles");
 
+    const TYPE_LABELS = {
+      blog: "Blog",
+      features: "Features",
+      "hiking-tips": "Hiking Tips",
+      "activity-review": "Activity Review",
+      "whats-new": "What's New",
+    };
+
     function tags() { return CMS.getStore().articleTags || []; }
-    function articles() { return CMS.getStore().articles || []; }
+    function articles() { return TW.getArticlePool ? TW.getArticlePool() : (CMS.getStore().articles || []); }
 
     function renderTags() {
       document.getElementById("tagList").innerHTML = tags().map((t) => `
@@ -86,15 +106,23 @@
         <label><input type="checkbox" data-tag="${cmsEsc(t.id)}" /> ${cmsEsc(t.name)}</label>`).join("");
     }
 
+    function tagLabel(id) {
+      return TYPE_LABELS[id] || id || "—";
+    }
+
     function renderList() {
       const q = (document.getElementById("q").value || "").toLowerCase();
       const featured = new Set(CMS.getStore().featuredArticleIds || []);
       let list = articles();
-      if (q) list = list.filter((a) => ((a.title || "") + " " + (a.titleZh || "") + " " + (a.id || "")).toLowerCase().indexOf(q) >= 0);
+      if (q) {
+        list = list.filter((a) =>
+          ((a.title || "") + " " + (a.titleZh || "") + " " + (a.url || "") + " " + (a.id || "")).toLowerCase().indexOf(q) >= 0
+        );
+      }
       document.getElementById("list").innerHTML = list.map((a) => `
         <tr>
-          <td><strong>${cmsEsc(a.title || a.id)}</strong><br/><span class="cms-muted">${cmsEsc(a.id)}</span></td>
-          <td>${(a.tags || a.categories || []).map((t) => cmsEsc(t)).join(", ") || "—"}</td>
+          <td><strong>${cmsEsc(a.title || a.id)}</strong><br/><span class="cms-muted">${cmsEsc(a.url || a.id)}</span></td>
+          <td>${cmsEsc(tagLabel(a.category))}</td>
           <td>${featured.has(a.id) ? '<span class="cms-badge pub">Yes</span>' : "—"}</td>
           <td style="white-space:nowrap">
             <button type="button" class="cms-btn cms-btn-secondary cms-btn-sm" data-open="${cmsEsc(a.id)}">Edit</button>
@@ -105,18 +133,19 @@
     }
 
     function openEdit(id) {
-      const a = articles().find((x) => x.id === id) || { id: uid("art"), tags: [] };
+      const a = articles().find((x) => x.id === id) || { id: uid("art"), tags: [], category: "blog" };
       document.getElementById("panel").style.display = "block";
       document.getElementById("editId").value = a.id;
+      document.getElementById("url").value = a.url || a.slug || "";
+      document.getElementById("category").value = a.category || "blog";
       document.getElementById("title").value = a.title || "";
       document.getElementById("titleZh").value = a.titleZh || "";
       document.getElementById("summary").value = a.summary || a.excerpt || "";
       document.getElementById("summaryZh").value = a.summaryZh || a.excerptZh || "";
-      document.getElementById("body").value = a.body || a.content || "";
-      document.getElementById("bodyZh").value = a.bodyZh || a.contentZh || "";
       document.getElementById("image").value = a.image || "";
-      document.getElementById("url").value = a.url || a.slug || "";
-      const selected = new Set(a.tags || a.categories || []);
+      const selected = new Set(
+        (a.tags || []).map((t) => (typeof t === "object" ? t.id : t))
+      );
       document.querySelectorAll("#tagChecks [data-tag]").forEach((c) => { c.checked = selected.has(c.dataset.tag); });
       document.getElementById("featured").checked = (CMS.getStore().featuredArticleIds || []).indexOf(a.id) >= 0;
     }
@@ -139,7 +168,7 @@
     document.getElementById("q").addEventListener("input", renderList);
     document.getElementById("btnDel").addEventListener("click", () => {
       const id = document.getElementById("editId").value;
-      if (!confirm("Delete article?")) return;
+      if (!confirm("Delete article override?")) return;
       const s = CMS.getStore();
       s.articles = (s.articles || []).filter((x) => x.id !== id);
       s.featuredArticleIds = (s.featuredArticleIds || []).filter((x) => x !== id);
@@ -150,19 +179,22 @@
     document.getElementById("form").addEventListener("submit", (e) => {
       e.preventDefault();
       const id = document.getElementById("editId").value || uid("art");
+      const url = document.getElementById("url").value.trim();
+      if (!url) return cmsToast("Blog URL is required");
       const tagIds = Array.from(document.querySelectorAll("#tagChecks [data-tag]:checked")).map((c) => c.dataset.tag);
       const entry = {
         id,
+        url,
+        category: document.getElementById("category").value,
         title: document.getElementById("title").value.trim(),
         titleZh: document.getElementById("titleZh").value.trim(),
         summary: document.getElementById("summary").value.trim(),
         summaryZh: document.getElementById("summaryZh").value.trim(),
-        body: document.getElementById("body").value.trim(),
-        bodyZh: document.getElementById("bodyZh").value.trim(),
         image: document.getElementById("image").value.trim(),
-        url: document.getElementById("url").value.trim(),
         tags: tagIds,
       };
+      if (entry.summary) entry.excerpt = entry.summary;
+      if (entry.summaryZh) entry.excerptZh = entry.summaryZh;
       const s = CMS.getStore();
       const list = (s.articles || []).slice();
       const i = list.findIndex((x) => x.id === id);

@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Premium — TrailWatch HK</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css?v=20260828o" />
+</head>
+<body>
+  <div id="app-header"></div>
+
+  <main class="page premium-page">
+    <div class="container">
+      <section class="premium-hero">
+        <div class="premium-hero-copy">
+          <span class="app-premium-pill premium-hero-badge">Premium</span>
+          <h1 class="page-title" data-i18n="premium_page_title"></h1>
+          <p class="page-sub" data-i18n="premium_page_lede"></p>
+          <a class="btn btn-primary btn-lg" href="login.html" id="premiumCta" data-i18n="premium_page_cta"></a>
+          <p class="premium-price-note" data-i18n="premium_page_price_note"></p>
+        </div>
+        <div class="premium-hero-media">
+          <img src="assets/brand/device.webp" alt="" loading="lazy" />
+        </div>
+      </section>
+
+      <section class="premium-spotlight card">
+        <div class="premium-spotlight-media">
+          <img src="assets/brand/homepage-hero.jpeg" alt="" loading="lazy" />
+        </div>
+        <div class="premium-spotlight-copy">
+          <h2 data-i18n="dash_premium_locked_title"></h2>
+          <p data-i18n="dash_more_premium_body"></p>
+          <ul class="premium-checklist" id="insightsList"></ul>
+        </div>
+      </section>
+
+      <div class="section-head">
+        <h2 data-i18n="premium_page_features_title"></h2>
+      </div>
+      <div class="premium-benefits-grid" id="premiumBenefits"></div>
+
+      <section class="premium-cta-band card">
+        <div>
+          <h2 data-i18n="home_premium_title"></h2>
+          <p data-i18n="dash_premium_plan_body"></p>
+        </div>
+        <a class="btn btn-primary btn-lg" href="login.html" data-i18n="premium_page_cta"></a>
+      </section>
+    </div>
+  </main>
+
+  <div id="app-footer"></div>
+
+  <script src="js/i18n.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/live-routes.js"></script>
+  <script src="js/cms-store.js"></script>
+  <script src="js/app.js?v=20260828n"></script>
+  <script>
+    document.documentElement.lang = TW.getLang() === "zh" ? "zh-Hant" : "en";
+    initShell("premium");
+
+    if (TW.isMemberPremium && TW.isMemberPremium()) {
+      const cta = document.getElementById("premiumCta");
+      if (cta) {
+        cta.textContent = TW.t("dash_premium_active");
+        cta.href = "profile.html";
+        cta.classList.remove("btn-primary");
+        cta.classList.add("btn-secondary");
+      }
+    }
+
+    document.getElementById("insightsList").innerHTML = TW.t("premium_insights_items")
+      .split("|")
+      .map((item) => `<li>${TW.escapeHtml(item.trim())}</li>`)
+      .join("");
+
+    const premiumImages = [
+      "assets/brand/homepage-hero.jpeg",
+      "assets/brand/img-hiking.jpg",
+      "assets/brand/img-route.webp",
+    ];
+
+    const benefits = [
+      {
+        icon: "insights",
+        titleKey: "premium_feat_insights_title",
+        bodyKey: "premium_feat_insights_body",
+        image: premiumImages[0],
+      },
+      {
+        icon: "download",
+        titleKey: "premium_feat_offline_title",
+        bodyKey: "premium_feat_offline_body",
+        image: premiumImages[1],
+      },
+      {
+        icon: "hikes",
+        titleKey: "premium_feat_footprint_title",
+        bodyKey: "premium_feat_footprint_body",
+        image: premiumImages[2],
+      },
+      {
+        icon: "groupHikes",
+        titleKey: "premium_feat_groups_title",
+        bodyKey: "premium_feat_groups_body",
+        image: premiumImages[0],
+      },
+      {
+        icon: "live",
+        titleKey: "premium_feat_live_title",
+        bodyKey: "premium_feat_live_body",
+        image: premiumImages[1],
+      },
+      {
+        icon: "badges",
+        titleKey: "premium_feat_badges_title",
+        bodyKey: "premium_feat_badges_body",
+        image: premiumImages[2],
+      },
+    ];
+
+    document.getElementById("premiumBenefits").innerHTML = benefits
+      .map(
+        (b) => `<article class="premium-benefit-card">
+          <div class="premium-benefit-media"><img src="${b.image}" alt="" loading="lazy" /></div>
+          <div class="premium-benefit-body">
+            <span class="premium-benefit-icon" aria-hidden="true">${twIcon(b.icon)}</span>
+            <h3>${TW.escapeHtml(TW.t(b.titleKey))}</h3>
+            <p>${TW.escapeHtml(TW.t(b.bodyKey))}</p>
+          </div>
+        </article>`
+      )
+      .join("");
+  </script>
+</body>
+</html>

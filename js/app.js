@@ -31,9 +31,13 @@ function twIcon(name) {
     speaker: `<svg viewBox="0 0 24 24" ${stroke}><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>`,
     insights: `<svg viewBox="0 0 24 24" ${stroke}><path d="M4 19V9"/><path d="M10 19V5"/><path d="M16 19v-8"/><path d="M22 19V3"/></svg>`,
     milestones: `<svg viewBox="0 0 24 24" ${stroke}><path d="M8 21h8"/><path d="M12 17V3"/><path d="m7 7 5-4 5 4"/><path d="M5 21h14"/></svg>`,
+    settings: `<svg width="20" height="20" viewBox="0 0 24 24" ${stroke}><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>`,
     facebook: `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M14 9h3V6h-3c-1.7 0-3 1.3-3 3v2H9v3h2v7h3v-7h2.5l.5-3H14V9z"/></svg>`,
     instagram: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>`,
     youtube: `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.6A3 3 0 0 0 .5 6.2 31.5 31.5 0 0 0 0 12a31.5 31.5 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.6 9.4.6 9.4.6s7.5 0 9.4-.6a3 3 0 0 0 2.1-2.1A31.5 31.5 0 0 0 24 12a31.5 31.5 0 0 0-.5-5.8zM9.8 15.5v-7l6.2 3.5-6.2 3.5z"/></svg>`,
+    support: `<svg width="20" height="20" viewBox="0 0 24 24" ${stroke}><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`,
+    gift: `<svg width="20" height="20" viewBox="0 0 24 24" ${stroke}><rect x="3" y="8" width="18" height="13" rx="2"/><path d="M12 8v13M3 12h18"/><path d="M12 8c-2.5 0-4-1.5-4-3.5S9.5 1 12 3c2.5-2 4-1.5 4 0.5S14.5 8 12 8z"/></svg>`,
+    volunteer: `<svg width="20" height="20" viewBox="0 0 24 24" ${stroke}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
   };
   return icons[name] || "";
 }
@@ -902,7 +906,7 @@ TW.authNextUrl = function (fallback) {
       return next;
     }
   } catch (e) { /* ignore */ }
-  return fallback || "profile.html#overview";
+  return fallback || "profile.html";
 };
 
 function twEsc(s) {
@@ -935,21 +939,25 @@ TW.demoNotifications = function () {
   const zh = TW.getLang() === "zh";
   return [
     {
+      icon: "groupHikes",
       title: t("notif_invite").replace("{name}", "Sarah Chen").replace("{hike}", zh ? "蚺蛇尖日出" : "Sunrise on Sharp Peak"),
       time: zh ? "2 小時前" : "2h ago",
       href: "group-hikes.html",
     },
     {
+      icon: "speaker",
       title: t("notif_announce").replace("{title}", zh ? "App 離線地圖小提示" : "Offline maps tip"),
       time: zh ? "昨天" : "Yesterday",
       href: "feed.html",
     },
     {
+      icon: "reports",
       title: t("notif_incident"),
       time: zh ? "3 天前" : "3d ago",
       href: "reports.html",
     },
     {
+      icon: "events",
       title: t("notif_group").replace("{hike}", zh ? "親子大潭行" : "Family-Friendly Tai Tam"),
       time: zh ? "本週" : "This week",
       href: "group-hikes.html",
@@ -957,53 +965,65 @@ TW.demoNotifications = function () {
   ];
 };
 
+function renderNotifItem(n) {
+  const iconName = n.icon || "bell";
+  return `<a class="nav-notif-item" href="${twEsc(n.href || "#")}">
+    <span class="nav-notif-item-icon" aria-hidden="true">${twIcon(iconName)}</span>
+    <span class="nav-notif-item-body">
+      <strong>${twEsc(n.title)}</strong>
+      <span>${twEsc(n.time || "")}</span>
+    </span>
+  </a>`;
+}
+
+/** Account dropdown profile card — avatar, premium mark, or upgrade CTA */
+function renderAccountMenuProfile(u, memberName, t) {
+  const isPremium = TW.isMemberPremium && TW.isMemberPremium();
+  const premiumMark = isPremium
+    ? `<span class="nav-account-premium-mark" title="${twEsc(t("app_premium"))}" aria-label="${twEsc(t("app_premium"))}">★</span>`
+    : "";
+  const premiumLabel = isPremium
+    ? `<span class="nav-account-premium-label">${twEsc(t("dash_premium_active"))}</span>`
+    : "";
+  const upgradeBtn = !isPremium
+    ? `<a href="premium.html" class="nav-account-upgrade-btn">${twEsc(t("home_premium_cta"))}</a>`
+    : "";
+  return `<div class="nav-account-profile">
+    <div class="nav-account-avatar-wrap">
+      ${twAvatarHtml(u && u.avatar, "avatar-sm nav-account-avatar", "", u && u.name)}
+      ${premiumMark}
+    </div>
+    <span class="nav-account-profile-name">${twEsc(memberName)}</span>
+    ${premiumLabel}
+    ${upgradeBtn}
+  </div>`;
+}
+
 function renderHeader(active) {
   const u = TW.user;
   const lang = TW.getLang();
   const t = TW.t;
   const loggedIn = TW.isLoggedIn();
   const memberName = loggedIn ? TW.memberDisplayName() : "";
-  const meHash = twMeHubHash();
-  const onMeHub = active === "profile" || !!meHash;
-  const profileTypes = ["records", "plans", "groups", "reports", "gallery", "badges", "activity"];
+  const onProfilePage = active === "profile";
   const joinActive = active === "join" || active === "group-hikes";
   const resourcesActive = active === "articles" || active === "gallery";
-  const meActive = (section) => {
-    if (!onMeHub) return false;
-    const cur = meHash || "overview";
-    if (section === "profile") return cur === "profile" || profileTypes.includes(cur);
-    if (section === "overview") return cur === "overview" || cur === "dashboard" || cur === "insights" || cur === "milestones";
-    return cur === section;
-  };
-  const accountActive = loggedIn && onMeHub;
   const accountNav = loggedIn
-    ? `<div class="nav-account ${accountActive ? "has-active" : ""}" id="navAccount">
+    ? `<div class="nav-account ${onProfilePage ? "has-active" : ""}" id="navAccount">
           <button type="button" class="nav-account-trigger" id="accountToggle" aria-expanded="false" aria-haspopup="true" aria-label="${t("nav_profile")}">
             ${twAvatarHtml(u && u.avatar, "avatar-sm", "", u && u.name)}
             <span class="nav-account-trigger-name">${twEsc(memberName || t("nav_profile"))}</span>
           </button>
           <div class="nav-account-menu" id="accountMenu" hidden>
-            <p class="nav-account-heading">${twEsc(memberName)}</p>
-            <a href="profile.html#overview" class="${meActive("overview") ? "active" : ""}">${t("nav_dashboard")}</a>
-            <a href="profile.html#profile" class="${meActive("profile") ? "active" : ""}">${t("nav_my_profile")}</a>
-            <a href="profile.html#friends" class="${meActive("friends") ? "active" : ""}">${t("nav_friends")}</a>
-            <a href="profile.html#bookmarks" class="${meActive("bookmarks") ? "active" : ""}">${t("nav_bookmarks")}</a>
-            <a href="profile.html#settings" class="${meActive("settings") ? "active" : ""}">${t("nav_settings")}</a>
+            ${renderAccountMenuProfile(u, memberName, t)}
+            <a href="profile.html" class="${onProfilePage ? "active" : ""}">${t("nav_my_profile")}</a>
             <button type="button" class="nav-account-logout" id="accountLogout">${t("nav_logout")}</button>
           </div>
         </div>`
     : `<a href="login.html" class="nav-login-btn ${active === "login" ? "active" : ""}" id="navLogin">${t("nav_login")}</a>`;
   const notifs = TW.demoNotifications ? TW.demoNotifications() : [];
   const notifItems = notifs.length
-    ? notifs
-        .map(
-          (n) =>
-            `<a class="nav-notif-item" href="${twEsc(n.href || "#")}">
-              <strong>${twEsc(n.title)}</strong>
-              <span>${twEsc(n.time || "")}</span>
-            </a>`
-        )
-        .join("")
+    ? notifs.map((n) => renderNotifItem(n)).join("")
     : `<p class="nav-notif-empty">${t("notif_empty")}</p>`;
   return `
   <header class="site-header">
@@ -1026,9 +1046,12 @@ function renderHeader(active) {
             <a href="gallery.html" class="${active === "gallery" ? "active" : ""}">${t("nav_gallery")}</a>
           </div>
         </div>
-        <a href="donate.html" class="${active === "donate" || active === "support" ? "active" : ""}">${t("nav_support")}</a>
       </nav>
       <div class="header-actions">
+        <a href="donate.html" class="nav-support-link ${active === "donate" || active === "support" ? "active" : ""}" aria-label="${t("nav_support")}">
+          ${twIcon("support")}
+          <span class="nav-support-label">${t("nav_support")}</span>
+        </a>
         <div class="lang-switch" role="group" aria-label="Language">
           <button type="button" class="${lang === "en" ? "active" : ""}" data-lang="en">EN</button>
           <button type="button" class="${lang === "zh" ? "active" : ""}" data-lang="zh">繁</button>
@@ -1084,7 +1107,7 @@ function renderFooter() {
           <h4><a href="about.html#feedback">${t("feedback_title")}</a></h4>
           <h4><a href="donate.html">${t("nav_support")}</a></h4>
           <h4><a href="faq.html">${t("footer_faq")}</a></h4>
-          <h4><a href="get-app.html#premium">${t("footer_premium")}</a></h4>
+          <h4><a href="premium.html">${t("footer_premium")}</a></h4>
           <a href="terms.html">${t("footer_terms")}</a>
           <a href="privacy.html">${t("footer_privacy")}</a>
           <a href="map-credits.html">${t("footer_map_credits")}</a>
@@ -1582,12 +1605,7 @@ TW.addFeedComment = function (key, text) {
 
 function renderFeedCard(post, opts) {
   opts = opts || {};
-  let media = "";
-  if (post.image) {
-    media = `<div class="feed-media"><img src="${post.image}" alt="" loading="lazy" onerror="this.closest('.feed-media')?.classList.add('is-empty')" /></div>`;
-  } else if (post.mapStyle) {
-    media = `<div class="feed-media feed-media--map" aria-hidden="true"><span>📍</span></div>`;
-  }
+  const inApp = /\/app(?:\/|$)/.test((location.pathname || "").replace(/\\/g, "/"));
 
   let stats = "";
   if (post.distance) {
@@ -1603,10 +1621,11 @@ function renderFeedCard(post, opts) {
   const more = TW.tt(post, "more") || post.more;
   const tag = TW.tt(post, "tag") || post.tag;
   const time = TW.tt(post, "time") || post.time;
-  const inApp = /\/app(?:\/|$)/.test((location.pathname || "").replace(/\\/g, "/"));
   const recHref =
     post.type === "record" && post.recordId
-      ? (inApp ? "record-detail.html" : "record-detail.html") + "?id=" + encodeURIComponent(post.recordId)
+      ? (typeof TW.recordDetailHref === "function"
+          ? TW.recordDetailHref(post.recordId, { inApp })
+          : (inApp ? "record-detail.html" : "user-route.html") + "?id=" + encodeURIComponent(post.recordId))
       : post.type === "incident"
         ? inApp ? "../reports.html" : "reports.html"
         : post.type === "route"
@@ -1614,6 +1633,25 @@ function renderFeedCard(post, opts) {
           : post.type === "group"
             ? inApp ? "hikes.html" : "group-hikes.html"
             : "";
+  const routeMediaHref =
+    post.type === "route" && post.routeId
+      ? (() => {
+          const trail = (TW.trails || []).find((x) => x.id === post.routeId);
+          return trail && typeof TW.routeDetailHref === "function"
+            ? TW.routeDetailHref(trail)
+            : "rec-trail.html?id=" + encodeURIComponent(post.routeId);
+        })()
+      : "";
+  let media = "";
+  if (post.image) {
+    const imgHtml = `<img src="${post.image}" alt="" loading="lazy" onerror="this.closest('.feed-media')?.classList.add('is-empty')" />`;
+    const mediaHref = post.type === "record" ? recHref : routeMediaHref;
+    media = mediaHref
+      ? `<a class="feed-media feed-media--link" href="${mediaHref}">${imgHtml}</a>`
+      : `<div class="feed-media">${imgHtml}</div>`;
+  } else if (post.mapStyle) {
+    media = `<div class="feed-media feed-media--map" aria-hidden="true"><span>📍</span></div>`;
+  }
   const key = TW.feedPostKey(post);
   const social = (TW.getFeedSocial() || {})[key] || {};
   const liked = !!social.liked;
@@ -1622,7 +1660,8 @@ function renderFeedCard(post, opts) {
   const commentN = (post.comments || 0) + extras.length;
   const url = post.url || "";
   const urlLabel = TW.tt(post, "urlLabel") || post.urlLabel || TW.t("feed_external");
-  const expandable = !!(more || url || (!opts.hideComments && extras.length));
+  const bodyLong = ((title || "") + " " + (body || "")).trim().length > 140;
+  const expandable = !!(more || url || bodyLong || (!opts.hideComments && extras.length));
 
   const isOfficial = typeof TW.isFeedOfficial === "function" ? TW.isFeedOfficial(post) : false;
   const channel = post.channel || (isOfficial || post.pinned ? "official" : /Sponsored|Promo|Ad/i.test(post.tag || "") ? "ad" : "friends");
@@ -1664,8 +1703,13 @@ function renderFeedCard(post, opts) {
     if (!media) {
       media = `<div class="feed-media feed-media--text" aria-hidden="true"><span>${TW.escapeHtml((title || body || "TW").slice(0, 1).toUpperCase())}</span></div>`;
     }
-    const captionTitle = title ? `<span class="feed-ig-caption-title">${TW.escapeHtml(title)}</span>` : "";
-    const captionBody = body ? `<span class="feed-ig-caption-body">${TW.escapeHtml(body)}</span>` : "";
+    const captionBits = [];
+    if (title) captionBits.push(`<span class="feed-ig-caption-title">${TW.escapeHtml(title)}</span>`);
+    if (body) captionBits.push(`<span class="feed-ig-caption-body">${TW.escapeHtml(body)}</span>`);
+    const captionInner = captionBits.join(captionBits.length > 1 ? " " : "");
+    const moreInline = expandable
+      ? ` <button type="button" class="feed-more-link" data-feed-toggle="${TW.escapeHtml(key)}">${TW.t("feed_expand")}</button>`
+      : "";
     return `
   <article class="feed-card feed-card--ig${channelClass}" data-feed-key="${TW.escapeHtml(key)}">
     <div class="feed-card-header">
@@ -1680,11 +1724,9 @@ function renderFeedCard(post, opts) {
       <button type="button" class="like-btn${liked ? " liked" : ""}" data-likes="${post.likes || 0}" data-feed-like="${TW.escapeHtml(key)}" aria-label="Like">♥</button>
       <span class="feed-ig-likes">${likeN}</span>
       ${linkBtn}
-      ${expandable ? `<button type="button" class="feed-expand-btn" data-feed-toggle="${TW.escapeHtml(key)}">${TW.t("feed_expand")}</button>` : ""}
     </div>
     <div class="feed-ig-caption">
-      <strong>${TW.escapeHtml(post.user || "")}</strong>
-      ${captionTitle}${captionTitle && captionBody ? " " : ""}${captionBody}
+      <span class="feed-ig-caption-text"><strong>${TW.escapeHtml(post.user || "")}</strong> ${captionInner}${moreInline}</span>
       ${stats}
     </div>
     <div class="feed-expand-body">
@@ -1743,31 +1785,36 @@ TW.escapeHtml = function (s) {
 
 TW.renderArticleCard = function (a, opts) {
   opts = opts || {};
+  const featured = opts.featured != null ? opts.featured : TW.isArticleFeatured ? TW.isArticleFeatured(a) : !!a.featured;
   const zh = TW.getLang() === "zh";
   const title = zh ? a.titleZh || a.title : a.title;
-  const excerpt = zh ? a.excerptZh || a.excerpt : a.excerpt;
+  const excerpt = zh ? a.excerptZh || a.excerpt || a.summaryZh || a.summary : a.excerpt || a.summary;
   const url = zh ? a.urlZh || a.url : a.url;
-  const cat = TW.articleCategoryLabel ? TW.articleCategoryLabel(a.category) : a.category || "";
   const esc = TW.escapeHtml;
-  const tags = (a.tags || [])
+  const typeTag = TW.articleTypeTagHtml ? TW.articleTypeTagHtml(a) : "";
+  const contentTags = (TW.normalizeArticleTags ? TW.normalizeArticleTags(a) : a.tags || [])
+    .slice(0, 3)
     .map((t) => `<span class="article-tag">${esc(zh ? t.nameZh || t.name : t.name)}</span>`)
     .join("");
   const img = a.image
     ? `<div class="article-card-media"><img src="${esc(a.image)}" alt="${esc(title)}" loading="lazy" /></div>`
     : "";
-  const author = a.author ? `<span>${esc(TW.t("article_by"))} ${esc(a.author)}</span>` : "";
-  const compact = opts.compact ? " article-card--featured" : "";
-  const excerptHtml = excerpt
-    ? `<p class="article-excerpt${opts.compact ? " article-excerpt--short" : ""}">${esc(excerpt)}</p>`
+  const featBadge = featured
+    ? `<span class="article-featured-badge">${esc(TW.t("articles_featured"))}</span>`
     : "";
-  return `<article class="article-card article-card--rich media-card${compact}">
+  const excerptHtml = excerpt
+    ? `<p class="article-excerpt">${esc(excerpt)}</p>`
+    : "";
+  return `<article class="article-card article-card--rich media-card">
     ${img}
     <div class="article-card-body">
-      <div class="meta">${esc(cat)} · ${esc(a.date || "")}${author ? " · " + author : ""}</div>
+      <div class="article-tags">${featBadge}${typeTag}${contentTags}</div>
       <strong><a href="${esc(url)}" target="_blank" rel="noopener noreferrer">${esc(title)}</a></strong>
       ${excerptHtml}
-      ${opts.compact ? "" : `<div class="article-tags">${tags}</div>`}
-      <a class="article-more" href="${esc(url)}" target="_blank" rel="noopener noreferrer">${esc(TW.t("article_read_more"))}</a>
+      <div class="article-card-foot">
+        <span class="article-date">${esc(a.date || "")}</span>
+        <a class="article-more" href="${esc(url)}" target="_blank" rel="noopener noreferrer">${esc(TW.t("article_read_more"))}</a>
+      </div>
     </div>
   </article>`;
 };
@@ -1778,6 +1825,8 @@ function renderTrailCard(t, opts) {
   const bookmarked = typeof TW.isBookmarked === "function" && TW.isBookmarked(t.id);
   const title = TW.tt(t, "title");
   const desc = TW.tt(t, "desc");
+  const detailHref =
+    TW.routeDetailHref ? TW.routeDetailHref(t) : "rec-trail.html?id=" + encodeURIComponent(t.id);
   const planBtn = opts.hidePlan
     ? ""
     : `<button type="button" class="btn ${planned ? "btn-secondary" : "btn-primary"} plan-btn" data-trail="${t.id}">
@@ -1795,7 +1844,9 @@ function renderTrailCard(t, opts) {
   return `
   <article class="trail-card media-card" id="${t.id}">
     <div class="trail-card-img">
-      <img src="${t.image}" alt="${title}" loading="lazy" />
+      <a class="trail-card-media-link" href="${detailHref}" aria-label="${TW.escapeHtml(title)}">
+        <img src="${t.image}" alt="${title}" loading="lazy" />
+      </a>
       ${bookmarkBtn}
       <span class="rating">${twIcon("star")} ${t.rating}</span>
     </div>
@@ -1807,7 +1858,7 @@ function renderTrailCard(t, opts) {
         ${difficultyPips(t.difficulty)}
         <span class="trail-diff-label">L${t.difficulty} · ${difficultyLabel(t.difficulty)}</span>
       </div>
-      <h3><a href="${TW.routeDetailHref ? TW.routeDetailHref(t) : "rec-trail.html?id=" + encodeURIComponent(t.id)}">${title}</a></h3>
+      <h3><a href="${detailHref}">${title}</a></h3>
       <p class="desc">${desc}</p>
       <div class="trail-meta">
         <span>📏 ${t.distance}</span>
@@ -1824,16 +1875,12 @@ function renderTrailCard(t, opts) {
 
 function renderRecordItem(r, detailHref) {
   const id = r.id || "";
-  const inApp = /\/app(?:\/|$)/.test((location.pathname || "").replace(/\\/g, "/"));
-  const isUser = !!(r.kind === "user" || r.userRoute || String(id).indexOf("ur_") === 0);
   const href =
     detailHref ||
     (id
-      ? (isUser
-          ? (inApp ? "record-detail.html" : "user-route.html")
-          : (inApp ? "record-detail.html" : "record-detail.html")) +
-        "?id=" +
-        encodeURIComponent(id)
+      ? typeof TW.recordDetailHref === "function"
+        ? TW.recordDetailHref(id)
+        : "user-route.html?id=" + encodeURIComponent(id)
       : "#");
   const date = TW.getLang() === "zh" && r.dateZh ? r.dateZh : r.date;
   return `
@@ -2086,7 +2133,7 @@ function bindLikes() {
       const card = btn.closest(".feed-card");
       if (!card) return;
       const on = card.classList.toggle("expanded");
-      card.querySelectorAll(".feed-expand-btn").forEach((b) => {
+      card.querySelectorAll(".feed-expand-btn, .feed-more-link").forEach((b) => {
         b.textContent = TW.t(on ? "feed_collapse" : "feed_expand");
       });
     });

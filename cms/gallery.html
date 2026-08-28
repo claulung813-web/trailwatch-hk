@@ -46,7 +46,7 @@
 <body class="cms-body">
   <div id="cmsShell">
     <h1>Gallery featured</h1>
-    <p class="sub">Select up to <strong>10</strong> featured photos for the public Gallery. Search by GPS, date, description, category, or record ID.</p>
+    <p class="sub">Select up to <strong>10</strong> photos to pin at the top of the public Gallery (larger tiles with a Featured badge). Search by GPS, date, description, category, or record ID.</p>
     <div class="cms-card" style="margin-bottom:1rem">
       <div class="cms-filter-grid">
         <div style="grid-column:span 2">
@@ -104,7 +104,7 @@
             <button type="button" class="gal-pick${on ? " selected" : ""}" data-id="${p.id}">
               <img src="${p.src}" alt="" loading="lazy" />
               <div class="gal-pick-body">
-                <strong>${p.date} · ${p.category}</strong>
+                <strong>${p.date} · ${TW.normalizeGalleryCategory ? TW.normalizeGalleryCategory(p.category) : p.category}</strong>
                 ${p.description || ""}
                 <div style="margin-top:0.35rem;opacity:.7">${p.recordId || ""} · ${p.routeId || "—"} · ${p.lat != null ? p.lat + "," + p.lng : ""}</div>
               </div>

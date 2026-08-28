@@ -198,16 +198,30 @@
     } else {
       const title = TW.tt(hike, "title") || hike.title;
       document.getElementById("ghTitle").textContent = title;
+      const place = TW.tt(hike, "place") || hike.place || "";
+      const date = TW.tt(hike, "date") || hike.date || "";
+      const gatherBits = [];
+      if (hike.gatherPoint) gatherBits.push(hike.gatherPoint);
+      if (hike.gatherTime) gatherBits.push(hike.gatherTime);
       document.getElementById("ghMeta").textContent =
-        (TW.tt(hike, "date") || hike.date || "") + " · " + (TW.tt(hike, "place") || hike.place || "");
+        date +
+        (place ? " · " + place : "") +
+        (gatherBits.length
+          ? " · " + (TW.getLang() === "zh" ? "集合：" : "Meet: ") + gatherBits.join(" · ")
+          : "") +
+        (hike.participantLimit || hike.spots
+          ? " · " + (hike.participantLimit || hike.spots) + " " + (TW.getLang() === "zh" ? "人" : "spots")
+          : "");
       if (hike.organizerName) {
         document.getElementById("ghOrg").textContent =
           (TW.getLang() === "zh" ? "主辦：" : "Organizer: ") + hike.organizerName;
       }
+      const desc = TW.tt(hike, "description") || hike.description || hike.descriptionZh || "";
       document.getElementById("ghDesc").textContent =
-        TW.getLang() === "zh"
+        desc ||
+        (TW.getLang() === "zh"
           ? "中等步速聯誼。請自備水與頭燈。"
-          : "Moderate-pace group hike. Bring water and a headlamp.";
+          : "Moderate-pace group hike. Bring water and a headlamp.");
       const vis = hike.visibility === "private" ? "private" : "public";
       document.getElementById("badges").innerHTML =
         `<span class="gh-badge ${vis === "private" ? "gh-private" : "gh-public"}">${TW.t(

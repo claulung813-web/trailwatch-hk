@@ -74,7 +74,7 @@
   <div id="app-footer"></div>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="js/i18n.js?v=20260828c"></script>
-  <script src="js/data.js?v=20260828c"></script>
+  <script src="js/data.js?v=20260828i"></script>
   <script src="js/live-routes.js?v=20260828c"></script>
   <script src="js/cms-store.js?v=20260828c"></script>
   <script src="js/app.js?v=20260828c"></script>
@@ -87,15 +87,23 @@
     document.getElementById("lblPhotos").textContent = t("rec_photos");
 
     const id = new URLSearchParams(location.search).get("id");
+    const ref = document.referrer || "";
+    const crumb = document.querySelector(".crumbs a");
+    if (crumb && ref.indexOf("feed") >= 0) {
+      crumb.href = "feed.html";
+      crumb.textContent = t("nav_feed");
+    }
+
     const r =
       (typeof TW.getUserRoute === "function" && TW.getUserRoute(id)) ||
       (typeof TW.getRecord === "function" && TW.getRecord(id));
     if (!r) {
       location.href = "explore.html?tab=records";
     } else {
+      const lang = TW.getLang();
       const title = TW.tt(r, "title") || r.date || id;
       const region =
-        TW.getLang() === "zh" ? r.regionZh || r.region || TW.districtName(r.district) : r.region || TW.districtName(r.district);
+        lang === "zh" ? r.regionZh || r.region || TW.districtName(r.district) : r.region || TW.districtName(r.district);
       document.title = title + " — TrailWatch HK";
       document.getElementById("recTitle").textContent = title;
       document.getElementById("crumbTitle").textContent = title;
@@ -105,15 +113,28 @@
       const desc = TW.tt(r, "desc") || TW.tt(r, "snippet") || "";
       document.getElementById("recDesc").textContent = desc && desc !== region ? desc : "";
       document.getElementById("recAuthor").textContent = r.author || r.user || "";
-      document.getElementById("recDate").textContent = r.date || "";
-      const dist = r.distanceKm != null ? Number(r.distanceKm).toFixed(2) : r.distance || "—";
+      document.getElementById("recDate").textContent = lang === "zh" && r.dateZh ? r.dateZh : (r.date || "");
+      const distKm =
+        r.distanceKm != null
+          ? Number(r.distanceKm).toFixed(2)
+          : r.distance
+            ? String(r.distance).replace(/\s*km\s*$/i, "").trim()
+            : "—";
+      const startTime =
+        r.startTime ||
+        (lang === "zh" && r.startedZh ? r.startedZh : r.started) ||
+        "—";
+      const endTime =
+        r.endTime || (lang === "zh" && r.finishedZh ? r.finishedZh : r.finished) || "—";
+      const elevChange =
+        r.elevChange != null ? r.elevChange : r.elevGain != null ? r.elevGain : "—";
       document.getElementById("recStats").innerHTML = [
         [r.durationClock || r.duration || "—", t("rec_duration_lbl")],
-        [r.startTime || "—", t("rec_start_time")],
-        [r.endTime || "—", t("rec_end_time")],
-        [dist, t("rec_distance_km")],
+        [startTime, t("rec_start_time")],
+        [endTime, t("rec_end_time")],
+        [distKm, t("rec_distance_km")],
         [r.paceKmh != null ? Number(r.paceKmh).toFixed(2) : "—", t("rec_avg_pace_kmh")],
-        [r.elevChange != null ? r.elevChange : "—", t("rec_elev_changes")],
+        [elevChange, t("rec_elev_changes")],
       ].map((s) => `<div><strong>${s[0]}</strong><span>${s[1]}</span></div>`).join("");
 
       document.getElementById("elevChart").innerHTML = TW.elevChartHtml({

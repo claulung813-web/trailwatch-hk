@@ -334,6 +334,11 @@ CMS.defaultStore = function () {
         distanceKm: 3256780,
         incidents: 2146,
       },
+      supportOptions: {
+        donate: { image: "", descriptionEn: "", descriptionZh: "" },
+        gift: { image: "", descriptionEn: "", descriptionZh: "" },
+        volunteer: { image: "", descriptionEn: "", descriptionZh: "" },
+      },
     },
     featuredGalleryIds: [],
     banners: CMS.seedBanners(),
@@ -1034,6 +1039,18 @@ CMS.getStore = function () {
       base.content.figures,
       (parsed.content && parsed.content.figures) || {}
     );
+    store.content.supportOptions = Object.assign(
+      {},
+      base.content.supportOptions,
+      (parsed.content && parsed.content.supportOptions) || {}
+    );
+    ["donate", "gift", "volunteer"].forEach((key) => {
+      store.content.supportOptions[key] = Object.assign(
+        {},
+        base.content.supportOptions[key],
+        (parsed.content && parsed.content.supportOptions && parsed.content.supportOptions[key]) || {}
+      );
+    });
     // migrate older stores that pre-date these collections
     let migrated = false;
     const tr = store.content.translations;
@@ -1724,6 +1741,21 @@ TW.getIncidentReport = function (id) {
 
 TW.getSiteContent = function () {
   return CMS.getStore().content;
+};
+
+TW.getSupportOption = function (id) {
+  const c = TW.getSiteContent() || {};
+  const raw = ((c.supportOptions || {})[id]) || {};
+  const zh = TW.getLang && TW.getLang() === "zh";
+  const descKey = "support_" + id + "_desc";
+  const fallback = typeof TW.t === "function" ? TW.t(descKey) : "";
+  const description = zh
+    ? raw.descriptionZh || raw.descriptionEn || fallback
+    : raw.descriptionEn || raw.descriptionZh || fallback;
+  return {
+    image: raw.image || "",
+    description: description || "",
+  };
 };
 
 TW.getHomeFigures = function () {

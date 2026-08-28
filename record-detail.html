@@ -116,93 +116,98 @@
   <div id="app-footer"></div>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="js/i18n.js"></script>
-  <script src="js/data.js"></script>
+  <script src="js/data.js?v=20260828i"></script>
   <script src="js/live-routes.js"></script>
   <script src="js/cms-store.js"></script>
   <script src="js/hikes.js"></script>
   <script src="js/app.js"></script>
   <script>
     document.documentElement.lang = TW.getLang() === "zh" ? "zh-Hant" : "en";
-    initShell("explore");
-    const t = TW.t;
-    const lang = TW.getLang();
-    document.getElementById("photosHeading").textContent = t("rec_photos");
-    document.getElementById("recGroupLbl").textContent = t("rec_group");
-    document.getElementById("photoEmpty").textContent = t("rec_no_photos");
-    document.getElementById("btnBookmark").title = t("rec_bookmark");
-    document.getElementById("btnShare").title = t("rec_share");
-
     const id = new URLSearchParams(location.search).get("id");
-    const ref = document.referrer || "";
-    if (ref.indexOf("profile") >= 0) document.getElementById("backBtn").href = "profile.html#activity&type=records";
-    else if (ref.indexOf("feed") >= 0) document.getElementById("backBtn").href = "feed.html";
-
-    const rec = TW.getRecord(id) || (TW.records && TW.records[0]);
-    if (!rec) {
-      location.href = "explore.html";
+    const inApp = typeof TW._inAppShell === "function" ? TW._inAppShell() : /\/app(?:\/|$)/.test(location.pathname);
+    if (id && !inApp) {
+      location.replace("user-route.html?id=" + encodeURIComponent(id));
     } else {
-      document.getElementById("recTitle").textContent = TW.tt(rec, "title");
-      document.getElementById("recUser").textContent = rec.user || "—";
-      document.getElementById("recDate").textContent = lang === "zh" && rec.dateZh ? rec.dateZh : (rec.date || "—");
-      document.getElementById("recRating").textContent = rec.rating != null ? rec.rating : "—";
-      document.getElementById("recAvatar").innerHTML = twAvatarHtml(rec.avatar, "avatar-sm", "", rec.user);
+      initShell("explore");
+      const t = TW.t;
+      const lang = TW.getLang();
+      document.getElementById("photosHeading").textContent = t("rec_photos");
+      document.getElementById("recGroupLbl").textContent = t("rec_group");
+      document.getElementById("photoEmpty").textContent = t("rec_no_photos");
+      document.getElementById("btnBookmark").title = t("rec_bookmark");
+      document.getElementById("btnShare").title = t("rec_share");
 
-      const elev = rec.elevGain != null ? rec.elevGain + " m" : (rec.elev || "—");
-      const started = lang === "zh" && rec.startedZh ? rec.startedZh : (rec.started || "—");
-      const finished = lang === "zh" && rec.finishedZh ? rec.finishedZh : (rec.finished || "—");
-      const stats = [
-        { ico: "📏", val: rec.distance || "—", lbl: t("app_distance") },
-        { ico: "⏱", val: rec.duration || "—", lbl: t("app_duration") },
-        { ico: "〰", val: elev, lbl: t("rec_elev_gain") },
-        { ico: "🔥", val: (rec.calories != null ? rec.calories + " kcal" : "—"), lbl: t("rec_calories") },
-        { ico: "◔", val: rec.pace || "—", lbl: t("rec_avg_pace") },
-        { ico: "▶", val: started, lbl: t("rec_started") },
-        { ico: "⚑", val: finished, lbl: t("rec_finished") },
-      ];
-      document.getElementById("recStats").innerHTML = stats.map((s) =>
-        `<div class="rec-stat"><div class="ico">${s.ico}</div><div class="val">${s.val}</div><div class="lbl">${s.lbl}</div></div>`
-      ).join("");
+      const ref = document.referrer || "";
+      if (ref.indexOf("profile") >= 0) document.getElementById("backBtn").href = "profile.html#activity&type=records";
+      else if (ref.indexOf("feed") >= 0) document.getElementById("backBtn").href = "feed.html";
 
-      if (rec.groupId) {
-        document.getElementById("recGroupWrap").hidden = false;
-        document.getElementById("recGroupBtn").href = "group-hike-detail.html?id=" + encodeURIComponent(rec.groupId);
-      }
-
-      const photos = rec.photos || [];
-      const grid = document.getElementById("photoGrid");
-      if (photos.length) {
-        grid.innerHTML = photos.map((p) =>
-          `<img src="${TW.recordPhotoSrc(p)}" alt="" loading="lazy" onerror="this.remove()" />`
-        ).join("");
+      let rec = TW.getRecord(id) || (TW.records && TW.records[0]);
+      if (!rec) {
+        location.href = "explore.html";
       } else {
-        document.getElementById("photoEmpty").style.display = "block";
+        document.getElementById("recTitle").textContent = TW.tt(rec, "title");
+        document.getElementById("recUser").textContent = rec.user || "—";
+        document.getElementById("recDate").textContent = lang === "zh" && rec.dateZh ? rec.dateZh : (rec.date || "—");
+        document.getElementById("recRating").textContent = rec.rating != null ? rec.rating : "—";
+        document.getElementById("recAvatar").innerHTML = twAvatarHtml(rec.avatar, "avatar-sm", "", rec.user);
+
+        const elev = rec.elevGain != null ? rec.elevGain + " m" : (rec.elev || "—");
+        const started = lang === "zh" && rec.startedZh ? rec.startedZh : (rec.started || "—");
+        const finished = lang === "zh" && rec.finishedZh ? rec.finishedZh : (rec.finished || "—");
+        const stats = [
+          { ico: "📏", val: rec.distance || "—", lbl: t("app_distance") },
+          { ico: "⏱", val: rec.duration || "—", lbl: t("app_duration") },
+          { ico: "〰", val: elev, lbl: t("rec_elev_gain") },
+          { ico: "🔥", val: (rec.calories != null ? rec.calories + " kcal" : "—"), lbl: t("rec_calories") },
+          { ico: "◔", val: rec.pace || "—", lbl: t("rec_avg_pace") },
+          { ico: "▶", val: started, lbl: t("rec_started") },
+          { ico: "⚑", val: finished, lbl: t("rec_finished") },
+        ];
+        document.getElementById("recStats").innerHTML = stats.map((s) =>
+          `<div class="rec-stat"><div class="ico">${s.ico}</div><div class="val">${s.val}</div><div class="lbl">${s.lbl}</div></div>`
+        ).join("");
+
+        if (rec.groupId) {
+          document.getElementById("recGroupWrap").hidden = false;
+          document.getElementById("recGroupBtn").href = "group-hike-detail.html?id=" + encodeURIComponent(rec.groupId);
+        }
+
+        const photos = rec.photos || [];
+        const grid = document.getElementById("photoGrid");
+        if (photos.length) {
+          grid.innerHTML = photos.map((p) =>
+            `<img src="${TW.recordPhotoSrc(p)}" alt="" loading="lazy" onerror="this.remove()" />`
+          ).join("");
+        } else {
+          document.getElementById("photoEmpty").style.display = "block";
+        }
+
+        const path = (rec.path && rec.path.length ? rec.path : [[22.35, 114.25]]).map((p) => [p[0], p[1]]);
+        const map = L.map("recMap", { zoomControl: false }).setView(path[0], 13);
+        TW.addMapTiles(map, { maxZoom: 18 });
+        if (path.length > 1) {
+          const line = L.polyline(path, { color: "#2563eb", weight: 5 }).addTo(map);
+          TW.addRouteEndpoints(map, path);
+          map.fitBounds(line.getBounds().pad(0.2));
+        }
+        document.getElementById("btnExpandMap").addEventListener("click", () => {
+          map.invalidateSize();
+          if (path.length > 1) map.fitBounds(L.polyline(path).getBounds().pad(0.15));
+        });
       }
 
-      const path = (rec.path && rec.path.length ? rec.path : [[22.35, 114.25]]).map((p) => [p[0], p[1]]);
-      const map = L.map("recMap", { zoomControl: false }).setView(path[0], 13);
-      TW.addMapTiles(map, { maxZoom: 18 });
-      if (path.length > 1) {
-        const line = L.polyline(path, { color: "#2563eb", weight: 5 }).addTo(map);
-        TW.addRouteEndpoints(map, path);
-        map.fitBounds(line.getBounds().pad(0.2));
-      }
-      document.getElementById("btnExpandMap").addEventListener("click", () => {
-        map.invalidateSize();
-        if (path.length > 1) map.fitBounds(L.polyline(path).getBounds().pad(0.15));
+      document.getElementById("btnBookmark").addEventListener("click", () => {
+        if (!TW.requireLogin({ messageKey: "login_to_save" })) return;
+        if (!rec || !rec.id) return;
+        const on = TW.toggleBookmark(rec.id, "record");
+        showToast(on ? t("toast_bookmarked") : t("toast_unbookmarked"));
+      });
+      document.getElementById("btnShare").addEventListener("click", () => {
+        const url = location.href;
+        if (navigator.clipboard) navigator.clipboard.writeText(url).then(() => showToast(t("rec_share")));
+        else showToast(url);
       });
     }
-
-    document.getElementById("btnBookmark").addEventListener("click", () => {
-      if (!TW.requireLogin({ messageKey: "login_to_save" })) return;
-      if (!rec || !rec.id) return;
-      const on = TW.toggleBookmark(rec.id, "record");
-      showToast(on ? t("toast_bookmarked") : t("toast_unbookmarked"));
-    });
-    document.getElementById("btnShare").addEventListener("click", () => {
-      const url = location.href;
-      if (navigator.clipboard) navigator.clipboard.writeText(url).then(() => showToast(t("rec_share")));
-      else showToast(url);
-    });
   </script>
 </body>
 </html>

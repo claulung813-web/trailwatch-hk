@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="css/styles.css?v=20260828i" />
 </head>
 <body>
   <div id="app-header"></div>
@@ -16,6 +16,14 @@
       <h1 class="page-title" data-i18n="gallery_title"></h1>
 
       <div class="tw-toolbar gallery-toolbar">
+        <div class="articles-cat-filter">
+          <div
+            class="chip-row articles-cat-chips"
+            id="galleryCategoryFilter"
+            role="toolbar"
+            aria-label="Gallery categories"
+          ></div>
+        </div>
         <div class="gallery-filters" style="margin:0">
           <div class="gallery-filter-field">
             <label for="galleryDateFrom" data-i18n="gallery_date_from"></label>
@@ -28,14 +36,8 @@
         </div>
       </div>
 
-      <section class="gallery-section" aria-labelledby="galleryAllHeading">
-        <div class="gallery-section-head">
-          <h2 id="galleryAllHeading" class="articles-section-title articles-section-title--sm" data-i18n="gallery_all"></h2>
-          <span class="meta" id="galleryCount"></span>
-        </div>
-        <div class="gallery-card-grid" id="galleryGrid"></div>
-        <div class="gallery-empty" id="galleryEmpty" hidden></div>
-      </section>
+      <div class="gallery-photo-grid" id="galleryGrid"></div>
+      <div class="gallery-empty" id="galleryEmpty" hidden></div>
     </div>
   </main>
   <div id="app-footer"></div>
@@ -43,13 +45,15 @@
   <script src="js/data.js"></script>
   <script src="js/live-routes.js"></script>
   <script src="js/cms-store.js"></script>
-  <script src="js/app.js"></script>
+  <script src="js/app.js?v=20260828i"></script>
   <script>
     document.documentElement.lang = TW.getLang() === "zh" ? "zh-Hant" : "en";
     if (new URLSearchParams(location.search).get("mine") === "1") {
       location.replace("profile.html#activity&type=gallery");
     } else {
     initShell("gallery");
+
+    let activeCategory = "all";
 
     function esc(s) {
       return TW.escapeHtml ? TW.escapeHtml(s) : String(s == null ? "" : s)
@@ -59,48 +63,47 @@
         .replace(/"/g, "&quot;");
     }
 
+    function renderCategoryChips() {
+      const row = document.getElementById("galleryCategoryFilter");
+      row.innerHTML = (TW.galleryCategories || []).map((c) => {
+        const label = TW.t(c.labelKey);
+        const isActive = c.id === activeCategory;
+        return `<button type="button" class="chip${isActive ? " active" : ""}" data-cat="${esc(c.id)}" aria-pressed="${isActive ? "true" : "false"}">${esc(label)}</button>`;
+      }).join("");
+      row.querySelectorAll("[data-cat]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          activeCategory = btn.dataset.cat;
+          renderCategoryChips();
+          refresh();
+        });
+      });
+    }
+
     function filterOpts() {
       return {
-        twOnly: true,
+        category: activeCategory,
         dateFrom: document.getElementById("galleryDateFrom").value,
         dateTo: document.getElementById("galleryDateTo").value,
         sort: "newest",
       };
     }
 
-    function routeLabel(p) {
-      if (!p.routeId) return "";
-      const trail = (TW.trails || []).find((t) => t.id === p.routeId);
-      if (!trail) return p.routeId;
-      return TW.tt ? TW.tt(trail, "title") : (TW.getLang() === "zh" ? trail.titleZh || trail.title : trail.title);
-    }
-
-    function renderPhotoCard(p) {
-      const zh = TW.getLang() === "zh";
-      const desc = zh ? p.descriptionZh || p.description : p.description;
+    function renderPhotoTile(p) {
+      const featured = TW.isGalleryFeatured ? TW.isGalleryFeatured(p) : false;
       const href = TW.galleryRouteHref(p);
-      const route = routeLabel(p);
+      const badge = featured
+        ? `<span class="gallery-photo-badge">${esc(TW.t("gallery_featured"))}</span>`
+        : "";
       return `
-        <article class="gallery-card media-card">
-          <a class="gallery-card-media" href="${esc(href)}">
-            <img src="${esc(p.src)}" alt="${esc(desc || route || p.date || "Photo")}" loading="lazy" onerror="this.closest('article').remove()" />
-          </a>
-          <div class="gallery-card-body">
-            <div class="gallery-card-meta">
-              <time datetime="${esc(p.date)}">${esc(p.date)}</time>
-            </div>
-            <p class="gallery-card-desc">${esc(desc || "")}</p>
-            <div class="gallery-card-links">
-              ${route ? `<a href="${esc(href)}">${esc(route)}</a>` : ""}
-            </div>
-          </div>
-        </article>`;
+        <a class="gallery-photo${featured ? " gallery-photo--featured" : ""}" href="${esc(href)}" title="${esc(TW.t("gallery_view_record"))}">
+          <img src="${esc(p.src)}" alt="" loading="lazy" onerror="this.closest('a')?.remove()" />
+          ${badge}
+        </a>`;
     }
 
     function refresh() {
       const list = TW.getGalleryPhotos(filterOpts());
-      document.getElementById("galleryGrid").innerHTML = list.map(renderPhotoCard).join("");
-      document.getElementById("galleryCount").textContent = list.length + " " + TW.t("gallery_photos_count");
+      document.getElementById("galleryGrid").innerHTML = list.map(renderPhotoTile).join("");
       const empty = document.getElementById("galleryEmpty");
       if (!list.length) {
         empty.hidden = false;
@@ -108,8 +111,10 @@
         const clearBtn = document.getElementById("galleryEmptyClear");
         if (clearBtn) {
           clearBtn.addEventListener("click", () => {
+            activeCategory = "all";
             document.getElementById("galleryDateFrom").value = "";
             document.getElementById("galleryDateTo").value = "";
+            renderCategoryChips();
             refresh();
           });
         }
@@ -119,6 +124,7 @@
       }
     }
 
+    renderCategoryChips();
     document.getElementById("galleryDateFrom").addEventListener("change", refresh);
     document.getElementById("galleryDateTo").addEventListener("change", refresh);
     refresh();

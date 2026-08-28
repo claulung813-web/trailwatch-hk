@@ -85,6 +85,68 @@
       margin-top: 0.65rem;
     }
     .gh-route-row .form-select { flex: 1; min-width: 160px; }
+    .gh-form-section {
+      font-size: 0.92rem;
+      color: var(--green-900);
+      margin: 0.35rem 0 0.65rem;
+    }
+    .gh-form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+      margin-bottom: 0.35rem;
+    }
+    @media (max-width: 640px) {
+      .gh-form-grid { grid-template-columns: 1fr; }
+    }
+    .gh-route-mode {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin: 0.35rem 0 0.65rem;
+    }
+    .gh-route-mode .chip.active {
+      background: var(--green-900);
+      color: #fff;
+      border-color: var(--green-900);
+    }
+    .gh-route-stats {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0.45rem;
+      margin-top: 0.75rem;
+    }
+    @media (max-width: 640px) {
+      .gh-route-stats { grid-template-columns: 1fr 1fr; }
+    }
+    .gh-stat {
+      background: var(--green-50);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.45rem 0.55rem;
+    }
+    .gh-stat .lbl {
+      display: block;
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      margin-bottom: 0.1rem;
+    }
+    .gh-stat strong {
+      font-size: 0.88rem;
+      color: var(--green-900);
+    }
+    .gh-invite-all {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--green-900);
+      margin: 0 0 0.55rem;
+      cursor: pointer;
+    }
+    #ghPickWrap .form-select { width: 100%; margin-top: 0.15rem; }
+    textarea.form-input { resize: vertical; min-height: 4.5rem; }
     .plan-ctx {
       position: absolute;
       z-index: 1000;
@@ -158,18 +220,42 @@
       <div class="card" id="createPanel" style="padding:1.25rem;margin-bottom:1.5rem;display:none">
         <h2 style="font-size:1.1rem;margin:0 0 0.85rem;color:var(--green-900)" data-i18n="groups_create_title"></h2>
         <p class="meta" id="createPremiumNote" style="margin:0 0 1rem"></p>
+
         <div class="form-group">
           <label for="ghName" data-i18n="groups_name"></label>
           <input class="form-input" id="ghName" type="text" required />
         </div>
-        <div class="form-group">
-          <label for="ghPlace" data-i18n="groups_place"></label>
-          <input class="form-input" id="ghPlace" type="text" />
+
+        <h3 class="gh-form-section" data-i18n="groups_details"></h3>
+        <div class="gh-form-grid">
+          <div class="form-group">
+            <label for="ghDate" data-i18n="groups_date"></label>
+            <input class="form-input" id="ghDate" type="date" />
+          </div>
+          <div class="form-group">
+            <label for="ghGatherTime" data-i18n="groups_gather_time"></label>
+            <input class="form-input" id="ghGatherTime" type="time" />
+          </div>
+          <div class="form-group">
+            <label for="ghPlace" data-i18n="groups_approx_location"></label>
+            <input class="form-input" id="ghPlace" type="text" data-i18n-placeholder="groups_place_ph" />
+          </div>
+          <div class="form-group">
+            <label for="ghGather" data-i18n="groups_gather_point"></label>
+            <input class="form-input" id="ghGather" type="text" />
+          </div>
         </div>
+
         <div class="form-group">
-          <label for="ghDate" data-i18n="groups_date"></label>
-          <input class="form-input" id="ghDate" type="text" placeholder="Sat, Jun 28 · 08:00" />
+          <label for="ghDesc" data-i18n="groups_description"></label>
+          <textarea class="form-input" id="ghDesc" rows="3" data-i18n-placeholder="groups_desc_ph"></textarea>
         </div>
+
+        <div class="form-group">
+          <label for="ghLimit" data-i18n="groups_participant_limit"></label>
+          <input class="form-input" id="ghLimit" type="number" min="2" max="200" value="12" />
+        </div>
+
         <div class="form-group">
           <label data-i18n="groups_visibility"></label>
           <div class="vis-toggle">
@@ -178,36 +264,56 @@
           </div>
           <p class="meta" id="ghPublicHint" style="margin:0.45rem 0 0"></p>
         </div>
+
+        <div class="form-group" id="ghRouteBlock">
+          <label data-i18n="groups_route"></label>
+          <div class="gh-route-mode">
+            <button type="button" class="chip active" id="ghModePick" data-route-mode="pick" data-i18n="groups_my_routes"></button>
+            <button type="button" class="chip" id="ghModePlan" data-route-mode="plan" data-i18n="groups_plan_new_route"></button>
+          </div>
+          <div id="ghPickWrap">
+            <select class="form-select" id="ghRouteDraft" aria-label="My routes"></select>
+          </div>
+          <div id="ghPlanWrap" hidden>
+            <p class="meta" style="margin:0.35rem 0 0.45rem" data-i18n="groups_route_edit_hint"></p>
+            <div class="gh-route-toolbar" id="ghRouteToolbar">
+              <button type="button" class="chip active" data-draw="menu" data-i18n="plan_mode_menu"></button>
+              <button type="button" class="btn btn-secondary" style="padding:0.35rem 0.75rem;font-size:0.8rem" data-route-undo data-i18n="plan_undo"></button>
+              <button type="button" class="btn btn-secondary" style="padding:0.35rem 0.75rem;font-size:0.8rem" data-route-clear data-i18n="plan_clear"></button>
+            </div>
+            <div style="position:relative">
+              <div id="ghRouteMap"></div>
+              <div class="plan-ctx" id="ghRouteCtx" role="menu">
+                <button type="button" data-type="start"><span class="plan-dot start">A</span><span data-i18n="plan_ctx_start"></span></button>
+                <button type="button" data-type="end"><span class="plan-dot end">B</span><span data-i18n="plan_ctx_end"></span></button>
+                <button type="button" data-type="via"><span class="plan-dot via">V</span><span data-i18n="plan_ctx_via"></span></button>
+                <hr />
+                <button type="button" class="cancel" data-type="cancel" data-i18n="plan_ctx_cancel"></button>
+              </div>
+            </div>
+            <div class="gh-route-row">
+              <button type="button" class="btn btn-primary" id="btnGhSaveRoute" data-i18n="groups_save_route"></button>
+              <a class="btn btn-secondary" href="plan.html" target="_blank" rel="noopener" style="padding:0.4rem 0.85rem;font-size:0.8rem" data-i18n="groups_plan_new_route"></a>
+            </div>
+          </div>
+          <div class="gh-route-stats" id="ghRouteStatsPanel" hidden>
+            <div class="gh-stat"><span class="lbl" data-i18n="groups_difficulty"></span><strong id="ghStatDiff">—</strong></div>
+            <div class="gh-stat"><span class="lbl" data-i18n="plan_est_distance"></span><strong id="ghStatDist">—</strong></div>
+            <div class="gh-stat"><span class="lbl" data-i18n="plan_est_duration"></span><strong id="ghStatDur">—</strong></div>
+            <div class="gh-stat"><span class="lbl" data-i18n="groups_elev_change"></span><strong id="ghStatElev">—</strong></div>
+          </div>
+        </div>
+
         <div id="inviteBlock">
           <label style="font-weight:700;color:var(--green-900);font-size:0.85rem" data-i18n="groups_invite_friends"></label>
           <p style="font-size:0.78rem;color:var(--text-muted);margin:0.25rem 0 0.5rem" data-i18n="groups_invite_hint"></p>
+          <label class="gh-invite-all">
+            <input type="checkbox" id="ghInviteAll" />
+            <span data-i18n="groups_invite_all"></span>
+          </label>
           <div class="friend-invite-list" id="friendInviteList"></div>
         </div>
-        <div class="form-group" id="ghRouteBlock">
-          <label data-i18n="groups_route"></label>
-          <p class="meta" style="margin:0.25rem 0 0" data-i18n="groups_route_edit_hint"></p>
-          <div class="gh-route-toolbar" id="ghRouteToolbar">
-            <button type="button" class="chip active" data-draw="menu" data-i18n="plan_mode_menu"></button>
-            <button type="button" class="chip" data-draw="click" data-i18n="plan_mode_click"></button>
-            <button type="button" class="btn btn-secondary" style="padding:0.35rem 0.75rem;font-size:0.8rem" data-route-undo data-i18n="plan_undo"></button>
-            <button type="button" class="btn btn-secondary" style="padding:0.35rem 0.75rem;font-size:0.8rem" data-route-clear data-i18n="plan_clear"></button>
-            <span class="meta" id="ghRouteStats"></span>
-          </div>
-          <div style="position:relative">
-            <div id="ghRouteMap"></div>
-            <div class="plan-ctx" id="ghRouteCtx" role="menu">
-              <button type="button" data-type="start"><span class="plan-dot start">A</span><span data-i18n="plan_ctx_start"></span></button>
-              <button type="button" data-type="end"><span class="plan-dot end">B</span><span data-i18n="plan_ctx_end"></span></button>
-              <button type="button" data-type="via"><span class="plan-dot via">V</span><span data-i18n="plan_ctx_via"></span></button>
-              <hr />
-              <button type="button" class="cancel" data-type="cancel" data-i18n="plan_ctx_cancel"></button>
-            </div>
-          </div>
-          <div class="gh-route-row">
-            <select class="form-select" id="ghRouteDraft" aria-label="Saved routes"></select>
-            <button type="button" class="btn btn-primary" id="btnGhSaveRoute" data-i18n="groups_save_route"></button>
-          </div>
-        </div>
+
         <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
           <button type="button" class="btn btn-primary" id="submitCreate" data-i18n="groups_create_submit"></button>
           <button type="button" class="btn btn-secondary" id="cancelCreate" data-i18n="groups_cancel"></button>
@@ -259,16 +365,110 @@
     let filter = "all";
     let q = "";
     let routeEditor = null;
+    let routeMode = "pick";
+
+    function estimateDifficulty(km, gain) {
+      const d = Number(km) || 0;
+      const g = Number(gain) || 0;
+      if (d <= 0 && g <= 0) return null;
+      if (d < 6 && g < 250) return 1;
+      if (d < 10 && g < 450) return 2;
+      if (d < 14 && g < 700) return 3;
+      if (d < 20 && g < 1000) return 4;
+      return 5;
+    }
+
+    function showRouteStats(info) {
+      const panel = document.getElementById("ghRouteStatsPanel");
+      if (!panel) return;
+      const km = info && info.distanceKm != null ? Number(info.distanceKm) : 0;
+      const gain = info && info.elevGain != null ? Number(info.elevGain) : 0;
+      const loss = info && info.elevLoss != null ? Number(info.elevLoss) : 0;
+      const hours =
+        info && info.durationHours != null
+          ? Number(info.durationHours)
+          : TW.estimateDurationHours(km, gain);
+      const has = info && (info.hasRoute || km > 0 || (info.path && info.path.length >= 2));
+      panel.hidden = !has;
+      if (!has) return;
+      const diff = estimateDifficulty(km, gain);
+      document.getElementById("ghStatDiff").textContent = diff
+        ? "L" + diff + " · " + (TW.difficultyLabels && TW.difficultyLabels[TW.getLang()]
+            ? TW.difficultyLabels[TW.getLang()][diff]
+            : "")
+        : "—";
+      document.getElementById("ghStatDist").textContent = km ? km.toFixed(1) + " km" : "—";
+      document.getElementById("ghStatDur").textContent = hours ? TW.formatHours(hours) : "—";
+      if (gain || loss) {
+        document.getElementById("ghStatElev").textContent =
+          (gain ? "+" + Math.round(gain) + " m" : "") +
+          (gain && loss ? " / " : "") +
+          (loss ? "−" + Math.round(loss) + " m" : "");
+      } else {
+        document.getElementById("ghStatElev").textContent = "—";
+      }
+    }
 
     function updateRouteStats(info) {
       const el = document.getElementById("ghRouteStats");
-      if (!el) return;
-      if (!info || !info.hasRoute) {
-        el.textContent = TW.t("groups_route_stats_empty");
+      if (el) {
+        if (!info || !info.hasRoute) el.textContent = TW.t("groups_route_stats_empty");
+        else
+          el.textContent =
+            TW.t("plan_est_distance") + ": " + info.distanceKm + " km · " + info.path.length + " " + TW.t("plan_points");
+      }
+      const path = (info && info.path) || [];
+      const km = info && info.distanceKm != null ? info.distanceKm : TW.pathDistanceKm(path);
+      const elev = TW.estimateElevFallback ? TW.estimateElevFallback(km) : { gain: 0, loss: 0 };
+      showRouteStats({
+        hasRoute: !!(info && info.hasRoute),
+        path: path,
+        distanceKm: km,
+        elevGain: elev.gain || 0,
+        elevLoss: elev.loss || 0,
+        durationHours: TW.estimateDurationHours(km, elev.gain || 0),
+      });
+    }
+
+    function statsFromDraft(d) {
+      if (!d) {
+        showRouteStats({ hasRoute: false });
         return;
       }
-      el.textContent =
-        TW.t("plan_est_distance") + ": " + info.distanceKm + " km · " + info.path.length + " " + TW.t("plan_points");
+      const path = d.path || [];
+      const km = d.distanceKm != null ? Number(d.distanceKm) : TW.pathDistanceKm(path);
+      const gain = Number(d.elevGain) || (TW.estimateElevFallback(km).gain || 0);
+      const loss = Number(d.elevLoss) || (TW.estimateElevFallback(km).loss || 0);
+      showRouteStats({
+        hasRoute: path.length >= 2 || km > 0,
+        path: path,
+        distanceKm: km,
+        elevGain: gain,
+        elevLoss: loss,
+        durationHours: d.durationHours != null ? Number(d.durationHours) : TW.estimateDurationHours(km, gain),
+      });
+    }
+
+    function setRouteMode(mode) {
+      routeMode = mode === "plan" ? "plan" : "pick";
+      document.getElementById("ghModePick").classList.toggle("active", routeMode === "pick");
+      document.getElementById("ghModePlan").classList.toggle("active", routeMode === "plan");
+      document.getElementById("ghPickWrap").hidden = routeMode !== "pick";
+      document.getElementById("ghPlanWrap").hidden = routeMode !== "plan";
+      if (routeMode === "plan") {
+        const editor = ensureRouteEditor();
+        if (editor) {
+          editor.invalidateSize();
+          updateRouteStats({
+            hasRoute: editor.hasRoute(),
+            path: editor.getPath(),
+            distanceKm: TW.pathDistanceKm(editor.getPath()),
+          });
+        }
+      } else {
+        const id = document.getElementById("ghRouteDraft").value;
+        statsFromDraft(id ? TW.getRouteDraft(id) : null);
+      }
     }
 
     function ensureRouteEditor() {
@@ -394,22 +594,76 @@
           </label>`
         )
         .join("");
+      const all = document.getElementById("ghInviteAll");
+      if (all) all.checked = false;
+    }
+
+    function applyRouteSelection(chosen) {
+      if (!chosen) {
+        statsFromDraft(null);
+        return;
+      }
+      if (chosen.indexOf("trail:") === 0) {
+        const trail = (TW.trails || []).find((t) => t.id === chosen.slice(6));
+        if (!trail) {
+          statsFromDraft(null);
+          return;
+        }
+        const km = parseFloat(String(trail.distance || "").replace(/[^\d.]/g, "")) || 0;
+        const elev = parseFloat(String(trail.elevation || "").replace(/[^\d.]/g, "")) || 0;
+        showRouteStats({
+          hasRoute: true,
+          path: trail.path || [],
+          distanceKm: km,
+          elevGain: elev,
+          elevLoss: Math.round(elev * 0.85),
+          durationHours: TW.estimateDurationHours(km, elev),
+        });
+        document.getElementById("ghStatDiff").textContent = trail.difficulty
+          ? "L" +
+            trail.difficulty +
+            " · " +
+            (typeof difficultyLabel === "function" ? difficultyLabel(trail.difficulty) : "")
+          : "—";
+        return;
+      }
+      if (routeMode === "plan") {
+        const editor = ensureRouteEditor();
+        if (editor) {
+          editor.loadDraft(chosen);
+        }
+      }
+      statsFromDraft(TW.getRouteDraft(chosen));
     }
 
     function fillRouteSelect(selectedId) {
       const sel = document.getElementById("ghRouteDraft");
       const drafts = TW.getRouteDrafts();
+      const plannedIds = typeof TW.getPlans === "function" ? TW.getPlans() : [];
+      const planned = plannedIds
+        .map((id) => (TW.trails || []).find((t) => t.id === id))
+        .filter(Boolean);
       const zh = TW.getLang() === "zh";
       const keep = selectedId || sel.value || "";
+      const draftOpts = drafts
+        .map((d) => {
+          const label = zh ? d.nameZh || d.name : d.name;
+          const km = d.distanceKm != null ? Number(d.distanceKm).toFixed(1) + " km" : "";
+          return `<option value="${d.id}">${twEsc(label)}${km ? " · " + km : ""}</option>`;
+        })
+        .join("");
+      const planOpts = planned
+        .map((t) => {
+          const label = TW.tt(t, "title");
+          return `<option value="trail:${t.id}">${twEsc(label)} · ${twEsc(t.distance || "")}</option>`;
+        })
+        .join("");
       sel.innerHTML =
-        `<option value="">${TW.t("groups_no_route")}</option>` +
-        drafts
-          .map((d) => {
-            const label = zh ? d.nameZh || d.name : d.name;
-            return `<option value="${d.id}">${twEsc(label)} (${(d.path || []).length})</option>`;
-          })
-          .join("");
-      if (keep && drafts.some((d) => d.id === keep)) sel.value = keep;
+        `<option value="">${TW.t("groups_route_pick")}</option>` +
+        (draftOpts ? `<optgroup label="${TW.t("plan_drafts")}">${draftOpts}</optgroup>` : "") +
+        (planOpts ? `<optgroup label="${TW.t("plan_marked_trails")}">${planOpts}</optgroup>` : "");
+      if (keep) sel.value = keep;
+      applyRouteSelection(sel.value);
     }
 
     function syncVisibilityUI() {
@@ -451,18 +705,11 @@
         fillRouteSelect();
         renderInviteFriends();
         syncVisibilityUI();
-        const editor = ensureRouteEditor();
-        if (editor) {
-          const selId = document.getElementById("ghRouteDraft").value;
-          if (selId) editor.loadDraft(selId);
-          else editor.reset();
-          editor.invalidateSize();
-          updateRouteStats({
-            hasRoute: editor.hasRoute(),
-            path: editor.getPath(),
-            distanceKm: TW.pathDistanceKm(editor.getPath()),
-          });
-        }
+        setRouteMode("pick");
+        ["ghPlace", "ghDesc"].forEach((id) => {
+          const el = document.getElementById(id);
+          if (el && el.dataset.i18nPlaceholder) el.placeholder = TW.t(el.dataset.i18nPlaceholder);
+        });
       }
     }
 
@@ -571,11 +818,21 @@
     });
 
     document.getElementById("ghRouteDraft").addEventListener("change", (e) => {
-      const editor = ensureRouteEditor();
-      if (!editor) return;
-      const id = e.target.value;
-      if (id) editor.loadDraft(id);
-      else editor.reset();
+      applyRouteSelection(e.target.value);
+    });
+
+    document.getElementById("ghModePick").addEventListener("click", () => setRouteMode("pick"));
+    document.getElementById("ghModePlan").addEventListener("click", () => setRouteMode("plan"));
+
+    document.getElementById("ghInviteAll").addEventListener("change", (e) => {
+      document.querySelectorAll('input[name="invite"]').forEach((c) => {
+        c.checked = e.target.checked;
+      });
+    });
+    document.getElementById("friendInviteList").addEventListener("change", () => {
+      const boxes = Array.from(document.querySelectorAll('input[name="invite"]'));
+      const all = document.getElementById("ghInviteAll");
+      if (all && boxes.length) all.checked = boxes.every((c) => c.checked);
     });
 
     document.getElementById("btnGhSaveRoute").addEventListener("click", () => {
@@ -588,6 +845,7 @@
         return;
       }
       fillRouteSelect(draft.id);
+      setRouteMode("pick");
       showToast(TW.t("groups_route_saved"));
     });
 
@@ -610,9 +868,16 @@
       if (vis === "private") {
         document.querySelectorAll('input[name="invite"]:checked').forEach((c) => invited.push(c.value));
       }
-      const editor = ensureRouteEditor();
+      const editor = routeMode === "plan" ? ensureRouteEditor() : null;
       let draftId = document.getElementById("ghRouteDraft").value;
       let path = [];
+      let trailId = "";
+      if (draftId.indexOf("trail:") === 0) {
+        trailId = draftId.slice(6);
+        const trail = (TW.trails || []).find((t) => t.id === trailId);
+        path = (trail && trail.path) || [];
+        draftId = "";
+      }
       if (editor && editor.hasRoute()) {
         const saved = editor.saveDraft(name);
         if (saved) {
@@ -624,32 +889,48 @@
       }
       if (path.length < 2) {
         const draft = draftId ? TW.getRouteDraft(draftId) : null;
-        path = draft && draft.path && draft.path.length >= 2 ? draft.path : [];
+        path = draft && draft.path && draft.path.length >= 2 ? draft.path : path;
       }
-      if (path.length < 2) {
+      if (path.length < 2 && !trailId) {
         showToast(TW.t("groups_route_need_ab"));
         return;
       }
+      const dateVal = document.getElementById("ghDate").value;
+      const timeVal = document.getElementById("ghGatherTime").value;
+      const place = document.getElementById("ghPlace").value.trim() || "Hong Kong";
+      const gather = document.getElementById("ghGather").value.trim();
+      const desc = document.getElementById("ghDesc").value.trim();
+      const limit = Math.max(2, Number(document.getElementById("ghLimit").value) || 12);
+      const dateLabel = dateVal
+        ? dateVal + (timeVal ? " · " + timeVal : "")
+        : timeVal || (TW.getLang() === "zh" ? "即將舉行" : "Coming soon");
       const auth = TW.getMemberAuth();
       const hike = {
         id: "gh_" + Date.now(),
         title: name,
         titleZh: name,
-        place: document.getElementById("ghPlace").value.trim() || "Hong Kong",
-        placeZh: document.getElementById("ghPlace").value.trim() || "香港",
-        date: document.getElementById("ghDate").value.trim() || "Coming soon",
-        dateZh: document.getElementById("ghDate").value.trim() || "即將舉行",
+        place: place,
+        placeZh: place,
+        gatherPoint: gather,
+        gatherTime: timeVal || "",
+        description: desc,
+        descriptionZh: desc,
+        date: dateLabel,
+        dateZh: dateLabel,
+        dateISO: dateVal || "",
         visibility: vis,
         invited: invited,
         inviteToken: vis === "private" ? TW.makeInviteToken() : "",
         invitedEmails: [],
         path: path,
         routeDraftId: draftId || "",
+        trailId: trailId || "",
         organizerEmail: (auth && auth.email) || "",
         organizerName: TW.memberDisplayName() || (TW.getLang() === "zh" ? "主辦人" : "Organizer"),
         local: true,
         image: "https://images.unsplash.com/photo-1551632811-561732d1e5ec?w=600&q=60",
-        spots: "12",
+        spots: String(limit),
+        participantLimit: limit,
         past: false,
         joined: true,
         members: [
@@ -668,7 +949,11 @@
       panel.style.display = "none";
       document.getElementById("ghName").value = "";
       document.getElementById("ghPlace").value = "";
+      document.getElementById("ghGather").value = "";
+      document.getElementById("ghGatherTime").value = "";
       document.getElementById("ghDate").value = "";
+      document.getElementById("ghDesc").value = "";
+      document.getElementById("ghLimit").value = "12";
       document.getElementById("ghRouteDraft").value = "";
       if (routeEditor) routeEditor.reset();
       fillRouteSelect();

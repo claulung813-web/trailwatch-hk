@@ -8,292 +8,200 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="css/styles.css?v=20260828m" />
 </head>
 <body>
   <div id="app-header"></div>
 
   <main class="page topo-bg">
-    <div class="container" style="position:relative;z-index:1">
-      <div class="profile-header">
-        <img class="profile-avatar" id="avatar" alt="" />
-        <div>
-          <h1 id="name"></h1>
-          <div class="rank" id="membershipStatus"></div>
+    <div class="container profile-container">
+
+      <!-- Main profile hub -->
+      <div id="profileHub">
+        <div class="profile-hero">
+          <img class="profile-avatar" id="avatar" alt="" />
+          <div class="profile-hero-main">
+            <h1 id="name"></h1>
+            <div id="profilePremiumCta"></div>
+          </div>
+          <button type="button" class="icon-btn profile-settings-btn" id="openSettings">
+            <span id="settingsIcon"></span>
+          </button>
         </div>
+
+        <div class="profile-badge-strip card">
+          <div class="profile-badge-strip-label" data-i18n="dash_selected_badge"></div>
+          <div class="profile-badge-strip-row">
+            <strong id="selectedBadge"></strong>
+            <a class="link-more" href="#badges" id="changeBadgeLink" data-i18n="dash_change_badge"></a>
+          </div>
+        </div>
+
+        <section class="profile-lifetime">
+          <div class="section-head">
+            <h2 data-i18n="dash_lifetime"></h2>
+          </div>
+          <div class="home-figures profile-lifetime-stats">
+            <div class="stat-box">
+              <div class="value" id="lifeKm">—</div>
+              <div class="label" data-i18n="km_hiked"></div>
+            </div>
+            <div class="stat-box">
+              <div class="value" id="lifeRecords">—</div>
+              <div class="label" data-i18n="records"></div>
+            </div>
+            <div class="stat-box">
+              <div class="value" id="lifeElevation">—</div>
+              <div class="label" data-i18n="profile_lifetime_elevation"></div>
+            </div>
+          </div>
+          <button type="button" class="btn btn-secondary dash-more-btn" id="dashMoreBtn" hidden data-i18n="dash_more"></button>
+          <div id="dashPremiumMore" hidden>
+            <div class="section-head"><h2 data-i18n="mil_top_records"></h2></div>
+            <div class="top-records" id="dashTopRecords"></div>
+            <div class="section-head"><h2 data-i18n="mil_highlights"></h2></div>
+            <ul class="highlight-list" id="milHighlights"></ul>
+            <div class="section-head mt-2"><h2 data-i18n="dash_insights"></h2></div>
+            <div class="chart-card">
+              <h3 data-i18n="insights_pace"></h3>
+              <svg class="pace-chart" viewBox="0 0 480 160" preserveAspectRatio="none">
+                <defs>
+                  <linearGradient id="paceFill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#3da855" stop-opacity="0.4"/>
+                    <stop offset="100%" stop-color="#3da855" stop-opacity="0.05"/>
+                  </linearGradient>
+                </defs>
+                <g stroke="#e5e7eb" stroke-width="1">
+                  <line x1="40" y1="20" x2="460" y2="20"/><line x1="40" y1="50" x2="460" y2="50"/>
+                  <line x1="40" y1="80" x2="460" y2="80"/><line x1="40" y1="110" x2="460" y2="110"/>
+                  <line x1="40" y1="140" x2="460" y2="140"/>
+                </g>
+                <path fill="url(#paceFill)" d="M40,90 L110,85 L180,95 L250,80 L320,88 L390,75 L460,78 L460,140 L40,140 Z"/>
+                <path fill="none" stroke="#3da855" stroke-width="2.5" d="M40,90 L110,85 L180,95 L250,80 L320,88 L390,75 L460,78"/>
+                <path fill="none" stroke="#4a90c8" stroke-width="2.5" d="M40,110 L110,100 L180,105 L250,70 L320,85 L390,55 L460,60"/>
+              </svg>
+              <div class="chart-summary">
+                <div class="box"><div class="k" data-i18n="insights_overall"></div><div class="v" id="avgPace">—</div></div>
+                <div class="box"><div class="k" data-i18n="insights_alltime"></div><div class="v" id="bestPace">—</div></div>
+              </div>
+            </div>
+            <div class="chart-card">
+              <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem">
+                <h3 style="margin:0" data-i18n="insights_activity"></h3>
+                <div class="toggle-pills" id="activityToggle" style="margin:0">
+                  <button class="active" data-mode="yearly" data-i18n="insights_yearly"></button>
+                  <button data-mode="monthly" data-i18n="insights_monthly"></button>
+                </div>
+              </div>
+              <div class="chart-bars" id="activityBars" style="margin-top:1rem"></div>
+            </div>
+            <div class="chart-card">
+              <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem">
+                <h3 style="margin:0" data-i18n="insights_distance"></h3>
+                <div class="toggle-pills" id="distToggle" style="margin:0">
+                  <button class="active" data-mode="yearly" data-i18n="insights_yearly"></button>
+                  <button data-mode="monthly" data-i18n="insights_monthly"></button>
+                </div>
+              </div>
+              <div class="chart-bars" id="distBars" style="margin-top:1rem"></div>
+            </div>
+            <div class="chart-card">
+              <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem">
+                <h3 style="margin:0" data-i18n="insights_elevation"></h3>
+                <div class="toggle-pills" id="elevToggle" style="margin:0">
+                  <button class="active" data-mode="yearly" data-i18n="insights_yearly"></button>
+                  <button data-mode="monthly" data-i18n="insights_monthly"></button>
+                </div>
+              </div>
+              <div class="chart-bars" id="elevBars" style="margin-top:1rem"></div>
+            </div>
+            <div class="chart-card">
+              <h3 data-i18n="insights_region"></h3>
+              <div id="regionPie"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="profile-preview-section">
+          <div class="section-head">
+            <h2 data-i18n="nav_my_plans"></h2>
+            <a class="link-more" href="#plans" data-i18n="profile_view_more"></a>
+          </div>
+          <div id="plansPreview" class="profile-preview-grid"></div>
+        </section>
+
+        <section class="profile-preview-section">
+          <div class="section-head">
+            <h2 data-i18n="nav_my_records"></h2>
+            <a class="link-more" href="#records" data-i18n="profile_view_more"></a>
+          </div>
+          <div id="recordsPreview" class="profile-preview-list"></div>
+        </section>
+
+        <section class="profile-preview-section">
+          <div class="section-head">
+            <h2 data-i18n="nav_my_reports"></h2>
+            <a class="link-more" href="#reports" data-i18n="profile_view_more"></a>
+          </div>
+          <div id="reportsPreview" class="profile-preview-list"></div>
+        </section>
       </div>
 
-      <nav class="me-hub-nav" id="meHubNav" aria-label="Profile sections">
-        <a href="#overview" data-me-jump="overview" data-i18n="nav_dashboard"></a>
-        <a href="#profile" data-me-jump="profile" data-i18n="nav_my_profile"></a>
-        <a href="#friends" data-me-jump="friends" data-i18n="nav_friends"></a>
-        <a href="#bookmarks" data-me-jump="bookmarks" data-i18n="nav_bookmarks"></a>
-        <a href="#settings" data-me-jump="settings" data-i18n="nav_settings"></a>
-      </nav>
-
-      <!-- Dashboard -->
-      <section class="me-panel" id="overview" data-me-panel="overview">
-        <div class="card" id="dashMembershipCard" style="padding:1rem 1.15rem;margin-bottom:1.25rem"></div>
-
-        <div class="section-head">
-          <h2 data-i18n="dash_lifetime"></h2>
+      <!-- Full: plans -->
+      <section class="profile-subview" id="viewPlans" hidden>
+        <div class="profile-subview-head">
+          <a class="profile-back link-more" href="#" data-profile-back data-i18n="profile_back"></a>
+          <h2 data-i18n="nav_my_plans"></h2>
         </div>
-        <div class="home-figures" style="margin-top:0">
-          <div class="stat-box">
-            <div class="value" id="lifeKm">—</div>
-            <div class="label" data-i18n="km_hiked"></div>
-          </div>
-          <div class="stat-box">
-            <div class="value" id="lifeRecords">—</div>
-            <div class="label" data-i18n="records"></div>
-          </div>
+        <div id="planEmpty" class="card" style="padding:2rem;text-align:center;display:none">
+          <p style="color:var(--text-muted);margin-bottom:1rem" data-i18n="plan_empty"></p>
+          <a class="btn btn-primary" href="explore.html" data-i18n="plan_go_explore"></a>
         </div>
-
-        <div class="card" style="padding:1rem 1.15rem;margin-bottom:1.25rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
-          <div>
-            <div style="font-size:0.75rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.04em" data-i18n="dash_selected_badge"></div>
-            <strong id="selectedBadge" style="color:var(--green-900);display:flex;align-items:center"></strong>
-          </div>
-          <a class="btn btn-secondary" style="margin-left:auto;padding:0.4rem 0.85rem;font-size:0.8rem" href="#profile&type=badges" data-me-jump="profile&type=badges" data-i18n="dash_change_badge"></a>
-        </div>
-
-        <div id="dashMoreGate" style="margin-bottom:1.25rem"></div>
-        <button type="button" class="btn btn-primary dash-more-btn" id="dashMoreBtn" hidden data-i18n="dash_more"></button>
-
-        <div id="dashPremiumMore" hidden>
-          <div class="section-head">
-            <h2 data-i18n="mil_top_records"></h2>
-          </div>
-          <div class="top-records" id="dashTopRecords"></div>
-          <div class="section-head">
-            <h2 data-i18n="mil_highlights"></h2>
-          </div>
-          <ul class="highlight-list" id="milHighlights"></ul>
-
-          <div class="section-head mt-2">
-            <h2 data-i18n="dash_insights"></h2>
-          </div>
-          <div class="chart-card">
-            <h3 data-i18n="insights_pace"></h3>
-            <svg class="pace-chart" viewBox="0 0 480 160" preserveAspectRatio="none">
-              <defs>
-                <linearGradient id="paceFill" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stop-color="#3da855" stop-opacity="0.4"/>
-                  <stop offset="100%" stop-color="#3da855" stop-opacity="0.05"/>
-                </linearGradient>
-              </defs>
-              <g stroke="#e5e7eb" stroke-width="1">
-                <line x1="40" y1="20" x2="460" y2="20"/>
-                <line x1="40" y1="50" x2="460" y2="50"/>
-                <line x1="40" y1="80" x2="460" y2="80"/>
-                <line x1="40" y1="110" x2="460" y2="110"/>
-                <line x1="40" y1="140" x2="460" y2="140"/>
-              </g>
-              <text x="8" y="24" font-size="10" fill="#9ca3af">5</text>
-              <text x="4" y="84" font-size="10" fill="#9ca3af">15</text>
-              <text x="4" y="144" font-size="10" fill="#9ca3af">30</text>
-              <path fill="url(#paceFill)" d="M40,90 L110,85 L180,95 L250,80 L320,88 L390,75 L460,78 L460,140 L40,140 Z"/>
-              <path fill="none" stroke="#3da855" stroke-width="2.5" d="M40,90 L110,85 L180,95 L250,80 L320,88 L390,75 L460,78"/>
-              <path fill="none" stroke="#4a90c8" stroke-width="2.5" d="M40,110 L110,100 L180,105 L250,70 L320,85 L390,55 L460,60"/>
-              <circle cx="250" cy="70" r="4" fill="#4a90c8"/>
-              <circle cx="390" cy="55" r="4" fill="#4a90c8"/>
-              <circle cx="460" cy="60" r="4" fill="#4a90c8"/>
-              <text x="40" y="156" font-size="9" fill="#9ca3af">2020</text>
-              <text x="250" y="156" font-size="9" fill="#9ca3af">2023</text>
-              <text x="430" y="156" font-size="9" fill="#9ca3af">2026</text>
-            </svg>
-            <div style="display:flex;gap:1rem;font-size:0.75rem;margin-top:0.5rem;color:var(--text-muted)">
-              <span><span style="color:#3da855">●</span> <span data-i18n="insights_avg"></span></span>
-              <span><span style="color:#4a90c8">●</span> <span data-i18n="insights_best"></span></span>
-              <span style="margin-left:auto">min/km</span>
-            </div>
-            <div class="chart-summary">
-              <div class="box">
-                <div class="k" data-i18n="insights_overall"></div>
-                <div class="v" id="avgPace">15.3 min/km</div>
-              </div>
-              <div class="box">
-                <div class="k" data-i18n="insights_alltime"></div>
-                <div class="v" id="bestPace">10.1 min/km</div>
-              </div>
-            </div>
-          </div>
-          <div class="chart-card">
-            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem">
-              <h3 style="margin:0" data-i18n="insights_activity"></h3>
-              <div class="toggle-pills" id="activityToggle" style="margin:0">
-                <button class="active" data-mode="yearly" data-i18n="insights_yearly"></button>
-                <button data-mode="monthly" data-i18n="insights_monthly"></button>
-              </div>
-            </div>
-            <div class="chart-bars" id="activityBars" style="margin-top:1rem"></div>
-          </div>
-          <div class="chart-card">
-            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem">
-              <h3 style="margin:0" data-i18n="insights_distance"></h3>
-              <div class="toggle-pills" id="distToggle" style="margin:0">
-                <button class="active" data-mode="yearly" data-i18n="insights_yearly"></button>
-                <button data-mode="monthly" data-i18n="insights_monthly"></button>
-              </div>
-            </div>
-            <div class="chart-bars" id="distBars" style="margin-top:1rem"></div>
-          </div>
-          <div class="chart-card">
-            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem">
-              <h3 style="margin:0" data-i18n="insights_elevation"></h3>
-              <div class="toggle-pills" id="elevToggle" style="margin:0">
-                <button class="active" data-mode="yearly" data-i18n="insights_yearly"></button>
-                <button data-mode="monthly" data-i18n="insights_monthly"></button>
-              </div>
-            </div>
-            <div class="chart-bars" id="elevBars" style="margin-top:1rem"></div>
-          </div>
-          <div class="chart-card">
-            <h3 data-i18n="insights_region"></h3>
-            <div id="regionPie"></div>
-          </div>
-        </div>
+        <div class="trail-grid" id="planGrid"></div>
       </section>
 
-      <!-- My profile -->
-      <section class="me-panel" id="profile" data-me-panel="profile" hidden>
-        <h2 class="page-title" style="font-size:1.25rem;margin-bottom:0.35rem" data-i18n="nav_my_profile"></h2>
-        <div class="chip-row filters activity-type-filters" id="profileFilters" role="tablist">
-          <button type="button" class="chip active" data-profile="badges" data-i18n="nav_badges"></button>
-          <button type="button" class="chip" data-profile="records" data-i18n="nav_my_records"></button>
-          <button type="button" class="chip" data-profile="plans" data-i18n="nav_my_plans"></button>
-          <button type="button" class="chip" data-profile="groups" data-i18n="nav_my_groups"></button>
-          <button type="button" class="chip" data-profile="reports" data-i18n="nav_my_reports"></button>
+      <!-- Full: records -->
+      <section class="profile-subview" id="viewRecords" hidden>
+        <div class="profile-subview-head">
+          <a class="profile-back link-more" href="#" data-profile-back data-i18n="profile_back"></a>
+          <h2 data-i18n="nav_my_records"></h2>
         </div>
-
-        <div class="activity-pane" data-profile-pane="badges" role="tabpanel">
-          <h3 class="activity-pane-title" data-i18n="nav_badges"></h3>
-          <div id="badgePicker"></div>
+        <div class="footprint-wrap">
+          <div id="footprintMap" class="footprint-map"></div>
+          <div class="footprint-gate" id="footprintGate" hidden></div>
         </div>
-
-        <div class="activity-pane" data-profile-pane="records" role="tabpanel" hidden>
-          <h3 class="activity-pane-title" data-i18n="nav_my_records"></h3>
-          <div class="footprint-wrap">
-            <div id="footprintMap" class="footprint-map"></div>
-            <div class="footprint-gate" id="footprintGate" hidden></div>
-          </div>
-          <div class="me-filter-bar">
-            <div>
-              <label for="recSearch" data-i18n="me_search"></label>
-              <input class="form-input" type="search" id="recSearch" data-i18n-placeholder="me_search" />
-            </div>
-            <div>
-              <label for="recDistrict" data-i18n="filter_district"></label>
-              <div id="recDistrictWrap"></div>
-            </div>
-            <div>
-              <label for="recFrom" data-i18n="gallery_date_from"></label>
-              <input class="form-input" type="date" id="recFrom" />
-            </div>
-            <div>
-              <label for="recTo" data-i18n="gallery_date_to"></label>
-              <input class="form-input" type="date" id="recTo" />
-            </div>
-          </div>
-          <div class="record-list" id="hikeList"></div>
-        </div>
-
-        <div class="activity-pane" data-profile-pane="plans" role="tabpanel" hidden>
-          <h3 class="activity-pane-title" data-i18n="nav_my_plans"></h3>
-          <div class="me-filter-bar">
-            <div>
-              <label for="planSearch" data-i18n="me_search"></label>
-              <input class="form-input" type="search" id="planSearch" data-i18n-placeholder="me_search" />
-            </div>
-            <div>
-              <label for="planDistrict" data-i18n="filter_district"></label>
-              <div id="planDistrictWrap"></div>
-            </div>
-            <div>
-              <label for="planFrom" data-i18n="gallery_date_from"></label>
-              <input class="form-input" type="date" id="planFrom" />
-            </div>
-            <div>
-              <label for="planTo" data-i18n="gallery_date_to"></label>
-              <input class="form-input" type="date" id="planTo" />
-            </div>
-          </div>
-          <div id="planEmpty" class="card" style="padding:2rem;text-align:center;display:none">
-            <p style="color:var(--text-muted);margin-bottom:1rem" data-i18n="plan_empty"></p>
-            <a class="btn btn-primary" href="explore.html" data-i18n="plan_go_explore"></a>
-          </div>
-          <div class="trail-grid" id="planGrid"></div>
-        </div>
-
-        <div class="activity-pane" data-profile-pane="groups" role="tabpanel" hidden>
-          <h3 class="activity-pane-title" data-i18n="nav_my_groups"></h3>
-          <div class="chip-row filters" id="groupFilters">
-            <button type="button" class="chip active" data-f="all" data-i18n="groups_all_when"></button>
-            <button type="button" class="chip" data-f="upcoming" data-i18n="groups_upcoming"></button>
-            <button type="button" class="chip" data-f="past" data-i18n="groups_past"></button>
-          </div>
-          <div class="me-filter-bar">
-            <div>
-              <label for="groupSearch" data-i18n="me_search"></label>
-              <input class="form-input" type="search" id="groupSearch" data-i18n-placeholder="me_search" />
-            </div>
-            <div>
-              <label for="groupFrom" data-i18n="gallery_date_from"></label>
-              <input class="form-input" type="date" id="groupFrom" />
-            </div>
-            <div>
-              <label for="groupTo" data-i18n="gallery_date_to"></label>
-              <input class="form-input" type="date" id="groupTo" />
-            </div>
-          </div>
-          <div class="trail-grid" id="groupGrid"></div>
-          <p style="margin-top:1rem"><a class="link-more" href="group-hikes.html" data-i18n="nav_groups"></a></p>
-        </div>
-
-        <div class="activity-pane" data-profile-pane="reports" role="tabpanel" hidden>
-          <h3 class="activity-pane-title" data-i18n="nav_my_reports"></h3>
-          <div id="myReports"></div>
-          <p style="margin-top:1rem"><a class="link-more" href="reports.html" data-i18n="nav_incidents"></a></p>
-        </div>
+        <div class="record-list" id="hikeList"></div>
       </section>
 
-      <!-- Friends -->
-      <section class="me-panel" id="friends" data-me-panel="friends" hidden>
-        <h2 class="page-title" style="font-size:1.25rem;margin-bottom:0.35rem" data-i18n="friends_title"></h2>
-        <div class="section-head"><h2 data-i18n="friends_list"></h2></div>
-        <div class="record-list" id="friendList"></div>
-        <div class="section-head mt-2"><h2 data-i18n="friends_pending"></h2></div>
-        <div class="record-list" id="pendingList"></div>
+      <!-- Full: reports -->
+      <section class="profile-subview" id="viewReports" hidden>
+        <div class="profile-subview-head">
+          <a class="profile-back link-more" href="#" data-profile-back data-i18n="profile_back"></a>
+          <h2 data-i18n="nav_my_reports"></h2>
+        </div>
+        <div id="myReports"></div>
+        <p style="margin-top:1rem"><a class="link-more" href="reports.html" data-i18n="nav_incidents"></a></p>
       </section>
 
-      <!-- Bookmarks -->
-      <section class="me-panel" id="bookmarks" data-me-panel="bookmarks" hidden>
-        <h2 class="page-title" style="font-size:1.25rem;margin-bottom:0.35rem" data-i18n="bookmarks_title"></h2>
-        <div class="chip-row filters" id="bmFilters" role="tablist">
-          <button type="button" class="chip active" data-bm="all" data-i18n="filter_all"></button>
-          <button type="button" class="chip" data-bm="route" data-i18n="app_bm_routes"></button>
-          <button type="button" class="chip" data-bm="record" data-i18n="app_bm_records"></button>
-          <button type="button" class="chip" data-bm="event" data-i18n="app_bm_events"></button>
+      <!-- Badges picker -->
+      <section class="profile-subview" id="viewBadges" hidden>
+        <div class="profile-subview-head">
+          <a class="profile-back link-more" href="#" data-profile-back data-i18n="profile_back"></a>
+          <h2 data-i18n="nav_badges"></h2>
         </div>
-        <div class="bm-list" id="bookmarkGrid"></div>
+        <div id="badgePicker"></div>
       </section>
 
       <!-- Settings -->
-      <section class="me-panel" id="settings" data-me-panel="settings" hidden>
-        <h2 class="page-title" style="font-size:1.25rem;margin-bottom:1rem;text-align:center" data-i18n="profile_title"></h2>
+      <section class="profile-subview" id="viewSettings" hidden>
+        <div class="profile-subview-head">
+          <a class="profile-back link-more" href="#" data-profile-back data-i18n="profile_back"></a>
+          <h2 data-i18n="nav_settings"></h2>
+        </div>
         <div style="max-width:560px;margin:0 auto">
           <div style="text-align:center;margin-bottom:1.5rem">
             <img class="profile-avatar" id="settingsAvatar" alt="" style="margin:0 auto 0.75rem;width:112px;height:112px" />
-            <div id="highestBadge" style="margin-top:0.75rem"></div>
           </div>
-          <a class="premium-card" href="get-app.html#premium">
-            <div class="app-premium-pill">Premium</div>
-            <div class="info">
-              <strong data-i18n="profile_premium"></strong>
-              <span id="premiumEnds"></span>
-            </div>
-            <span class="chevron">›</span>
-          </a>
           <form id="profileForm" onsubmit="event.preventDefault();showToast(TW.t('toast_saved'))">
             <div class="form-group">
               <label for="settingsName" data-i18n="profile_name"></label>
@@ -318,6 +226,7 @@
           </p>
         </div>
       </section>
+
     </div>
   </main>
 
@@ -331,75 +240,84 @@
   <script src="js/env-badge.js"></script>
   <script src="js/hikes.js"></script>
   <script src="js/dashboard.js"></script>
-  <script src="js/app.js"></script>
+  <script src="js/app.js?v=20260828m"></script>
   <script>
     document.documentElement.lang = TW.getLang() === "zh" ? "zh-Hant" : "en";
     initShell("profile");
+
+    const PROFILE_VIEWS = ["hub", "plans", "records", "reports", "badges", "settings"];
+
     TW.setAvatar(document.getElementById("avatar"), TW.user.avatar);
     TW.setAvatar(document.getElementById("settingsAvatar"), TW.user.avatar);
     document.getElementById("name").textContent = TW.user.name;
-    TW.renderMembershipHeader(document.getElementById("membershipStatus"));
-    TW.renderMembershipCard(document.getElementById("dashMembershipCard"));
+    document.getElementById("settingsIcon").innerHTML = twIcon("settings");
+    document.getElementById("openSettings").setAttribute("aria-label", TW.t("nav_settings"));
+
+    function renderProfilePremiumCta() {
+      const el = document.getElementById("profilePremiumCta");
+      if (!el) return;
+      const prem = TW.isMemberPremium && TW.isMemberPremium();
+      if (prem) {
+        el.innerHTML = `<span class="dash-premium-pill">${TW.escapeHtml(TW.t("dash_premium_active"))}</span>`;
+      } else {
+        el.innerHTML = `<a href="premium.html" class="btn btn-secondary profile-premium-btn">${TW.escapeHtml(TW.t("dash_unlock"))}</a>`;
+      }
+    }
+    renderProfilePremiumCta();
+
     TW.renderSelectedBadgeCard(null, document.getElementById("selectedBadge"));
     TW.applyPremiumMoreGate();
 
     const recCount = (TW.records || []).length + (TW.getHikes ? TW.getHikes().length : 0);
     document.getElementById("lifeKm").textContent = (TW.stats.distanceKm || 0).toLocaleString() + " km";
     document.getElementById("lifeRecords").textContent = TW.stats.records || recCount;
+    document.getElementById("lifeElevation").textContent = (TW.stats.elevGain || 0).toLocaleString() + " m";
 
-    const PROFILE_TYPES = ["badges", "records", "plans", "groups", "reports"];
-    const ME_PANELS = ["overview", "profile", "friends", "bookmarks", "settings"];
-
-    function parseMeHash(raw) {
-      let h = String(raw || "overview").replace(/^#/, "") || "overview";
-      if (h === "dashboard") return { panel: "overview", type: "badges", hashOut: "overview", openMore: false };
-      if (h === "insights" || h === "milestones") return { panel: "overview", type: "badges", hashOut: "overview", openMore: true };
-      if (h === "hikes") h = "records";
-      if (h === "gallery" || h === "trees") h = "badges";
-
-      function typeFrom(str, prefix) {
-        const m = str.match(/[?&\/]type=([a-z]+)/) || str.match(new RegExp("^" + prefix + "\\/([a-z]+)"));
-        let type = prefix === "profile" ? "badges" : "records";
-        if (m && PROFILE_TYPES.includes(m[1])) type = m[1];
-        if (m && m[1] === "gallery") type = "records";
-        return type;
+    function parseProfileView(raw) {
+      const h = String(raw || "").replace(/^#/, "").toLowerCase();
+      if (!h || h === "overview" || h === "dashboard" || h === "profile") return "hub";
+      if (h.startsWith("plans") || h.includes("type=plans")) return "plans";
+      if (h.startsWith("records") || h === "hikes" || h.includes("type=records")) return "records";
+      if (h.startsWith("reports") || h.includes("type=reports")) return "reports";
+      if (h.startsWith("badges") || h.includes("type=badges")) return "badges";
+      if (h.startsWith("settings")) return "settings";
+      if (h === "insights" || h === "milestones") return { view: "hub", openMore: true };
+      if (h.startsWith("activity")) {
+        if (h.includes("records")) return "records";
+        if (h.includes("plans")) return "plans";
+        if (h.includes("reports")) return "reports";
+        if (h.includes("badges")) return "badges";
       }
-
-      if (h === "activity" || h.startsWith("activity&") || h.startsWith("activity?") || h.startsWith("activity/")) {
-        const type = typeFrom(h, "activity");
-        return { panel: "profile", type, hashOut: "profile&type=" + type, openMore: false };
+      if (h.startsWith("profile")) {
+        if (h.includes("records")) return "records";
+        if (h.includes("plans")) return "plans";
+        if (h.includes("reports")) return "reports";
+        if (h.includes("badges")) return "badges";
       }
-      if (h === "profile" || h.startsWith("profile&") || h.startsWith("profile?") || h.startsWith("profile/")) {
-        const type = typeFrom(h, "profile");
-        const hashOut = type === "badges" ? "profile" : "profile&type=" + type;
-        return { panel: "profile", type, hashOut, openMore: false };
-      }
-      if (PROFILE_TYPES.includes(h)) {
-        return { panel: "profile", type: h, hashOut: h === "badges" ? "profile" : "profile&type=" + h, openMore: false };
-      }
-      if (ME_PANELS.indexOf(h) >= 0) {
-        return { panel: h, type: "badges", hashOut: h, openMore: false };
-      }
-      return { panel: "overview", type: "badges", hashOut: "overview", openMore: false };
+      return "hub";
     }
 
-    function currentMeRaw() {
-      return (location.hash || "#overview").replace(/^#/, "") || "overview";
-    }
+    function showProfileView(viewOrParsed, pushHash) {
+      let view = typeof viewOrParsed === "string" ? viewOrParsed : viewOrParsed.view;
+      const openMore = viewOrParsed && viewOrParsed.openMore;
+      if (!PROFILE_VIEWS.includes(view)) view = "hub";
 
-    function setProfileType(type, pushHash) {
-      const t = PROFILE_TYPES.includes(type) ? type : "badges";
-      document.querySelectorAll("#profileFilters [data-profile]").forEach((btn) => {
-        btn.classList.toggle("active", btn.getAttribute("data-profile") === t);
-      });
-      document.querySelectorAll("[data-profile-pane]").forEach((pane) => {
-        pane.hidden = pane.getAttribute("data-profile-pane") !== t;
-      });
-      if (t === "records") initFootprintMap();
-      if (pushHash) {
-        const next = "#" + (t === "badges" ? "profile" : "profile&type=" + t);
-        if (location.hash !== next) history.replaceState(null, "", next);
+      document.getElementById("profileHub").hidden = view !== "hub";
+      document.getElementById("viewPlans").hidden = view !== "plans";
+      document.getElementById("viewRecords").hidden = view !== "records";
+      document.getElementById("viewReports").hidden = view !== "reports";
+      document.getElementById("viewBadges").hidden = view !== "badges";
+      document.getElementById("viewSettings").hidden = view !== "settings";
+
+      if (view === "records") initFootprintMap();
+      if (view === "hub" && openMore) setDashMore(true);
+
+      if (pushHash !== false) {
+        const hashMap = { hub: "", plans: "plans", records: "records", reports: "reports", badges: "badges", settings: "settings" };
+        const next = hashMap[view] ? "#" + hashMap[view] : "";
+        if (location.hash !== next) history.replaceState(null, "", "profile.html" + next);
       }
+      window.scrollTo({ top: 0, behavior: "smooth" });
     }
 
     function setDashMore(open) {
@@ -413,79 +331,54 @@
       btn.setAttribute("aria-expanded", show ? "true" : "false");
     }
 
-    function showMePanel(id, pushHash) {
-      const parsed = parseMeHash(id);
-      document.querySelectorAll("[data-me-panel]").forEach((el) => {
-        el.hidden = el.getAttribute("data-me-panel") !== parsed.panel;
-      });
-      if (parsed.panel === "profile") setProfileType(parsed.type, false);
-      if (parsed.panel === "overview" && parsed.openMore) setDashMore(true);
+    document.getElementById("openSettings").addEventListener("click", () => {
+      history.pushState(null, "", "#settings");
+      showProfileView("settings", false);
+    });
 
-      document.querySelectorAll("#meHubNav a").forEach((a) => {
-        const jump = a.getAttribute("data-me-jump") || "";
-        a.classList.toggle("active", jump === parsed.panel || (parsed.panel === "overview" && jump === "overview"));
-      });
-      document.querySelectorAll("#accountMenu a[href*='profile.html']").forEach((a) => {
-        const hash = (a.getAttribute("href") || "").split("#")[1] || "overview";
-        const linkParsed = parseMeHash(hash);
-        a.classList.toggle("active", linkParsed.panel === parsed.panel);
-      });
-
-      if (pushHash !== false) {
-        const next = "#" + parsed.hashOut;
-        if (location.hash !== next) history.replaceState(null, "", next);
-      }
-      const activeTab = document.querySelector("#meHubNav a.active");
-      if (activeTab && activeTab.scrollIntoView) {
-        activeTab.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" });
-      }
-    }
-
-    document.querySelectorAll("[data-me-jump]").forEach((a) => {
+    document.querySelectorAll("[data-profile-back]").forEach((a) => {
       a.addEventListener("click", (e) => {
-        const id = a.getAttribute("data-me-jump");
-        if (!id) return;
         e.preventDefault();
-        const parsed = parseMeHash(id);
-        history.pushState(null, "", "#" + parsed.hashOut);
-        showMePanel(id, false);
-        window.scrollTo({ top: 0, behavior: "smooth" });
+        history.pushState(null, "", "profile.html");
+        showProfileView("hub", false);
       });
     });
 
-    document.getElementById("profileFilters").addEventListener("click", (e) => {
-      const btn = e.target.closest("button[data-profile]");
-      if (!btn) return;
-      setProfileType(btn.getAttribute("data-profile"), true);
+    document.getElementById("changeBadgeLink").addEventListener("click", (e) => {
+      e.preventDefault();
+      history.pushState(null, "", "#badges");
+      showProfileView("badges", false);
     });
 
     const moreBtn = document.getElementById("dashMoreBtn");
     if (moreBtn) {
       moreBtn.addEventListener("click", () => {
+        if (!(TW.isMemberPremium && TW.isMemberPremium())) {
+          location.href = "premium.html";
+          return;
+        }
         const panel = document.getElementById("dashPremiumMore");
         setDashMore(panel && panel.hidden);
       });
     }
 
-    window.addEventListener("hashchange", () => showMePanel(currentMeRaw(), false));
-    if (!location.hash) history.replaceState(null, "", "#overview");
-    showMePanel(currentMeRaw(), true);
+    window.addEventListener("hashchange", () => {
+      const parsed = parseProfileView(location.hash);
+      if (parsed && parsed.openMore) showProfileView(parsed, false);
+      else showProfileView(typeof parsed === "string" ? parsed : parsed.view || "hub", false);
+    });
 
-    /* Dashboard more: top records + highlights + insights */
+    const initial = parseProfileView(location.hash);
+    if (initial && initial.openMore) showProfileView(initial, true);
+    else showProfileView(typeof initial === "string" ? initial : "hub", true);
+
+    /* Dashboard more content */
     const mil = TW.getMilestonesDemo();
     document.getElementById("dashTopRecords").innerHTML = mil.topRecords
-      .map(
-        (r) => `<div class="top-record-card">
-          <div class="inner"><div class="trophy">🏆</div><div class="name">${r.title}</div><div class="val">${r.val}</div></div>
-          <div class="foot">${TW.t(r.key)}</div>
-        </div>`
-      )
+      .map((r) => `<div class="top-record-card"><div class="inner"><div class="trophy">🏆</div><div class="name">${r.title}</div><div class="val">${r.val}</div></div><div class="foot">${TW.t(r.key)}</div></div>`)
       .join("");
     document.getElementById("milHighlights").innerHTML = mil.highlights
-      .map(
-        (h) =>
-          `<li><span class="hl-icon">${h.icon}</span><span class="hl-label">${TW.t(h.labelKey)}</span><span class="hl-val">${h.val}</span></li>`
-      )
+      .map((h) => `<li><span class="hl-icon">${h.icon}</span><span class="hl-label">${TW.t(h.labelKey)}</span><span class="hl-val">${h.val}</span></li>`)
       .join("");
     document.getElementById("avgPace").textContent = TW.stats.avgPace + " min/km";
     document.getElementById("bestPace").textContent = TW.stats.bestPace + " min/km";
@@ -494,49 +387,98 @@
     TW.bindInsightToggle(document.getElementById("elevToggle"), document.getElementById("elevBars"), "elevation");
     TW.renderRegionPie(document.getElementById("regionPie"));
 
-    /* Badges */
     TW.renderProfileBadgeGrid(document.getElementById("badgePicker"));
     TW.bindBadgeCatalogSync();
 
-    /* Records + footprint */
-    document.getElementById("recDistrictWrap").innerHTML = TW.districtSelectHtml("recDistrict");
-    document.getElementById("planDistrictWrap").innerHTML = TW.districtSelectHtml("planDistrict");
     TW.ensureDemoHike();
     if (TW.ensureDemoPlans) TW.ensureDemoPlans();
 
-    function recFilters() {
-      return {
-        q: document.getElementById("recSearch").value,
-        district: document.getElementById("recDistrict").value,
-        from: document.getElementById("recFrom").value,
-        to: document.getElementById("recTo").value,
-      };
-    }
     function allMyRecords() {
       const hikes = (TW.getHikes() || []).map((h) => Object.assign({}, h, { _kind: "hike" }));
       const recs = (TW.records || []).map((r) => Object.assign({}, r, { _kind: "record" }));
       return hikes.concat(recs);
     }
-    function renderRecords() {
-      const opts = recFilters();
-      const list = allMyRecords().filter((item) => TW.matchesProfileFilters(item, opts));
+
+    function recordItemHtml(item) {
+      return item._kind === "hike"
+        ? TW.renderHikeListItem(item, "hike-detail.html?id=" + encodeURIComponent(item.id))
+        : renderRecordItem(item);
+    }
+
+    function renderRecordsPreview() {
+      const list = allMyRecords().slice(0, 4);
+      document.getElementById("recordsPreview").innerHTML = list.length
+        ? list.map(recordItemHtml).join("")
+        : `<p style="color:var(--text-muted);padding:0.5rem 0">${TW.t("hikes_empty")}</p>`;
+    }
+
+    function renderRecordsFull() {
+      const list = allMyRecords();
       document.getElementById("hikeList").innerHTML = list.length
-        ? list
-            .map((item) =>
-              item._kind === "hike"
-                ? TW.renderHikeListItem(item, "hike-detail.html?id=" + encodeURIComponent(item.id))
-                : renderRecordItem(item)
-            )
-            .join("")
+        ? list.map(recordItemHtml).join("")
         : `<p style="color:var(--text-muted);padding:1.5rem 0">${TW.t("hikes_empty")}</p>`;
     }
-    ["recSearch", "recDistrict", "recFrom", "recTo"].forEach((id) => {
-      const el = document.getElementById(id);
-      if (!el) return;
-      el.addEventListener("input", renderRecords);
-      el.addEventListener("change", renderRecords);
-    });
-    renderRecords();
+
+    function renderPlansPreview() {
+      const ids = TW.getPlans();
+      const trails = ids.map((id) => TW.trails.find((t) => t.id === id)).filter(Boolean).slice(0, 4);
+      const el = document.getElementById("plansPreview");
+      if (!trails.length) {
+        el.innerHTML = `<p style="color:var(--text-muted);padding:0.5rem 0">${TW.t("plan_empty")}</p>`;
+        return;
+      }
+      el.innerHTML = trails.map((t) => renderTrailCard(t, { hidePlan: true, hideDuplicate: true })).join("");
+    }
+
+    function renderPlansFull() {
+      const ids = TW.getPlans();
+      let trails = ids.map((id) => TW.trails.find((t) => t.id === id)).filter(Boolean);
+      const empty = document.getElementById("planEmpty");
+      const grid = document.getElementById("planGrid");
+      if (!trails.length) {
+        empty.style.display = "block";
+        grid.innerHTML = "";
+        return;
+      }
+      empty.style.display = "none";
+      grid.innerHTML = trails
+        .map(
+          (t) => `<div>${renderTrailCard(t, { hidePlan: true })}
+          <div style="display:flex;gap:0.5rem;margin-top:0.5rem">
+            <button class="btn btn-secondary" style="flex:1;font-size:0.8rem" data-remove="${t.id}">${TW.t("plan_remove")}</button>
+            <a class="btn btn-primary" style="flex:1;font-size:0.8rem" href="plan.html">${TW.t("nav_plan")}</a>
+          </div></div>`
+        )
+        .join("");
+      grid.querySelectorAll("[data-remove]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          TW.togglePlan(btn.getAttribute("data-remove"));
+          showToast(TW.t("toast_unplanned"));
+          renderPlansFull();
+          renderPlansPreview();
+        });
+      });
+    }
+
+    function renderReportsPreview() {
+      const list = (TW.reports || []).slice(0, 4);
+      document.getElementById("reportsPreview").innerHTML = list.length
+        ? list.map(renderReportItem).join("")
+        : `<p style="color:var(--text-muted);padding:0.5rem 0">${TW.t("hikes_empty")}</p>`;
+    }
+
+    function renderReportsFull() {
+      document.getElementById("myReports").innerHTML =
+        (TW.reports || []).map(renderReportItem).join("") ||
+        `<p style="color:var(--text-muted)">${TW.t("hikes_empty")}</p>`;
+    }
+
+    renderRecordsPreview();
+    renderRecordsFull();
+    renderPlansPreview();
+    renderPlansFull();
+    renderReportsPreview();
+    renderReportsFull();
 
     let footprintMap;
     function initFootprintMap() {
@@ -548,7 +490,7 @@
         if (!prem) {
           gate.innerHTML = `<span class="app-premium-pill">${TW.t("app_premium")}</span>
             <p style="margin:0.65rem 0 1rem;max-width:22rem">${TW.t("footprint_locked")}</p>
-            <a class="btn btn-primary" href="get-app.html#premium">${TW.t("dash_unlock")}</a>`;
+            <a class="btn btn-primary" href="premium.html">${TW.t("dash_unlock")}</a>`;
         }
       }
       if (!mapEl || typeof L === "undefined" || footprintMap) {
@@ -572,225 +514,15 @@
       setTimeout(() => footprintMap.invalidateSize(), 150);
     }
 
-    /* Plans */
-    function planFilters() {
-      return {
-        q: document.getElementById("planSearch").value,
-        district: document.getElementById("planDistrict").value,
-        from: document.getElementById("planFrom").value,
-        to: document.getElementById("planTo").value,
-      };
-    }
-    function renderPlans() {
-      const ids = TW.getPlans();
-      let trails = ids.map((id) => TW.trails.find((t) => t.id === id)).filter(Boolean);
-      trails = trails.filter((t) => TW.matchesProfileFilters(t, planFilters()));
-      const empty = document.getElementById("planEmpty");
-      const grid = document.getElementById("planGrid");
-      if (!trails.length) {
-        empty.style.display = ids.length ? "none" : "block";
-        grid.innerHTML = ids.length
-          ? `<p style="color:var(--text-muted);padding:1.25rem 0">${TW.t("hikes_empty")}</p>`
-          : "";
-        if (!ids.length) empty.style.display = "block";
-        return;
-      }
-      empty.style.display = "none";
-      grid.innerHTML = trails
-        .map(
-          (t) => `
-        <div>
-          ${renderTrailCard(t, { hidePlan: true })}
-          <div style="display:flex;gap:0.5rem;margin-top:0.5rem">
-            <button class="btn btn-secondary" style="flex:1;font-size:0.8rem" data-remove="${t.id}">${TW.t("plan_remove")}</button>
-            <a class="btn btn-primary" style="flex:1;font-size:0.8rem" href="plan.html">${TW.t("nav_plan")}</a>
-          </div>
-        </div>`
-        )
-        .join("");
-      grid.querySelectorAll("[data-remove]").forEach((btn) => {
-        btn.addEventListener("click", () => {
-          TW.togglePlan(btn.getAttribute("data-remove"));
-          showToast(TW.t("toast_unplanned"));
-          renderPlans();
-        });
-      });
-    }
-    ["planSearch", "planDistrict", "planFrom", "planTo"].forEach((id) => {
-      const el = document.getElementById(id);
-      if (!el) return;
-      el.addEventListener("input", renderPlans);
-      el.addEventListener("change", renderPlans);
-    });
-    renderPlans();
-
-    /* Groups */
-    let groupFilter = "all";
-    function allJoinedGroups() {
-      const email = TW.memberEmail();
-      const custom = (TW.getGroupHikes ? TW.getGroupHikes() : []).filter((g) => {
-        return (
-          (g.organizerEmail && g.organizerEmail === email) ||
-          (TW.canViewGroupHike && TW.canViewGroupHike(g)) ||
-          g.joined
-        );
-      });
-      const demo = (TW.meetups || []).map((m, i) => ({
-        ...m,
-        id: "meetup_" + i,
-        visibility: "public",
-        past: i >= Math.ceil((TW.meetups || []).length / 2),
-        joined: true,
-        iso: i >= Math.ceil((TW.meetups || []).length / 2) ? "2026-03-0" + (i + 1) : "2026-09-1" + i,
-      }));
-      return custom.concat(demo);
-    }
-    function renderGroups() {
-      const q = document.getElementById("groupSearch").value;
-      const from = document.getElementById("groupFrom").value;
-      const to = document.getElementById("groupTo").value;
-      let list = allJoinedGroups().filter((g) => {
-        if (groupFilter === "past") return !!g.past;
-        if (groupFilter === "upcoming") return !g.past;
-        return true;
-      });
-      list = list.filter((g) => TW.matchesProfileFilters(g, { q, from, to }));
-      document.getElementById("groupGrid").innerHTML = list.length
-        ? list
-            .map((m) => {
-              const title = TW.tt(m, "title") || m.title;
-              const place = TW.tt(m, "place") || m.place || "";
-              const date = TW.tt(m, "date") || m.date || "";
-              const img = m.image || "https://images.unsplash.com/photo-1551632811-561732d1e5ec?w=600&q=60";
-              const href = "group-hike-detail.html?id=" + encodeURIComponent(m.id);
-              return `<article class="trail-card">
-              <img src="${img}" alt="" loading="lazy" />
-              <div class="trail-card-body">
-                <strong>${title}</strong>
-                <p class="meta">${date} · ${place}</p>
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-top:0.5rem">
-                  <span style="font-size:0.8rem;color:var(--text-muted)">${m.past ? TW.t("groups_past") : TW.t("groups_upcoming")}</span>
-                  <a class="btn btn-primary" style="padding:0.35rem 0.85rem;font-size:0.8rem" href="${href}">${TW.t("groups_view")}</a>
-                </div>
-              </div>
-            </article>`;
-            })
-            .join("")
-        : `<p style="color:var(--text-muted);padding:2rem 0">${TW.t("hikes_empty")}</p>`;
-    }
-    document.getElementById("groupFilters").addEventListener("click", (e) => {
-      const btn = e.target.closest("button[data-f]");
-      if (!btn) return;
-      groupFilter = btn.dataset.f;
-      document.querySelectorAll("#groupFilters .chip").forEach((c) => c.classList.toggle("active", c === btn));
-      renderGroups();
-    });
-    ["groupSearch", "groupFrom", "groupTo"].forEach((id) => {
-      document.getElementById(id).addEventListener("input", renderGroups);
-      document.getElementById(id).addEventListener("change", renderGroups);
-    });
-    renderGroups();
-
-    /* Reports */
-    document.getElementById("myReports").innerHTML =
-      (TW.reports || []).slice(0, 4).map(renderReportItem).join("") ||
-      `<p style="color:var(--text-muted)">${TW.t("hikes_empty")}</p>`;
-
-    /* Friends */
-    const friends = [
-      { name: "Elena Green", rank: "Rare Hiker Level 3", avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop" },
-      { name: "Marcus Lee", rank: "Trail Friend Level 2", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop" },
-      { name: "Sarah Chen", rank: "Weekend Walker", avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop" },
-    ];
-    const pending = [
-      { name: "James Wilson", rank: "Invite pending", avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop" },
-    ];
-    function friendRow(f) {
-      return `<div class="card" style="padding:0.85rem;margin-bottom:0.65rem;display:flex;align-items:center;gap:0.75rem">
-        ${TW.avatarHtml(f.avatar, "avatar-sm")}
-        <div><strong>${f.name}</strong><div style="font-size:0.8rem;color:var(--text-muted)">${f.rank}</div></div>
-        <a class="btn btn-secondary" style="margin-left:auto;padding:0.35rem 0.75rem;font-size:0.8rem" href="public-profile.html">${TW.t("nav_profile")}</a>
-      </div>`;
-    }
-    document.getElementById("friendList").innerHTML = friends.map(friendRow).join("");
-    document.getElementById("pendingList").innerHTML = pending.map(friendRow).join("");
-
-    /* Bookmarks */
-    TW.ensureDemoBookmarks();
-    let bmFilter = "all";
-    function bmTypeLabel(type) {
-      if (type === "route") return TW.t("app_bm_routes");
-      if (type === "record") return TW.t("app_bm_records");
-      if (type === "event") return TW.t("app_bm_events");
-      return type;
-    }
-    function renderBookmarks() {
-      let items = typeof TW.resolveBookmarkItems === "function" ? TW.resolveBookmarkItems() : [];
-      if (bmFilter !== "all") items = items.filter((it) => it.type === bmFilter);
-      const grid = document.getElementById("bookmarkGrid");
-      if (!items.length) {
-        grid.innerHTML = `<p style="color:var(--text-muted);padding:1.5rem 0">${TW.t("bookmarks_empty")}</p>
-          <a class="btn btn-primary" href="explore.html">${TW.t("nav_explore")}</a>`;
-        return;
-      }
-      grid.innerHTML = items
-        .map((it) => {
-          const img = it.image
-            ? `<img class="bm-card-img" src="${TW.recordPhotoSrc ? TW.recordPhotoSrc(it.image) : it.image}" alt="" loading="lazy" onerror="this.remove()" />`
-            : `<div class="bm-card-img bm-card-img--empty">${twIcon ? twIcon(it.type === "event" ? "groupHikes" : it.type === "record" ? "records" : "routes") : ""}</div>`;
-          return `<a class="bm-card" href="${it.href}">
-            ${img}
-            <div class="bm-card-body">
-              <strong>${it.title}</strong>
-              <span class="bm-card-type">${bmTypeLabel(it.type)}${it.meta ? " · " + it.meta : ""}</span>
-            </div>
-            <span class="bm-card-chevron" aria-hidden="true">›</span>
-          </a>`;
-        })
-        .join("");
-    }
-    document.getElementById("bmFilters").addEventListener("click", (e) => {
-      const btn = e.target.closest("[data-bm]");
-      if (!btn) return;
-      bmFilter = btn.dataset.bm;
-      document.querySelectorAll("#bmFilters .chip").forEach((c) => c.classList.toggle("active", c === btn));
-      renderBookmarks();
-    });
-    renderBookmarks();
-
-    /* Settings */
     const member = TW.getMemberAuth && TW.getMemberAuth();
     document.getElementById("settingsName").value = (member && (member.name || member.displayName)) || TW.user.name;
     document.getElementById("settingsEmail").value = (member && member.email) || TW.user.email;
-    document.getElementById("settingsNickname").value = TW.user.nickname;
-    const prem = typeof TW.getMemberPremiumInfo === "function" ? TW.getMemberPremiumInfo() : { active: !!TW.user.premium, end: TW.user.premiumEnds };
-    const endLabel = prem.end || TW.user.premiumEnds || "";
-    const premEl = document.getElementById("premiumEnds");
-    if (!TW.isLoggedIn || !TW.isLoggedIn()) {
-      premEl.textContent = TW.t("profile_premium_login");
-    } else if (prem.active) {
-      premEl.textContent = TW.t("profile_premium_ends").replace("{d}", endLabel || "—");
-    } else if (prem.expired) {
-      premEl.textContent = TW.t("profile_premium_expired").replace("{d}", endLabel || "—");
-    } else {
-      premEl.textContent = TW.t("profile_premium_none");
-    }
-    const level = TW.getEnvLevel();
-    const wrap = document.getElementById("highestBadge");
-    if (level >= 1) {
-      const meta = TW.ENV_BADGE_META[level];
-      const badgeName = TW.getLang() === "zh" ? meta.nameZh : meta.name;
-      wrap.innerHTML = `<span class="env-mini-pill" style="font-size:0.85rem;padding:0.4rem 0.85rem">${meta.emoji} ${badgeName} · L${level}</span>`;
-    } else {
-      wrap.innerHTML = `<span class="env-mini-pill">${TW.t("env_title")} · L0</span>`;
-    }
-    const logoutBtn = document.getElementById("settingsLogout");
-    if (logoutBtn) {
-      logoutBtn.addEventListener("click", () => {
-        TW.logoutMember();
-        location.href = "index.html";
-      });
-    }
+    document.getElementById("settingsNickname").value = TW.user.nickname || "";
+
+    document.getElementById("settingsLogout").addEventListener("click", () => {
+      TW.logoutMember();
+      location.href = "index.html";
+    });
   </script>
 </body>
 </html>

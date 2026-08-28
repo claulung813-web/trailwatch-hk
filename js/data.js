@@ -1098,6 +1098,54 @@ TW.records = [
     ],
   },
   {
+    id: "high-island",
+    title: "High Island Reservoir East Dam",
+    titleZh: "萬宜水庫東壩",
+    date: "Aug 1, 2026",
+    dateZh: "2026年8月1日",
+    rating: 4.4,
+    snippet: "Hexagonal columns after rain — slippery rocks, bring grippy shoes.",
+    snippetZh: "雨後六角岩柱，石面濕滑，請穿防滑鞋。",
+    distance: "6.1 km",
+    duration: "2:10",
+    durationClock: "2:10:00",
+    isoDate: "2026-08-01",
+    activityTags: ["sea", "geology"],
+    elev: "85 m",
+    elevGain: 85,
+    elevChange: 85,
+    elevMax: 85,
+    elevMin: 0,
+    calories: 420,
+    pace: "21:18 /km",
+    paceKmh: 2.82,
+    started: "8:30 AM",
+    finished: "10:40 AM",
+    startTime: "08:30",
+    endTime: "10:40",
+    startedZh: "上午 8:30",
+    finishedZh: "上午 10:40",
+    district: "sai-kung",
+    region: "Sai Kung",
+    regionZh: "西貢",
+    privacy: "Public",
+    image: "https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=800&q=80",
+    user: "Mei Ling",
+    author: "Mei Ling",
+    avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop",
+    photos: [
+      "https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=800&q=80",
+      "assets/brand/img-hiking.jpg",
+    ],
+    path: [
+      [22.382, 114.348],
+      [22.385, 114.355],
+      [22.388, 114.362],
+      [22.391, 114.368],
+      [22.394, 114.374],
+    ],
+  },
+  {
     id: "kwai-chung-kam-shan",
     title: "Kwai Chung · Kam Shan Loop",
     titleZh: "葵涌金山繞一圈",
@@ -2371,13 +2419,70 @@ TW.articleCategoryLabel = function (categoryId) {
     "activity-review": "article_cat_activity_review",
     "whats-new": "article_cat_whats_new",
   })[categoryId];
-  return key ? TW.t(key) : categoryId;
+  return key ? TW.t(key) : categoryId || "";
+};
+
+/** Category shown as a type tag on article cards (Blog, Features, …). */
+TW.articleTypeTagHtml = function (a) {
+  if (!a || !a.category || a.category === "all") return "";
+  const label = TW.articleCategoryLabel(a.category);
+  if (!label) return "";
+  const esc = TW.escapeHtml || function (s) { return String(s == null ? "" : s); };
+  return `<span class="article-tag article-tag--type">${esc(label)}</span>`;
+};
+
+TW.normalizeArticleTags = function (a) {
+  const cmsTags = [];
+  try {
+    if (typeof CMS !== "undefined" && CMS.getStore) cmsTags.push.apply(cmsTags, CMS.getStore().articleTags || []);
+  } catch (e) {}
+  const byId = {};
+  cmsTags.forEach((t) => { if (t && t.id) byId[t.id] = t; });
+  return (a && a.tags ? a.tags : []).map((t) => {
+    if (t && typeof t === "object") return t;
+    return byId[t] || { id: t, name: t, nameZh: t };
+  });
 };
 
 TW.articleDateValue = function (a) {
   const raw = (a && a.date) || "";
   const t = Date.parse(raw);
   return Number.isFinite(t) ? t : 0;
+};
+
+TW.getFeaturedArticleIds = function () {
+  try {
+    if (typeof CMS !== "undefined" && CMS.getStore) {
+      const ids = CMS.getStore().featuredArticleIds;
+      if (Array.isArray(ids) && ids.length) return ids.slice();
+    }
+  } catch (e) {}
+  return (TW.articles || []).filter((a) => a.featured).map((a) => a.id);
+};
+
+TW.isArticleFeatured = function (a) {
+  if (!a || !a.id) return false;
+  return TW.getFeaturedArticleIds().indexOf(a.id) >= 0 || !!a.featured;
+};
+
+TW.getArticlePool = function () {
+  const byId = {};
+  (TW.articles || []).forEach((a) => {
+    byId[a.id] = Object.assign({}, a);
+  });
+  try {
+    if (typeof CMS !== "undefined" && CMS.getStore) {
+      (CMS.getStore().articles || []).forEach((a) => {
+        if (!a || !a.id) return;
+        const prev = byId[a.id] || {};
+        const merged = Object.assign({}, prev, a);
+        if (!merged.excerpt && merged.summary) merged.excerpt = merged.summary;
+        if (!merged.excerptZh && merged.summaryZh) merged.excerptZh = merged.summaryZh;
+        byId[a.id] = merged;
+      });
+    }
+  } catch (e) {}
+  return Object.values(byId);
 };
 
 TW.getArticles = function (opts) {
@@ -2390,8 +2495,9 @@ TW.getArticles = function (opts) {
   const routeId = opts.routeId || "all";
   const dateFrom = opts.dateFrom ? Date.parse(opts.dateFrom) : null;
   const dateTo = opts.dateTo ? Date.parse(opts.dateTo) : null;
-  let list = (TW.articles || []).filter((a) => {
-    if (opts.featured && !a.featured) return false;
+  const featIds = TW.getFeaturedArticleIds();
+  let list = TW.getArticlePool().filter((a) => {
+    if (opts.featured && featIds.indexOf(a.id) < 0 && !a.featured) return false;
     if (cat && cat !== "all" && a.category !== cat) return false;
     if (district && district !== "all") {
       const trail = a.routeId ? (TW.trails || []).find((t) => t.id === a.routeId) : null;
@@ -2410,6 +2516,12 @@ TW.getArticles = function (opts) {
     return blob.includes(q);
   });
   list = list.slice().sort((a, b) => {
+    const af = featIds.indexOf(a.id);
+    const bf = featIds.indexOf(b.id);
+    const aFeat = af >= 0 || !!a.featured;
+    const bFeat = bf >= 0 || !!b.featured;
+    if (aFeat !== bFeat) return aFeat ? -1 : 1;
+    if (aFeat && bFeat && af >= 0 && bf >= 0 && af !== bf) return af - bf;
     const da = TW.articleDateValue(a);
     const db = TW.articleDateValue(b);
     return sort === "oldest" ? da - db : db - da;
@@ -2419,7 +2531,7 @@ TW.getArticles = function (opts) {
 
 TW.getArticleFilterRoutes = function () {
   const used = {};
-  (TW.articles || []).forEach((a) => {
+  TW.getArticlePool().forEach((a) => {
     if (a.routeId) used[a.routeId] = true;
   });
   return (TW.trails || []).filter((t) => t.editorChoice || used[t.id]);
@@ -2685,7 +2797,7 @@ TW.resolveBookmarkItems = function () {
         title: title || entry.id,
         meta: zh && rec.dateZh ? rec.dateZh : (rec.date || rec.distance || ""),
         image: rec.image || (rec.photos && rec.photos[0]) || "",
-        href: "record-detail.html?id=" + encodeURIComponent(rec.id),
+        href: typeof TW.recordDetailHref === "function" ? TW.recordDetailHref(rec.id) : "user-route.html?id=" + encodeURIComponent(rec.id),
       };
     }
     if (entry.type === "event") {
@@ -2718,12 +2830,29 @@ TW.resolveBookmarkItems = function () {
 
 TW.galleryCategories = [
   { id: "all", labelKey: "gallery_cat_all" },
-  { id: "landscape", labelKey: "gallery_cat_landscape" },
-  { id: "wildlife", labelKey: "gallery_cat_wildlife" },
-  { id: "trail", labelKey: "gallery_cat_trail" },
-  { id: "coastal", labelKey: "gallery_cat_coastal" },
-  { id: "community", labelKey: "gallery_cat_community" },
+  { id: "biodiversity", labelKey: "gallery_cat_biodiversity" },
+  { id: "natural-scenery", labelKey: "gallery_cat_natural_scenery" },
+  { id: "architecture", labelKey: "gallery_cat_architecture" },
+  { id: "cultural-artifacts", labelKey: "gallery_cat_cultural_artifacts" },
+  { id: "others", labelKey: "gallery_cat_others" },
 ];
+
+TW.normalizeGalleryCategory = function (cat) {
+  const c = String(cat || "").toLowerCase();
+  const map = {
+    landscape: "natural-scenery",
+    coastal: "natural-scenery",
+    wildlife: "biodiversity",
+    biodiversity: "biodiversity",
+    "natural-scenery": "natural-scenery",
+    architecture: "architecture",
+    community: "cultural-artifacts",
+    "cultural-artifacts": "cultural-artifacts",
+    trail: "others",
+    others: "others",
+  };
+  return map[c] || "others";
+};
 
 /** Public gallery photos (TW + community), with route links and GPS for historical filters */
 TW.galleryPhotos = [
@@ -2899,7 +3028,7 @@ TW.galleryPhotos = [
     id: "gal_harbour_2026",
     src: "https://images.unsplash.com/photo-1536599018102-9f803c140fc1?w=800&q=80",
     date: "2026-08-03",
-    category: "community",
+    category: "architecture",
     description: "Harbourfront Coastal Trail — Yue Yi & Ching Sha segments.",
     descriptionZh: "活力環島長廊：漁怡徑、晴沙徑。",
     lat: 22.2850,
@@ -3013,7 +3142,7 @@ TW.getGalleryPhotos = function (opts) {
     }
     if (opts.source && p.source && p.source !== opts.source) return false;
     if (opts.twOnly && p.source !== "tw") return false;
-    if (cat && cat !== "all" && p.category !== cat) return false;
+    if (cat && cat !== "all" && TW.normalizeGalleryCategory(p.category) !== cat) return false;
     const ts = TW.galleryDateValue(p);
     if (dateFrom != null && Number.isFinite(dateFrom) && ts < dateFrom) return false;
     if (dateTo != null && Number.isFinite(dateTo)) {
@@ -3031,20 +3160,28 @@ TW.getGalleryPhotos = function (opts) {
     return blob.includes(q);
   });
 
+  const featOrder = TW.getFeaturedGalleryIds();
   list = list.slice().sort((a, b) => {
+    const af = featOrder.indexOf(a.id);
+    const bf = featOrder.indexOf(b.id);
+    const aFeat = af >= 0;
+    const bFeat = bf >= 0;
+    if (opts.featuredOnly) {
+      if (aFeat !== bFeat) return aFeat ? -1 : 1;
+      if (aFeat && bFeat && af !== bf) return af - bf;
+    } else if (aFeat !== bFeat) {
+      return aFeat ? -1 : 1;
+    } else if (aFeat && bFeat && af !== bf) {
+      return af - bf;
+    }
     if (sort === "category") {
-      const c = String(a.category || "").localeCompare(String(b.category || ""));
+      const c = TW.normalizeGalleryCategory(a.category).localeCompare(TW.normalizeGalleryCategory(b.category));
       if (c) return c;
     }
     const da = TW.galleryDateValue(a);
     const db = TW.galleryDateValue(b);
     return sort === "oldest" ? da - db : db - da;
   });
-
-  if (opts.featuredOnly) {
-    const order = TW.getFeaturedGalleryIds();
-    list.sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
-  }
   return list;
 };
 
@@ -3053,12 +3190,41 @@ TW.getFeaturedGalleryPhotos = function () {
 };
 
 TW.galleryRouteHref = function (p) {
+  if (p && p.recordId) {
+    return TW.recordDetailHref(p.recordId);
+  }
   if (p && p.routeId) {
     const trail = (TW.trails || []).find((t) => t.id === p.routeId);
-    if (trail) return "rec-trail.html?id=" + encodeURIComponent(p.routeId);
+    if (trail && typeof TW.routeDetailHref === "function") return TW.routeDetailHref(trail);
+    return "rec-trail.html?id=" + encodeURIComponent(p.routeId);
   }
-  if (p && p.recordId) return "record-detail.html?id=" + encodeURIComponent(p.recordId);
   return "explore.html";
+};
+
+/** Web user-route layout; app shell keeps record-detail.html */
+TW.recordDetailHref = function (id, opts) {
+  opts = opts || {};
+  if (!id) {
+    const inApp = opts.inApp != null ? opts.inApp : TW._inAppShell && TW._inAppShell();
+    return inApp ? "record-detail.html" : "explore.html?tab=records";
+  }
+  const inApp =
+    opts.inApp != null
+      ? opts.inApp
+      : typeof TW._inAppShell === "function"
+        ? TW._inAppShell()
+        : /\/app(?:\/|$)/.test(((typeof location !== "undefined" && location.pathname) || "").replace(/\\/g, "/"));
+  if (inApp) return "record-detail.html?id=" + encodeURIComponent(id);
+  return "user-route.html?id=" + encodeURIComponent(id);
+};
+
+TW._inAppShell = function () {
+  return /\/app(?:\/|$)/.test(((typeof location !== "undefined" && location.pathname) || "").replace(/\\/g, "/"));
+};
+
+TW.isGalleryFeatured = function (p) {
+  if (!p || !p.id) return false;
+  return TW.getFeaturedGalleryIds().indexOf(p.id) >= 0;
 };
 
 TW.districtName = function (id) {
