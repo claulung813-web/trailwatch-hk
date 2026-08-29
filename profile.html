@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <link rel="stylesheet" href="css/styles.css?v=20260828m" />
+  <link rel="stylesheet" href="css/styles.css?v=20260829e" />
 </head>
 <body>
   <div id="app-header"></div>
@@ -132,10 +132,17 @@
 
         <section class="profile-preview-section">
           <div class="section-head">
+            <h2 data-i18n="app_my_friends"></h2>
+          </div>
+          <ul id="friendsPreview" class="profile-friends-list"></ul>
+        </section>
+
+        <section class="profile-preview-section">
+          <div class="section-head">
             <h2 data-i18n="nav_my_records"></h2>
             <a class="link-more" href="#records" data-i18n="profile_view_more"></a>
           </div>
-          <div id="recordsPreview" class="profile-preview-list"></div>
+          <div id="recordsPreview" class="profile-preview-grid"></div>
         </section>
 
         <section class="profile-preview-section">
@@ -143,7 +150,7 @@
             <h2 data-i18n="nav_my_reports"></h2>
             <a class="link-more" href="#reports" data-i18n="profile_view_more"></a>
           </div>
-          <div id="reportsPreview" class="profile-preview-list"></div>
+          <div id="reportsPreview" class="profile-preview-grid"></div>
         </section>
       </div>
 
@@ -405,11 +412,40 @@
         : renderRecordItem(item);
     }
 
+    function renderProfilePreviewTile(title, meta, href, img, fallbackEmoji) {
+      const thumb = img
+        ? `<img src="${TW.escapeHtml(img)}" alt="" loading="lazy" />`
+        : `<div class="profile-preview-thumb">${fallbackEmoji || "🗺"}</div>`;
+      return `<a class="profile-preview-tile" href="${href}">
+        ${thumb}
+        <div class="profile-preview-tile-body">
+          <strong>${TW.escapeHtml(title)}</strong>
+          ${meta ? `<span class="meta">${TW.escapeHtml(meta)}</span>` : ""}
+        </div>
+      </a>`;
+    }
+
     function renderRecordsPreview() {
       const list = allMyRecords().slice(0, 4);
       document.getElementById("recordsPreview").innerHTML = list.length
-        ? list.map(recordItemHtml).join("")
-        : `<p style="color:var(--text-muted);padding:0.5rem 0">${TW.t("hikes_empty")}</p>`;
+        ? list
+            .map((item) => {
+              const href =
+                item._kind === "hike"
+                  ? "hike-detail.html?id=" + encodeURIComponent(item.id)
+                  : typeof TW.recordDetailHref === "function"
+                    ? TW.recordDetailHref(item.id)
+                    : "user-route.html?id=" + encodeURIComponent(item.id);
+              const title = TW.tt(item, "title") || item.title || "";
+              const meta =
+                item._kind === "hike"
+                  ? (item.distanceKm != null ? item.distanceKm + " km" : "") +
+                    (item.seconds ? " · " + TW.formatDuration(item.seconds) : "")
+                  : [item.distance, item.duration].filter(Boolean).join(" · ");
+              return renderProfilePreviewTile(title, meta, href, item.image, "🗺");
+            })
+            .join("")
+        : `<p class="profile-preview-empty">${TW.t("hikes_empty")}</p>`;
     }
 
     function renderRecordsFull() {
@@ -424,7 +460,7 @@
       const trails = ids.map((id) => TW.trails.find((t) => t.id === id)).filter(Boolean).slice(0, 4);
       const el = document.getElementById("plansPreview");
       if (!trails.length) {
-        el.innerHTML = `<p style="color:var(--text-muted);padding:0.5rem 0">${TW.t("plan_empty")}</p>`;
+        el.innerHTML = `<p class="profile-preview-empty">${TW.t("plan_empty")}</p>`;
         return;
       }
       el.innerHTML = trails.map((t) => renderTrailCard(t, { hidePlan: true, hideDuplicate: true })).join("");
@@ -463,8 +499,35 @@
     function renderReportsPreview() {
       const list = (TW.reports || []).slice(0, 4);
       document.getElementById("reportsPreview").innerHTML = list.length
-        ? list.map(renderReportItem).join("")
-        : `<p style="color:var(--text-muted);padding:0.5rem 0">${TW.t("hikes_empty")}</p>`;
+        ? list
+            .map((r) => {
+              const href = "incident-detail.html?id=" + encodeURIComponent(r.id || r.sourceId || "");
+              const title = TW.tt(r, "title") || r.title || "";
+              const catId = TW.normalizeReportCategory ? TW.normalizeReportCategory(r.category) : r.category;
+              const catKey = "cat_" + catId;
+              let catLabel = TW.t(catKey);
+              if (catLabel === catKey) catLabel = r.categoryLabel || r.category || "";
+              const meta = [r.date, catLabel].filter(Boolean).join(" · ");
+              return renderProfilePreviewTile(title, meta, href, r.image, "⚠️");
+            })
+            .join("")
+        : `<p class="profile-preview-empty">${TW.t("hikes_empty")}</p>`;
+    }
+
+    function renderFriendsPreview() {
+      const list = TW.demoFriends || [];
+      const el = document.getElementById("friendsPreview");
+      if (!el) return;
+      el.innerHTML = list.length
+        ? list
+            .map(
+              (f) => `<li class="profile-friend-row">
+            ${TW.avatarHtml(f.avatar, "avatar-sm")}
+            <span class="profile-friend-name">${TW.escapeHtml(f.name)}</span>
+          </li>`
+            )
+            .join("")
+        : `<li class="profile-preview-empty">${TW.t("hikes_empty")}</li>`;
     }
 
     function renderReportsFull() {
@@ -479,6 +542,7 @@
     renderPlansFull();
     renderReportsPreview();
     renderReportsFull();
+    renderFriendsPreview();
 
     let footprintMap;
     function initFootprintMap() {

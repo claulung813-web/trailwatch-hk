@@ -751,6 +751,213 @@ TW.saveGroupHike = function (hike) {
   return hike;
 };
 
+TW.estimateRouteDifficulty = function (km, gain) {
+  const d = Number(km) || 0;
+  const g = Number(gain) || 0;
+  if (d <= 0 && g <= 0) return null;
+  if (d < 6 && g < 250) return 1;
+  if (d < 10 && g < 450) return 2;
+  if (d < 14 && g < 700) return 3;
+  if (d < 20 && g < 1000) return 4;
+  return 5;
+};
+
+TW.resolveGroupHikeStats = function (hike) {
+  if (!hike) return null;
+  if (hike.distanceKm != null || hike.difficulty != null || hike.elevGain != null) {
+    const km = Number(hike.distanceKm) || 0;
+    const gain = Number(hike.elevGain) || 0;
+    const loss = Number(hike.elevLoss) || 0;
+    return {
+      distanceKm: km,
+      elevGain: gain,
+      elevLoss: loss,
+      durationHours:
+        hike.durationHours != null ? Number(hike.durationHours) : TW.estimateDurationHours(km, gain),
+      difficulty: hike.difficulty || TW.estimateRouteDifficulty(km, gain),
+    };
+  }
+  if (hike.trailId) {
+    const trail = (TW.trails || []).find((t) => t.id === hike.trailId);
+    if (trail) {
+      const km =
+        parseFloat(String(trail.distance || "").replace(/[^\d.]/g, "")) ||
+        TW.pathDistanceKm(hike.path || []);
+      const elev = parseFloat(String(trail.elevation || "").replace(/[^\d.]/g, "")) || 0;
+      return {
+        distanceKm: km,
+        elevGain: elev,
+        elevLoss: Math.round(elev * 0.85),
+        durationHours: TW.estimateDurationHours(km, elev),
+        difficulty: trail.difficulty || TW.estimateRouteDifficulty(km, elev),
+      };
+    }
+  }
+  if (hike.routeDraftId) {
+    const d = TW.getRouteDraft(hike.routeDraftId);
+    if (d) {
+      const km = d.distanceKm != null ? Number(d.distanceKm) : TW.pathDistanceKm(d.path || []);
+      const gain = Number(d.elevGain) || (TW.estimateElevFallback(km).gain || 0);
+      const loss = Number(d.elevLoss) || (TW.estimateElevFallback(km).loss || 0);
+      return {
+        distanceKm: km,
+        elevGain: gain,
+        elevLoss: loss,
+        durationHours:
+          d.durationHours != null ? Number(d.durationHours) : TW.estimateDurationHours(km, gain),
+        difficulty: TW.estimateRouteDifficulty(km, gain),
+      };
+    }
+  }
+  const path = hike.path || [];
+  const km = TW.pathDistanceKm(path);
+  const elev = TW.estimateElevFallback(km);
+  return {
+    distanceKm: km,
+    elevGain: elev.gain || 0,
+    elevLoss: elev.loss || 0,
+    durationHours: TW.estimateDurationHours(km, elev.gain),
+    difficulty: TW.estimateRouteDifficulty(km, elev.gain),
+  };
+};
+
+TW.resolveGroupHikeRouteLabel = function (hike) {
+  if (!hike) return "";
+  const zh = TW.getLang() === "zh";
+  if (hike.routeLabel) return hike.routeLabel;
+  if (hike.routeSource === "trail" || hike.trailId) {
+    const trail = (TW.trails || []).find((t) => t.id === hike.trailId);
+    const title = trail ? TW.tt(trail, "title") : "";
+    return (zh ? "我的計劃路線" : "My planned route") + (title ? ": " + title : "");
+  }
+  if (hike.routeSource === "draft" || hike.routeDraftId) {
+    const d = TW.getRouteDraft(hike.routeDraftId);
+    const name = d ? (zh ? d.nameZh || d.name : d.name) : "";
+    return (zh ? "我的草稿路線" : "My draft route") + (name ? ": " + name : "");
+  }
+  if (hike.routeSource === "new") return zh ? "新繪路線" : "New route on map";
+  return "";
+};
+
+TW.formatGroupHikeDifficulty = function (level) {
+  if (!level) return "—";
+  const labels = TW.difficultyLabels && TW.difficultyLabels[TW.getLang()];
+  const name = labels && labels[level] ? labels[level] : "";
+  return "L" + level + (name ? " · " + name : "");
+};
+
+TW.groupHikeSpotsInfo = function (hike) {
+  if (!hike) return null;
+  const limit = Number(hike.participantLimit) || 0;
+  const joined = (hike.members || []).length;
+  if (limit > 0) {
+    return { joined, limit, left: Math.max(0, limit - joined) };
+  }
+  const left = Number(hike.spots);
+  if (Number.isFinite(left) && left >= 0) {
+    return { joined: null, limit: null, left };
+  }
+  return null;
+};
+
+TW.formatGroupHikeSpots = function (hike) {
+  return TW.formatGroupHikeJoined(hike);
+};
+
+TW.formatGroupHikeJoined = function (hike) {
+  const info = TW.groupHikeSpotsInfo(hike);
+  if (!info || info.limit == null) return "";
+  let tpl = TW.t("groups_hikers_joined");
+  if (!tpl || tpl === "groups_hikers_joined") {
+    tpl =
+      TW.getLang() === "zh" ? "{joined} / {limit} 人已報名" : "{joined} / {limit} hikers joined";
+  }
+  return String(tpl).replace("{joined}", info.joined).replace("{limit}", info.limit);
+};
+
+TW.formatGroupHikeGatherPoint = function (hike) {
+  if (!hike) return "";
+  const zh = TW.getLang() === "zh";
+  return (zh && hike.gatherPointZh ? hike.gatherPointZh : hike.gatherPoint) || "";
+};
+
+TW.formatGroupHikeGather = function (hike) {
+  if (!hike) return "";
+  const zh = TW.getLang() === "zh";
+  const point = (zh && hike.gatherPointZh ? hike.gatherPointZh : hike.gatherPoint) || "";
+  const time = hike.gatherTime || "";
+  if (!point && !time) return "";
+  return [point, time].filter(Boolean).join(" · ");
+};
+
+TW.formatGroupHikeDate = function (hike) {
+  if (!hike) return "";
+  if (hike.dateISO) {
+    try {
+      return new Date(hike.dateISO + "T12:00:00").toLocaleDateString(
+        TW.getLang() === "zh" ? "zh-HK" : "en-HK",
+        { weekday: "short", year: "numeric", month: "short", day: "numeric" }
+      );
+    } catch (e) {
+      /* fall through */
+    }
+  }
+  return TW.tt(hike, "date") || hike.date || "";
+};
+
+TW.updateGroupHikeInvites = function (hike, friendIds) {
+  if (!hike || !TW.isGroupHikeHost(hike)) return false;
+  hike.invited = Array.isArray(friendIds) ? friendIds.filter(Boolean) : [];
+  TW.saveGroupHike(hike);
+  return true;
+};
+
+TW.resolvePreviewGroupHike = function (raw) {
+  if (!raw) return null;
+  const hike = Object.assign({}, raw);
+  hike.invited = hike.invited || [];
+  hike.members = hike.members || [];
+  if (!hike.members.length && hike.membersCount) {
+    const friends = TW.demoFriends || [];
+    hike.members = Array.from({ length: hike.membersCount }, (_, fi) => {
+      const f = friends[fi % Math.max(1, friends.length)] || {};
+      return {
+        email: f.email || "member" + fi + "@example.com",
+        name: f.name || "Member " + (fi + 1),
+        avatar: f.avatar || "",
+        joinedAt: Date.now() - (fi + 1) * 86400000,
+      };
+    });
+  }
+  if (!hike.path || !hike.path.length) {
+    const c = hike.pathCenter || [22.35, 114.25];
+    hike.path = TW.demoPathAround(c[0], c[1]);
+  }
+  if (hike.discussion && hike.discussion.length) {
+    hike.discussion = hike.discussion.map((msg, i) =>
+      Object.assign({}, msg, {
+        text: TW.getLang() === "zh" && msg.textZh ? msg.textZh : msg.text,
+        at: msg.at || Date.now() - (hike.discussion.length - i) * 3600000,
+      })
+    );
+  }
+  hike.builtIn = true;
+  return hike;
+};
+
+TW.findPreviewGroupHike = function (hid) {
+  if (!hid) return null;
+  const list = TW.previewGroupHikes || [];
+  let raw = list.find((h) => h.id === hid);
+  if (!raw) {
+    const legacy = /^meetup_(\d+)$/.exec(hid);
+    if (legacy) raw = list[Number(legacy[1])];
+    else if (hid === "meetup_private_invite") raw = list.find((h) => h.id === "preview_3");
+    else if (hid === "meetup_private_past") raw = list.find((h) => h.id === "preview_4");
+  }
+  return raw ? TW.resolvePreviewGroupHike(raw) : null;
+};
+
 TW.makeInviteToken = function () {
   return "inv_" + Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
 };
