@@ -28,14 +28,11 @@
       font-size: 1.25rem; color: #111; display: grid; place-items: center; text-decoration: none;
       flex-shrink: 0;
     }
-    .insights-page-lede { font-size: 0.78rem; margin: 0 0 0.85rem; }
     .section-label { margin-top: 0.15rem; }
-    .top-records { margin-bottom: 0.75rem; }
     .highlight-list { margin-bottom: 0.75rem; }
     .chart-card { margin-bottom: 0.65rem; }
     .chart-card h3 { font-size: 0.82rem; }
     .insights-upgrade { margin-top: 0.85rem; padding: 0.85rem; margin-bottom: 4.5rem; }
-    .insights-upgrade p { font-size: 0.78rem; }
   </style>
 </head>
 <body>
@@ -56,7 +53,6 @@
           <span class="ib" aria-hidden="true"></span>
         </div>
         <div class="phone-body insights-page" id="insightsPage">
-          <p class="insights-page-lede" id="insightsLede"></p>
 
           <div class="section-label" id="lblTopRec"></div>
           <div class="top-records" id="dashTopRecords"></div>
@@ -124,7 +120,6 @@
           </div>
 
           <div class="insights-upgrade card" id="insightsUpgrade" hidden>
-            <p id="upgradeBody"></p>
             <a class="btn btn-primary btn-block" href="premium.html" data-premium-link id="upgradeBtn"></a>
           </div>
         </div>
@@ -146,7 +141,6 @@
     });
     document.getElementById("backWeb").textContent = "‹ " + t("nav_profile");
     document.getElementById("pageTitle").textContent = t("dash_insights");
-    document.getElementById("insightsLede").textContent = t("dash_more_premium_body");
     document.getElementById("lblTopRec").textContent = t("mil_top_records");
     document.getElementById("lblHighlights").textContent = t("mil_highlights");
     document.getElementById("lblInsights").textContent = t("dash_insights");
@@ -157,7 +151,6 @@
     document.getElementById("lblDistTrend").textContent = t("insights_distance");
     document.getElementById("lblElevTrend").textContent = t("insights_elevation");
     document.getElementById("lblRegion").textContent = t("insights_region");
-    document.getElementById("upgradeBody").textContent = t("dash_more_premium_body");
     document.getElementById("upgradeBtn").textContent = t("dash_unlock_insights");
     ["activityToggle", "distToggle", "elevToggle"].forEach((id) => {
       const el = document.getElementById(id);

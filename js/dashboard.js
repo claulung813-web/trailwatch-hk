@@ -577,15 +577,16 @@ TW.profilePageHref = function () {
 
 TW.renderInsightsTopRecords = function (el, opts) {
   if (!el) return;
-  opts = opts || {};
   const mil = TW.getMilestonesDemo();
-  const trophy = opts.compact ? "" : `<div class="trophy">🏆</div>`;
-  el.innerHTML = mil.topRecords
-    .map(
-      (r) =>
-        `<div class="top-record-card"><div class="inner">${trophy}<div class="name">${TW.escapeHtml(r.title)}</div><div class="val insight-val">${TW.escapeHtml(r.val)}</div></div><div class="foot">${TW.escapeHtml(TW.t(r.key))}</div></div>`
-    )
-    .join("");
+  el.innerHTML =
+    `<ul class="highlight-list insights-record-list">` +
+    mil.topRecords
+      .map(
+        (r) =>
+          `<li><span class="hl-label">${TW.escapeHtml(TW.t(r.key))}</span><span class="hl-val insight-val">${TW.escapeHtml(r.title)} · ${TW.escapeHtml(r.val)}</span></li>`
+      )
+      .join("") +
+    `</ul>`;
 };
 
 TW.renderInsightsHighlights = function (el) {

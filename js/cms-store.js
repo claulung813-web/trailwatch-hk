@@ -339,6 +339,12 @@ CMS.defaultStore = function () {
         gift: { image: "", descriptionEn: "", descriptionZh: "" },
         volunteer: { image: "", descriptionEn: "", descriptionZh: "" },
       },
+      premiumSpotlight: {
+        titleEn: "Premium insights",
+        titleZh: "Premium 洞察",
+        bodyEn: "Top records, highlights, and insights are Premium — unlock them to see trends and region breakdowns.",
+        bodyZh: "最佳紀錄、亮點與洞察為 Premium 功能 — 解鎖後可查看趨勢與地區分布。",
+      },
     },
     featuredGalleryIds: [],
     banners: CMS.seedBanners(),
@@ -1051,6 +1057,11 @@ CMS.getStore = function () {
         (parsed.content && parsed.content.supportOptions && parsed.content.supportOptions[key]) || {}
       );
     });
+    store.content.premiumSpotlight = Object.assign(
+      {},
+      base.content.premiumSpotlight,
+      (parsed.content && parsed.content.premiumSpotlight) || {}
+    );
     // migrate older stores that pre-date these collections
     let migrated = false;
     const tr = store.content.translations;
@@ -1756,6 +1767,34 @@ TW.getSupportOption = function (id) {
     image: raw.image || "",
     description: description || "",
   };
+};
+
+TW.getPremiumSpotlight = function () {
+  const c = TW.getSiteContent() || {};
+  const raw = c.premiumSpotlight || {};
+  const zh = TW.getLang && TW.getLang() === "zh";
+  const title = zh
+    ? raw.titleZh || raw.titleEn || (typeof TW.t === "function" ? TW.t("dash_premium_locked_title") : "")
+    : raw.titleEn || raw.titleZh || (typeof TW.t === "function" ? TW.t("dash_premium_locked_title") : "");
+  const body = zh
+    ? raw.bodyZh || raw.bodyEn || (typeof TW.t === "function" ? TW.t("dash_more_premium_body") : "")
+    : raw.bodyEn || raw.bodyZh || (typeof TW.t === "function" ? TW.t("dash_more_premium_body") : "");
+  return { title: title || "", body: body || "" };
+};
+
+TW.applyPremiumSpotlightCopy = function (root) {
+  const spot = TW.getPremiumSpotlight();
+  const scope = root && root.querySelector ? root : document;
+  const titleEl =
+    (scope.querySelector && scope.querySelector("[data-premium-spotlight-title]")) ||
+    (scope.getElementById && scope.getElementById("premiumSpotlightTitle")) ||
+    (scope.getElementById && scope.getElementById("spotlightTitle"));
+  const bodyEl =
+    (scope.querySelector && scope.querySelector("[data-premium-spotlight-body]")) ||
+    (scope.getElementById && scope.getElementById("premiumSpotlightBody")) ||
+    (scope.getElementById && scope.getElementById("spotlightBody"));
+  if (titleEl) titleEl.textContent = spot.title;
+  if (bodyEl) bodyEl.textContent = spot.body;
 };
 
 TW.getHomeFigures = function () {

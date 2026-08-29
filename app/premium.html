@@ -32,7 +32,6 @@
     .premium-hero { margin-bottom: 1rem; }
     .premium-hero-copy .page-title { font-size: 1.35rem; }
     .premium-hero-copy .page-sub { font-size: 0.82rem; }
-    .premium-hero-media { max-height: 160px; }
     .premium-spotlight-copy h2 { font-size: 1.05rem; }
     .premium-spotlight-copy p { font-size: 0.82rem; }
     .premium-checklist { font-size: 0.8rem; }
@@ -72,10 +71,6 @@
                 <h1 class="page-title" id="premiumTitle"></h1>
                 <p class="page-sub" id="premiumLede"></p>
                 <a class="btn btn-primary btn-block" href="../login.html" id="premiumCta"></a>
-                <p class="premium-price-note" id="premiumPriceNote"></p>
-              </div>
-              <div class="premium-hero-media">
-                <img src="../assets/brand/device.webp" alt="" loading="lazy" />
               </div>
             </section>
 
@@ -86,7 +81,6 @@
               <div class="premium-spotlight-copy">
                 <h2 id="spotlightTitle"></h2>
                 <p id="spotlightBody"></p>
-                <ul class="premium-checklist" id="insightsList"></ul>
               </div>
             </section>
 
@@ -126,9 +120,7 @@
     document.getElementById("pageTitle").textContent = t("app_premium");
     document.getElementById("premiumTitle").textContent = t("premium_page_title");
     document.getElementById("premiumLede").textContent = t("premium_page_lede");
-    document.getElementById("premiumPriceNote").textContent = t("premium_page_price_note");
-    document.getElementById("spotlightTitle").textContent = t("dash_premium_locked_title");
-    document.getElementById("spotlightBody").textContent = t("dash_more_premium_body");
+    if (TW.applyPremiumSpotlightCopy) TW.applyPremiumSpotlightCopy();
     document.getElementById("featuresTitle").textContent = t("premium_page_features_title");
     document.getElementById("ctaBandTitle").textContent = t("home_premium_title");
     document.getElementById("ctaBandBody").textContent = t("dash_premium_plan_body");
@@ -149,11 +141,6 @@
         cta.classList.add("btn-secondary");
       });
     }
-
-    document.getElementById("insightsList").innerHTML = t("premium_insights_items")
-      .split("|")
-      .map((item) => `<li>${TW.escapeHtml(item.trim())}</li>`)
-      .join("");
 
     const premiumImages = [
       "../assets/brand/homepage-hero.jpeg",

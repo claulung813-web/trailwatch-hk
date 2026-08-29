@@ -20,10 +20,6 @@
           <h1 class="page-title" data-i18n="premium_page_title"></h1>
           <p class="page-sub" data-i18n="premium_page_lede"></p>
           <a class="btn btn-primary btn-lg" href="login.html" id="premiumCta" data-i18n="premium_page_cta"></a>
-          <p class="premium-price-note" data-i18n="premium_page_price_note"></p>
-        </div>
-        <div class="premium-hero-media">
-          <img src="assets/brand/device.webp" alt="" loading="lazy" />
         </div>
       </section>
 
@@ -32,9 +28,8 @@
           <img src="assets/brand/homepage-hero.jpeg" alt="" loading="lazy" />
         </div>
         <div class="premium-spotlight-copy">
-          <h2 data-i18n="dash_premium_locked_title"></h2>
-          <p data-i18n="dash_more_premium_body"></p>
-          <ul class="premium-checklist" id="insightsList"></ul>
+          <h2 id="premiumSpotlightTitle"></h2>
+          <p id="premiumSpotlightBody"></p>
         </div>
       </section>
 
@@ -63,6 +58,7 @@
   <script>
     document.documentElement.lang = TW.getLang() === "zh" ? "zh-Hant" : "en";
     initShell("premium");
+    if (TW.applyPremiumSpotlightCopy) TW.applyPremiumSpotlightCopy();
 
     if (TW.isMemberPremium && TW.isMemberPremium()) {
       const cta = document.getElementById("premiumCta");
@@ -73,11 +69,6 @@
         cta.classList.add("btn-secondary");
       }
     }
-
-    document.getElementById("insightsList").innerHTML = TW.t("premium_insights_items")
-      .split("|")
-      .map((item) => `<li>${TW.escapeHtml(item.trim())}</li>`)
-      .join("");
 
     const premiumImages = [
       "assets/brand/homepage-hero.jpeg",

@@ -89,9 +89,23 @@
         </fieldset>
       </div>
 
+      <div class="cms-card">
+        <h3 style="margin-top:0">Premium page — insights spotlight</h3>
+        <p style="font-size:0.85rem;color:#6b7280">Copy shown in the Premium insights block on <a href="../premium.html" target="_blank">Premium</a> (website and app).</p>
+        <label>Title (EN)</label>
+        <input id="premiumSpotlightTitleEn" />
+        <label>Title (繁)</label>
+        <input id="premiumSpotlightTitleZh" />
+        <label>Body (EN)</label>
+        <textarea id="premiumSpotlightBodyEn" rows="3"></textarea>
+        <label>Body (繁)</label>
+        <textarea id="premiumSpotlightBodyZh" rows="3"></textarea>
+      </div>
+
       <button type="submit" class="cms-btn cms-btn-primary">Save content</button>
       <a class="cms-btn cms-btn-secondary" href="../about.html" target="_blank" style="margin-left:0.5rem">Preview About ↗</a>
       <a class="cms-btn cms-btn-secondary" href="../donate.html" target="_blank" style="margin-left:0.5rem">Preview Support ↗</a>
+      <a class="cms-btn cms-btn-secondary" href="../premium.html" target="_blank" style="margin-left:0.5rem">Preview Premium ↗</a>
     </form>
   </div>
 
@@ -126,6 +140,12 @@
       document.getElementById("support_" + id + "_descZh").value = opt.descriptionZh || "";
     });
 
+    const spot = c.premiumSpotlight || {};
+    document.getElementById("premiumSpotlightTitleEn").value = spot.titleEn || "";
+    document.getElementById("premiumSpotlightTitleZh").value = spot.titleZh || "";
+    document.getElementById("premiumSpotlightBodyEn").value = spot.bodyEn || "";
+    document.getElementById("premiumSpotlightBodyZh").value = spot.bodyZh || "";
+
     function readSupportOption(id) {
       return {
         image: document.getElementById("support_" + id + "_image").value.trim(),
@@ -159,6 +179,12 @@
           donate: readSupportOption("donate"),
           gift: readSupportOption("gift"),
           volunteer: readSupportOption("volunteer"),
+        },
+        premiumSpotlight: {
+          titleEn: document.getElementById("premiumSpotlightTitleEn").value.trim(),
+          titleZh: document.getElementById("premiumSpotlightTitleZh").value.trim(),
+          bodyEn: document.getElementById("premiumSpotlightBodyEn").value.trim(),
+          bodyZh: document.getElementById("premiumSpotlightBodyZh").value.trim(),
         },
       });
       CMS.setStore(store);

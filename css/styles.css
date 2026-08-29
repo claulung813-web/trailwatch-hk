@@ -2227,21 +2227,17 @@ img.profile-avatar[hidden] {
   padding: 1.15rem 1.25rem;
   text-align: center;
 }
-.insights-upgrade p {
-  margin: 0 0 0.85rem;
-  color: var(--text-muted);
-  font-size: 0.88rem;
-  line-height: 1.5;
+.insights-record-list {
+  margin-bottom: 1.5rem;
 }
-.insights-locked .top-record-card .name,
-.insights-locked .top-record-card .val,
-.insights-locked .highlight-list .hl-val,
+.insights-locked .insight-val,
 .insights-locked .chart-summary .v,
 .insights-locked .chart-bars,
 .insights-locked .pace-chart,
 .insights-locked .region-pie-wrap .donut,
 .insights-locked .region-legend strong {
-  filter: blur(7px);
+  filter: blur(14px);
+  opacity: 0.88;
   user-select: none;
   pointer-events: none;
 }
