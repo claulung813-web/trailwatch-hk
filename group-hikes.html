@@ -784,9 +784,11 @@
                     ? TW.formatGroupHikeSpots(m)
                     : "";
               return `<article class="trail-card">
-              <a class="trail-card-img trail-card-media-link" href="${href}" aria-label="${twEsc(title)}">
-                <img src="${img}" alt="" loading="lazy" />
-              </a>
+              <div class="trail-card-img">
+                <a class="trail-card-media-link" href="${href}" aria-label="${twEsc(title)}">
+                  <img src="${img}" alt="" loading="lazy" />
+                </a>
+              </div>
               <div class="trail-card-body">
                 <div style="margin-bottom:0.35rem">${badges}</div>
                 <strong>${twEsc(title)}</strong>
