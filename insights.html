@@ -2,11 +2,111 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta http-equiv="refresh" content="0;url=profile.html#insights" />
-  <title>Redirecting…</title>
-  <script>location.replace("profile.html#insights");</script>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Insights — TrailWatch HK</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body>
-  <p><a href="profile.html#insights">Continue</a></p>
+  <div id="app-header"></div>
+  <main class="page insights-page" id="insightsPage">
+    <div class="container">
+      <a href="profile.html" class="link-more" style="display:inline-block;margin-bottom:1rem" data-i18n="profile_back"></a>
+      <h1 class="page-title" data-i18n="dash_insights"></h1>
+      <p class="insights-page-lede" id="insightsLede" data-i18n="dash_more_premium_body"></p>
+
+      <div class="section-head"><h2 data-i18n="mil_top_records"></h2></div>
+      <div class="top-records" id="dashTopRecords"></div>
+
+      <div class="section-head"><h2 data-i18n="mil_highlights"></h2></div>
+      <ul class="highlight-list" id="milHighlights"></ul>
+
+      <div class="section-head mt-2"><h2 data-i18n="dash_insights"></h2></div>
+
+      <div class="chart-card">
+        <h3 data-i18n="insights_pace"></h3>
+        <svg class="pace-chart" viewBox="0 0 480 160" preserveAspectRatio="none" aria-hidden="true">
+          <defs>
+            <linearGradient id="paceFill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#3da855" stop-opacity="0.4"/>
+              <stop offset="100%" stop-color="#3da855" stop-opacity="0.05"/>
+            </linearGradient>
+          </defs>
+          <g stroke="#e5e7eb" stroke-width="1">
+            <line x1="40" y1="20" x2="460" y2="20"/><line x1="40" y1="50" x2="460" y2="50"/>
+            <line x1="40" y1="80" x2="460" y2="80"/><line x1="40" y1="110" x2="460" y2="110"/>
+            <line x1="40" y1="140" x2="460" y2="140"/>
+          </g>
+          <path fill="url(#paceFill)" d="M40,90 L110,85 L180,95 L250,80 L320,88 L390,75 L460,78 L460,140 L40,140 Z"/>
+          <path fill="none" stroke="#3da855" stroke-width="2.5" d="M40,90 L110,85 L180,95 L250,80 L320,88 L390,75 L460,78"/>
+          <path fill="none" stroke="#4a90c8" stroke-width="2.5" d="M40,110 L110,100 L180,105 L250,70 L320,85 L390,55 L460,60"/>
+        </svg>
+        <div class="chart-summary">
+          <div class="box"><div class="k" data-i18n="insights_overall"></div><div class="v" id="avgPace">—</div></div>
+          <div class="box"><div class="k" data-i18n="insights_alltime"></div><div class="v" id="bestPace">—</div></div>
+        </div>
+        <div style="display:flex;gap:1rem;font-size:0.78rem;color:var(--text-muted);margin-top:0.35rem">
+          <span><span style="color:#3da855">●</span> <span data-i18n="insights_avg"></span></span>
+          <span><span style="color:#4a90c8">●</span> <span data-i18n="insights_best"></span></span>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem">
+          <h3 style="margin:0" data-i18n="insights_activity"></h3>
+          <div class="toggle-pills" id="activityToggle" style="margin:0">
+            <button type="button" class="active" data-mode="yearly" data-i18n="insights_yearly"></button>
+            <button type="button" data-mode="monthly" data-i18n="insights_monthly"></button>
+          </div>
+        </div>
+        <div class="chart-bars" id="activityBars" style="margin-top:1rem"></div>
+      </div>
+
+      <div class="chart-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem">
+          <h3 style="margin:0" data-i18n="insights_distance"></h3>
+          <div class="toggle-pills" id="distToggle" style="margin:0">
+            <button type="button" class="active" data-mode="yearly" data-i18n="insights_yearly"></button>
+            <button type="button" data-mode="monthly" data-i18n="insights_monthly"></button>
+          </div>
+        </div>
+        <div class="chart-bars" id="distBars" style="margin-top:1rem"></div>
+      </div>
+
+      <div class="chart-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem">
+          <h3 style="margin:0" data-i18n="insights_elevation"></h3>
+          <div class="toggle-pills" id="elevToggle" style="margin:0">
+            <button type="button" class="active" data-mode="yearly" data-i18n="insights_yearly"></button>
+            <button type="button" data-mode="monthly" data-i18n="insights_monthly"></button>
+          </div>
+        </div>
+        <div class="chart-bars" id="elevBars" style="margin-top:1rem"></div>
+      </div>
+
+      <div class="chart-card">
+        <h3 data-i18n="insights_region"></h3>
+        <div id="regionPie"></div>
+      </div>
+
+      <div class="insights-upgrade card" id="insightsUpgrade" hidden>
+        <p data-i18n="dash_more_premium_body"></p>
+        <a class="btn btn-primary" href="premium.html" data-premium-link data-i18n="dash_unlock_insights"></a>
+      </div>
+    </div>
+  </main>
+  <div id="app-footer"></div>
+  <script src="js/i18n.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/live-routes.js"></script>
+  <script src="js/dashboard.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    document.documentElement.lang = TW.getLang() === "zh" ? "zh-Hant" : "en";
+    initShell("profile");
+    TW.initInsightsPage();
+  </script>
 </body>
 </html>

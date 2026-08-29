@@ -315,60 +315,7 @@
               <div class="life-box"><div class="val" id="lifeElev">—</div><div class="lbl" id="lblElev"></div></div>
             </div>
             <div id="dashMoreGate"></div>
-            <button type="button" class="btn btn-primary btn-block" id="dashMoreBtn" hidden style="margin-bottom:0.75rem"></button>
-            <div id="dashPremiumMore" hidden>
-              <div class="section-label" id="lblTopRec"></div>
-              <div class="top-records" id="dashTopRecords"></div>
-              <div class="section-label" id="lblHighlights"></div>
-              <ul class="highlight-list" id="milHighlights"></ul>
-              <div class="section-label" id="lblInsights"></div>
-              <div class="chart-card">
-                <h3 id="lblPace"></h3>
-                <svg class="pace-chart" viewBox="0 0 320 120" preserveAspectRatio="none">
-                  <path fill="rgba(61,168,85,0.2)" d="M20,70 L60,66 L100,74 L140,62 L180,68 L220,58 L300,60 L300,110 L20,110 Z"/>
-                  <path fill="none" stroke="#3da855" stroke-width="2.5" d="M20,70 L60,66 L100,74 L140,62 L180,68 L220,58 L300,60"/>
-                  <path fill="none" stroke="#4a90c8" stroke-width="2.5" d="M20,85 L60,78 L100,82 L140,55 L180,66 L220,42 L300,48"/>
-                </svg>
-                <div style="display:flex;gap:0.75rem;font-size:0.68rem;color:var(--text-muted);margin-top:0.35rem">
-                  <span><span style="color:#3da855">●</span> <span id="lblAvgPace"></span></span>
-                  <span><span style="color:#4a90c8">●</span> <span id="lblBestPace"></span></span>
-                </div>
-              </div>
-              <div class="chart-card">
-                <div style="display:flex;justify-content:space-between;align-items:center;gap:0.35rem;margin-bottom:0.35rem">
-                  <h3 style="margin:0" id="lblActivity"></h3>
-                  <div class="toggle-pills" id="activityToggle">
-                    <button type="button" class="active" data-mode="yearly"></button>
-                    <button type="button" data-mode="monthly"></button>
-                  </div>
-                </div>
-                <div class="chart-bars" id="activityBars"></div>
-              </div>
-              <div class="chart-card">
-                <div style="display:flex;justify-content:space-between;align-items:center;gap:0.35rem;margin-bottom:0.35rem">
-                  <h3 style="margin:0" id="lblDistTrend"></h3>
-                  <div class="toggle-pills" id="distToggle">
-                    <button type="button" class="active" data-mode="yearly"></button>
-                    <button type="button" data-mode="monthly"></button>
-                  </div>
-                </div>
-                <div class="chart-bars" id="distBars"></div>
-              </div>
-              <div class="chart-card">
-                <div style="display:flex;justify-content:space-between;align-items:center;gap:0.35rem;margin-bottom:0.35rem">
-                  <h3 style="margin:0" id="lblElevTrend"></h3>
-                  <div class="toggle-pills" id="elevToggle">
-                    <button type="button" class="active" data-mode="yearly"></button>
-                    <button type="button" data-mode="monthly"></button>
-                  </div>
-                </div>
-                <div class="chart-bars" id="elevBars"></div>
-              </div>
-              <div class="chart-card">
-                <h3 id="lblRegion"></h3>
-                <div id="regionPie"></div>
-              </div>
-            </div>
+            <a href="insights.html" class="btn btn-primary btn-block dash-more-btn" id="dashMoreBtn" style="margin-bottom:0.75rem" data-i18n="dash_unlock_insights"></a>
 
             <div class="profile-preview-head">
               <h2 id="lblPlansPreview"></h2>
@@ -670,49 +617,7 @@
       showHub("info");
     });
 
-    const isPrem = typeof TW.isMemberPremium === "function" && TW.isMemberPremium();
     TW.applyPremiumMoreGate();
-    const moreBtn = document.getElementById("dashMoreBtn");
-    moreBtn.textContent = t("dash_more");
-    moreBtn.hidden = !isPrem;
-    function setDashMore(open) {
-      const panel = document.getElementById("dashPremiumMore");
-      if (!isPrem) return;
-      panel.hidden = !open;
-      moreBtn.textContent = open ? t("dash_more_hide") : t("dash_more");
-    }
-    moreBtn.addEventListener("click", () => {
-      const panel = document.getElementById("dashPremiumMore");
-      setDashMore(panel.hidden);
-    });
-
-    document.getElementById("lblTopRec").textContent = t("mil_top_records");
-    document.getElementById("lblHighlights").textContent = t("mil_highlights");
-    document.getElementById("lblInsights").textContent = t("dash_insights");
-    document.getElementById("lblPace").textContent = t("insights_pace");
-    document.getElementById("lblAvgPace").textContent = t("insights_avg");
-    document.getElementById("lblBestPace").textContent = t("insights_best");
-    document.getElementById("lblActivity").textContent = t("insights_activity");
-    document.getElementById("lblDistTrend").textContent = t("insights_distance");
-    document.getElementById("lblElevTrend").textContent = t("insights_elevation");
-    document.getElementById("lblRegion").textContent = t("insights_region");
-    ["activityToggle", "distToggle", "elevToggle"].forEach((id) => {
-      const el = document.getElementById(id);
-      el.querySelector('[data-mode="yearly"]').textContent = t("insights_yearly");
-      el.querySelector('[data-mode="monthly"]').textContent = t("insights_monthly");
-    });
-
-    const mil = TW.getMilestonesDemo();
-    document.getElementById("dashTopRecords").innerHTML = mil.topRecords.map((r) =>
-      `<div class="top-record-card"><div class="name">${r.title}</div><div class="val">${r.val}</div><div class="foot">${t(r.key)}</div></div>`
-    ).join("");
-    document.getElementById("milHighlights").innerHTML = mil.highlights.map((h) =>
-      `<li><span>${h.icon}</span><span class="hl-label">${t(h.labelKey)}</span><span class="hl-val">${h.val}</span></li>`
-    ).join("");
-    TW.bindInsightToggle(document.getElementById("activityToggle"), document.getElementById("activityBars"), "activity");
-    TW.bindInsightToggle(document.getElementById("distToggle"), document.getElementById("distBars"), "distance");
-    TW.bindInsightToggle(document.getElementById("elevToggle"), document.getElementById("elevBars"), "elevation");
-    TW.renderRegionPie(document.getElementById("regionPie"));
 
     document.getElementById("lblPlansPreview").textContent = t("nav_my_plans");
     document.getElementById("lblFriendsPreview").textContent = t("app_my_friends");
@@ -1253,6 +1158,9 @@
 
     /* Boot from hash */
     const hash = (location.hash || "").replace(/^#/, "");
+    if (hash === "milestones" || hash === "insights") {
+      location.replace("insights.html");
+    }
     const hashMap = {
       overview: "dashboard", dashboard: "dashboard",
       profile: "info", info: "info",
@@ -1282,9 +1190,6 @@
       }
       showHub(next);
     });
-    if (hash === "milestones" || hash === "insights") {
-      if (isPrem) setDashMore(true);
-    }
   </script>
 </body>
 </html>

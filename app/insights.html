@@ -2,11 +2,170 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta http-equiv="refresh" content="0;url=profile.html#overview" />
-  <title>Insights — TrailWatch App</title>
-  <script>location.replace("profile.html#overview");</script>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>TrailWatch App — Insights</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/styles.css" />
+  <style>
+    body { margin: 0; }
+    .phone-body {
+      flex: 1; overflow-y: auto; background: #f7faf7; min-height: 0;
+      padding: 0.75rem 0.9rem calc(1rem + env(safe-area-inset-bottom, 0px));
+    }
+    .app-detail-bar {
+      display: flex; align-items: center; gap: 0.35rem;
+      padding: 2.35rem 0.65rem 0.55rem; background: #fff; border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .app-detail-bar h1 {
+      flex: 1; font-size: 0.95rem; margin: 0; text-align: center; color: #111;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .app-detail-bar .ib {
+      width: 36px; height: 36px; border: none; background: none; cursor: pointer;
+      font-size: 1.25rem; color: #111; display: grid; place-items: center; text-decoration: none;
+      flex-shrink: 0;
+    }
+    .insights-page-lede { font-size: 0.78rem; margin: 0 0 0.85rem; }
+    .section-label { margin-top: 0.15rem; }
+    .top-records { margin-bottom: 0.75rem; }
+    .highlight-list { margin-bottom: 0.75rem; }
+    .chart-card { margin-bottom: 0.65rem; }
+    .chart-card h3 { font-size: 0.82rem; }
+    .insights-upgrade { margin-top: 0.85rem; padding: 0.85rem; margin-bottom: 4.5rem; }
+    .insights-upgrade p { font-size: 0.78rem; }
+  </style>
 </head>
 <body>
-  <p><a href="profile.html#overview">Continue</a></p>
+  <div class="app-page">
+    <div class="app-page-top">
+      <a href="profile.html" id="backWeb"></a>
+      <div class="lang-switch" style="margin:0.75rem auto 0;width:fit-content;background:rgba(255,255,255,0.15);border-color:rgba(255,255,255,0.25)">
+        <button type="button" data-lang="en" style="color:#fff">EN</button>
+        <button type="button" data-lang="zh" style="color:#fff">繁</button>
+      </div>
+    </div>
+    <div class="phone-frame">
+      <div class="phone-notch"></div>
+      <div class="phone-screen">
+        <div class="app-detail-bar">
+          <a class="ib" href="profile.html" id="backInline">‹</a>
+          <h1 id="pageTitle"></h1>
+          <span class="ib" aria-hidden="true"></span>
+        </div>
+        <div class="phone-body insights-page" id="insightsPage">
+          <p class="insights-page-lede" id="insightsLede"></p>
+
+          <div class="section-label" id="lblTopRec"></div>
+          <div class="top-records" id="dashTopRecords"></div>
+
+          <div class="section-label" id="lblHighlights"></div>
+          <ul class="highlight-list" id="milHighlights"></ul>
+
+          <div class="section-label" id="lblInsights"></div>
+
+          <div class="chart-card">
+            <h3 id="lblPace"></h3>
+            <svg class="pace-chart" viewBox="0 0 320 120" preserveAspectRatio="none" aria-hidden="true">
+              <path fill="rgba(61,168,85,0.2)" d="M20,70 L60,66 L100,74 L140,62 L180,68 L220,58 L300,60 L300,110 L20,110 Z"/>
+              <path fill="none" stroke="#3da855" stroke-width="2.5" d="M20,70 L60,66 L100,74 L140,62 L180,68 L220,58 L300,60"/>
+              <path fill="none" stroke="#4a90c8" stroke-width="2.5" d="M20,85 L60,78 L100,82 L140,55 L180,66 L220,42 L300,48"/>
+            </svg>
+            <div class="chart-summary" style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin-top:0.45rem">
+              <div class="box" style="background:#f7faf7;border-radius:8px;padding:0.45rem;text-align:center">
+                <div class="k" style="font-size:0.62rem;color:var(--text-muted)" id="lblAvgPace"></div>
+                <div class="v" id="avgPace" style="font-weight:800;color:var(--green-900)">—</div>
+              </div>
+              <div class="box" style="background:#f7faf7;border-radius:8px;padding:0.45rem;text-align:center">
+                <div class="k" style="font-size:0.62rem;color:var(--text-muted)" id="lblBestPace"></div>
+                <div class="v" id="bestPace" style="font-weight:800;color:var(--green-900)">—</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="chart-card">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:0.35rem;margin-bottom:0.35rem">
+              <h3 style="margin:0" id="lblActivity"></h3>
+              <div class="toggle-pills" id="activityToggle">
+                <button type="button" class="active" data-mode="yearly"></button>
+                <button type="button" data-mode="monthly"></button>
+              </div>
+            </div>
+            <div class="chart-bars" id="activityBars"></div>
+          </div>
+
+          <div class="chart-card">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:0.35rem;margin-bottom:0.35rem">
+              <h3 style="margin:0" id="lblDistTrend"></h3>
+              <div class="toggle-pills" id="distToggle">
+                <button type="button" class="active" data-mode="yearly"></button>
+                <button type="button" data-mode="monthly"></button>
+              </div>
+            </div>
+            <div class="chart-bars" id="distBars"></div>
+          </div>
+
+          <div class="chart-card">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:0.35rem;margin-bottom:0.35rem">
+              <h3 style="margin:0" id="lblElevTrend"></h3>
+              <div class="toggle-pills" id="elevToggle">
+                <button type="button" class="active" data-mode="yearly"></button>
+                <button type="button" data-mode="monthly"></button>
+              </div>
+            </div>
+            <div class="chart-bars" id="elevBars"></div>
+          </div>
+
+          <div class="chart-card">
+            <h3 id="lblRegion"></h3>
+            <div id="regionPie"></div>
+          </div>
+
+          <div class="insights-upgrade card" id="insightsUpgrade" hidden>
+            <p id="upgradeBody"></p>
+            <a class="btn btn-primary btn-block" href="premium.html" data-premium-link id="upgradeBtn"></a>
+          </div>
+        </div>
+        <div data-app-nav></div>
+      </div>
+    </div>
+  </div>
+  <script src="../js/i18n.js"></script>
+  <script src="../js/data.js"></script>
+  <script src="../js/live-routes.js"></script>
+  <script src="../js/dashboard.js"></script>
+  <script src="../js/app.js"></script>
+  <script>
+    document.documentElement.lang = TW.getLang() === "zh" ? "zh-Hant" : "en";
+    const t = TW.t;
+    document.querySelectorAll(".lang-switch button").forEach((b) => {
+      b.classList.toggle("active", b.dataset.lang === TW.getLang());
+      b.addEventListener("click", () => { TW.setLang(b.dataset.lang); location.reload(); });
+    });
+    document.getElementById("backWeb").textContent = "‹ " + t("nav_profile");
+    document.getElementById("pageTitle").textContent = t("dash_insights");
+    document.getElementById("insightsLede").textContent = t("dash_more_premium_body");
+    document.getElementById("lblTopRec").textContent = t("mil_top_records");
+    document.getElementById("lblHighlights").textContent = t("mil_highlights");
+    document.getElementById("lblInsights").textContent = t("dash_insights");
+    document.getElementById("lblPace").textContent = t("insights_pace");
+    document.getElementById("lblAvgPace").textContent = t("insights_avg");
+    document.getElementById("lblBestPace").textContent = t("insights_best");
+    document.getElementById("lblActivity").textContent = t("insights_activity");
+    document.getElementById("lblDistTrend").textContent = t("insights_distance");
+    document.getElementById("lblElevTrend").textContent = t("insights_elevation");
+    document.getElementById("lblRegion").textContent = t("insights_region");
+    document.getElementById("upgradeBody").textContent = t("dash_more_premium_body");
+    document.getElementById("upgradeBtn").textContent = t("dash_unlock_insights");
+    ["activityToggle", "distToggle", "elevToggle"].forEach((id) => {
+      const el = document.getElementById(id);
+      el.querySelector('[data-mode="yearly"]').textContent = t("insights_yearly");
+      el.querySelector('[data-mode="monthly"]').textContent = t("insights_monthly");
+    });
+    twMountAppNav("profile");
+    TW.initInsightsPage({ compact: true });
+  </script>
 </body>
 </html>

@@ -55,71 +55,7 @@
               <div class="label" data-i18n="profile_lifetime_elevation"></div>
             </div>
           </div>
-          <button type="button" class="btn btn-secondary dash-more-btn" id="dashMoreBtn" hidden data-i18n="dash_more"></button>
-          <div id="dashPremiumMore" hidden>
-            <div class="section-head"><h2 data-i18n="mil_top_records"></h2></div>
-            <div class="top-records" id="dashTopRecords"></div>
-            <div class="section-head"><h2 data-i18n="mil_highlights"></h2></div>
-            <ul class="highlight-list" id="milHighlights"></ul>
-            <div class="section-head mt-2"><h2 data-i18n="dash_insights"></h2></div>
-            <div class="chart-card">
-              <h3 data-i18n="insights_pace"></h3>
-              <svg class="pace-chart" viewBox="0 0 480 160" preserveAspectRatio="none">
-                <defs>
-                  <linearGradient id="paceFill" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stop-color="#3da855" stop-opacity="0.4"/>
-                    <stop offset="100%" stop-color="#3da855" stop-opacity="0.05"/>
-                  </linearGradient>
-                </defs>
-                <g stroke="#e5e7eb" stroke-width="1">
-                  <line x1="40" y1="20" x2="460" y2="20"/><line x1="40" y1="50" x2="460" y2="50"/>
-                  <line x1="40" y1="80" x2="460" y2="80"/><line x1="40" y1="110" x2="460" y2="110"/>
-                  <line x1="40" y1="140" x2="460" y2="140"/>
-                </g>
-                <path fill="url(#paceFill)" d="M40,90 L110,85 L180,95 L250,80 L320,88 L390,75 L460,78 L460,140 L40,140 Z"/>
-                <path fill="none" stroke="#3da855" stroke-width="2.5" d="M40,90 L110,85 L180,95 L250,80 L320,88 L390,75 L460,78"/>
-                <path fill="none" stroke="#4a90c8" stroke-width="2.5" d="M40,110 L110,100 L180,105 L250,70 L320,85 L390,55 L460,60"/>
-              </svg>
-              <div class="chart-summary">
-                <div class="box"><div class="k" data-i18n="insights_overall"></div><div class="v" id="avgPace">—</div></div>
-                <div class="box"><div class="k" data-i18n="insights_alltime"></div><div class="v" id="bestPace">—</div></div>
-              </div>
-            </div>
-            <div class="chart-card">
-              <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem">
-                <h3 style="margin:0" data-i18n="insights_activity"></h3>
-                <div class="toggle-pills" id="activityToggle" style="margin:0">
-                  <button class="active" data-mode="yearly" data-i18n="insights_yearly"></button>
-                  <button data-mode="monthly" data-i18n="insights_monthly"></button>
-                </div>
-              </div>
-              <div class="chart-bars" id="activityBars" style="margin-top:1rem"></div>
-            </div>
-            <div class="chart-card">
-              <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem">
-                <h3 style="margin:0" data-i18n="insights_distance"></h3>
-                <div class="toggle-pills" id="distToggle" style="margin:0">
-                  <button class="active" data-mode="yearly" data-i18n="insights_yearly"></button>
-                  <button data-mode="monthly" data-i18n="insights_monthly"></button>
-                </div>
-              </div>
-              <div class="chart-bars" id="distBars" style="margin-top:1rem"></div>
-            </div>
-            <div class="chart-card">
-              <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem">
-                <h3 style="margin:0" data-i18n="insights_elevation"></h3>
-                <div class="toggle-pills" id="elevToggle" style="margin:0">
-                  <button class="active" data-mode="yearly" data-i18n="insights_yearly"></button>
-                  <button data-mode="monthly" data-i18n="insights_monthly"></button>
-                </div>
-              </div>
-              <div class="chart-bars" id="elevBars" style="margin-top:1rem"></div>
-            </div>
-            <div class="chart-card">
-              <h3 data-i18n="insights_region"></h3>
-              <div id="regionPie"></div>
-            </div>
-          </div>
+          <a href="insights.html" class="btn btn-secondary dash-more-btn" id="dashMoreBtn" data-i18n="dash_unlock_insights"></a>
         </section>
 
         <section class="profile-preview-section">
@@ -288,7 +224,10 @@
       if (h.startsWith("reports") || h.includes("type=reports")) return "reports";
       if (h.startsWith("badges") || h.includes("type=badges")) return "badges";
       if (h.startsWith("settings")) return "settings";
-      if (h === "insights" || h === "milestones") return { view: "hub", openMore: true };
+      if (h === "insights" || h === "milestones") {
+        location.replace("insights.html");
+        return "hub";
+      }
       if (h.startsWith("activity")) {
         if (h.includes("records")) return "records";
         if (h.includes("plans")) return "plans";
@@ -306,7 +245,6 @@
 
     function showProfileView(viewOrParsed, pushHash) {
       let view = typeof viewOrParsed === "string" ? viewOrParsed : viewOrParsed.view;
-      const openMore = viewOrParsed && viewOrParsed.openMore;
       if (!PROFILE_VIEWS.includes(view)) view = "hub";
 
       document.getElementById("profileHub").hidden = view !== "hub";
@@ -317,7 +255,6 @@
       document.getElementById("viewSettings").hidden = view !== "settings";
 
       if (view === "records") initFootprintMap();
-      if (view === "hub" && openMore) setDashMore(true);
 
       if (pushHash !== false) {
         const hashMap = { hub: "", plans: "plans", records: "records", reports: "reports", badges: "badges", settings: "settings" };
@@ -325,17 +262,6 @@
         if (location.hash !== next) history.replaceState(null, "", "profile.html" + next);
       }
       window.scrollTo({ top: 0, behavior: "smooth" });
-    }
-
-    function setDashMore(open) {
-      const prem = TW.isMemberPremium && TW.isMemberPremium();
-      const panel = document.getElementById("dashPremiumMore");
-      const btn = document.getElementById("dashMoreBtn");
-      if (!panel || !btn) return;
-      const show = !!(prem && open);
-      panel.hidden = !show;
-      btn.textContent = show ? TW.t("dash_more_hide") : TW.t("dash_more");
-      btn.setAttribute("aria-expanded", show ? "true" : "false");
     }
 
     document.getElementById("openSettings").addEventListener("click", () => {
@@ -357,42 +283,12 @@
       showProfileView("badges", false);
     });
 
-    const moreBtn = document.getElementById("dashMoreBtn");
-    if (moreBtn) {
-      moreBtn.addEventListener("click", () => {
-        if (!(TW.isMemberPremium && TW.isMemberPremium())) {
-          location.href = "premium.html";
-          return;
-        }
-        const panel = document.getElementById("dashPremiumMore");
-        setDashMore(panel && panel.hidden);
-      });
-    }
-
     window.addEventListener("hashchange", () => {
       const parsed = parseProfileView(location.hash);
-      if (parsed && parsed.openMore) showProfileView(parsed, false);
-      else showProfileView(typeof parsed === "string" ? parsed : parsed.view || "hub", false);
+      showProfileView(typeof parsed === "string" ? parsed : parsed.view || "hub", false);
     });
 
-    const initial = parseProfileView(location.hash);
-    if (initial && initial.openMore) showProfileView(initial, true);
-    else showProfileView(typeof initial === "string" ? initial : "hub", true);
-
-    /* Dashboard more content */
-    const mil = TW.getMilestonesDemo();
-    document.getElementById("dashTopRecords").innerHTML = mil.topRecords
-      .map((r) => `<div class="top-record-card"><div class="inner"><div class="trophy">🏆</div><div class="name">${r.title}</div><div class="val">${r.val}</div></div><div class="foot">${TW.t(r.key)}</div></div>`)
-      .join("");
-    document.getElementById("milHighlights").innerHTML = mil.highlights
-      .map((h) => `<li><span class="hl-icon">${h.icon}</span><span class="hl-label">${TW.t(h.labelKey)}</span><span class="hl-val">${h.val}</span></li>`)
-      .join("");
-    document.getElementById("avgPace").textContent = TW.stats.avgPace + " min/km";
-    document.getElementById("bestPace").textContent = TW.stats.bestPace + " min/km";
-    TW.bindInsightToggle(document.getElementById("activityToggle"), document.getElementById("activityBars"), "activity");
-    TW.bindInsightToggle(document.getElementById("distToggle"), document.getElementById("distBars"), "distance");
-    TW.bindInsightToggle(document.getElementById("elevToggle"), document.getElementById("elevBars"), "elevation");
-    TW.renderRegionPie(document.getElementById("regionPie"));
+    showProfileView(parseProfileView(location.hash), true);
 
     TW.renderProfileBadgeGrid(document.getElementById("badgePicker"));
     TW.bindBadgeCatalogSync();

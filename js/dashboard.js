@@ -545,12 +545,85 @@ TW.applyPremiumMoreGate = function () {
     gate.hidden = true;
     gate.innerHTML = "";
   }
-  if (moreBtn) {
-    moreBtn.hidden = false;
-    moreBtn.textContent = prem ? TW.t("dash_more") : TW.t("dash_unlock");
-  }
-  if (morePanel && !prem) {
+  if (morePanel) {
     morePanel.hidden = true;
     morePanel.classList.remove("is-open");
+  }
+  if (moreBtn) {
+    moreBtn.hidden = false;
+    const href = TW.insightsPageHref ? TW.insightsPageHref() : "insights.html";
+    moreBtn.textContent = prem ? TW.t("dash_view_insights") : TW.t("dash_unlock_insights");
+    if (moreBtn.tagName === "A") {
+      moreBtn.href = href;
+    } else {
+      moreBtn.onclick = () => {
+        location.href = href;
+      };
+    }
+  }
+};
+
+TW.insightsPageHref = function () {
+  return "insights.html";
+};
+
+TW.premiumPageHref = function () {
+  return "premium.html";
+};
+
+TW.profilePageHref = function () {
+  return "profile.html";
+};
+
+TW.renderInsightsTopRecords = function (el, opts) {
+  if (!el) return;
+  opts = opts || {};
+  const mil = TW.getMilestonesDemo();
+  const trophy = opts.compact ? "" : `<div class="trophy">🏆</div>`;
+  el.innerHTML = mil.topRecords
+    .map(
+      (r) =>
+        `<div class="top-record-card"><div class="inner">${trophy}<div class="name">${TW.escapeHtml(r.title)}</div><div class="val insight-val">${TW.escapeHtml(r.val)}</div></div><div class="foot">${TW.escapeHtml(TW.t(r.key))}</div></div>`
+    )
+    .join("");
+};
+
+TW.renderInsightsHighlights = function (el) {
+  if (!el) return;
+  const mil = TW.getMilestonesDemo();
+  el.innerHTML = mil.highlights
+    .map(
+      (h) =>
+        `<li><span class="hl-icon">${h.icon}</span><span class="hl-label">${TW.escapeHtml(TW.t(h.labelKey))}</span><span class="hl-val insight-val">${TW.escapeHtml(h.val)}</span></li>`
+    )
+    .join("");
+};
+
+TW.renderPaceChartSummary = function () {
+  const avg = document.getElementById("avgPace");
+  const best = document.getElementById("bestPace");
+  if (avg) avg.textContent = (TW.stats && TW.stats.avgPace ? TW.stats.avgPace : "12.4") + " min/km";
+  if (best) best.textContent = (TW.stats && TW.stats.bestPace ? TW.stats.bestPace : "9.8") + " min/km";
+};
+
+TW.initInsightsPage = function (opts) {
+  opts = opts || {};
+  const prem = TW.isMemberPremium && TW.isMemberPremium();
+  const root = document.getElementById("insightsPage");
+  if (root) root.classList.toggle("insights-locked", !prem);
+
+  TW.renderInsightsTopRecords(document.getElementById("dashTopRecords"), { compact: !!opts.compact });
+  TW.renderInsightsHighlights(document.getElementById("milHighlights"));
+  TW.renderPaceChartSummary();
+  TW.bindInsightToggle(document.getElementById("activityToggle"), document.getElementById("activityBars"), "activity");
+  TW.bindInsightToggle(document.getElementById("distToggle"), document.getElementById("distBars"), "distance");
+  TW.bindInsightToggle(document.getElementById("elevToggle"), document.getElementById("elevBars"), "elevation");
+  TW.renderRegionPie(document.getElementById("regionPie"));
+
+  const upgrade = document.getElementById("insightsUpgrade");
+  if (upgrade) {
+    upgrade.hidden = !!prem;
+    const link = upgrade.querySelector("a[data-premium-link]");
+    if (link) link.href = TW.premiumPageHref();
   }
 };
