@@ -2465,7 +2465,7 @@ function statusClass(s) {
   return { closed: "status-closed", updated: "status-updated", received: "status-received", new: "status-received" }[s] || "status-received";
 }
 
-function renderReportItem(r) {
+function renderReportItem(r, detailHref) {
   const note = TW.getLang() === "zh" ? r.staffNoteZh || r.staffNote : r.staffNote;
   const reporter =
     TW.getLang() === "zh" ? r.reporterZh || r.reporter : r.reporter || r.reporterZh;
@@ -2479,6 +2479,7 @@ function renderReportItem(r) {
         : r.categoryLabel || r.categoryLabelZh || r.category || "";
   }
   const href =
+    detailHref ||
     "incident-detail.html?id=" + encodeURIComponent(r.id || r.sourceId || "");
   const desc = TW.tt(r, "desc") || "";
   return `

@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="../css/styles.css" />
   <style>
     body { margin: 0; }
-    .phone-body { flex: 1; overflow-y: auto; padding: 0.75rem 0.9rem 1rem; background: #f7faf7; min-height: 0; }
+    .phone-body { flex: 1; overflow-y: auto; padding: 0.75rem 0.9rem 1rem; background: #f7faf7; min-height: 0; padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px)); }
     .app-head {
       padding: 2.45rem 0.9rem 0.65rem; background: #fff; border-bottom: 1px solid var(--border);
     }
@@ -29,12 +29,13 @@
     .profile-hero-actions {
       display: flex; align-items: center; gap: 0.35rem; flex-shrink: 0;
     }
-    .profile-icon-btn {
+    .profile-icon-btn, .profile-settings-btn {
       position: relative; width: 2.35rem; height: 2.35rem; border-radius: 999px;
       border: 1px solid var(--border); background: #fff; color: var(--green-800);
       display: grid; place-items: center; cursor: pointer; padding: 0;
     }
-    .profile-icon-btn.active { background: var(--green-50); border-color: var(--green-300); }
+    .profile-icon-btn svg, .profile-settings-btn svg { width: 18px; height: 18px; }
+    .profile-icon-btn.active, .profile-settings-btn.active { background: var(--green-50); border-color: var(--green-300); }
     .profile-notif-dot {
       position: absolute; top: 0.35rem; right: 0.38rem; width: 7px; height: 7px;
       border-radius: 50%; background: #e84a3c; border: 1.5px solid #fff;
@@ -102,18 +103,19 @@
       margin-bottom: 0.35rem;
     }
     .profile-friend-name { font-size: 0.8rem; font-weight: 700; color: var(--green-900); }
-    .hub-tabs {
-      display: flex; gap: 0.3rem; padding: 0.45rem 0.65rem; background: #fff;
-      border-bottom: 1px solid var(--border); overflow-x: auto; -webkit-overflow-scrolling: touch;
+    .friend-card, .bm-card, .notif-card {
+      background: #fff; border: 1px solid var(--border); border-radius: 12px;
+      padding: 0.7rem 0.8rem; margin-bottom: 0.55rem; display: flex; align-items: center; gap: 0.55rem;
     }
-    .hub-tabs button {
-      border: none; border-radius: 999px; padding: 0.38rem 0.7rem; white-space: nowrap;
-      font-size: 0.72rem; font-weight: 700; background: var(--green-50); color: var(--green-900); cursor: pointer;
+    .profile-subview-head {
+      display: flex; align-items: center; gap: 0.35rem; margin-bottom: 0.65rem;
     }
-    .hub-tabs button.active { background: var(--green-900); color: #fff; }
-    .hub-tabs button .dot {
-      display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #e84a3c;
-      margin-left: 0.25rem; vertical-align: middle;
+    .profile-subview-head h2 {
+      flex: 1; font-size: 0.95rem; margin: 0; color: var(--green-900);
+    }
+    .profile-back {
+      border: none; background: none; font-size: 1.35rem; color: var(--green-900);
+      cursor: pointer; padding: 0; width: 36px; height: 36px; display: grid; place-items: center;
     }
     .life-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.4rem; margin-bottom: 0.75rem; }
     .life-box {
@@ -140,10 +142,11 @@
     .menu-list a:last-child, .menu-list button:last-child { border-bottom: none; }
     .menu-list .chev { margin-left: auto; color: #9ca3af; font-weight: 400; }
     .menu-list .prem { margin-left: auto; }
-    .friend-card, .bm-card, .notif-card {
-      background: #fff; border: 1px solid var(--border); border-radius: 12px;
-      padding: 0.7rem 0.8rem; margin-bottom: 0.55rem; display: flex; align-items: center; gap: 0.55rem;
+    .notif-card .nav-notif-item-icon {
+      width: 36px; height: 36px; border-radius: 10px; background: var(--green-50);
+      display: grid; place-items: center; flex-shrink: 0; color: var(--green-800);
     }
+    .notif-card .nav-notif-item-icon svg { width: 18px; height: 18px; }
     .friend-card strong, .bm-card strong, .notif-card strong { display: block; font-size: 0.85rem; color: var(--green-900); }
     .friend-card span, .bm-card span, .notif-card span { font-size: 0.68rem; color: var(--text-muted); }
     .app-record-card {
@@ -253,6 +256,10 @@
       display: block; font-size: 0.68rem; color: var(--text-muted); margin-top: 0.15rem; line-height: 1.4;
     }
     .settings-toggle input { width: 18px; height: 18px; margin-top: 0.15rem; accent-color: var(--green-700); flex-shrink: 0; }
+    .settings-logout-wrap {
+      margin-top: 0.85rem;
+      padding-bottom: calc(4.75rem + env(safe-area-inset-bottom, 0px));
+    }
   </style>
 </head>
 <body>
@@ -280,16 +287,18 @@
                 <span id="notifIcon"></span>
                 <span class="profile-notif-dot" id="notifDot" hidden aria-hidden="true"></span>
               </button>
-              <button type="button" class="profile-icon-btn" id="openSettings">
+              <button type="button" class="profile-settings-btn" id="openSettings" aria-label="Settings">
                 <span id="settingsIcon"></span>
               </button>
             </div>
           </div>
         </div>
 
-        <div class="hub-tabs" id="hubTabs" role="tablist"></div>
-
         <div class="phone-body">
+          <div class="profile-subview-head" id="profileSubHead" hidden>
+            <button type="button" class="profile-back" id="profileBack" aria-label="Back">‹</button>
+            <h2 id="profileSubTitle"></h2>
+          </div>
           <!-- Dashboard -->
           <section class="hub-panel" id="panelDashboard" data-hub="dashboard">
             <div class="profile-badge-strip">
@@ -423,9 +432,6 @@
               </div>
               <div id="groupList"></div>
             </div>
-            <div class="info-pane" data-info="more" hidden>
-              <div class="menu-list" id="moreLinks"></div>
-            </div>
           </section>
 
           <!-- Friends -->
@@ -478,7 +484,14 @@
             </div>
 
             <div class="menu-list" style="margin-top:0.25rem">
-              <a href="../get-app.html#premium"><span id="setPremium"></span><span class="prem"><span class="app-premium-pill" id="setPremPill"></span></span></a>
+              <a href="premium.html"><span id="setPremium"></span><span class="prem"><span class="app-premium-pill" id="setPremPill"></span></span></a>
+            </div>
+
+            <div class="section-label" id="lblMore"></div>
+            <div class="menu-list" id="settingsMoreLinks"></div>
+
+            <div class="settings-logout-wrap">
+              <button type="button" class="btn btn-secondary btn-block" id="btnLogout"></button>
             </div>
           </section>
 
@@ -529,7 +542,7 @@
       </div>
       <p class="cms-muted" style="font-size:0.8rem;color:var(--text-muted);margin:0 0 0.75rem" id="offlineBody"></p>
       <span class="app-premium-pill" id="offlinePrem"></span>
-      <a class="btn btn-primary btn-block" style="margin-top:0.85rem" href="../get-app.html#premium" id="offlineUpgrade"></a>
+      <a class="btn btn-primary btn-block" style="margin-top:0.85rem" href="premium.html" id="offlineUpgrade"></a>
     </div>
   </div>
   <div class="toast" id="toast"></div>
@@ -561,7 +574,7 @@
     document.getElementById("notifIcon").innerHTML = twIcon("bell");
     document.getElementById("settingsIcon").innerHTML = twIcon("settings");
     document.getElementById("openNotif").setAttribute("aria-label", t("app_notifications"));
-    document.getElementById("openSettings").setAttribute("aria-label", t("app_settings"));
+    document.getElementById("openSettings").setAttribute("aria-label", t("nav_settings"));
 
     function renderProfilePremiumCta() {
       const el = document.getElementById("profilePremiumCta");
@@ -570,18 +583,11 @@
       if (prem) {
         el.innerHTML = `<span class="dash-premium-pill">${TW.escapeHtml(t("dash_premium_active"))}</span>`;
       } else {
-        el.innerHTML = `<a href="../get-app.html#premium" class="btn btn-secondary profile-premium-btn">${TW.escapeHtml(t("dash_unlock"))}</a>`;
+        el.innerHTML = `<a href="premium.html" class="btn btn-secondary profile-premium-btn">${TW.escapeHtml(t("dash_unlock"))}</a>`;
       }
     }
     renderProfilePremiumCta();
 
-    const HUBS = [
-      { id: "dashboard", label: t("app_sec_dashboard") },
-      { id: "info", label: t("app_sec_my_info") },
-      { id: "friends", label: t("app_my_friends") },
-      { id: "bookmarks", label: t("app_bookmarks") },
-      { id: "sync", label: t("app_sec_sync") },
-    ];
     let hub = "dashboard";
     let infoTab = "badges";
     let friendTab = "list";
@@ -589,6 +595,16 @@
     let groupWhen = "all";
     let recDur = "all";
     let recGroup = "all";
+
+    const VIEW_TITLES = {
+      dashboard: "",
+      info: t("app_sec_my_info"),
+      friends: t("app_my_friends"),
+      bookmarks: t("app_bookmarks"),
+      settings: t("nav_settings"),
+      notifications: t("app_notifications"),
+      sync: t("app_sec_sync"),
+    };
 
     function notifUnread() {
       try { return localStorage.getItem("tw_app_notif_read") !== "1"; } catch (e) { return true; }
@@ -600,26 +616,23 @@
       document.getElementById("openSettings").classList.toggle("active", hub === "settings");
     }
 
-    function renderHubTabs() {
-      document.getElementById("hubTabs").innerHTML = HUBS.map((h) =>
-        `<button type="button" data-hub="${h.id}" class="${hub === h.id ? "active" : ""}">${h.label}</button>`
-      ).join("");
-      updateHeaderActions();
-    }
-
     function showHub(id) {
       hub = id;
-      if (id === "info") {
-        /* keep infoTab; hash may set type */
-      }
+      const isDashboard = id === "dashboard";
+      document.getElementById("profileSubHead").hidden = isDashboard;
+      document.getElementById("profileSubTitle").textContent = VIEW_TITLES[id] || "";
       document.querySelectorAll(".hub-panel").forEach((el) => {
         el.hidden = el.getAttribute("data-hub") !== id;
       });
-      renderHubTabs();
+      updateHeaderActions();
       try {
         const u = new URL(location.href);
-        let h = id === "dashboard" ? "overview" : id;
-        if (id === "info") h = infoTab === "badges" ? "profile" : "profile&type=" + infoTab;
+        let h = "overview";
+        if (id === "dashboard") h = "overview";
+        else if (id === "info") h = infoTab === "badges" ? "profile" : "profile&type=" + infoTab;
+        else if (id === "settings") h = "settings";
+        else if (id === "notifications") h = "notifications";
+        else h = id;
         u.hash = h;
         history.replaceState(null, "", u.pathname + u.search + u.hash);
       } catch (e) {}
@@ -627,16 +640,14 @@
       if (id === "friends") renderFriends();
       if (id === "bookmarks") renderBookmarks();
       if (id === "notifications") renderNotifs();
-      updateHeaderActions();
+      if (!isDashboard) {
+        document.querySelector(".phone-body").scrollTop = 0;
+      }
     }
 
     document.getElementById("openNotif").addEventListener("click", () => showHub("notifications"));
     document.getElementById("openSettings").addEventListener("click", () => showHub("settings"));
-
-    document.getElementById("hubTabs").addEventListener("click", (e) => {
-      const btn = e.target.closest("button[data-hub]");
-      if (btn) showHub(btn.dataset.hub);
-    });
+    document.getElementById("profileBack").addEventListener("click", () => showHub("dashboard"));
 
     /* —— Dashboard —— */
     TW.ensureDemoHike();
@@ -827,7 +838,6 @@
       { id: "records", label: t("app_my_records") },
       { id: "plans", label: t("app_my_plans") },
       { id: "groups", label: t("app_my_groups") },
-      { id: "more", label: t("app_more") },
     ].map((c) => `<button type="button" data-info="${c.id}" class="${infoTab === c.id ? "active" : ""}">${c.label}</button>`).join("");
 
     document.getElementById("badgeHint").textContent = t("app_badge_criteria");
@@ -1191,13 +1201,21 @@
     function renderNotifs() {
       const items = (TW.demoNotifications && TW.demoNotifications()) || [];
       document.getElementById("notifList").innerHTML = items.length
-        ? items.map((n) => `<div class="notif-card"><div style="flex:1"><strong>${n.title}</strong><span>${n.time || ""}</span></div></div>`).join("")
+        ? items.map((n) => {
+            const iconName = n.icon || "bell";
+            return `<div class="notif-card">
+              <span class="nav-notif-item-icon" aria-hidden="true">${twIcon(iconName)}</span>
+              <div style="flex:1;min-width:0">
+                <strong>${TW.escapeHtml(n.title)}</strong>
+                <span>${TW.escapeHtml(n.time || "")}</span>
+              </div>
+            </div>`;
+          }).join("")
         : `<p style="text-align:center;color:var(--text-muted);padding:1.5rem 0">${t("notif_empty")}</p>`;
     }
     document.getElementById("btnMarkRead").addEventListener("click", () => {
       try { localStorage.setItem("tw_app_notif_read", "1"); } catch (e) {}
-      renderHubTabs();
-      twMountAppNav("profile");
+      updateHeaderActions();
       showToast(t("toast_saved"));
     });
 
@@ -1214,17 +1232,24 @@
       if (e.target.closest("[data-sync]")) showToast(isPrem ? t("toast_saved") : t("app_sync_premium"));
     });
 
-    /* —— More —— */
+    /* —— More (Settings) —— */
+    document.getElementById("lblMore").textContent = t("app_more");
     const moreItems = [
-      { label: t("footer_map_credits"), href: "../map-credits.html" },
-      { label: t("footer_about_heading"), href: "../about.html" },
-      { label: t("footer_faq"), href: "../faq.html" },
-      { label: t("footer_terms"), href: "../terms.html" },
-      { label: t("footer_privacy"), href: "../privacy.html" },
+      { label: t("footer_map_credits"), href: "info.html?page=map-credits" },
+      { label: t("footer_about_heading"), href: "info.html?page=about" },
+      { label: t("footer_faq"), href: "info.html?page=faq" },
+      { label: t("footer_terms"), href: "info.html?page=terms" },
+      { label: t("footer_privacy"), href: "info.html?page=privacy" },
     ];
-    document.getElementById("moreLinks").innerHTML = moreItems.map((item) =>
+    document.getElementById("settingsMoreLinks").innerHTML = moreItems.map((item) =>
       `<a href="${item.href}"><span>${TW.escapeHtml(item.label)}</span><span class="chev">›</span></a>`
     ).join("");
+
+    document.getElementById("btnLogout").textContent = t("nav_logout");
+    document.getElementById("btnLogout").addEventListener("click", () => {
+      if (typeof TW.logoutMember === "function") TW.logoutMember();
+      location.href = "../login.html";
+    });
 
     /* Boot from hash */
     const hash = (location.hash || "").replace(/^#/, "");
@@ -1233,15 +1258,30 @@
       profile: "info", info: "info",
       friends: "friends", bookmarks: "bookmarks",
       settings: "settings", notifications: "notifications", sync: "sync",
-      more: "info",
       milestones: "dashboard", insights: "dashboard",
     };
     if (hash.indexOf("profile") === 0) {
       const type = (hash.match(/type=(\w+)/) || [])[1];
       if (type) infoTab = type;
     }
-    if (hash === "more") infoTab = "more";
-    showHub(hashMap[hash.split("&")[0]] || "dashboard");
+    const bootHub = hash === "more" ? "settings" : (hashMap[hash.split("&")[0]] || "dashboard");
+    showHub(bootHub);
+    updateHeaderActions();
+    if (hash === "more") {
+      setTimeout(() => {
+        const moreEl = document.getElementById("lblMore");
+        if (moreEl) moreEl.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 120);
+    }
+    window.addEventListener("hashchange", () => {
+      const h = (location.hash || "").replace(/^#/, "");
+      const next = hashMap[h.split("&")[0]] || "dashboard";
+      if (h.indexOf("profile") === 0) {
+        const type = (h.match(/type=(\w+)/) || [])[1];
+        if (type) infoTab = type;
+      }
+      showHub(next);
+    });
     if (hash === "milestones" || hash === "insights") {
       if (isPrem) setDashMore(true);
     }

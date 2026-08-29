@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>TrailWatch App — Premium</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/styles.css" />
+  <style>
+    body { margin: 0; }
+    .phone-body {
+      flex: 1; overflow-y: auto; background: #f7faf7; min-height: 0;
+      padding: 0.75rem 0.9rem calc(1rem + env(safe-area-inset-bottom, 0px));
+    }
+    .app-detail-bar {
+      display: flex; align-items: center; gap: 0.35rem;
+      padding: 2.35rem 0.65rem 0.55rem; background: #fff; border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .app-detail-bar h1 {
+      flex: 1; font-size: 0.95rem; margin: 0; text-align: center; color: #111;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .app-detail-bar .ib {
+      width: 36px; height: 36px; border: none; background: none; cursor: pointer;
+      font-size: 1.25rem; color: #111; display: grid; place-items: center; text-decoration: none;
+      flex-shrink: 0;
+    }
+    .premium-page { padding-bottom: 0.5rem; }
+    .premium-hero { margin-bottom: 1rem; }
+    .premium-hero-copy .page-title { font-size: 1.35rem; }
+    .premium-hero-copy .page-sub { font-size: 0.82rem; }
+    .premium-hero-media { max-height: 160px; }
+    .premium-spotlight-copy h2 { font-size: 1.05rem; }
+    .premium-spotlight-copy p { font-size: 0.82rem; }
+    .premium-checklist { font-size: 0.8rem; }
+    .premium-benefits-grid { grid-template-columns: 1fr; margin-bottom: 1rem; }
+    .premium-benefit-body h3 { font-size: 0.92rem; }
+    .premium-benefit-body p { font-size: 0.8rem; }
+    .premium-cta-band {
+      display: grid; gap: 0.85rem; padding: 1rem 1.05rem; margin-bottom: 0.5rem;
+    }
+    .premium-cta-band h2 { font-size: 1.05rem; margin: 0 0 0.35rem; color: var(--green-900); }
+    .premium-cta-band p { margin: 0; font-size: 0.82rem; color: var(--text-muted); line-height: 1.5; }
+    .section-head h2 { font-size: 0.95rem; }
+  </style>
+</head>
+<body>
+  <div class="app-page">
+    <div class="app-page-top">
+      <a href="profile.html" id="backWeb"></a>
+      <div class="lang-switch" style="margin:0.75rem auto 0;width:fit-content;background:rgba(255,255,255,0.15);border-color:rgba(255,255,255,0.25)">
+        <button type="button" data-lang="en" style="color:#fff">EN</button>
+        <button type="button" data-lang="zh" style="color:#fff">繁</button>
+      </div>
+    </div>
+    <div class="phone-frame">
+      <div class="phone-notch"></div>
+      <div class="phone-screen">
+        <div class="app-detail-bar">
+          <a class="ib" href="profile.html" id="backInline">‹</a>
+          <h1 id="pageTitle">Premium</h1>
+          <span class="ib" aria-hidden="true"></span>
+        </div>
+        <div class="phone-body">
+          <main class="premium-page">
+            <section class="premium-hero">
+              <div class="premium-hero-copy">
+                <span class="app-premium-pill premium-hero-badge">Premium</span>
+                <h1 class="page-title" id="premiumTitle"></h1>
+                <p class="page-sub" id="premiumLede"></p>
+                <a class="btn btn-primary btn-block" href="../login.html" id="premiumCta"></a>
+                <p class="premium-price-note" id="premiumPriceNote"></p>
+              </div>
+              <div class="premium-hero-media">
+                <img src="../assets/brand/device.webp" alt="" loading="lazy" />
+              </div>
+            </section>
+
+            <section class="premium-spotlight card">
+              <div class="premium-spotlight-media">
+                <img src="../assets/brand/homepage-hero.jpeg" alt="" loading="lazy" />
+              </div>
+              <div class="premium-spotlight-copy">
+                <h2 id="spotlightTitle"></h2>
+                <p id="spotlightBody"></p>
+                <ul class="premium-checklist" id="insightsList"></ul>
+              </div>
+            </section>
+
+            <div class="section-head">
+              <h2 id="featuresTitle"></h2>
+            </div>
+            <div class="premium-benefits-grid" id="premiumBenefits"></div>
+
+            <section class="premium-cta-band card">
+              <div>
+                <h2 id="ctaBandTitle"></h2>
+                <p id="ctaBandBody"></p>
+              </div>
+              <a class="btn btn-primary btn-block" href="../login.html" id="premiumCtaBottom"></a>
+            </section>
+          </main>
+        </div>
+        <div data-app-nav></div>
+      </div>
+    </div>
+  </div>
+  <div class="toast" id="toast"></div>
+
+  <script src="../js/i18n.js"></script>
+  <script src="../js/data.js"></script>
+  <script src="../js/live-routes.js"></script>
+  <script src="../js/cms-store.js"></script>
+  <script src="../js/app.js"></script>
+  <script>
+    document.documentElement.lang = TW.getLang() === "zh" ? "zh-Hant" : "en";
+    const t = TW.t;
+    document.querySelectorAll(".lang-switch button").forEach((b) => {
+      b.classList.toggle("active", b.dataset.lang === TW.getLang());
+      b.addEventListener("click", () => { TW.setLang(b.dataset.lang); location.reload(); });
+    });
+    document.getElementById("backWeb").textContent = "‹ " + t("nav_profile");
+    document.getElementById("pageTitle").textContent = t("app_premium");
+    document.getElementById("premiumTitle").textContent = t("premium_page_title");
+    document.getElementById("premiumLede").textContent = t("premium_page_lede");
+    document.getElementById("premiumPriceNote").textContent = t("premium_page_price_note");
+    document.getElementById("spotlightTitle").textContent = t("dash_premium_locked_title");
+    document.getElementById("spotlightBody").textContent = t("dash_more_premium_body");
+    document.getElementById("featuresTitle").textContent = t("premium_page_features_title");
+    document.getElementById("ctaBandTitle").textContent = t("home_premium_title");
+    document.getElementById("ctaBandBody").textContent = t("dash_premium_plan_body");
+    document.getElementById("premiumCta").textContent = t("premium_page_cta");
+    document.getElementById("premiumCtaBottom").textContent = t("premium_page_cta");
+    twMountAppNav("profile");
+
+    const loginNext = encodeURIComponent("app/premium.html");
+    document.getElementById("premiumCta").href = "../login.html?next=" + loginNext;
+    document.getElementById("premiumCtaBottom").href = "../login.html?next=" + loginNext;
+
+    if (TW.isMemberPremium && TW.isMemberPremium()) {
+      [document.getElementById("premiumCta"), document.getElementById("premiumCtaBottom")].forEach((cta) => {
+        if (!cta) return;
+        cta.textContent = t("dash_premium_active");
+        cta.href = "profile.html";
+        cta.classList.remove("btn-primary");
+        cta.classList.add("btn-secondary");
+      });
+    }
+
+    document.getElementById("insightsList").innerHTML = t("premium_insights_items")
+      .split("|")
+      .map((item) => `<li>${TW.escapeHtml(item.trim())}</li>`)
+      .join("");
+
+    const premiumImages = [
+      "../assets/brand/homepage-hero.jpeg",
+      "../assets/brand/img-hiking.jpg",
+      "../assets/brand/img-route.webp",
+    ];
+
+    const benefits = [
+      { icon: "insights", titleKey: "premium_feat_insights_title", bodyKey: "premium_feat_insights_body", image: premiumImages[0] },
+      { icon: "download", titleKey: "premium_feat_offline_title", bodyKey: "premium_feat_offline_body", image: premiumImages[1] },
+      { icon: "hikes", titleKey: "premium_feat_footprint_title", bodyKey: "premium_feat_footprint_body", image: premiumImages[2] },
+      { icon: "groupHikes", titleKey: "premium_feat_groups_title", bodyKey: "premium_feat_groups_body", image: premiumImages[0] },
+      { icon: "live", titleKey: "premium_feat_live_title", bodyKey: "premium_feat_live_body", image: premiumImages[1] },
+      { icon: "badges", titleKey: "premium_feat_badges_title", bodyKey: "premium_feat_badges_body", image: premiumImages[2] },
+    ];
+
+    document.getElementById("premiumBenefits").innerHTML = benefits
+      .map(
+        (b) => `<article class="premium-benefit-card">
+          <div class="premium-benefit-media"><img src="${b.image}" alt="" loading="lazy" /></div>
+          <div class="premium-benefit-body">
+            <span class="premium-benefit-icon" aria-hidden="true">${twIcon(b.icon)}</span>
+            <h3>${TW.escapeHtml(t(b.titleKey))}</h3>
+            <p>${TW.escapeHtml(t(b.bodyKey))}</p>
+          </div>
+        </article>`
+      )
+      .join("");
+  </script>
+</body>
+</html>

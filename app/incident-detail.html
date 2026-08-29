@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>TrailWatch App — Incident</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="../css/styles.css?v=20260830b" />
+  <style>
+    body { margin: 0; }
+    .phone-body { flex: 1; overflow-y: auto; background: #f3f4f6; min-height: 0; padding-bottom: 0.5rem; }
+    .app-detail-bar {
+      display: flex; align-items: center; gap: 0.35rem;
+      padding: calc(2.35rem + env(safe-area-inset-top, 0px)) 0.65rem 0.55rem;
+      background: #fff; border-bottom: 1px solid var(--border);
+    }
+    .app-detail-bar h1 {
+      flex: 1; font-size: 0.95rem; margin: 0; text-align: center; color: #111;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .app-detail-bar .ib {
+      width: 36px; height: 36px; border: none; background: none; cursor: pointer;
+      font-size: 1.25rem; color: #111; display: grid; place-items: center; text-decoration: none;
+      flex-shrink: 0;
+    }
+    .incident-detail-content { padding: 0.75rem 0.85rem 0.25rem; }
+    .incident-meta { font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.65rem; display: flex; flex-wrap: wrap; gap: 0.35rem 0.65rem; align-items: center; }
+    .incident-meta strong { color: var(--green-900); }
+    .route-share-map { height: 200px; border-radius: 12px; margin-bottom: 0.75rem; border: 1px solid var(--border); }
+    .route-share-story { font-size: 0.82rem; line-height: 1.55; margin: 0 0 0.65rem; white-space: pre-wrap; }
+    .route-share-block { margin-bottom: 1rem; }
+    .route-share-block h2 { font-size: 0.88rem; color: var(--green-900); margin: 0 0 0.55rem; }
+    .rec-photo-grid { grid-template-columns: repeat(3, 1fr); gap: 0.35rem; }
+  </style>
+</head>
+<body>
+  <div class="app-page">
+    <div class="app-page-top">
+      <a href="explore.html?tab=incidents" id="backWeb"></a>
+      <div class="lang-switch" style="margin:0.75rem auto 0;width:fit-content;background:rgba(255,255,255,0.15);border-color:rgba(255,255,255,0.25)">
+        <button type="button" data-lang="en" style="color:#fff">EN</button>
+        <button type="button" data-lang="zh" style="color:#fff">繁</button>
+      </div>
+    </div>
+    <div class="phone-frame">
+      <div class="phone-notch"></div>
+      <div class="phone-screen">
+        <div class="app-detail-bar">
+          <a class="ib" href="explore.html?tab=incidents" id="backInline">‹</a>
+          <h1 id="incTitle">—</h1>
+          <span class="ib" aria-hidden="true"></span>
+        </div>
+        <div class="phone-body">
+          <div class="incident-detail-content">
+            <div class="incident-meta">
+              <span class="status-badge status-inline" id="incStatus"></span>
+              <strong id="incReporter"></strong>
+              <span id="incDate"></span>
+              <span id="incCategory"></span>
+            </div>
+            <div id="incMap" class="route-share-map"></div>
+            <section class="route-share-block">
+              <h2 id="lblDesc"></h2>
+              <p class="route-share-story" id="incDesc"></p>
+            </section>
+            <section class="route-share-block" id="staffSection" hidden>
+              <h2 id="lblStaff"></h2>
+              <p class="route-share-story" id="incStaff"></p>
+            </section>
+            <section class="route-share-block" id="photoSection" hidden>
+              <h2 id="lblPhotos"></h2>
+              <div class="rec-photo-grid" id="photoGrid"></div>
+            </section>
+          </div>
+        </div>
+        <div data-app-nav></div>
+      </div>
+    </div>
+  </div>
+  <div class="toast" id="toast"></div>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="../js/i18n.js"></script>
+  <script src="../js/data.js"></script>
+  <script src="../js/live-routes.js"></script>
+  <script src="../js/cms-store.js"></script>
+  <script src="../js/app.js"></script>
+  <script>
+    document.documentElement.lang = TW.getLang() === "zh" ? "zh-Hant" : "en";
+    const lang = TW.getLang();
+    const t = TW.t;
+    document.querySelectorAll(".lang-switch button").forEach((b) => {
+      b.classList.toggle("active", b.dataset.lang === lang);
+      b.addEventListener("click", () => { TW.setLang(b.dataset.lang); location.reload(); });
+    });
+    document.getElementById("backWeb").textContent = "‹ " + t("incident_back");
+    document.getElementById("lblDesc").textContent = t("description");
+    document.getElementById("lblStaff").textContent = t("staff_update");
+    document.getElementById("lblPhotos").textContent = t("rec_photos");
+    twMountAppNav("explore");
+
+    const id = new URLSearchParams(location.search).get("id");
+    const r = typeof TW.getIncidentReport === "function" ? TW.getIncidentReport(id) : null;
+    if (!r) {
+      location.href = "explore.html?tab=incidents";
+    } else {
+      const title = TW.tt(r, "title");
+      document.getElementById("incTitle").textContent = title;
+      const statusEl = document.getElementById("incStatus");
+      statusEl.textContent = statusLabel(r.status);
+      statusEl.className = "status-badge status-inline " + statusClass(r.status);
+
+      const reporter = lang === "zh" ? r.reporterZh || r.reporter : r.reporter || r.reporterZh;
+      document.getElementById("incReporter").textContent = reporter || "TrailWatch";
+      document.getElementById("incDate").textContent = r.date || "";
+
+      const catId = TW.normalizeReportCategory ? TW.normalizeReportCategory(r.category) : r.category;
+      let catLabel = t("cat_" + catId);
+      if (catLabel === "cat_" + catId) {
+        catLabel = lang === "zh"
+          ? r.categoryLabelZh || r.categoryLabel || r.category || ""
+          : r.categoryLabel || r.categoryLabelZh || r.category || "";
+      }
+      document.getElementById("incCategory").textContent = catLabel || "";
+
+      document.getElementById("incDesc").textContent = TW.tt(r, "desc") || t("incident_no_desc");
+
+      const note = lang === "zh" ? r.staffNoteZh || r.staffNote : r.staffNote;
+      if (note && String(note).trim()) {
+        document.getElementById("staffSection").hidden = false;
+        document.getElementById("incStaff").textContent = note;
+      }
+
+      const photos = r.photos && r.photos.length ? r.photos : r.image ? [r.image] : [];
+      if (photos.length) {
+        document.getElementById("photoSection").hidden = false;
+        document.getElementById("photoGrid").innerHTML = photos
+          .map((p) => `<img src="${p}" alt="" loading="lazy" />`)
+          .join("");
+      }
+
+      if (r.lat != null && r.lng != null) {
+        const map = L.map("incMap", { zoomControl: false }).setView([r.lat, r.lng], 15);
+        TW.addMapTiles(map);
+        L.marker([r.lat, r.lng]).addTo(map);
+        if (TW.prepareLeafletMap) TW.prepareLeafletMap(map);
+        setTimeout(() => map.invalidateSize(), 100);
+      } else {
+        document.getElementById("incMap").style.display = "none";
+      }
+    }
+  </script>
+</body>
+</html>

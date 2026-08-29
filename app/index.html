@@ -236,9 +236,23 @@
     }
     .leaflet-tooltip-top.follow-name::before { display: none; }
     .plan-panel {
-      display: none; background: #fff; padding: 0.75rem 1rem 1rem; border-top: 1px solid var(--border);
+      display: none;
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 25;
+      max-height: 58%;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      background: #fff;
+      padding: 0.75rem 1rem calc(0.85rem + env(safe-area-inset-bottom, 0px));
+      border-top: 1px solid var(--border);
+      border-radius: 20px 20px 0 0;
+      box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.12);
     }
     .plan-panel.show { display: block; }
+    .phone-screen.plan-mode .map-tools-stack { bottom: auto; top: 9.25rem; }
     .plan-fields { margin: 0.5rem 0 0.65rem; }
     .plan-fields .figma-field { margin-bottom: 0.55rem; }
     .plan-fields .figma-field-label { font-size: 0.72rem; }
@@ -990,12 +1004,14 @@
 
     function applyFollowPath(path) {
       if (!path || path.length < 2) return;
-      route = path;
+      route = path.map((p) => [Number(p[0]), Number(p[1])]);
       recordedPath = [route[0]];
       routeIdx = 0;
       marker.setLatLng(route[0]);
       plannedRoute.setLatLngs(route);
-      map.setView(route[0], 14);
+      const bounds = L.latLngBounds(route);
+      map.fitBounds(bounds.pad(0.15));
+      setTimeout(() => map.invalidateSize(), 120);
     }
 
     function followHintKey(kind) {
@@ -1207,10 +1223,13 @@
       }
       mapMode = mode;
       document.querySelectorAll("#modeToggle button").forEach((b) => b.classList.toggle("active", b.dataset.mode === mode));
+      document.querySelector(".phone-screen").classList.toggle("plan-mode", mode === "plan");
       planPanel.classList.toggle("show", mode === "plan");
       closeReport(false);
       updateMapChrome();
+      setTimeout(() => map.invalidateSize(), 80);
       if (mode === "plan") {
+        setTimeout(() => map.invalidateSize(), 320);
         if (state !== "active" && state !== "paused") {
           idleBar.classList.add("hidden");
           activeSheet.classList.add("hidden");
@@ -1711,6 +1730,7 @@
     }
     const followParam = params.get("follow");
     const draftId = params.get("draft");
+    const groupId = params.get("group");
     const followKindParam = followParam === "group" || followParam === "route" || followParam === "plan"
       ? followParam
       : "";
@@ -1722,19 +1742,58 @@
       setMapMode("plan", { force: true });
     }
     if (followKindParam === "route" && trailId) {
-      document.getElementById("trackBack").href = "route-detail.html?id=" + encodeURIComponent(trailId);
+      if (recMatch) {
+        document.getElementById("trackBack").href = "record-detail.html?id=" + encodeURIComponent(trailId);
+      } else {
+        document.getElementById("trackBack").href = "route-detail.html?id=" + encodeURIComponent(trailId);
+      }
     }
     if (followKindParam === "plan" && draftId) {
       const planDraft = TW.getRouteDraft(draftId);
       if (planDraft && planDraft.path && planDraft.path.length > 1) followPath = planDraft.path;
       document.getElementById("trackBack").href = "plan-detail.html?id=" + encodeURIComponent(draftId);
     }
+    if (followKindParam === "group" && groupId) {
+      function findFollowGroup(hid) {
+        if (!hid) return null;
+        const custom = TW.getGroupHike(hid);
+        if (custom) return custom;
+        const preview = TW.findPreviewGroupHike(hid);
+        if (preview) return preview;
+        if (/^\d+$/.test(String(hid))) {
+          return TW.findPreviewGroupHike("preview_" + hid) || TW.findPreviewGroupHike("meetup_" + hid);
+        }
+        return null;
+      }
+      const groupHike = findFollowGroup(groupId);
+      if (groupHike) {
+        if (groupHike.path && groupHike.path.length > 1) {
+          followPath = groupHike.path;
+        } else if (groupHike.trailId && TW.trails) {
+          const groupTrail = TW.trails.find((x) => x.id === groupHike.trailId);
+          if (groupTrail && groupTrail.path && groupTrail.path.length > 1) followPath = groupTrail.path;
+          else if (groupTrail && groupTrail.lat != null) followPath = demoPathFrom(groupTrail.lat, groupTrail.lng);
+        } else if (groupHike.pathCenter) {
+          followPath = demoPathFrom(groupHike.pathCenter[0], groupHike.pathCenter[1]);
+        }
+        document.getElementById("trackBack").href = "group-detail.html?id=" + encodeURIComponent(groupId);
+      }
+    }
     if (followKindParam) {
-      const friendName = params.get("friend");
       let title = trail ? TW.tt(trail, "title") : "";
+      if (recMatch) title = TW.tt(recMatch, "title") || recMatch.title || title;
       if (followKindParam === "plan" && draftId) {
         const planDraft = TW.getRouteDraft(draftId);
         if (planDraft) title = TW.tt(planDraft, "name") || planDraft.name || title;
+      }
+      if (followKindParam === "group" && groupId) {
+        const gh =
+          TW.getGroupHike(groupId) ||
+          TW.findPreviewGroupHike(groupId) ||
+          (/^\d+$/.test(String(groupId))
+            ? TW.findPreviewGroupHike("preview_" + groupId) || TW.findPreviewGroupHike("meetup_" + groupId)
+            : null);
+        if (gh) title = TW.tt(gh, "title") || gh.title || title;
       }
       enableFollow(followKindParam, { path: followPath, title: title });
     }

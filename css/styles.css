@@ -6532,7 +6532,7 @@ a.record-item {
   min-height: 0;
   position: relative;
   background: #dce8dc;
-  padding-top: env(safe-area-inset-top, 0px);
+  padding-top: 0;
 }
 .phone-screen.report-open .phone-topbar,
 .phone-screen.report-open .follow-banner,
@@ -6542,9 +6542,25 @@ a.record-item {
 }
 .report-sheet-back {
   position: absolute;
-  top: calc(0.65rem + env(safe-area-inset-top, 0px));
-  left: 0.75rem;
+  top: calc(3.2rem + env(safe-area-inset-top, 0px));
+  left: 0.85rem;
   z-index: 20;
+}
+.app-report-sheet .picker-map-hint {
+  top: auto;
+  bottom: 0.85rem;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.72rem;
+  line-height: 1.35;
+  padding: 0.45rem 0.75rem;
+  pointer-events: none;
+  max-width: calc(100% - 1.5rem);
+}
+@media (max-width: 520px) {
+  .report-sheet-back {
+    top: calc(0.75rem + env(safe-area-inset-top, 0px));
+  }
 }
 .report-sheet-head {
   display: flex;

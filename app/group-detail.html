@@ -7,52 +7,66 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="../css/styles.css" />
   <style>
     body { margin: 0; }
     .phone-screen { display: flex; flex-direction: column; height: 100%; }
-    .phone-body { flex: 1; overflow-y: auto; padding: 0.75rem 0.9rem 1rem; background: #f7faf7; }
+    .phone-body { flex: 1; overflow-y: auto; padding: 0.75rem 0.9rem 1rem; background: #f7faf7; min-height: 0; }
     .app-detail-bar {
       display: flex; align-items: center; gap: 0.35rem;
       padding: 2.35rem 0.65rem 0.45rem; background: #fff; border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .app-detail-bar h1 {
+      flex: 1; font-size: 0.95rem; margin: 0; text-align: center; color: #111;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
     .app-detail-bar .ib {
       width: 36px; height: 36px; border: none; background: none; cursor: pointer;
       font-size: 1.25rem; color: #111; display: grid; place-items: center; text-decoration: none;
+      flex-shrink: 0;
     }
-    .join-dock {
-      padding: 0.7rem 0.9rem 1.05rem; background: #fff; border-top: 1px solid var(--border);
+    .gh-badge {
+      display: inline-block; font-size: 0.62rem; font-weight: 700;
+      padding: 0.15rem 0.45rem; border-radius: 4px; margin: 0 0.35rem 0.35rem 0;
     }
-    .stage-tabs {
-      display: flex; gap: 0.35rem; padding: 0.55rem 0.9rem; background: #fff;
-      border-bottom: 1px solid var(--border); overflow-x: auto; flex-wrap: nowrap;
-      mask-image: linear-gradient(90deg, #000 88%, transparent);
+    .gh-public { background: #ecfdf5; color: #047857; }
+    .gh-private { background: #eff6ff; color: #1d4ed8; }
+    .gh-host { background: #fef3c7; color: #92400e; }
+    #ghMap {
+      height: 200px; border-radius: 12px; border: 1px solid var(--border);
+      margin-bottom: 0.75rem; background: #e8ece8;
     }
-    .hero { height: 140px; background: center/cover no-repeat; position: relative; }
-    .hero::after {
-      content: ""; position: absolute; inset: 0;
-      background: linear-gradient(transparent, rgba(0,0,0,0.45));
+    .gh-field { margin-bottom: 0.65rem; }
+    .gh-field:last-child { margin-bottom: 0; }
+    .gh-field-label {
+      display: block; font-size: 0.68rem; font-weight: 600;
+      color: var(--text-muted); margin-bottom: 0.15rem;
     }
-    .stage-tabs button {
-      border: none; border-radius: 999px; padding: 0.35rem 0.7rem;
-      font-size: 0.7rem; font-weight: 700; background: var(--green-50); color: var(--green-900); cursor: pointer;
+    .gh-field-value {
+      font-size: 0.82rem; font-weight: 600; color: var(--green-900); line-height: 1.45;
     }
-    .stage-tabs button.active { background: var(--green-900); color: #fff; }
+    .gh-field-value.desc { font-weight: 400; white-space: pre-wrap; }
     .block {
       background: #fff; border: 1px solid var(--border); border-radius: 12px;
       padding: 0.75rem 0.85rem; margin-bottom: 0.65rem;
     }
-    .block h3 { margin: 0 0 0.35rem; font-size: 0.82rem; color: var(--green-900); }
-    .block p { margin: 0; font-size: 0.75rem; color: var(--text-muted); }
-    .who { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-top: 0.45rem; }
-    .who span {
-      width: 32px; height: 32px; border-radius: 50%; background: var(--green-100);
-      display: grid; place-items: center; font-size: 0.7rem; font-weight: 700; color: var(--green-900);
+    .block h2 { margin: 0 0 0.45rem; font-size: 0.82rem; color: var(--green-900); }
+    .gh-member-row {
+      display: flex; align-items: center; gap: 0.55rem;
+      padding: 0.45rem 0; border-bottom: 1px solid var(--border);
     }
-    .msg {
-      padding: 0.5rem 0; border-bottom: 1px solid #eee; font-size: 0.75rem;
+    .gh-member-row:last-child { border-bottom: none; }
+    .gh-msg {
+      padding: 0.5rem 0; border-bottom: 1px solid var(--border); font-size: 0.78rem;
     }
-    .msg strong { color: var(--green-900); }
+    .gh-msg:last-child { border-bottom: none; }
+    .gh-msg strong { color: var(--green-900); }
+    .gh-msg time {
+      display: block; font-size: 0.65rem; color: var(--text-muted); margin-top: 0.12rem;
+    }
+    .join-row { display: flex; flex-wrap: wrap; gap: 0.45rem; align-items: center; margin-bottom: 0.55rem; }
   </style>
 </head>
 <body>
@@ -70,23 +84,70 @@
       <div class="phone-screen">
         <div class="app-detail-bar">
           <a class="ib" href="hikes.html" id="backInline" aria-label="Back">‹</a>
-          <span style="flex:1"></span>
+          <h1 id="pageTitle">—</h1>
+          <span class="ib" aria-hidden="true"></span>
         </div>
-        <div class="hero" id="hero"></div>
-        <div style="padding:0.75rem 0.9rem 0.35rem;background:#fff;border-bottom:1px solid var(--border)">
-          <h1 style="font-size:1.05rem;color:var(--green-900);margin:0" id="title"></h1>
-          <p style="font-size:0.72rem;color:var(--text-muted);margin:0.25rem 0 0" id="meta"></p>
-          <p style="margin:0.4rem 0 0"><span class="app-tbd" id="orgBadge"></span> · <span class="app-tbd" id="visBadge"></span></p>
+        <div class="phone-body">
+          <div id="badges" style="margin-bottom:0.35rem"></div>
+
+          <div id="lockedBox" class="block" hidden>
+            <p id="lockedMsg" style="margin:0 0 0.75rem;color:var(--text-muted);font-size:0.78rem"></p>
+            <a class="btn btn-primary btn-block" id="loginCta" href="login.html"></a>
+          </div>
+
+          <div id="routeBox" hidden>
+            <div id="ghMap"></div>
+          </div>
+
+          <div id="summaryBox" class="block" hidden>
+            <div class="gh-field">
+              <span class="gh-field-label" id="lblDate"></span>
+              <span class="gh-field-value" id="ghDateEl">—</span>
+            </div>
+            <div class="gh-field">
+              <span class="gh-field-label" id="lblPlace"></span>
+              <span class="gh-field-value" id="ghPlaceEl">—</span>
+            </div>
+            <div class="gh-field">
+              <span class="gh-field-label" id="lblGather"></span>
+              <span class="gh-field-value" id="ghGatherPoint">—</span>
+            </div>
+            <div class="gh-field">
+              <span class="gh-field-label" id="lblJoined"></span>
+              <span class="gh-field-value" id="ghHikersJoined">—</span>
+            </div>
+            <div class="gh-field">
+              <span class="gh-field-label" id="lblOrg"></span>
+              <span class="gh-field-value" id="ghOrg">—</span>
+            </div>
+            <div class="gh-field" id="ghDescField" hidden>
+              <span class="gh-field-label" id="lblDesc"></span>
+              <p class="gh-field-value desc" id="ghDesc"></p>
+            </div>
+            <div id="followWrap" hidden style="margin-top:0.65rem">
+              <a class="btn btn-primary btn-block" id="btnFollow" href="index.html" style="padding:0.5rem;font-size:0.82rem"></a>
+            </div>
+          </div>
+
+          <div id="peopleBox" class="block" hidden>
+            <h2 id="lblWho"></h2>
+            <div class="join-row" id="joinActions"></div>
+            <div id="memberList"></div>
+          </div>
+
+          <div id="discussBox" class="block" hidden>
+            <h2 id="lblDiscuss"></h2>
+            <div id="discussList"></div>
+            <p id="discussLock" style="margin:0.55rem 0 0;font-size:0.72rem;color:var(--text-muted)" hidden></p>
+          </div>
         </div>
-        <div class="stage-tabs" id="stages"></div>
-        <div class="phone-body" id="content"></div>
-        <div class="join-dock" id="joinDock" hidden></div>
         <div data-app-nav></div>
       </div>
     </div>
   </div>
   <div class="toast" id="toast"></div>
 
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="../js/i18n.js"></script>
   <script src="../js/data.js"></script>
   <script src="../js/live-routes.js"></script>
@@ -100,110 +161,199 @@
       b.addEventListener("click", () => { TW.setLang(b.dataset.lang); location.reload(); });
     });
     document.getElementById("backWeb").textContent = "‹ " + t("groups_title");
+    document.getElementById("lblDate").textContent = t("groups_date");
+    document.getElementById("lblPlace").textContent = t("groups_approx_location");
+    document.getElementById("lblGather").textContent = t("groups_gather_point");
+    document.getElementById("lblJoined").textContent = t("groups_hikers_joined_label");
+    document.getElementById("lblOrg").textContent = t("groups_organizer");
+    document.getElementById("lblDesc").textContent = t("groups_description");
+    document.getElementById("lblWho").textContent = t("groups_who_joined");
+    document.getElementById("lblDiscuss").textContent = t("groups_discussion");
+    document.getElementById("loginCta").textContent = t("groups_login_cta");
+    document.getElementById("btnFollow").textContent = t("app_track_follow");
     twMountAppNav("home");
 
     const params = new URLSearchParams(location.search);
-    const id = Number(params.get("id") || 0);
-    const meetup = (TW.meetups || [])[id] || (TW.meetups || [])[0];
-    let stage = params.get("stage") || "recruiting";
+    const id = params.get("id") || "";
+    const token = params.get("token") || "";
 
-    document.getElementById("hero").style.backgroundImage =
-      `url("${(meetup && meetup.image) || "https://images.unsplash.com/photo-1551632811-561732d1e5ec?w=800&q=60"}")`;
-    document.getElementById("title").textContent = meetup ? TW.tt(meetup, "title") : "Group hike";
-    document.getElementById("meta").textContent = meetup
-      ? `${TW.tt(meetup, "date")} · ${TW.tt(meetup, "place")}`
-      : "";
-    document.getElementById("orgBadge").textContent = id === 0 ? t("app_org_tw") : t("app_org_user");
-    document.getElementById("visBadge").textContent = t("app_group_private_mvp");
-
-    const stageList = [
-      { id: "recruiting", key: "app_stage_recruiting" },
-      { id: "joined", key: "app_stage_joined" },
-      { id: "completed", key: "app_stage_completed" },
-    ];
-    document.getElementById("stages").innerHTML = stageList.map((s) =>
-      `<button type="button" class="${s.id === stage ? "active" : ""}" data-s="${s.id}">${t(s.key)}</button>`
-    ).join("");
-
-    function render() {
-      const joinedPeople = ["AC", "SW", "JL", "MK", "YT"];
-      const vis = id === 0 ? t("groups_badge_public") : t("groups_badge_private");
-      document.getElementById("visBadge").textContent = vis;
-      let html = `
-        <div class="block">
-          <h3>${t("app_hike_details")}</h3>
-          <p>${meetup ? TW.tt(meetup, "date") + " · " + TW.tt(meetup, "place") : ""}</p>
-        </div>
-        <div class="block">
-          <h3>${t("groups_description")}</h3>
-          <p>${lang === "zh" ? "中等步速聯誼。請自備水與頭燈。" : "Moderate-pace group hike. Bring water and a headlamp."}</p>
-        </div>
-        <div class="block">
-          <h3>${t("groups_route")}</h3>
-          <p>${meetup ? TW.tt(meetup, "title") : "—"} · ~8 km</p>
-          ${stage !== "recruiting" ? `<p style="margin:0.35rem 0 0.55rem;font-size:0.72rem">${t("app_track_follow_group")}</p>
-          <a class="btn btn-primary btn-block" href="index.html?follow=group" style="padding:0.5rem;font-size:0.82rem">${t("app_track_follow")}</a>` : ""}
-        </div>
-        <div class="block">
-          <h3>${t("groups_who_joined")}</h3>
-          <div class="who">${joinedPeople.map((n) => `<span>${n}</span>`).join("")}</div>
-        </div>`;
-
-      if (stage === "joined" || stage === "completed") {
-        html += `
-          <div class="block">
-            <h3>${t("groups_detail_links")}</h3>
-            <p>${lang === "zh" ? "主辦可加入 WhatsApp 等外部連結。" : "Organizer can add external URLs such as a WhatsApp group."}</p>
-            <p style="margin-top:0.4rem"><a href="#" onclick="showToast('WhatsApp');return false">chat.whatsapp.com/demo</a></p>
-          </div>
-          <div class="block">
-            <h3>${t("groups_discussion")}</h3>
-            <div class="msg"><strong>Alex</strong> — ${lang === "zh" ? "早上 5:15 地鐵會合？" : "Meet at MTR 5:15am?"}</div>
-            <div class="msg"><strong>Sam</strong> — ${lang === "zh" ? "好，我會帶備用電池。" : "Sounds good — bringing spare batteries."}</div>
-            ${stage === "completed" ? `<p style="margin-top:0.55rem;font-size:0.72rem;color:var(--green-800)">${t("app_discussion_days").replace("{n}", "7")}</p>` : ""}
-          </div>`;
+    function findHike(hid) {
+      if (!hid) return null;
+      const custom = TW.getGroupHike(hid);
+      if (custom) return custom;
+      const preview = TW.findPreviewGroupHike(hid);
+      if (preview) return preview;
+      if (/^\d+$/.test(String(hid))) {
+        return TW.findPreviewGroupHike("preview_" + hid) || TW.findPreviewGroupHike("meetup_" + hid);
       }
-      if (stage === "completed") {
-        html += `
-          <div class="block">
-            <h3>${t("groups_recorded")}</h3>
-            <p style="margin-bottom:0.45rem">${t("groups_recorded_privacy")}</p>
-            <a href="record-detail.html" style="font-size:0.75rem;font-weight:700;color:var(--green-800)">${lang === "zh" ? "Alex 的路線" : "Alex’s route"} →</a>
-          </div>
-          <div class="block">
-            <h3>${t("groups_photos")}</h3>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.4rem;margin-top:0.4rem">
-              <div style="height:72px;border-radius:8px;background:url(https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=300&q=60) center/cover"></div>
-              <div style="height:72px;border-radius:8px;background:url(https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=300&q=60) center/cover"></div>
-            </div>
-          </div>`;
-      }
-      if (stage === "recruiting") {
-        document.getElementById("joinDock").hidden = false;
-        document.getElementById("joinDock").innerHTML =
-          `<button type="button" class="btn btn-primary btn-block" id="btnJoin">${t("groups_join_cta")}</button>`;
-      } else {
-        document.getElementById("joinDock").hidden = true;
-        document.getElementById("joinDock").innerHTML = "";
-      }
-      document.getElementById("content").innerHTML = html;
-      const joinBtn = document.getElementById("btnJoin");
-      if (joinBtn) joinBtn.addEventListener("click", () => {
-        showToast(t("toast_joined"));
-        stage = "joined";
-        document.querySelectorAll("#stages button").forEach((b) => b.classList.toggle("active", b.dataset.s === "joined"));
-        render();
-      });
+      return null;
     }
 
-    document.getElementById("stages").addEventListener("click", (e) => {
-      const btn = e.target.closest("button[data-s]");
-      if (!btn) return;
-      stage = btn.dataset.s;
-      document.querySelectorAll("#stages button").forEach((b) => b.classList.toggle("active", b === btn));
-      render();
-    });
-    render();
+    function fmtMsgTime(ts) {
+      try {
+        return new Date(ts).toLocaleString(lang === "zh" ? "zh-HK" : "en-HK", {
+          month: "short", day: "numeric", hour: "2-digit", minute: "2-digit",
+        });
+      } catch (e) {
+        return "";
+      }
+    }
+
+    function renderSummary(h) {
+      TW.ensureGroupHikeRoster(h);
+      document.getElementById("ghDateEl").textContent = TW.formatGroupHikeDate(h) || "—";
+      document.getElementById("ghPlaceEl").textContent = TW.tt(h, "place") || h.place || "—";
+      document.getElementById("ghGatherPoint").textContent =
+        (typeof TW.formatGroupHikeGatherPoint === "function" ? TW.formatGroupHikeGatherPoint(h) : h.gatherPoint) || "—";
+      document.getElementById("ghHikersJoined").textContent =
+        (typeof TW.formatGroupHikeJoined === "function" ? TW.formatGroupHikeJoined(h) : "") || "—";
+      document.getElementById("ghOrg").textContent = h.organizerName || "—";
+      const desc = TW.tt(h, "description") || h.description || "";
+      const descField = document.getElementById("ghDescField");
+      if (desc) {
+        descField.hidden = false;
+        document.getElementById("ghDesc").textContent = desc;
+      } else {
+        descField.hidden = true;
+      }
+    }
+
+    function initMap(h) {
+      const path = (h.path && h.path.length ? h.path : TW.demoPathAround()).map((p) => [Number(p[0]), Number(p[1])]);
+      const map = L.map("ghMap", { zoomControl: false }).setView(path[0], 13);
+      TW.addMapTiles(map, { maxZoom: 18 });
+      if (path.length > 1) {
+        const line = L.polyline(path, { color: "#2563eb", weight: 5 }).addTo(map);
+        TW.addRouteEndpoints(map, path);
+        setTimeout(() => { map.invalidateSize(); map.fitBounds(line.getBounds().pad(0.2)); }, 120);
+      }
+    }
+
+    function syncFollowVisibility(h) {
+      const canFollow = TW.canViewGroupHike(h, token);
+      document.getElementById("followWrap").hidden = !canFollow;
+    }
+
+    function renderCommunity(h) {
+      TW.ensureGroupHikeRoster(h);
+      const host = TW.isGroupHikeHost(h);
+      const inGroup = TW.isGroupHikeParticipant(h);
+      const completed = !!(h.past || h.stage === "completed" || (h.dateISO && Date.parse(h.dateISO) < Date.now() - 86400000));
+
+      const actions = document.getElementById("joinActions");
+      const nextPath = "group-detail.html?id=" + encodeURIComponent(id) + (token ? "&token=" + encodeURIComponent(token) : "");
+      if (!TW.isLoggedIn()) {
+        actions.innerHTML = `<a class="btn btn-primary" href="login.html?next=${encodeURIComponent(nextPath)}">${t("groups_login_join")}</a>`;
+      } else if (host) {
+        actions.innerHTML = `<span class="gh-badge gh-host">${t("groups_host")}</span>`;
+      } else if (inGroup) {
+        actions.innerHTML = `<span class="gh-badge gh-public">${t("groups_already")}</span>
+          <button type="button" class="btn btn-secondary" id="btnLeave" style="padding:0.35rem 0.75rem;font-size:0.78rem">${t("groups_leave")}</button>`;
+      } else {
+        actions.innerHTML = `<button type="button" class="btn btn-primary" id="btnJoin">${t("groups_join_cta")}</button>`;
+      }
+
+      const btnJoin = document.getElementById("btnJoin");
+      if (btnJoin) {
+        btnJoin.addEventListener("click", () => {
+          if (TW.joinGroupHike(h)) {
+            showToast(t("toast_joined"));
+            renderCommunity(h);
+            syncFollowVisibility(h);
+          }
+        });
+      }
+      const btnLeave = document.getElementById("btnLeave");
+      if (btnLeave) {
+        btnLeave.addEventListener("click", () => {
+          if (TW.leaveGroupHike(h)) {
+            showToast(t("groups_left"));
+            renderCommunity(h);
+          }
+        });
+      }
+
+      const hostEmail = (h.organizerEmail || "").toLowerCase();
+      document.getElementById("memberList").innerHTML = (h.members || [])
+        .map((m) => {
+          const isHostRow = String(m.email || "").toLowerCase() === hostEmail || m.host;
+          return `<div class="gh-member-row">
+            ${twAvatarHtml(m.avatar, "avatar-sm", "", m.name || m.email)}
+            <div style="flex:1;min-width:0">
+              <strong style="font-size:0.78rem">${m.name || m.email || "—"}</strong>
+              ${isHostRow ? `<div><span class="gh-badge gh-host">${t("groups_host")}</span></div>` : ""}
+            </div>
+          </div>`;
+        })
+        .join("") || `<p style="margin:0;font-size:0.75rem;color:var(--text-muted)">${t("groups_discussion_empty")}</p>`;
+
+      const msgs = h.discussion || [];
+      document.getElementById("discussList").innerHTML = msgs.length
+        ? msgs.map((msg) => `<div class="gh-msg">
+            <strong>${msg.name || "Hiker"}</strong>
+            <div>${msg.text || ""}</div>
+            <time>${fmtMsgTime(msg.at)}</time>
+          </div>`).join("")
+        : `<p style="margin:0;font-size:0.75rem;color:var(--text-muted)">${t("groups_discussion_empty")}</p>`;
+
+      const lock = document.getElementById("discussLock");
+      if (inGroup && completed) {
+        lock.hidden = false;
+        lock.textContent = t("app_discussion_days").replace("{n}", "7");
+      } else if (!inGroup) {
+        lock.hidden = false;
+        lock.textContent = TW.isLoggedIn() ? t("groups_discussion_locked") : t("groups_login_join");
+      } else {
+        lock.hidden = true;
+      }
+    }
+
+    const hike = findHike(id);
+    if (!hike) {
+      location.href = "hikes.html";
+    } else {
+      const title = TW.tt(hike, "title") || hike.title || t("groups_title");
+      document.getElementById("pageTitle").textContent = title;
+      const vis = hike.visibility === "private" ? "private" : "public";
+      document.getElementById("badges").innerHTML =
+        `<span class="gh-badge ${vis === "private" ? "gh-private" : "gh-public"}">${t(vis === "private" ? "groups_badge_private" : "groups_badge_public")}</span>` +
+        (hike.past ? `<span class="gh-badge gh-host">${t("groups_past")}</span>` : `<span class="gh-badge gh-public">${t("groups_upcoming")}</span>`);
+
+      const canSee = TW.canViewGroupHike(hike, token);
+      const locked = document.getElementById("lockedBox");
+      const routeBox = document.getElementById("routeBox");
+      const summaryBox = document.getElementById("summaryBox");
+      const peopleBox = document.getElementById("peopleBox");
+      const discussBox = document.getElementById("discussBox");
+
+      document.getElementById("btnFollow").href =
+        "index.html?follow=group&group=" + encodeURIComponent(hike.id || id);
+
+      if (!canSee) {
+        locked.hidden = false;
+        routeBox.hidden = true;
+        summaryBox.hidden = true;
+        peopleBox.hidden = true;
+        discussBox.hidden = true;
+        if (!TW.isLoggedIn()) {
+          document.getElementById("lockedMsg").textContent = t("groups_login_cta");
+          document.getElementById("loginCta").href =
+            "login.html?next=" + encodeURIComponent("group-detail.html?id=" + encodeURIComponent(id));
+        } else {
+          document.getElementById("lockedMsg").textContent = t("groups_private_locked");
+          document.getElementById("loginCta").hidden = true;
+        }
+      } else {
+        routeBox.hidden = false;
+        summaryBox.hidden = false;
+        peopleBox.hidden = false;
+        discussBox.hidden = false;
+        renderSummary(hike);
+        initMap(hike);
+        renderCommunity(hike);
+        syncFollowVisibility(hike);
+      }
+    }
   </script>
 </body>
 </html>
