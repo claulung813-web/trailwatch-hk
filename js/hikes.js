@@ -252,6 +252,22 @@ TW.recordIsFriend = function (r) {
   return names.indexOf(String(r.user || "").toLowerCase()) >= 0;
 };
 
+TW.recordIsOwn = function (r) {
+  if (!r) return false;
+  if (r.isOwn || r.mine) return true;
+  if (typeof TW.getHike === "function" && TW.getHike(r.id)) return true;
+  const name =
+    (typeof TW.memberDisplayName === "function" && TW.memberDisplayName()) ||
+    (TW.user && TW.user.name) ||
+    "";
+  if (name && String(r.user || "").trim().toLowerCase() === String(name).trim().toLowerCase()) return true;
+  const auth = typeof TW.getMemberAuth === "function" ? TW.getMemberAuth() : null;
+  if (auth && auth.email && r.ownerEmail && String(r.ownerEmail).toLowerCase() === String(auth.email).toLowerCase()) {
+    return true;
+  }
+  return false;
+};
+
 TW.activityTagLabel = function (id) {
   const tag = (TW.getActivityTags() || []).find((t) => t.id === id);
   if (!tag) return id;

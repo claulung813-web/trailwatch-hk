@@ -12,11 +12,96 @@
     body { margin: 0; }
     .phone-body { flex: 1; overflow-y: auto; padding: 0.75rem 0.9rem 1rem; background: #f7faf7; min-height: 0; }
     .app-head {
-      padding: 2.45rem 0.9rem 0.55rem; background: #fff; border-bottom: 1px solid var(--border);
+      padding: 2.45rem 0.9rem 0.65rem; background: #fff; border-bottom: 1px solid var(--border);
     }
-    .profile-row { display: flex; align-items: center; gap: 0.65rem; }
-    .profile-row h1 { font-size: 1.05rem; color: var(--green-900); margin: 0; }
-    .profile-row .rank { font-size: 0.72rem; color: var(--text-muted); margin-top: 0.15rem; }
+    .profile-hero-row {
+      display: flex; align-items: center; gap: 0.75rem;
+    }
+    .profile-avatar-app {
+      width: 56px; height: 56px; border-radius: 50%; background: var(--green-100);
+      overflow: hidden; flex-shrink: 0;
+    }
+    .profile-hero-main { flex: 1; min-width: 0; }
+    .profile-hero-main h1 {
+      font-size: 1.05rem; color: var(--green-900); margin: 0 0 0.35rem;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .profile-hero-actions {
+      display: flex; align-items: center; gap: 0.35rem; flex-shrink: 0;
+    }
+    .profile-icon-btn {
+      position: relative; width: 2.35rem; height: 2.35rem; border-radius: 999px;
+      border: 1px solid var(--border); background: #fff; color: var(--green-800);
+      display: grid; place-items: center; cursor: pointer; padding: 0;
+    }
+    .profile-icon-btn.active { background: var(--green-50); border-color: var(--green-300); }
+    .profile-notif-dot {
+      position: absolute; top: 0.35rem; right: 0.38rem; width: 7px; height: 7px;
+      border-radius: 50%; background: #e84a3c; border: 1.5px solid #fff;
+    }
+    .profile-premium-btn {
+      font-size: 0.72rem; padding: 0.28rem 0.65rem; display: inline-block;
+    }
+    .profile-badge-strip {
+      background: #fff; border: 1px solid var(--border); border-radius: 12px;
+      padding: 0.75rem 0.85rem; margin-bottom: 0.75rem;
+    }
+    .profile-badge-strip-label {
+      font-size: 0.65rem; font-weight: 700; color: var(--text-muted);
+      text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.35rem;
+    }
+    .profile-badge-strip-row {
+      display: flex; align-items: center; gap: 0.55rem;
+    }
+    .profile-badge-strip-row strong {
+      flex: 1; min-width: 0; color: var(--green-900); font-size: 0.9rem;
+      display: flex; align-items: center;
+    }
+    .profile-preview-head {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 0.5rem; margin: 0.85rem 0 0.45rem;
+    }
+    .profile-preview-head h2 {
+      font-size: 0.82rem; font-weight: 800; color: var(--green-900); margin: 0;
+    }
+    .profile-preview-head a {
+      font-size: 0.72rem; font-weight: 700; color: var(--green-800); text-decoration: none;
+    }
+    .profile-preview-grid {
+      display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.45rem;
+      margin-bottom: 0.65rem;
+    }
+    .profile-preview-tile {
+      display: flex; flex-direction: column; background: #fff; border: 1px solid var(--border);
+      border-radius: 12px; overflow: hidden; text-decoration: none; color: inherit;
+    }
+    .profile-preview-tile img, .profile-preview-thumb {
+      width: 100%; aspect-ratio: 16 / 10; object-fit: cover; display: block;
+    }
+    .profile-preview-thumb {
+      background: linear-gradient(135deg, #c8e6c9, #81c784);
+      display: grid; place-items: center; font-size: 1.35rem;
+    }
+    .profile-preview-tile-body { padding: 0.45rem 0.55rem 0.55rem; }
+    .profile-preview-tile-body strong {
+      display: block; font-size: 0.75rem; color: var(--green-900);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .profile-preview-tile-body .meta {
+      display: block; font-size: 0.62rem; color: var(--text-muted); margin-top: 0.12rem;
+    }
+    .profile-preview-empty, .profile-friends-list {
+      list-style: none; padding: 0; margin: 0 0 0.65rem;
+    }
+    .profile-preview-empty {
+      font-size: 0.75rem; color: var(--text-muted); text-align: center; padding: 0.85rem 0;
+    }
+    .profile-friend-row {
+      display: flex; align-items: center; gap: 0.55rem; background: #fff;
+      border: 1px solid var(--border); border-radius: 10px; padding: 0.55rem 0.65rem;
+      margin-bottom: 0.35rem;
+    }
+    .profile-friend-name { font-size: 0.8rem; font-weight: 700; color: var(--green-900); }
     .hub-tabs {
       display: flex; gap: 0.3rem; padding: 0.45rem 0.65rem; background: #fff;
       border-bottom: 1px solid var(--border); overflow-x: auto; -webkit-overflow-scrolling: touch;
@@ -150,6 +235,24 @@
     .ib-back { width: 36px; height: 36px; border: none; background: none; font-size: 1.5rem; cursor: pointer; color: var(--green-900); }
     .app-sheet-actions { display: flex; gap: 0.5rem; margin-top: 0.75rem; }
     .app-sheet-actions .btn { flex: 1; }
+    .settings-card {
+      background: #fff; border: 1px solid var(--border); border-radius: 12px;
+      padding: 0.85rem; margin-bottom: 0.75rem;
+    }
+    .settings-toggle {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      gap: 0.75rem; cursor: pointer;
+    }
+    .settings-toggle + .settings-toggle {
+      margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid #f0f0f0;
+    }
+    .settings-toggle strong {
+      display: block; font-size: 0.82rem; color: var(--green-900); font-weight: 700;
+    }
+    .settings-toggle small {
+      display: block; font-size: 0.68rem; color: var(--text-muted); margin-top: 0.15rem; line-height: 1.4;
+    }
+    .settings-toggle input { width: 18px; height: 18px; margin-top: 0.15rem; accent-color: var(--green-700); flex-shrink: 0; }
   </style>
 </head>
 <body>
@@ -166,11 +269,20 @@
       <div class="phone-notch"></div>
       <div class="phone-screen" style="position:relative">
         <div class="app-head">
-          <div class="profile-row">
-            <div id="avatarWrap" style="width:48px;height:48px;border-radius:50%;background:var(--green-100);overflow:hidden;flex-shrink:0"></div>
-            <div style="min-width:0;flex:1">
+          <div class="profile-hero-row">
+            <div id="avatarWrap" class="profile-avatar-app"></div>
+            <div class="profile-hero-main">
               <h1 id="userName"></h1>
-              <div class="rank" id="membershipStatus"></div>
+              <div id="profilePremiumCta"></div>
+            </div>
+            <div class="profile-hero-actions">
+              <button type="button" class="profile-icon-btn" id="openNotif" aria-haspopup="true">
+                <span id="notifIcon"></span>
+                <span class="profile-notif-dot" id="notifDot" hidden aria-hidden="true"></span>
+              </button>
+              <button type="button" class="profile-icon-btn" id="openSettings">
+                <span id="settingsIcon"></span>
+              </button>
             </div>
           </div>
         </div>
@@ -180,20 +292,18 @@
         <div class="phone-body">
           <!-- Dashboard -->
           <section class="hub-panel" id="panelDashboard" data-hub="dashboard">
-            <div id="dashMembershipCard" style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:0.75rem 0.85rem;margin-bottom:0.75rem"></div>
+            <div class="profile-badge-strip">
+              <div class="profile-badge-strip-label" id="lblSelBadge"></div>
+              <div class="profile-badge-strip-row">
+                <strong id="selBadge"></strong>
+                <button type="button" style="border:none;background:none;font-size:0.72rem;font-weight:700;color:var(--green-800);cursor:pointer;flex-shrink:0" id="linkBadges"></button>
+              </div>
+            </div>
             <div class="section-label" id="lblLifetime"></div>
             <div class="life-grid">
               <div class="life-box"><div class="val" id="lifeKm">—</div><div class="lbl" id="lblKm"></div></div>
-              <div class="life-box"><div class="val" id="lifeHrs">—</div><div class="lbl" id="lblHrs"></div></div>
               <div class="life-box"><div class="val" id="lifeRec">—</div><div class="lbl" id="lblRec"></div></div>
-            </div>
-            <div class="badge-card">
-              <span id="selBadgeIco" style="font-size:1.4rem">🌿</span>
-              <div style="flex:1;min-width:0">
-                <div style="font-size:0.65rem;font-weight:700;color:var(--text-muted);text-transform:uppercase" id="lblSelBadge"></div>
-                <strong id="selBadge" style="color:var(--green-900);font-size:0.9rem"></strong>
-              </div>
-              <button type="button" style="border:none;background:none;font-size:0.72rem;font-weight:700;color:var(--green-800);cursor:pointer" id="linkBadges"></button>
+              <div class="life-box"><div class="val" id="lifeElev">—</div><div class="lbl" id="lblElev"></div></div>
             </div>
             <div id="dashMoreGate"></div>
             <button type="button" class="btn btn-primary btn-block" id="dashMoreBtn" hidden style="margin-bottom:0.75rem"></button>
@@ -250,6 +360,30 @@
                 <div id="regionPie"></div>
               </div>
             </div>
+
+            <div class="profile-preview-head">
+              <h2 id="lblPlansPreview"></h2>
+              <a href="#" id="linkPlansMore"></a>
+            </div>
+            <div class="profile-preview-grid" id="plansPreview"></div>
+
+            <div class="profile-preview-head">
+              <h2 id="lblFriendsPreview"></h2>
+              <a href="#" id="linkFriendsMore"></a>
+            </div>
+            <ul class="profile-friends-list" id="friendsPreview"></ul>
+
+            <div class="profile-preview-head">
+              <h2 id="lblRecordsPreview"></h2>
+              <a href="#" id="linkRecordsMore"></a>
+            </div>
+            <div class="profile-preview-grid" id="recordsPreview"></div>
+
+            <div class="profile-preview-head">
+              <h2 id="lblReportsPreview"></h2>
+              <a href="#" id="linkReportsMore"></a>
+            </div>
+            <div class="profile-preview-grid" id="reportsPreview"></div>
           </section>
 
           <!-- My Info -->
@@ -289,6 +423,9 @@
               </div>
               <div id="groupList"></div>
             </div>
+            <div class="info-pane" data-info="more" hidden>
+              <div class="menu-list" id="moreLinks"></div>
+            </div>
           </section>
 
           <!-- Friends -->
@@ -305,26 +442,44 @@
 
           <!-- Settings -->
           <section class="hub-panel" id="panelSettings" data-hub="settings" hidden>
-            <div class="menu-list">
-              <a href="../get-app.html#premium"><span id="setPremium"></span><span class="prem"><span class="app-premium-pill" id="setPremPill"></span></span></a>
-              <button type="button" id="setOffline"><span id="setOfflineLbl"></span><span class="prem"><span class="app-premium-pill"></span></span></button>
-              <button type="button" id="setOverseas"><span id="setOverseasLbl"></span><span class="prem"><span class="app-premium-pill"></span></span></button>
-            </div>
-            <div class="section-label" id="lblProfileSettings"></div>
-            <div style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:0.85rem;margin-bottom:0.75rem">
+            <div class="section-label" id="lblEditProfile"></div>
+            <div class="settings-card">
               <div class="form-group">
                 <label id="lblName"></label>
                 <input class="form-input" id="settingsName" />
               </div>
-              <div class="form-group">
+              <div class="form-group" style="margin-bottom:0">
                 <label id="lblEmail"></label>
                 <input class="form-input" id="settingsEmail" type="email" />
               </div>
-              <button type="button" class="btn btn-primary btn-block" id="btnSaveProfile"></button>
+              <button type="button" class="btn btn-primary btn-block" id="btnSaveProfile" style="margin-top:0.75rem"></button>
             </div>
+
+            <div class="section-label" id="lblMapsSettings"></div>
+            <div class="menu-list">
+              <button type="button" id="setOffline"><span id="setOfflineLbl"></span><span class="prem"><span class="app-premium-pill"></span></span></button>
+              <button type="button" id="setOverseas"><span id="setOverseasLbl"></span><span class="prem"><span class="app-premium-pill"></span></span></button>
+              <button type="button" id="btnClearCache"><span id="lblClearCache"></span><span class="chev">›</span></button>
+            </div>
+
             <div class="section-label" id="lblLanding"></div>
             <p style="font-size:0.72rem;color:var(--text-muted);margin:0 0 0.45rem" id="landingHint"></p>
             <div class="subchips" id="landingChips"></div>
+
+            <div class="section-label" id="lblPrefs"></div>
+            <div class="settings-card">
+              <label class="settings-toggle">
+                <span>
+                  <strong id="lblWifiPhotos"></strong>
+                  <small id="hintWifiPhotos"></small>
+                </span>
+                <input type="checkbox" id="wifiPhotosOnly" />
+              </label>
+            </div>
+
+            <div class="menu-list" style="margin-top:0.25rem">
+              <a href="../get-app.html#premium"><span id="setPremium"></span><span class="prem"><span class="app-premium-pill" id="setPremPill"></span></span></a>
+            </div>
           </section>
 
           <!-- Notifications -->
@@ -400,18 +555,31 @@
     twMountAppNav("profile");
 
     const u = TW.user || { name: "Hiker", email: "hiker@example.com" };
-    document.getElementById("avatarWrap").innerHTML = TW.avatarHtml(u.avatar, "", 'style="width:48px;height:48px;object-fit:cover"')
-      || `<div style="width:48px;height:48px;display:grid;place-items:center;font-weight:800;color:var(--green-900)">${(u.name || "H")[0]}</div>`;
+    document.getElementById("avatarWrap").innerHTML = TW.avatarHtml(u.avatar, "", 'style="width:56px;height:56px;object-fit:cover"')
+      || `<div style="width:56px;height:56px;display:grid;place-items:center;font-weight:800;color:var(--green-900)">${(u.name || "H")[0]}</div>`;
     document.getElementById("userName").textContent = u.name;
-    TW.renderMembershipHeader(document.getElementById("membershipStatus"));
+    document.getElementById("notifIcon").innerHTML = twIcon("bell");
+    document.getElementById("settingsIcon").innerHTML = twIcon("settings");
+    document.getElementById("openNotif").setAttribute("aria-label", t("app_notifications"));
+    document.getElementById("openSettings").setAttribute("aria-label", t("app_settings"));
+
+    function renderProfilePremiumCta() {
+      const el = document.getElementById("profilePremiumCta");
+      if (!el) return;
+      const prem = TW.isMemberPremium && TW.isMemberPremium();
+      if (prem) {
+        el.innerHTML = `<span class="dash-premium-pill">${TW.escapeHtml(t("dash_premium_active"))}</span>`;
+      } else {
+        el.innerHTML = `<a href="../get-app.html#premium" class="btn btn-secondary profile-premium-btn">${TW.escapeHtml(t("dash_unlock"))}</a>`;
+      }
+    }
+    renderProfilePremiumCta();
 
     const HUBS = [
       { id: "dashboard", label: t("app_sec_dashboard") },
       { id: "info", label: t("app_sec_my_info") },
       { id: "friends", label: t("app_my_friends") },
       { id: "bookmarks", label: t("app_bookmarks") },
-      { id: "settings", label: t("app_settings") },
-      { id: "notifications", label: t("app_notifications"), notif: true },
       { id: "sync", label: t("app_sec_sync") },
     ];
     let hub = "dashboard";
@@ -426,10 +594,17 @@
       try { return localStorage.getItem("tw_app_notif_read") !== "1"; } catch (e) { return true; }
     }
 
+    function updateHeaderActions() {
+      document.getElementById("notifDot").hidden = !notifUnread();
+      document.getElementById("openNotif").classList.toggle("active", hub === "notifications");
+      document.getElementById("openSettings").classList.toggle("active", hub === "settings");
+    }
+
     function renderHubTabs() {
       document.getElementById("hubTabs").innerHTML = HUBS.map((h) =>
-        `<button type="button" data-hub="${h.id}" class="${hub === h.id ? "active" : ""}">${h.label}${h.notif && notifUnread() ? '<span class="dot"></span>' : ""}</button>`
+        `<button type="button" data-hub="${h.id}" class="${hub === h.id ? "active" : ""}">${h.label}</button>`
       ).join("");
+      updateHeaderActions();
     }
 
     function showHub(id) {
@@ -452,7 +627,11 @@
       if (id === "friends") renderFriends();
       if (id === "bookmarks") renderBookmarks();
       if (id === "notifications") renderNotifs();
+      updateHeaderActions();
     }
+
+    document.getElementById("openNotif").addEventListener("click", () => showHub("notifications"));
+    document.getElementById("openSettings").addEventListener("click", () => showHub("settings"));
 
     document.getElementById("hubTabs").addEventListener("click", (e) => {
       const btn = e.target.closest("button[data-hub]");
@@ -460,27 +639,19 @@
     });
 
     /* —— Dashboard —— */
-    TW.renderMembershipCard(document.getElementById("dashMembershipCard"));
     TW.ensureDemoHike();
     document.getElementById("lblLifetime").textContent = t("dash_lifetime");
-    document.getElementById("lifeKm").textContent = ((TW.stats && TW.stats.distanceKm) || 128) + " km";
-    document.getElementById("lifeHrs").textContent = ((TW.stats && TW.stats.movingHrs) || 48.5) + " h";
-    document.getElementById("lifeRec").textContent = String((TW.stats && TW.stats.records) || TW.getHikes().length || 12);
-    document.getElementById("lblKm").textContent = t("app_distance");
-    document.getElementById("lblHrs").textContent = t("app_duration");
+    const recCount = (TW.records || []).length + (TW.getHikes ? TW.getHikes().length : 0);
+    document.getElementById("lifeKm").textContent = ((TW.stats && TW.stats.distanceKm) || 128).toLocaleString() + " km";
+    document.getElementById("lifeRec").textContent = String((TW.stats && TW.stats.records) || recCount);
+    document.getElementById("lifeElev").textContent = ((TW.stats && TW.stats.elevGain) || 8420).toLocaleString() + " m";
+    document.getElementById("lblKm").textContent = t("km_hiked");
     document.getElementById("lblRec").textContent = t("records");
+    document.getElementById("lblElev").textContent = t("profile_lifetime_elevation");
     document.getElementById("lblSelBadge").textContent = t("dash_selected_badge");
     document.getElementById("linkBadges").textContent = t("dash_change_badge");
     function refreshSelBadge() {
-      const b = TW.resolveDashboardBadge(TW.getSelectedBadgeId());
-      if (!b) return;
-      const ico = document.getElementById("selBadgeIco");
-      if (b.image) {
-        ico.innerHTML = `<img src="${b.image}" alt="" style="width:1.4rem;height:1.4rem;object-fit:cover;border-radius:6px;display:block" />`;
-      } else {
-        ico.textContent = b.emoji || "🏅";
-      }
-      document.getElementById("selBadge").textContent = b.name;
+      TW.renderSelectedBadgeCard(null, document.getElementById("selBadge"));
     }
     refreshSelBadge();
     document.getElementById("linkBadges").addEventListener("click", () => {
@@ -532,12 +703,131 @@
     TW.bindInsightToggle(document.getElementById("elevToggle"), document.getElementById("elevBars"), "elevation");
     TW.renderRegionPie(document.getElementById("regionPie"));
 
+    document.getElementById("lblPlansPreview").textContent = t("nav_my_plans");
+    document.getElementById("lblFriendsPreview").textContent = t("app_my_friends");
+    document.getElementById("lblRecordsPreview").textContent = t("app_my_records");
+    document.getElementById("lblReportsPreview").textContent = t("nav_my_reports");
+    document.getElementById("linkPlansMore").textContent = t("profile_view_more");
+    document.getElementById("linkFriendsMore").textContent = t("profile_view_more");
+    document.getElementById("linkRecordsMore").textContent = t("profile_view_more");
+    document.getElementById("linkReportsMore").textContent = t("profile_view_more");
+
+    function renderProfilePreviewTile(title, meta, href, img, fallbackEmoji) {
+      const thumb = img
+        ? `<img src="${TW.escapeHtml(img)}" alt="" loading="lazy" />`
+        : `<div class="profile-preview-thumb">${fallbackEmoji || "🗺"}</div>`;
+      return `<a class="profile-preview-tile" href="${href}">
+        ${thumb}
+        <div class="profile-preview-tile-body">
+          <strong>${TW.escapeHtml(title)}</strong>
+          ${meta ? `<span class="meta">${TW.escapeHtml(meta)}</span>` : ""}
+        </div>
+      </a>`;
+    }
+
+    function allMyRecords() {
+      const hikes = (TW.getHikes() || []).map((h) => Object.assign({}, h, { _kind: "hike" }));
+      const recs = (TW.records || []).map((r) => Object.assign({}, r, { _kind: "record" }));
+      return hikes.concat(recs);
+    }
+
+    function renderPlansPreview() {
+      const drafts = ((TW.getRouteDrafts && TW.getRouteDrafts()) || []).slice(0, 2);
+      const planned = (TW.getPlans() || [])
+        .map((id) => TW.resolveTrailSource ? TW.resolveTrailSource(id) : (TW.trails || []).find((x) => x.id === id))
+        .filter(Boolean)
+        .slice(0, 4 - drafts.length);
+      const rows = drafts.map((d) => ({
+        title: TW.tt(d, "name") || d.name,
+        meta: zh ? "草稿" : "Draft",
+        href: "plan-detail.html?id=" + encodeURIComponent(d.id),
+        image: d.image,
+        emoji: "📝",
+      })).concat(planned.map((tr) => ({
+        title: TW.tt(tr, "title") || tr.title,
+        meta: tr.distance || "",
+        href: "route-detail.html?id=" + encodeURIComponent(tr.id),
+        image: tr.image,
+        emoji: "🗺",
+      })));
+      document.getElementById("plansPreview").innerHTML = rows.length
+        ? rows.slice(0, 4).map((r) => renderProfilePreviewTile(r.title, r.meta, r.href, r.image, r.emoji)).join("")
+        : `<p class="profile-preview-empty">${t("plan_empty")}</p>`;
+    }
+
+    function renderFriendsPreview() {
+      const list = TW.demoFriends || [];
+      document.getElementById("friendsPreview").innerHTML = list.length
+        ? list.slice(0, 4).map((f) => `<li class="profile-friend-row">
+            ${TW.avatarHtml(f.avatar, "avatar-sm")}
+            <span class="profile-friend-name">${TW.escapeHtml(f.name)}</span>
+          </li>`).join("")
+        : `<li class="profile-preview-empty">${t("hikes_empty")}</li>`;
+    }
+
+    function renderRecordsPreview() {
+      const list = allMyRecords().slice(0, 4);
+      document.getElementById("recordsPreview").innerHTML = list.length
+        ? list.map((item) => {
+            const href = item._kind === "hike"
+              ? "hike-detail.html?id=" + encodeURIComponent(item.id)
+              : (typeof TW.recordDetailHref === "function" ? TW.recordDetailHref(item.id, { inApp: true }) : "record-detail.html?id=" + encodeURIComponent(item.id));
+            const title = TW.tt(item, "title") || item.title || "";
+            const meta = item._kind === "hike"
+              ? (item.distanceKm != null ? item.distanceKm + " km" : "") + (item.seconds ? " · " + TW.formatDuration(item.seconds) : "")
+              : [item.distance, item.duration].filter(Boolean).join(" · ");
+            return renderProfilePreviewTile(title, meta, href, item.image, "🗺");
+          }).join("")
+        : `<p class="profile-preview-empty">${t("hikes_empty")}</p>`;
+    }
+
+    function renderReportsPreview() {
+      const list = (TW.reports || []).slice(0, 4);
+      document.getElementById("reportsPreview").innerHTML = list.length
+        ? list.map((r) => {
+            const href = "explore.html#incidents";
+            const title = TW.tt(r, "title") || r.title || "";
+            const catId = TW.normalizeReportCategory ? TW.normalizeReportCategory(r.category) : r.category;
+            const catKey = "cat_" + catId;
+            let catLabel = t(catKey);
+            if (catLabel === catKey) catLabel = r.categoryLabel || r.category || "";
+            const meta = [r.date, catLabel].filter(Boolean).join(" · ");
+            return renderProfilePreviewTile(title, meta, href, r.image, "⚠️");
+          }).join("")
+        : `<p class="profile-preview-empty">${t("hikes_empty")}</p>`;
+    }
+
+    document.getElementById("linkPlansMore").addEventListener("click", (e) => {
+      e.preventDefault();
+      infoTab = "plans";
+      showHub("info");
+    });
+    document.getElementById("linkFriendsMore").addEventListener("click", (e) => {
+      e.preventDefault();
+      showHub("friends");
+    });
+    document.getElementById("linkRecordsMore").addEventListener("click", (e) => {
+      e.preventDefault();
+      infoTab = "records";
+      showHub("info");
+    });
+    document.getElementById("linkReportsMore").addEventListener("click", (e) => {
+      e.preventDefault();
+      location.href = "explore.html#incidents";
+    });
+
+    renderPlansPreview();
+    renderFriendsPreview();
+    renderRecordsPreview();
+    renderReportsPreview();
+
     /* —— My Info —— */
     document.getElementById("infoChips").innerHTML = [
       { id: "badges", label: t("app_my_badges") },
       { id: "records", label: t("app_my_records") },
       { id: "plans", label: t("app_my_plans") },
       { id: "groups", label: t("app_my_groups") },
+      { id: "more", label: t("app_more") },
     ].map((c) => `<button type="button" data-info="${c.id}" class="${infoTab === c.id ? "active" : ""}">${c.label}</button>`).join("");
 
     document.getElementById("badgeHint").textContent = t("app_badge_criteria");
@@ -670,7 +960,7 @@
         ? rows.map((r) => {
             const name = TW.tt(r, "title") || r.title;
             const href = r._draft
-              ? "index.html?mode=plan&draft=" + encodeURIComponent(r.id)
+              ? "plan-detail.html?id=" + encodeURIComponent(r.id)
               : "route-detail.html?id=" + encodeURIComponent(r.id);
             return `<a class="bm-card" href="${href}" style="text-decoration:none;color:inherit">
               <div style="flex:1"><strong>${name}</strong><span>${r._draft ? (zh ? "草稿" : "Draft") : (r.distance || "")}</span></div>
@@ -825,6 +1115,12 @@
     renderBookmarks();
 
     /* —— Settings —— */
+    document.getElementById("lblEditProfile").textContent = t("app_edit_profile");
+    document.getElementById("lblMapsSettings").textContent = t("app_maps_settings");
+    document.getElementById("lblPrefs").textContent = t("app_prefs");
+    document.getElementById("lblClearCache").textContent = t("app_clear_map_cache");
+    document.getElementById("lblWifiPhotos").textContent = t("app_wifi_photos");
+    document.getElementById("hintWifiPhotos").textContent = t("app_wifi_photos_hint");
     document.getElementById("setPremium").textContent = t("app_premium");
     document.getElementById("setPremPill").textContent = t("app_premium");
     document.getElementById("setOfflineLbl").textContent = t("app_offline_maps");
@@ -841,7 +1137,17 @@
     document.getElementById("offlineBack").addEventListener("click", () => {
       document.getElementById("offlineSheet").classList.remove("open");
     });
-    document.getElementById("lblProfileSettings").textContent = t("nav_settings");
+    document.getElementById("btnClearCache").addEventListener("click", () => {
+      const keys = [];
+      try {
+        for (let i = 0; i < localStorage.length; i++) {
+          const k = localStorage.key(i);
+          if (k && (k.indexOf("tw_map_") === 0 || k.indexOf("tw_offline_") === 0)) keys.push(k);
+        }
+        keys.forEach((k) => localStorage.removeItem(k));
+      } catch (e) {}
+      showToast(t("app_map_cache_cleared"));
+    });
     document.getElementById("lblName").textContent = t("profile_name");
     document.getElementById("lblEmail").textContent = t("profile_email");
     document.getElementById("settingsName").value = u.name || "";
@@ -852,6 +1158,13 @@
     document.getElementById("landingHint").textContent = t("app_landing_hint");
     let landing = "home";
     try { landing = localStorage.getItem("tw_app_landing") || "home"; } catch (e) {}
+    let wifiPhotosOnly = false;
+    try { wifiPhotosOnly = localStorage.getItem("tw_app_wifi_photos") === "1"; } catch (e) {}
+    document.getElementById("wifiPhotosOnly").checked = wifiPhotosOnly;
+    document.getElementById("wifiPhotosOnly").addEventListener("change", (e) => {
+      try { localStorage.setItem("tw_app_wifi_photos", e.target.checked ? "1" : "0"); } catch (err) {}
+      showToast(t("toast_saved"));
+    });
     const landOpts = [
       { id: "home", label: t("app_landing_community") },
       { id: "explore", label: t("app_landing_explore") },
@@ -885,7 +1198,7 @@
       try { localStorage.setItem("tw_app_notif_read", "1"); } catch (e) {}
       renderHubTabs();
       twMountAppNav("profile");
-      showToast(t("notif_empty"));
+      showToast(t("toast_saved"));
     });
 
     /* —— Sync —— */
@@ -901,6 +1214,18 @@
       if (e.target.closest("[data-sync]")) showToast(isPrem ? t("toast_saved") : t("app_sync_premium"));
     });
 
+    /* —— More —— */
+    const moreItems = [
+      { label: t("footer_map_credits"), href: "../map-credits.html" },
+      { label: t("footer_about_heading"), href: "../about.html" },
+      { label: t("footer_faq"), href: "../faq.html" },
+      { label: t("footer_terms"), href: "../terms.html" },
+      { label: t("footer_privacy"), href: "../privacy.html" },
+    ];
+    document.getElementById("moreLinks").innerHTML = moreItems.map((item) =>
+      `<a href="${item.href}"><span>${TW.escapeHtml(item.label)}</span><span class="chev">›</span></a>`
+    ).join("");
+
     /* Boot from hash */
     const hash = (location.hash || "").replace(/^#/, "");
     const hashMap = {
@@ -908,14 +1233,16 @@
       profile: "info", info: "info",
       friends: "friends", bookmarks: "bookmarks",
       settings: "settings", notifications: "notifications", sync: "sync",
+      more: "info",
       milestones: "dashboard", insights: "dashboard",
     };
     if (hash.indexOf("profile") === 0) {
       const type = (hash.match(/type=(\w+)/) || [])[1];
       if (type) infoTab = type;
     }
+    if (hash === "more") infoTab = "more";
     showHub(hashMap[hash.split("&")[0]] || "dashboard");
-    if (hash === "milestones" || hash === "insights" || hash.indexOf("more") >= 0) {
+    if (hash === "milestones" || hash === "insights") {
       if (isPrem) setDashMore(true);
     }
   </script>

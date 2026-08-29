@@ -2033,7 +2033,7 @@ function renderTrailCard(t, opts) {
   const title = TW.tt(t, "title");
   const desc = TW.tt(t, "desc");
   const detailHref =
-    TW.routeDetailHref ? TW.routeDetailHref(t) : "rec-trail.html?id=" + encodeURIComponent(t.id);
+    TW.routeDetailHref ? TW.routeDetailHref(t, opts.inApp) : "rec-trail.html?id=" + encodeURIComponent(t.id);
   const planBtn = opts.hidePlan
     ? ""
     : `<button type="button" class="btn ${planned ? "btn-secondary" : "btn-primary"} plan-btn" data-trail="${t.id}">
@@ -2092,7 +2092,7 @@ function renderRecordItem(r, detailHref) {
   const date = TW.getLang() === "zh" && r.dateZh ? r.dateZh : r.date;
   return `
   <a class="record-item media-card" href="${href}">
-    <img src="${r.image}" alt="${TW.escapeHtml(TW.tt(r, "title"))}" loading="lazy" />
+    <img src="${TW.recordPhotoSrc ? TW.recordPhotoSrc(r.image) : r.image}" alt="${TW.escapeHtml(TW.tt(r, "title"))}" loading="lazy" />
     <div class="body">
       <div class="top"><span>${date || ""}</span><span>★ ${r.rating != null ? r.rating : "—"}</span></div>
       <h4>${TW.tt(r, "title")}</h4>

@@ -7,10 +7,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="../css/styles.css" />
+  <link rel="stylesheet" href="../css/styles.css?v=20260830a" />
   <style>
     body { margin: 0; }
-    .phone-body { flex: 1; overflow-y: auto; padding: 0.75rem 0.9rem 1rem; background: #f7faf7; }
+    .phone-body { flex: 1; overflow-y: auto; padding: 0.65rem 0.9rem 1rem; background: #f7faf7; }
     .app-head {
       padding: 2.55rem 0.9rem 0.55rem; background: #fff; border-bottom: 1px solid var(--border);
     }
@@ -25,10 +25,12 @@
       white-space: nowrap; cursor: pointer;
     }
     .tabs button.active { background: var(--green-900); color: #fff; }
-    .subfilters { padding: 0.5rem 0.9rem; background: #fff; border-bottom: 1px solid var(--border); }
+    .subfilters { padding: 0 0.9rem 0.35rem; background: #fff; border-bottom: 1px solid var(--border); }
+    .subfilters[hidden] { display: none !important; }
+    .phone-body .record-item.media-card { margin-bottom: 0.65rem; }
     .search-mini {
       width: 100%; border: 1px solid var(--border); border-radius: 10px;
-      padding: 0.45rem 0.7rem; font-size: 0.8rem; margin-bottom: 0.45rem; background: #f7faf7;
+      padding: 0.45rem 0.7rem; font-size: 0.8rem; background: #f7faf7;
     }
     .route-card {
       display: flex; gap: 0.75rem; background: #fff; border: 1px solid var(--border);
@@ -51,6 +53,7 @@
     .inc-form label { display:block; font-size:0.72rem; font-weight:700; color:var(--green-900); margin-bottom:0.2rem; }
     .filter-grid { display:grid; grid-template-columns:1fr 1fr; gap:0.35rem; margin-top:0.4rem; }
     .filter-grid label { font-size:0.62rem; font-weight:700; color:var(--text-muted); }
+    .app-chip-label { margin: 0.35rem 0 0.15rem; font-size: 0.68rem; font-weight: 800; color: var(--green-900); }
   </style>
 </head>
 <body>
@@ -75,9 +78,84 @@
           <button type="button" data-tab="records" id="tabRecords">Records</button>
           <button type="button" data-tab="incidents" id="tabIncidents">Incidents</button>
         </div>
+        <div class="app-explore-bar">
+          <input class="search-mini" id="exploreSearch" type="search" />
+          <button type="button" class="app-filter-btn" id="btnFilters"></button>
+        </div>
         <div class="subfilters" id="subfilters"></div>
+        <p class="app-explore-count" id="listCount" hidden></p>
         <div class="phone-body" id="list"></div>
         <div data-app-nav></div>
+
+        <div class="app-filter-overlay" id="filterOverlay" aria-hidden="true">
+          <div class="app-filter-sheet" role="dialog" aria-modal="true" aria-labelledby="filterTitle">
+            <div class="app-filter-head">
+              <h2 id="filterTitle"></h2>
+              <button type="button" class="app-filter-close" id="filterClose" aria-label="Close">×</button>
+            </div>
+            <div class="app-filter-body">
+              <div class="app-filter-panel" id="filterRoutes">
+                <div class="form-group">
+                  <label for="draftDistrict" data-i18n="filter_district"></label>
+                  <select class="form-select" id="draftDistrict"></select>
+                </div>
+                <div class="form-group">
+                  <label data-i18n="filter_difficulty"></label>
+                  <div class="app-chip-row wrap" id="draftDiff"></div>
+                  <p id="draftDiffHint" style="font-size:0.72rem;color:var(--text-muted);margin:0.35rem 0 0"></p>
+                </div>
+                <div class="form-group">
+                  <label for="draftDuration" data-i18n="explore_duration"></label>
+                  <select class="form-select" id="draftDuration"></select>
+                </div>
+                <div class="form-group">
+                  <label for="draftDistance" data-i18n="explore_distance"></label>
+                  <select class="form-select" id="draftDistance"></select>
+                </div>
+              </div>
+              <div class="app-filter-panel" id="filterRecords" hidden>
+                <div class="form-group">
+                  <label data-i18n="rec_filter_user"></label>
+                  <div class="app-chip-row wrap" id="draftRecPeople"></div>
+                </div>
+                <div class="form-group">
+                  <label data-i18n="filter_category"></label>
+                  <div class="app-chip-row wrap" id="draftRecTags"></div>
+                </div>
+                <div class="form-group">
+                  <label data-i18n="filter_difficulty"></label>
+                  <div class="app-chip-row wrap" id="draftRecDiff"></div>
+                </div>
+                <div class="form-group">
+                  <label for="draftRecDistance" data-i18n="explore_distance"></label>
+                  <select class="form-select" id="draftRecDistance"></select>
+                </div>
+                <div class="form-group">
+                  <label for="draftRecDuration" data-i18n="explore_duration"></label>
+                  <select class="form-select" id="draftRecDuration"></select>
+                </div>
+                <div class="filter-grid">
+                  <div><label data-i18n="app_filter_from"></label><input class="search-mini" style="margin:0" type="date" id="draftRecFrom" /></div>
+                  <div><label data-i18n="app_filter_to"></label><input class="search-mini" style="margin:0" type="date" id="draftRecTo" /></div>
+                </div>
+              </div>
+              <div class="app-filter-panel" id="filterIncidents" hidden>
+                <div class="form-group">
+                  <label for="draftIncDate" data-i18n="reports_filter_date"></label>
+                  <select class="form-select" id="draftIncDate"></select>
+                </div>
+                <div class="form-group">
+                  <label for="draftIncStatus" data-i18n="reports_filter_status"></label>
+                  <select class="form-select" id="draftIncStatus"></select>
+                </div>
+              </div>
+            </div>
+            <div class="app-filter-foot">
+              <button type="button" class="btn btn-secondary" id="filterReset"></button>
+              <button type="button" class="btn btn-primary" id="filterApply"></button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -101,249 +179,606 @@
     document.getElementById("tabRoutes").textContent = lang === "zh" ? "路線" : "Routes";
     document.getElementById("tabRecords").textContent = lang === "zh" ? "記錄" : "Records";
     document.getElementById("tabIncidents").textContent = lang === "zh" ? "事故" : "Incidents";
+    document.getElementById("filterTitle").textContent = t("app_filters");
+    document.getElementById("filterReset").textContent = t("app_filter_reset");
+    document.getElementById("filterApply").textContent = t("app_filter_apply");
+    document.getElementById("btnFilters").textContent = t("app_filters");
+    document.getElementById("exploreSearch").placeholder = t("search_placeholder");
     twMountAppNav("explore");
 
-    const trails = (typeof TW.getPublishedTrails === "function" ? TW.getPublishedTrails() : null) || TW.trails || [];
-    const records = TW.records || [];
-    const list = document.getElementById("list");
-    const sub = document.getElementById("subfilters");
     let tab = new URLSearchParams(location.search).get("tab") || "routes";
     if (!["routes", "records", "incidents"].includes(tab)) tab = "routes";
-    let routeFilter = "editors"; // default Editor's Choice
-    let recQ = "";
-    let recFriends = false;
-    let recDur = "all";
-    let recFrom = "";
-    let recTo = "";
-    let recTag = "";
-
     document.querySelectorAll(".tabs button").forEach((b) => b.classList.toggle("active", b.dataset.tab === tab));
 
-    function editorsChoice() {
-      return trails.filter((tr, i) => tr.monthly || i < 4);
+    let query = "";
+    let view = "editors";
+    let theme = "all";
+    let area = "all";
+    let district = "all";
+    let difficulty = "all";
+    let duration = "all";
+    let distanceBand = "all";
+
+    let recPeople = "public";
+    let recDuration = "all";
+    let recDistance = "all";
+    let recDiff = "all";
+    let recTag = "all";
+    let recFrom = "";
+    let recTo = "";
+
+    let incDate = "all";
+    let incStatus = "all";
+    let incCat = "all";
+
+    let draft = {};
+
+    const list = document.getElementById("list");
+    const sub = document.getElementById("subfilters");
+    const overlay = document.getElementById("filterOverlay");
+    const listCount = document.getElementById("listCount");
+
+    function recAsTrail(r) {
+      const lat = r.lat != null ? r.lat : r.path && r.path[0] ? r.path[0][0] : 22.32;
+      const lng = r.lng != null ? r.lng : r.path && r.path[0] ? r.path[0][1] : 114.17;
+      return {
+        id: r.id,
+        trailId: r.trailId || r.id,
+        title: r.title || r.name,
+        titleZh: r.titleZh || r.nameZh,
+        desc: r.desc || "",
+        descZh: r.descZh || "",
+        district: r.district,
+        difficulty: r.difficulty || 2,
+        distance: r.distanceKm != null ? r.distanceKm + " km" : r.distance || "—",
+        duration: r.duration || "—",
+        elevation: r.elevation || (r.elevChange != null ? r.elevChange + " m" : "—"),
+        rating: r.rating || 4.5,
+        image: r.image,
+        tags: r.tags || r.categories || [],
+        lat, lng,
+        path: r.path,
+        monthly: r.monthly,
+        editorChoice: true,
+      };
+    }
+
+    function allLibraryRoutes() {
+      const byId = {};
+      (TW.trails || []).forEach((tr) => { byId[tr.id] = recAsTrail(tr); });
+      (typeof TW.getRecommendedTrails === "function" ? TW.getRecommendedTrails() : []).forEach((r) => {
+        const tr = recAsTrail(r);
+        if (!byId[tr.trailId] && !byId[tr.id]) byId[tr.id] = tr;
+      });
+      return Object.keys(byId).map((k) => byId[k]);
+    }
+
+    function editorsRoutes() {
+      return (typeof TW.getRecommendedTrails === "function" ? TW.getRecommendedTrails() : []).map(recAsTrail);
+    }
+
+    function allRoutes() {
+      return allLibraryRoutes();
+    }
+
+    function parseHours(tr) {
+      const s = String(tr.duration || "");
+      const h = /(\d+(?:\.\d+)?)\s*h/i.exec(s);
+      const m = /(\d+)\s*m/i.exec(s);
+      return (h ? +h[1] : 0) + (m ? +m[1] / 60 : 0);
+    }
+
+    function parseKm(tr) {
+      if (tr.distanceKm != null) return +tr.distanceKm;
+      const m = /([\d.]+)\s*km/i.exec(String(tr.distance || ""));
+      return m ? +m[1] : NaN;
+    }
+
+    function baseForView() {
+      if (view === "editors") return editorsRoutes();
+      return allRoutes();
+    }
+
+    function applyRouteSearch(rows) {
+      return rows.filter((tr) => {
+        const matchD = district === "all" || tr.district === district;
+        const matchDiff = difficulty === "all" || String(tr.difficulty) === String(difficulty);
+        const hrs = parseHours(tr);
+        const matchDur =
+          duration === "all" ||
+          (duration === "short" && hrs > 0 && hrs < 2) ||
+          (duration === "mid" && hrs >= 2 && hrs <= 4) ||
+          (duration === "long" && hrs > 4);
+        const km = parseKm(tr);
+        const matchDist =
+          distanceBand === "all" ||
+          (distanceBand === "short" && km < 8) ||
+          (distanceBand === "mid" && km >= 8 && km <= 15) ||
+          (distanceBand === "long" && km > 15);
+        const tags = tr.tags || [];
+        const matchTheme = theme === "all" || tags.indexOf(theme) >= 0;
+        const matchArea = view !== "themes" || area === "all" || tr.district === area;
+        const q = query.trim().toLowerCase();
+        const hay = (
+          TW.tt(tr, "title") + " " + TW.tt(tr, "desc") + " " + TW.districtName(tr.district) + " " + tags.join(" ")
+        ).toLowerCase();
+        const matchQ = !q || hay.includes(q);
+        return matchD && matchDiff && matchDur && matchDist && matchTheme && matchArea && matchQ;
+      });
+    }
+
+    function routeCountLabel(n) {
+      const unit = n === 1 ? t("explore_result_one") : t("explore_results");
+      const viewLabel =
+        view === "editors" ? t("explore_view_editors") : view === "themes" ? t("explore_view_themes") : t("explore_view_all");
+      return n + " " + unit + " · " + viewLabel;
+    }
+
+    function routeFiltersActive() {
+      return district !== "all" || difficulty !== "all" || duration !== "all" || distanceBand !== "all";
+    }
+
+    function recordFiltersActive() {
+      return recPeople !== "public" || recDuration !== "all" || recDistance !== "all" || recDiff !== "all" || recTag !== "all" || recFrom || recTo;
+    }
+
+    function incidentFiltersActive() {
+      return incDate !== "all" || incStatus !== "all";
+    }
+
+    function syncFilterBtn() {
+      const btn = document.getElementById("btnFilters");
+      const active = tab === "routes" ? routeFiltersActive() : tab === "records" ? recordFiltersActive() : incidentFiltersActive();
+      btn.classList.toggle("has-filters", active);
+    }
+
+    function renderRouteSub() {
+      const pool = applyRouteSearch(baseForView().filter((tr) => {
+        const tags = tr.tags || [];
+        const matchTheme = theme === "all" || tags.indexOf(theme) >= 0;
+        const matchArea = view !== "themes" || area === "all" || tr.district === area;
+        return matchTheme && matchArea;
+      }));
+      const allN = applyRouteSearch(allRoutes()).length;
+      const edN = applyRouteSearch(editorsRoutes()).length;
+      const modes = [
+        { id: "all", label: t("explore_view_all"), n: allN },
+        { id: "editors", label: t("explore_view_editors"), n: edN },
+        { id: "themes", label: t("explore_view_themes"), n: allN },
+      ];
+      const modeHtml = modes.map((m) =>
+        `<button type="button" data-view="${m.id}" class="${view === m.id ? "active" : ""}">${m.label} (${m.n})</button>`
+      ).join("");
+      const filters = (TW.trailFilters || []).filter((f) => f.id !== "all");
+      const countPool = applyRouteSearch(baseForView());
+      let catHtml =
+        `<button type="button" data-theme="all" class="${theme === "all" ? "active" : ""}">${t("filter_all")} (${countPool.length})</button>` +
+        filters.map((f) => {
+          const n = countPool.filter((tr) => (tr.tags || []).indexOf(f.id) >= 0).length;
+          return `<button type="button" data-theme="${f.id}" class="${theme === f.id ? "active" : ""}">${t(f.labelKey)} (${n})</button>`;
+        }).join("");
+      if (view === "themes") {
+        catHtml +=
+          `<p class="app-chip-label">${t("explore_theme_areas")}</p>` +
+          `<button type="button" data-area="all" class="${area === "all" ? "active" : ""}">${t("all_districts")} (${countPool.length})</button>` +
+          TW.districts.map((d) => {
+            const n = countPool.filter((tr) => tr.district === d.id).length;
+            const name = lang === "zh" ? d.nameZh : d.name;
+            return `<button type="button" data-area="${d.id}" class="${area === d.id ? "active" : ""}">${name} (${n})</button>`;
+          }).join("");
+      }
+      sub.innerHTML =
+        `<div class="app-chip-row" id="viewModes">${modeHtml}</div>` +
+        `<div class="app-chip-row wrap" id="catChips">${catHtml}</div>`;
     }
 
     function renderSub() {
       if (tab === "routes") {
-        sub.innerHTML = `
-          <div class="app-chip-row" id="routeChips">
-            <button type="button" data-rf="all" class="${routeFilter === "all" ? "active" : ""}">${t("app_routes_all")}</button>
-            <button type="button" data-rf="editors" class="${routeFilter === "editors" ? "active" : ""}">${t("app_editors_choice")}</button>
-            <button type="button" data-rf="categories" class="${routeFilter === "categories" ? "active" : ""}">${t("app_routes_categories")}</button>
-          </div>
-          <p style="margin:0.4rem 0 0;font-size:0.65rem"><span class="app-tbd">${t("app_tbd_official")}</span></p>`;
-        document.getElementById("routeChips").addEventListener("click", (e) => {
-          const btn = e.target.closest("button[data-rf]");
-          if (!btn) return;
-          routeFilter = btn.dataset.rf;
-          render();
-        });
+        sub.hidden = false;
+        renderRouteSub();
       } else if (tab === "records") {
-        const tags = TW.DEFAULT_ACTIVITY_TAGS || [];
-        const tagBtns = `<button type="button" data-tag="" class="${!recTag ? "active" : ""}">${t("filter_all")}</button>` +
-          tags.map((tg) => {
-            const label = lang === "zh" ? tg.labelZh : tg.label;
-            return `<button type="button" data-tag="${tg.id}" class="${recTag === tg.id ? "active" : ""}">${label}</button>`;
-          }).join("");
-        sub.innerHTML = `
-          <input class="search-mini" id="recSearch" type="search" placeholder="${t("app_filter_keyword")}…" value="${recQ}" />
-          <div class="app-chip-row" id="recChips">
-            <button type="button" data-rf="friends" class="${recFriends ? "active" : ""}">${t("app_filter_friends")}</button>
-            <button type="button" data-dur="all" class="${recDur === "all" ? "active" : ""}">${t("filter_all")}</button>
-            <button type="button" data-dur="under1" class="${recDur === "under1" ? "active" : ""}">${t("app_dur_under1")}</button>
-            <button type="button" data-dur="1to3" class="${recDur === "1to3" ? "active" : ""}">${t("app_dur_1to3")}</button>
-            <button type="button" data-dur="over3" class="${recDur === "over3" ? "active" : ""}">${t("app_dur_over3")}</button>
-          </div>
-          <div class="filter-grid">
-            <div><label>${t("app_filter_from")}</label><input class="search-mini" style="margin:0" type="date" id="recFrom" value="${recFrom}" /></div>
-            <div><label>${t("app_filter_to")}</label><input class="search-mini" style="margin:0" type="date" id="recTo" value="${recTo}" /></div>
-          </div>
-          <p style="margin:0.45rem 0 0.25rem;font-size:0.68rem;font-weight:800;color:var(--green-900)">${t("app_filter_tags")}</p>
-          <div class="app-chip-row" id="recTags" style="flex-wrap:wrap">${tagBtns}</div>`;
-        document.getElementById("recSearch").addEventListener("input", (e) => {
-          recQ = e.target.value.trim().toLowerCase();
-          renderListOnly();
-        });
-        document.getElementById("recChips").addEventListener("click", (e) => {
-          const friendBtn = e.target.closest("button[data-rf]");
-          const durBtn = e.target.closest("button[data-dur]");
-          if (friendBtn) {
-            recFriends = !recFriends;
-            friendBtn.classList.toggle("active", recFriends);
-          }
-          if (durBtn) {
-            recDur = durBtn.dataset.dur;
-            document.querySelectorAll("#recChips [data-dur]").forEach((b) => b.classList.toggle("active", b === durBtn));
-          }
-          renderListOnly();
-        });
-        document.getElementById("recFrom").addEventListener("change", (e) => { recFrom = e.target.value; renderListOnly(); });
-        document.getElementById("recTo").addEventListener("change", (e) => { recTo = e.target.value; renderListOnly(); });
-        document.getElementById("recTags").addEventListener("click", (e) => {
-          const btn = e.target.closest("button[data-tag]");
-          if (!btn) return;
-          recTag = btn.dataset.tag || "";
-          document.querySelectorAll("#recTags button").forEach((b) => b.classList.toggle("active", b === btn));
-          renderListOnly();
-        });
+        sub.hidden = true;
+        sub.innerHTML = "";
       } else {
-        sub.innerHTML = `<p style="margin:0;font-size:0.75rem;color:var(--text-muted)">${t("app_incidents_hint")}</p>`;
+        sub.hidden = true;
+        sub.innerHTML = "";
       }
     }
 
     function routeCards(rows) {
       return rows.length
         ? rows.map((tr) => {
-            const name = lang === "zh" ? (tr.nameZh || tr.titleZh || tr.name || tr.title) : (tr.name || tr.title);
+            const name = TW.tt(tr, "title");
             const dist = tr.distanceKm != null ? tr.distanceKm + " km" : (tr.distance || "");
             const img = tr.image || "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=200&q=60";
-            const href = "route-detail.html?id=" + encodeURIComponent(tr.id || "");
+            const href = TW.routeDetailHref(tr, true);
+            const diff = typeof difficultyLabel === "function" ? difficultyLabel(tr.difficulty) : "";
             return `<a class="route-card" href="${href}">
-              <img src="${img}" alt="" />
+              <img src="${img}" alt="" loading="lazy" />
               <div class="meta">
-                <strong>${name || "Trail"}</strong>
-                <p>${dist}${tr.duration ? " · " + tr.duration : ""}</p>
-                <span class="follow-cta">${t("app_save_to_plans")} →</span>
+                <strong>${TW.escapeHtml(name || "Trail")}</strong>
+                <p>${TW.escapeHtml(TW.districtName(tr.district))}${diff ? " · L" + tr.difficulty : ""}</p>
+                <p>${TW.escapeHtml(dist)}${tr.duration ? " · " + tr.duration : ""}</p>
               </div>
             </a>`;
           }).join("")
-        : `<p style="text-align:center;color:var(--text-muted);padding:2rem 1rem">${lang === "zh" ? "暫無路線" : "No routes yet"}</p>`;
+        : `<p style="text-align:center;color:var(--text-muted);padding:2rem 1rem">${t("no_trails")}</p>`;
+    }
+
+    function parseRecordHours(r) {
+      const s = String(r.duration || "");
+      const hm = /^(\d+):(\d+)/.exec(s);
+      if (hm) return +hm[1] + +hm[2] / 60;
+      const h = /(\d+(?:\.\d+)?)\s*h/i.exec(s);
+      const m = /(\d+)\s*m/i.exec(s);
+      return (h ? +h[1] : 0) + (m ? +m[1] / 60 : 0);
+    }
+
+    function recordIsoDate(r) {
+      if (typeof TW.recordDateValue === "function") {
+        const d = TW.recordDateValue(r);
+        if (d && !isNaN(d.getTime())) return d.toISOString().slice(0, 10);
+      }
+      return "";
+    }
+
+    function recordKm(r) {
+      if (r.distanceKm != null) return +r.distanceKm;
+      const m = /([\d.]+)\s*km/i.exec(String(r.distance || ""));
+      return m ? +m[1] : NaN;
+    }
+
+    function recordTags(r) {
+      return r.tags || r.categories || [];
+    }
+
+    function filteredRecords() {
+      const q = query.trim().toLowerCase();
+      return (TW.getUserRoutes ? TW.getUserRoutes() : []).concat(TW.records || []).filter((r) => {
+        const hay = (
+          TW.tt(r, "title") + " " + TW.tt(r, "snippet") + " " + (r.user || "") + " " + (r.region || "") + " " + recordTags(r).join(" ")
+        ).toLowerCase();
+        if (q && !hay.includes(q)) return false;
+        const privacy = String(r.privacy || "Public").toLowerCase();
+        if (recPeople === "public") {
+          if (privacy !== "public" && privacy !== "") return false;
+        } else if (recPeople === "friends") {
+          if (!(privacy === "friends" || privacy === "friend") && !(typeof TW.recordIsFriend === "function" && TW.recordIsFriend(r))) return false;
+        }
+        if (recTag !== "all" && recordTags(r).indexOf(recTag) < 0) return false;
+        if (recDiff !== "all" && String(r.difficulty || "") !== String(recDiff)) return false;
+        const hrs = parseRecordHours(r);
+        const matchDur =
+          recDuration === "all" ||
+          (recDuration === "short" && hrs > 0 && hrs < 2) ||
+          (recDuration === "mid" && hrs >= 2 && hrs <= 4) ||
+          (recDuration === "long" && hrs > 4);
+        if (!matchDur) return false;
+        const km = recordKm(r);
+        const matchDist =
+          recDistance === "all" ||
+          (recDistance === "short" && km < 8) ||
+          (recDistance === "mid" && km >= 8 && km <= 15) ||
+          (recDistance === "long" && km > 15);
+        if (!matchDist) return false;
+        const iso = recordIsoDate(r);
+        if (recFrom && iso && iso < recFrom) return false;
+        if (recTo && iso && iso > recTo) return false;
+        return true;
+      });
+    }
+
+    const incCats = [
+      { id: "all", labelKey: "filter_all" },
+      { id: "waste", labelKey: "cat_waste" },
+      { id: "tree", labelKey: "cat_tree" },
+      { id: "vandalism", labelKey: "cat_vandalism" },
+      { id: "obstruction", labelKey: "cat_obstruction" },
+    ];
+
+    function incList() {
+      const listInc = typeof TW.getCommunityReports === "function"
+        ? TW.getCommunityReports({ dateRange: incDate, category: incCat, status: incStatus })
+        : (TW.reports || []);
+      const q = query.trim().toLowerCase();
+      if (!q) return listInc;
+      return listInc.filter((r) => {
+        const hay = (TW.tt(r, "title") + " " + TW.tt(r, "desc") + " " + (r.category || "") + " " + (r.reporter || "")).toLowerCase();
+        return hay.includes(q);
+      });
     }
 
     function renderListOnly() {
+      listCount.hidden = tab !== "routes";
       if (tab === "routes") {
-        let rows = trails.slice();
-        if (routeFilter === "editors") rows = editorsChoice();
-        else if (routeFilter === "categories") {
-          const chips = (TW.trailFilters || []).map((f) =>
-            `<button type="button" class="app-chip" data-cat="${f.id}">${t(f.labelKey)}</button>`
-          ).join("");
-          list.innerHTML = `
-            <div class="app-chip-row" id="catChips" style="margin-bottom:0.75rem;flex-wrap:wrap">${chips}</div>
-            <div id="catRoutes">${routeCards(trails.slice(0, 8))}</div>`;
-          document.getElementById("catChips").addEventListener("click", (e) => {
-            const btn = e.target.closest("button[data-cat]");
-            if (!btn) return;
-            document.querySelectorAll("#catChips button").forEach((b) => b.classList.toggle("active", b === btn));
-            const cat = btn.dataset.cat;
-            const filtered = cat === "all"
-              ? trails
-              : trails.filter((tr) => (tr.tags || []).includes(cat));
-            document.getElementById("catRoutes").innerHTML = routeCards(filtered.slice(0, 10));
-          });
-          return;
-        }
-        list.innerHTML = routeCards(rows.slice(0, 10));
+        const rows = applyRouteSearch(baseForView());
+        listCount.textContent = routeCountLabel(rows.length);
+        list.innerHTML = routeCards(rows);
       } else if (tab === "records") {
-        let rows = records.slice();
-        if (recQ) {
-          rows = rows.filter((r) => {
-            const tags = (r.activityTags || []).map((id) => TW.activityTagLabel ? TW.activityTagLabel(id) : id).join(" ");
-            const text = ((r.title || "") + " " + (r.titleZh || "") + " " + (r.user || "") + " " + tags).toLowerCase();
-            return text.includes(recQ);
-          });
-        }
-        if (recFriends) rows = rows.filter((r) => TW.recordIsFriend(r));
-        if (recDur !== "all") {
-          rows = rows.filter((r) => {
-            const m = TW.recordDurationMinutes(r);
-            if (recDur === "under1") return m > 0 && m < 60;
-            if (recDur === "1to3") return m >= 60 && m <= 180;
-            if (recDur === "over3") return m > 180;
-            return true;
-          });
-        }
-        if (recFrom || recTo) {
-          rows = rows.filter((r) => {
-            const d = TW.recordDateValue(r);
-            if (!d) return true;
-            const iso = d.toISOString().slice(0, 10);
-            if (recFrom && iso < recFrom) return false;
-            if (recTo && iso > recTo) return false;
-            return true;
-          });
-        }
-        if (recTag) {
-          rows = rows.filter((r) => (r.activityTags || []).indexOf(recTag) >= 0);
-        }
+        const rows = filteredRecords();
+        listCount.hidden = true;
         list.innerHTML = rows.length
-          ? rows.map((r) => {
-              const title = TW.tt(r, "title") || r.title;
-              const href = "record-detail.html?id=" + encodeURIComponent(r.id || "");
-              const tags = typeof TW.activityTagsHtml === "function" ? TW.activityTagsHtml(r.activityTags) : "";
-              return `<a class="record-row" href="${href}" style="text-decoration:none;color:inherit;display:block">
-                <strong>${title}</strong>
-                <p>${r.user || ""} · ${r.distance || ""} · ${r.duration || ""}</p>
-                <p>★ ${r.rating != null ? r.rating : "—"} · ${r.elev || (r.elevGain != null ? r.elevGain + " m" : "")}</p>
-                ${tags}
-              </a>`;
-            }).join("")
+          ? rows
+              .map((r) =>
+                renderRecordItem(
+                  r,
+                  typeof TW.recordDetailHref === "function"
+                    ? TW.recordDetailHref(r.id, { inApp: true })
+                    : "record-detail.html?id=" + encodeURIComponent(r.id || "")
+                )
+              )
+              .join("")
           : `<p style="text-align:center;color:var(--text-muted);padding:2rem 1rem">${t("hikes_empty")}</p>`;
       } else {
-        const reports = (typeof TW.getCommunityReports === "function" ? TW.getCommunityReports({ dateRange: "all" }) : TW.reports || []).slice(0, 12);
+        listCount.hidden = true;
+        const reports = incList().slice(0, 20);
         const now = new Date();
         const dateStr = String(now.getDate()).padStart(2, "0") + "/" + String(now.getMonth() + 1).padStart(2, "0") + "/" + now.getFullYear();
         const timeStr = String(now.getHours()).padStart(2, "0") + ":" + String(now.getMinutes()).padStart(2, "0");
+        const catHtml = incCats.map((c) =>
+          `<button type="button" data-cat="${c.id}" class="${incCat === c.id ? "active" : ""}">${t(c.labelKey)}</button>`
+        ).join("");
         list.innerHTML = `
+          <div class="app-chip-row wrap" id="incCatRow" style="margin-bottom:0.65rem">${catHtml}</div>
           <div class="inc-form" id="incForm">
             <strong style="display:block;color:var(--green-900);margin-bottom:0.45rem">${t("report_modal_title")}</strong>
             <p style="font-size:0.72rem;color:var(--text-muted);margin:0 0 0.5rem">${t("app_incidents_hint")}</p>
-            <div class="form-group">
-              <label>${t("report_photos")}</label>
-              <p style="font-size:0.7rem;color:var(--text-muted);margin:0 0 0.3rem">${t("report_photos_hint")}</p>
-              <button type="button" class="btn btn-amber btn-block" id="incPhotos">${t("add_photos")}</button>
-            </div>
-            <div class="filter-grid">
-              <div class="form-group"><label>${t("date")}</label><input class="form-input" id="incDate" value="${dateStr}" /></div>
-              <div class="form-group"><label>${t("time")}</label><input class="form-input" id="incTime" value="${timeStr}" /></div>
-            </div>
-            <div class="form-group">
-              <label>${t("category")}</label>
-              <select class="form-select" id="incCat">
-                <option value="waste">${t("cat_waste")}</option>
-                <option value="tree">${t("cat_tree")}</option>
-                <option value="vandalism">${t("cat_vandalism")}</option>
-                <option value="obstruction">${t("cat_obstruction")}</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label>${t("location")}</label>
-              <input class="form-input" id="incLoc" value="${lang === "zh" ? "香港" : "Hong Kong"}" />
-              <a href="index.html" style="display:inline-block;margin-top:0.35rem;font-size:0.72rem;font-weight:800;color:var(--green-800)">${t("pick_on_map")}</a>
-            </div>
-            <div class="form-group">
-              <label>${t("title_label")}</label>
-              <input class="form-input" id="incTitle" placeholder="${t("add_title")}" />
-            </div>
-            <div class="form-group">
-              <label>${t("description")}</label>
-              <textarea class="form-textarea" id="incDesc" rows="2" placeholder="${t("tell_more")}"></textarea>
-            </div>
             <button type="button" class="btn btn-primary btn-block" id="incSubmit">${t("confirm")}</button>
           </div>
           ${reports.map(renderReportItem).join("") || `<p style="text-align:center;color:var(--text-muted)">${t("no_trails")}</p>`}`;
-        document.getElementById("incPhotos").addEventListener("click", () => showToast("📷"));
-        document.getElementById("incSubmit").addEventListener("click", () => {
-          if (typeof CMS !== "undefined" && CMS.submitIncident) {
-            CMS.submitIncident({
-              title: document.getElementById("incTitle").value.trim() || t("report_modal_title"),
-              desc: document.getElementById("incDesc").value.trim(),
-              category: document.getElementById("incCat").value,
-              date: document.getElementById("incDate").value + " " + document.getElementById("incTime").value,
-              coords: document.getElementById("incLoc").value,
-              reporter: (TW.user && TW.user.name) || "",
-            });
-          }
-          showToast(t("toast_report"));
+        document.getElementById("incCatRow").addEventListener("click", (e) => {
+          const btn = e.target.closest("button[data-cat]");
+          if (!btn) return;
+          incCat = btn.dataset.cat;
           renderListOnly();
         });
+        document.getElementById("incSubmit").addEventListener("click", () => showToast(t("toast_report")));
       }
+      syncFilterBtn();
     }
 
     function render() {
       renderSub();
       renderListOnly();
     }
+
+    function fillSelectOptions(sel, options) {
+      sel.innerHTML = options.map((o) => `<option value="${o.v}">${o.l}</option>`).join("");
+    }
+
+    function initFilterControls() {
+      const distSel = document.getElementById("draftDistrict");
+      fillSelectOptions(distSel, [{ v: "all", l: t("all_districts") }].concat(
+        TW.districts.map((d) => ({ v: d.id, l: lang === "zh" ? d.nameZh : d.name }))
+      ));
+      fillSelectOptions(document.getElementById("draftDuration"), [
+        { v: "all", l: t("explore_duration_any") },
+        { v: "short", l: t("explore_duration_short") },
+        { v: "mid", l: t("explore_duration_mid") },
+        { v: "long", l: t("explore_duration_long") },
+      ]);
+      fillSelectOptions(document.getElementById("draftDistance"), [
+        { v: "all", l: t("explore_distance_any") },
+        { v: "short", l: t("explore_distance_short") },
+        { v: "mid", l: t("explore_distance_mid") },
+        { v: "long", l: t("explore_distance_long") },
+      ]);
+      fillSelectOptions(document.getElementById("draftRecDuration"), [
+        { v: "all", l: t("explore_duration_any") },
+        { v: "short", l: t("explore_duration_short") },
+        { v: "mid", l: t("explore_duration_mid") },
+        { v: "long", l: t("explore_duration_long") },
+      ]);
+      fillSelectOptions(document.getElementById("draftRecDistance"), [
+        { v: "all", l: t("explore_distance_any") },
+        { v: "short", l: t("explore_distance_short") },
+        { v: "mid", l: t("explore_distance_mid") },
+        { v: "long", l: t("explore_distance_long") },
+      ]);
+      fillSelectOptions(document.getElementById("draftIncDate"), [
+        { v: "all", l: t("reports_date_all") },
+        { v: "6m", l: t("reports_date_6m") },
+        { v: "30d", l: t("reports_date_30d") },
+        { v: "90d", l: t("reports_date_90d") },
+        { v: "year", l: t("reports_date_year") },
+      ]);
+      fillSelectOptions(document.getElementById("draftIncStatus"), [
+        { v: "all", l: t("reports_status_all") },
+        { v: "new", l: t("status_new") },
+        { v: "update", l: t("status_updated") },
+        { v: "closed", l: t("status_closed") },
+      ]);
+
+      document.getElementById("draftDiff").innerHTML =
+        ["all", "1", "2", "3", "4", "5"].map((d) =>
+          `<button type="button" data-diff="${d}" class="${d === "all" ? "active" : ""}">${d === "all" ? t("all_levels") : d}</button>`
+        ).join("");
+      document.getElementById("draftRecDiff").innerHTML = document.getElementById("draftDiff").innerHTML;
+      document.getElementById("draftRecPeople").innerHTML =
+        `<button type="button" data-people="public" class="active">${t("rec_filter_public")}</button>` +
+        `<button type="button" data-people="friends">${t("rec_filter_friends")}</button>`;
+      const tagFilters = (TW.trailFilters || []).filter((f) => f.id !== "all");
+      document.getElementById("draftRecTags").innerHTML =
+        `<button type="button" data-tag="all" class="active">${t("filter_all")}</button>` +
+        tagFilters.map((f) => `<button type="button" data-tag="${f.id}">${t(f.labelKey)}</button>`).join("");
+    }
+
+    function updateDraftDiffHint() {
+      const el = document.getElementById("draftDiffHint");
+      if (!el) return;
+      if (draft.difficulty === "all") el.textContent = "1 " + t("easy") + " → 5 " + t("expert");
+      else el.textContent = t("level") + " " + draft.difficulty + " · " + difficultyLabel(+draft.difficulty);
+    }
+
+    function loadDraftFromApplied() {
+      if (tab === "routes") {
+        draft = { district, difficulty, duration, distanceBand };
+      } else if (tab === "records") {
+        draft = { recPeople, recDuration, recDistance, recDiff, recTag, recFrom, recTo };
+      } else {
+        draft = { incDate, incStatus };
+      }
+    }
+
+    function applyDraftToControls() {
+      if (tab === "routes") {
+        document.getElementById("draftDistrict").value = draft.district || "all";
+        document.getElementById("draftDuration").value = draft.duration || "all";
+        document.getElementById("draftDistance").value = draft.distanceBand || "all";
+        document.querySelectorAll("#draftDiff button").forEach((b) => b.classList.toggle("active", b.dataset.diff === (draft.difficulty || "all")));
+        updateDraftDiffHint();
+      } else if (tab === "records") {
+        document.getElementById("draftRecDuration").value = draft.recDuration || "all";
+        document.getElementById("draftRecDistance").value = draft.recDistance || "all";
+        document.getElementById("draftRecFrom").value = draft.recFrom || "";
+        document.getElementById("draftRecTo").value = draft.recTo || "";
+        document.querySelectorAll("#draftRecPeople button").forEach((b) => b.classList.toggle("active", b.dataset.people === (draft.recPeople || "public")));
+        document.querySelectorAll("#draftRecDiff button").forEach((b) => b.classList.toggle("active", b.dataset.diff === (draft.recDiff || "all")));
+        document.querySelectorAll("#draftRecTags button").forEach((b) => b.classList.toggle("active", b.dataset.tag === (draft.recTag || "all")));
+      } else {
+        document.getElementById("draftIncDate").value = draft.incDate || "all";
+        document.getElementById("draftIncStatus").value = draft.incStatus || "all";
+      }
+    }
+
+    function readDraftFromControls() {
+      if (tab === "routes") {
+        draft.district = document.getElementById("draftDistrict").value;
+        draft.duration = document.getElementById("draftDuration").value;
+        draft.distanceBand = document.getElementById("draftDistance").value;
+        const activeDiff = document.querySelector("#draftDiff button.active");
+        draft.difficulty = activeDiff ? activeDiff.dataset.diff : "all";
+      } else if (tab === "records") {
+        draft.recDuration = document.getElementById("draftRecDuration").value;
+        draft.recDistance = document.getElementById("draftRecDistance").value;
+        draft.recFrom = document.getElementById("draftRecFrom").value;
+        draft.recTo = document.getElementById("draftRecTo").value;
+        const ppl = document.querySelector("#draftRecPeople button.active");
+        draft.recPeople = ppl ? ppl.dataset.people : "public";
+        const diff = document.querySelector("#draftRecDiff button.active");
+        draft.recDiff = diff ? diff.dataset.diff : "all";
+        const tag = document.querySelector("#draftRecTags button.active");
+        draft.recTag = tag ? tag.dataset.tag : "all";
+      } else {
+        draft.incDate = document.getElementById("draftIncDate").value;
+        draft.incStatus = document.getElementById("draftIncStatus").value;
+      }
+    }
+
+    function applyDraftToState() {
+      if (tab === "routes") {
+        district = draft.district || "all";
+        difficulty = draft.difficulty || "all";
+        duration = draft.duration || "all";
+        distanceBand = draft.distanceBand || "all";
+      } else if (tab === "records") {
+        recPeople = draft.recPeople || "public";
+        recDuration = draft.recDuration || "all";
+        recDistance = draft.recDistance || "all";
+        recDiff = draft.recDiff || "all";
+        recTag = draft.recTag || "all";
+        recFrom = draft.recFrom || "";
+        recTo = draft.recTo || "";
+      } else {
+        incDate = draft.incDate || "all";
+        incStatus = draft.incStatus || "all";
+      }
+    }
+
+    function resetFiltersForTab() {
+      if (tab === "routes") {
+        district = "all";
+        difficulty = "all";
+        duration = "all";
+        distanceBand = "all";
+      } else if (tab === "records") {
+        recPeople = "public";
+        recDuration = "all";
+        recDistance = "all";
+        recDiff = "all";
+        recTag = "all";
+        recFrom = "";
+        recTo = "";
+      } else {
+        incDate = "all";
+        incStatus = "all";
+      }
+    }
+
+    function openFilterOverlay() {
+      document.getElementById("filterRoutes").hidden = tab !== "routes";
+      document.getElementById("filterRecords").hidden = tab !== "records";
+      document.getElementById("filterIncidents").hidden = tab !== "incidents";
+      loadDraftFromApplied();
+      applyDraftToControls();
+      overlay.classList.add("open");
+      overlay.setAttribute("aria-hidden", "false");
+    }
+
+    function closeFilterOverlay() {
+      overlay.classList.remove("open");
+      overlay.setAttribute("aria-hidden", "true");
+    }
+
+    document.getElementById("btnFilters").addEventListener("click", openFilterOverlay);
+    document.getElementById("filterClose").addEventListener("click", closeFilterOverlay);
+    overlay.addEventListener("click", (e) => { if (e.target === overlay) closeFilterOverlay(); });
+    document.getElementById("filterApply").addEventListener("click", () => {
+      readDraftFromControls();
+      applyDraftToState();
+      closeFilterOverlay();
+      render();
+    });
+    document.getElementById("filterReset").addEventListener("click", () => {
+      resetFiltersForTab();
+      loadDraftFromApplied();
+      applyDraftToControls();
+    });
+
+    document.getElementById("draftDiff").addEventListener("click", (e) => {
+      const btn = e.target.closest("button[data-diff]");
+      if (!btn) return;
+      document.querySelectorAll("#draftDiff button").forEach((b) => b.classList.toggle("active", b === btn));
+      draft.difficulty = btn.dataset.diff;
+      updateDraftDiffHint();
+    });
+    document.getElementById("draftRecDiff").addEventListener("click", (e) => {
+      const btn = e.target.closest("button[data-diff]");
+      if (!btn) return;
+      document.querySelectorAll("#draftRecDiff button").forEach((b) => b.classList.toggle("active", b === btn));
+    });
+    document.getElementById("draftRecPeople").addEventListener("click", (e) => {
+      const btn = e.target.closest("button[data-people]");
+      if (!btn) return;
+      document.querySelectorAll("#draftRecPeople button").forEach((b) => b.classList.toggle("active", b === btn));
+    });
+    document.getElementById("draftRecTags").addEventListener("click", (e) => {
+      const btn = e.target.closest("button[data-tag]");
+      if (!btn) return;
+      document.querySelectorAll("#draftRecTags button").forEach((b) => b.classList.toggle("active", b === btn));
+    });
+
+    document.getElementById("exploreSearch").addEventListener("input", (e) => {
+      query = e.target.value;
+      render();
+    });
+
+    sub.addEventListener("click", (e) => {
+      if (tab !== "routes") return;
+      const viewBtn = e.target.closest("button[data-view]");
+      if (viewBtn) {
+        view = viewBtn.dataset.view;
+        theme = "all";
+        area = "all";
+        render();
+        return;
+      }
+      const themeBtn = e.target.closest("button[data-theme]");
+      const areaBtn = e.target.closest("button[data-area]");
+      if (themeBtn) theme = themeBtn.dataset.theme;
+      if (areaBtn) area = areaBtn.dataset.area;
+      if (themeBtn || areaBtn) render();
+    });
 
     document.getElementById("tabs").addEventListener("click", (e) => {
       const btn = e.target.closest("button[data-tab]");
@@ -354,10 +789,12 @@
         const u = new URL(location.href);
         u.searchParams.set("tab", tab);
         history.replaceState(null, "", u.pathname + u.search);
-      } catch (e) {}
+      } catch (err) {}
+      closeFilterOverlay();
       render();
     });
 
+    initFilterControls();
     render();
   </script>
 </body>

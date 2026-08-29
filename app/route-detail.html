@@ -8,10 +8,10 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <link rel="stylesheet" href="../css/styles.css" />
+  <link rel="stylesheet" href="../css/styles.css?v=20260830a" />
   <style>
     body { margin: 0; }
-    .phone-body { flex: 1; overflow-y: auto; background: #f3f4f6; min-height: 0; }
+    .phone-body { flex: 1; overflow-y: auto; background: #f3f4f6; min-height: 0; padding-bottom: 0.5rem; }
     .app-detail-bar {
       display: flex; align-items: center; gap: 0.35rem;
       padding: 2.35rem 0.65rem 0.55rem; background: #fff; border-bottom: 1px solid var(--border);
@@ -25,16 +25,25 @@
       font-size: 1.25rem; color: #111; display: grid; place-items: center; text-decoration: none;
       flex-shrink: 0;
     }
-    #detailMap { height: 210px; width: 100%; }
-    .map-wrap { position: relative; background: #e8ece8; }
-    .rec-card {
-      margin: 0.65rem 0.7rem 0.85rem; background: #fff; border-radius: 14px;
-      padding: 0.85rem 0.9rem 1rem; box-shadow: 0 2px 10px rgba(0,0,0,.06);
+    .route-detail-content { padding: 0.75rem 0.85rem 0.25rem; }
+    .route-share-byline { margin-bottom: 0.65rem; font-size: 0.78rem; }
+    .route-share-map { height: 200px; border-radius: 12px; margin-bottom: 0.75rem; border: 1px solid var(--border); }
+    .route-share-story { font-size: 0.82rem; line-height: 1.55; margin: 0 0 0.65rem; white-space: pre-wrap; }
+    .route-share-itinerary { font-size: 0.78rem; color: var(--text-muted); margin: 0 0 0.85rem; line-height: 1.45; }
+    .route-share-block { margin-bottom: 1rem; }
+    .route-share-block h2 { font-size: 0.88rem; color: var(--green-900); margin: 0 0 0.55rem; }
+    .route-share-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.45rem; }
+    .route-share-stats div { background: #fff; border: 1px solid var(--border); border-radius: 10px; padding: 0.55rem 0.35rem; text-align: center; }
+    .route-share-stats strong { display: block; font-size: 0.92rem; }
+    .route-share-stats span { font-size: 0.62rem; color: var(--text-muted); }
+    .rec-photo-grid { grid-template-columns: repeat(3, 1fr); gap: 0.35rem; }
+    .route-actions {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 0.45rem;
+      padding: 0.65rem 0.85rem calc(0.85rem + env(safe-area-inset-bottom, 0px));
+      background: #fff; border-top: 1px solid var(--border);
     }
-    .rec-stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem 0.35rem; }
-    .rec-stat .val { font-size: 0.88rem; font-weight: 800; color: #111; }
-    .rec-stat .lbl { font-size: 0.62rem; color: var(--text-muted); font-weight: 600; margin-top: 0.08rem; }
-    .route-actions { display: grid; gap: 0.45rem; padding: 0 0.7rem 1.25rem; }
+    .route-actions .btn-block.full { grid-column: 1 / -1; }
+    .route-actions .bookmark-btn { min-height: 42px; }
   </style>
 </head>
 <body>
@@ -55,15 +64,32 @@
           <span class="ib" aria-hidden="true"></span>
         </div>
         <div class="phone-body">
-          <div class="map-wrap"><div id="detailMap"></div></div>
-          <div class="rec-card">
-            <p id="routeDesc" style="font-size:0.8rem;color:var(--text-muted);margin:0 0 0.75rem"></p>
-            <div class="rec-stats-grid" id="routeStats"></div>
+          <div class="route-detail-content">
+            <div class="route-share-byline">
+              <strong id="recAuthor">TrailWatch</strong>
+              <span id="recDate"></span>
+            </div>
+            <div id="recMap" class="route-share-map"></div>
+            <p class="route-share-story" id="recDesc"></p>
+            <p class="route-share-itinerary" id="recItinerary"></p>
+            <section class="route-share-block">
+              <h2 id="lblPlanData"></h2>
+              <div class="route-share-stats" id="planStats"></div>
+            </section>
+            <section class="route-share-block">
+              <h2 id="lblElev"></h2>
+              <div id="elevChart"></div>
+            </section>
+            <section class="route-share-block">
+              <h2 id="lblPhotos"></h2>
+              <div class="rec-photo-grid" id="photoGrid"></div>
+            </section>
           </div>
           <div class="route-actions">
-            <button type="button" class="btn btn-primary btn-block" id="btnBookmark"></button>
-            <button type="button" class="btn btn-secondary btn-block" id="btnSavePlan"></button>
-            <a class="btn btn-secondary btn-block" id="btnFollow" href="index.html">Track</a>
+            <button type="button" class="btn btn-secondary bookmark-btn icon-only" id="recBookmark" aria-label="Bookmark"></button>
+            <button type="button" class="btn btn-secondary dup-btn" id="recDup"></button>
+            <button type="button" class="btn btn-primary btn-block full" id="btnSavePlan"></button>
+            <a class="btn btn-secondary btn-block full" id="btnFollow" href="index.html"></a>
           </div>
         </div>
         <div data-app-nav></div>
@@ -86,38 +112,67 @@
       b.addEventListener("click", () => { TW.setLang(b.dataset.lang); location.reload(); });
     });
     document.getElementById("backWeb").textContent = "‹ " + t("nav_explore");
+    document.getElementById("lblPlanData").textContent = t("rec_planned_data");
+    document.getElementById("lblElev").textContent = t("rec_elev_stat");
+    document.getElementById("lblPhotos").textContent = t("rec_photos");
+    document.getElementById("recDup").textContent = t("rec_duplicate_edit");
     twMountAppNav("explore");
 
     const id = new URLSearchParams(location.search).get("id");
-    const trail = (typeof TW.resolveTrailSource === "function" && TW.resolveTrailSource(id))
-      || (TW.trails || []).find((x) => x.id === id)
-      || (typeof TW.getPublishedTrails === "function" && TW.getPublishedTrails().find((x) => x.id === id));
+    const trail =
+      (typeof TW.getRecommendedTrail === "function" && TW.getRecommendedTrail(id)) ||
+      (typeof TW.resolveTrailSource === "function" && TW.resolveTrailSource(id)) ||
+      (TW.trails || []).find((x) => x.id === id) ||
+      (typeof TW.getPublishedTrails === "function" && TW.getPublishedTrails().find((x) => x.id === id));
+
     if (!trail) {
       location.href = "explore.html";
     } else {
-      document.getElementById("routeTitle").textContent = TW.tt(trail, "title");
-      document.getElementById("routeDesc").textContent = TW.tt(trail, "desc") || "";
-      const stats = trail.userRoute || trail.kind === "user"
-        ? [
-            { val: trail.durationClock || trail.duration || "—", lbl: t("rec_duration_lbl") },
-            { val: trail.startTime || "—", lbl: t("rec_start_time") },
-            { val: trail.endTime || "—", lbl: t("rec_end_time") },
-            { val: trail.distanceKm != null ? trail.distanceKm + " km" : trail.distance || "—", lbl: t("rec_distance_km") },
-            { val: trail.paceKmh != null ? trail.paceKmh : "—", lbl: t("rec_avg_pace_kmh") },
-            { val: trail.elevChange != null ? trail.elevChange + " m" : "—", lbl: t("rec_elev_changes") },
-          ]
-        : [
-            { val: trail.durationClock || trail.duration || "—", lbl: t("rec_duration_lbl") },
-            { val: trail.distanceKm != null ? trail.distanceKm + " km" : trail.distance || "—", lbl: t("rec_distance_km") },
-            { val: trail.elevChange != null ? trail.elevChange + " m" : trail.elevation || "—", lbl: t("rec_elev_changes") },
-          ];
-      document.getElementById("routeStats").innerHTML = stats.map((s) =>
-        `<div class="rec-stat"><div class="val">${s.val}</div><div class="lbl">${s.lbl}</div></div>`
-      ).join("");
+      const title = TW.tt(trail, "title");
+      document.getElementById("routeTitle").textContent = title;
+      document.getElementById("recDesc").textContent = TW.tt(trail, "desc") || "";
+      const it = lang === "zh" ? trail.itineraryZh || trail.itinerary : trail.itinerary || trail.itineraryZh;
+      document.getElementById("recItinerary").textContent = it ? t("rec_itinerary") + "：" + it : "";
+      document.getElementById("recAuthor").textContent = trail.author || "TrailWatch";
+      document.getElementById("recDate").textContent = trail.date || "";
+
+      const dist = trail.distanceKm != null ? Number(trail.distanceKm).toFixed(2) : (trail.distance || "—");
+      const dur = trail.durationClock || trail.duration || "—";
+      const elev = trail.elevChange != null ? trail.elevChange : trail.elevation || "—";
+      document.getElementById("planStats").innerHTML = [
+        [dur, t("rec_duration_lbl")],
+        [dist, t("rec_distance_km")],
+        [elev, t("rec_elev_changes")],
+      ].map((s) => `<div><strong>${s[0]}</strong><span>${s[1]}</span></div>`).join("");
+
+      document.getElementById("elevChart").innerHTML = TW.elevChartHtml({
+        elevMax: trail.elevMax,
+        elevMin: trail.elevMin,
+        elevProfile: trail.elevProfile,
+        showPace: false,
+      });
+
+      const photos = trail.photos && trail.photos.length ? trail.photos : trail.image ? [trail.image] : [];
+      document.getElementById("photoGrid").innerHTML = photos.length
+        ? photos.map((p) => `<img src="${p}" alt="" loading="lazy" />`).join("")
+        : `<p style="grid-column:1/-1;font-size:0.78rem;color:var(--text-muted);margin:0">${t("hikes_empty")}</p>`;
+
+      const planId = trail.trailId || trail.id;
+      const bm = document.getElementById("recBookmark");
+      bm.dataset.trail = planId;
+      bm.setAttribute("aria-label", t("rec_bookmark"));
+      bm.innerHTML = typeof twIcon === "function" ? twIcon("bookmarks") : "🔖";
+      if (TW.isBookmarked && TW.isBookmarked(planId)) {
+        bm.classList.add("active");
+        bm.setAttribute("aria-pressed", "true");
+      } else {
+        bm.setAttribute("aria-pressed", "false");
+      }
+      bm.addEventListener("click", () => showToast(t("rec_bookmark")));
+      document.getElementById("recDup").dataset.trail = planId;
+      document.getElementById("recDup").addEventListener("click", () => showToast(t("rec_duplicate_edit")));
 
       const followHref = "index.html?follow=route&trail=" + encodeURIComponent(trail.id);
-      document.getElementById("btnBookmark").textContent = t("rec_bookmark");
-      document.getElementById("btnBookmark").addEventListener("click", () => showToast(t("rec_bookmark")));
       document.getElementById("btnFollow").href = followHref;
       document.getElementById("btnFollow").textContent = t("app_track_follow");
 
@@ -135,11 +190,14 @@
       let path = Array.isArray(trail.path) ? trail.path : [];
       if (path.length < 2 && trail.lat != null) path = TW.demoPathAround(trail.lat, trail.lng);
       if (path.length < 2) path = [[22.35, 114.25], [22.36, 114.26]];
-      const map = L.map("detailMap", { zoomControl: false }).setView(path[0], 13);
+      path = path.map((p) => [Number(p[0]), Number(p[1])]);
+      const map = L.map("recMap", { zoomControl: false }).setView(path[0], 13);
       TW.addMapTiles(map, { maxZoom: 18 });
-      const line = L.polyline(path, { color: "#2563eb", weight: 5 }).addTo(map);
-      if (typeof TW.addRouteEndpoints === "function") TW.addRouteEndpoints(map, path);
-      setTimeout(() => { map.invalidateSize(); map.fitBounds(line.getBounds().pad(0.22)); }, 80);
+      if (path.length > 1) {
+        const line = L.polyline(path, { color: "#2563eb", weight: 5 }).addTo(map);
+        if (typeof TW.addRouteEndpoints === "function") TW.addRouteEndpoints(map, path);
+        setTimeout(() => { map.invalidateSize(); map.fitBounds(line.getBounds().pad(0.18)); }, 80);
+      }
     }
   </script>
 </body>

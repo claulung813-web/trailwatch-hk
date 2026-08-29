@@ -54,6 +54,19 @@
       background: var(--green-900); color: #fff; border-radius: 10px;
       padding: 0.5rem 0.9rem; font-weight: 700; font-size: 0.8rem; text-decoration: none;
     }
+    .rec-actions {
+      display: flex; align-items: center; gap: 0.45rem;
+      padding: 0 0.7rem 1.25rem;
+    }
+    .rec-bookmark-btn {
+      width: 40px; height: 40px; padding: 0; flex-shrink: 0;
+      display: grid; place-items: center; border-radius: 10px;
+      border: 1px solid var(--border); background: #fff; cursor: pointer;
+      color: var(--green-900);
+    }
+    .rec-bookmark-btn svg { width: 18px; height: 18px; }
+    .rec-bookmark-btn.active { background: var(--green-900); color: #fff; border-color: var(--green-900); }
+    .rec-actions .btn-export { flex: 1; min-width: 0; }
     .photos-block { padding: 0 0.7rem 1.25rem; }
     .photos-block h2 { font-size: 0.9rem; margin: 0 0 0.5rem; color: var(--green-900); }
     .photo-strip {
@@ -107,9 +120,9 @@
             <div class="photo-strip" id="photoGrid"></div>
             <p id="photoEmpty" style="display:none;color:var(--text-muted);font-size:0.78rem;margin:0.35rem 0 0"></p>
           </div>
-          <div class="route-actions" style="display:grid;gap:0.45rem;padding:0 0.7rem 1.25rem">
-            <button type="button" class="btn btn-primary btn-block" id="btnBookmark"></button>
-            <button type="button" class="btn btn-secondary btn-block" id="btnExportGpx"></button>
+          <div class="rec-actions">
+            <button type="button" class="rec-bookmark-btn bookmark-btn icon-only" id="btnBookmark" aria-label="Bookmark"></button>
+            <button type="button" class="btn btn-secondary btn-export" id="btnExportGpx" hidden></button>
           </div>
         </div>
         <div data-app-nav></div>
@@ -133,7 +146,7 @@
     });
     document.getElementById("backWeb").textContent = "‹ " + t("nav_explore");
     document.getElementById("photosHeading").textContent = t("rec_photos");
-    document.getElementById("recGroupLbl").textContent = t("rec_group");
+    document.getElementById("recGroupLbl").textContent = t("rec_view_group_hike");
     document.getElementById("photoEmpty").textContent = t("rec_no_photos");
     twMountAppNav("explore");
 
@@ -177,7 +190,12 @@
         document.getElementById("recGroupBtn").href = "group-detail.html?id=" + encodeURIComponent(rec.groupId);
       }
 
-      const photos = rec.photos || [];
+      const photos =
+        rec.photos && rec.photos.length
+          ? rec.photos
+          : rec.image
+            ? [rec.image]
+            : [];
       if (photos.length) {
         document.getElementById("photoGrid").innerHTML = photos.map((p) =>
           `<img src="${TW.recordPhotoSrc(p)}" alt="" loading="lazy" onerror="this.remove()" />`
@@ -200,11 +218,17 @@
       });
     }
 
-    document.getElementById("btnBookmark").textContent = t("rec_bookmark");
+    document.getElementById("btnBookmark").setAttribute("aria-label", t("rec_bookmark"));
+    document.getElementById("btnBookmark").innerHTML = typeof twIcon === "function" ? twIcon("bookmarks") : "🔖";
     document.getElementById("btnExportGpx").textContent = t("app_export_gpx");
     document.getElementById("btnBookmark").addEventListener("click", () => showToast(t("rec_bookmark")));
     document.getElementById("btnExportGpx").addEventListener("click", () => showToast(t("app_gpx_exported")));
     document.getElementById("btnShare").addEventListener("click", () => showToast(t("rec_share")));
+
+    if (rec) {
+      const own = typeof TW.recordIsOwn === "function" && TW.recordIsOwn(rec);
+      document.getElementById("btnExportGpx").hidden = !own;
+    }
   </script>
 </body>
 </html>

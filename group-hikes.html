@@ -400,7 +400,6 @@
         </div>
       </div>
       </div>
-      <p class="meta" id="groupInviteHint" style="margin:-0.35rem 0 0.85rem;display:none"></p>
       <div class="trail-grid" id="groupGrid"></div>
     </div>
   </main>
@@ -738,11 +737,6 @@
     }
 
     function render() {
-      const hint = document.getElementById("groupInviteHint");
-      if (hint) {
-        hint.style.display = TW.isLoggedIn() ? "none" : "block";
-        hint.textContent = TW.t("groups_login_invites");
-      }
       const list = visibleHikes().filter((m) => {
         const title = ((TW.tt(m, "title") || m.title || "") + " " + (m.place || "") + " " + (m.placeZh || "")).toLowerCase();
         const okQ = !q || title.includes(q);
