@@ -1910,37 +1910,57 @@ function renderFeedCard(post, opts) {
     if (!media) {
       media = `<div class="feed-media feed-media--text" aria-hidden="true"><span>${TW.escapeHtml((title || body || "TW").slice(0, 1).toUpperCase())}</span></div>`;
     }
-    const captionBits = [];
-    if (title) captionBits.push(`<span class="feed-ig-caption-title">${TW.escapeHtml(title)}</span>`);
-    if (body) captionBits.push(`<span class="feed-ig-caption-body">${TW.escapeHtml(body)}</span>`);
-    const captionInner = captionBits.join(captionBits.length > 1 ? " " : "");
-    const moreInline = expandable
-      ? ` <button type="button" class="feed-more-link" data-feed-toggle="${TW.escapeHtml(key)}">${TW.t("feed_expand")}</button>`
-      : "";
-    return `
-  <article class="feed-card feed-card--ig${channelClass}" data-feed-key="${TW.escapeHtml(key)}">
-    <div class="feed-card-header">
+    const photoFirst = !!opts.photoFirst;
+    const minimal = opts.minimalCaption === true || (opts.minimalCaption !== false && !photoFirst);
+    let captionHtml = "";
+    if (minimal) {
+      const openHref = recHref || routeMediaHref || url || "";
+      captionHtml = openHref
+        ? `<div class="feed-ig-caption feed-ig-caption--minimal">
+            <a class="feed-ig-open" href="${TW.escapeHtml(openHref)}">${TW.escapeHtml(TW.t("feed_view_post"))}</a>
+          </div>`
+        : `<div class="feed-ig-caption feed-ig-caption--minimal">
+            <button type="button" class="feed-ig-open" data-feed-toggle="${TW.escapeHtml(key)}">${TW.escapeHtml(TW.t("feed_view_post"))}</button>
+          </div>`;
+    } else {
+      const captionBits = [];
+      if (title) captionBits.push(`<span class="feed-ig-caption-title">${TW.escapeHtml(title)}</span>`);
+      if (body) captionBits.push(`<span class="feed-ig-caption-body">${TW.escapeHtml(body)}</span>`);
+      const captionInner = captionBits.join(captionBits.length > 1 ? " " : "");
+      const moreInline = expandable
+        ? ` <button type="button" class="feed-more-link" data-feed-toggle="${TW.escapeHtml(key)}">${TW.t("feed_expand")}</button>`
+        : "";
+      captionHtml = `<div class="feed-ig-caption">
+        <span class="feed-ig-caption-text"><strong>${TW.escapeHtml(post.user || "")}</strong> ${captionInner}${moreInline}</span>
+        ${stats}
+      </div>`;
+    }
+    const headerHtml = `<div class="feed-card-header">
       ${avatarHtml}
       <div class="user-info">
         <div class="name">${TW.escapeHtml(post.user || "")}${pinBadge}</div>
         <div class="time">${TW.escapeHtml(time || "")}${tag ? ` · ${TW.escapeHtml(tag)}` : ""}</div>
       </div>
-    </div>
-    ${media}
-    <div class="feed-actions feed-ig-actions">
+    </div>`;
+    const actionsHtml = `<div class="feed-actions feed-ig-actions">
       <button type="button" class="like-btn${liked ? " liked" : ""}" data-likes="${post.likes || 0}" data-feed-like="${TW.escapeHtml(key)}" aria-label="Like">♥</button>
       <span class="feed-ig-likes">${likeN}</span>
       ${linkBtn}
-    </div>
-    <div class="feed-ig-caption">
-      <span class="feed-ig-caption-text"><strong>${TW.escapeHtml(post.user || "")}</strong> ${captionInner}${moreInline}</span>
-      ${stats}
-    </div>
-    <div class="feed-expand-body">
+    </div>`;
+    const expandHtml = `<div class="feed-expand-body">
+      ${title ? `<p><strong>${TW.escapeHtml(title)}</strong></p>` : ""}
+      ${body ? `<p>${TW.escapeHtml(body)}</p>` : ""}
       ${more ? `<p>${TW.escapeHtml(more)}</p>` : ""}
       ${url && !linkBtn ? `<p><a href="${TW.escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${TW.escapeHtml(urlLabel)} →</a></p>` : ""}
       ${commentBlock}
-    </div>
+    </div>`;
+    const cardClass = `feed-card feed-card--ig${photoFirst ? " feed-card--photo-first" : ""}${channelClass}`;
+    const bodyOrder = photoFirst
+      ? `${media}${headerHtml}${actionsHtml}${captionHtml}${expandHtml}`
+      : `${headerHtml}${media}${actionsHtml}${captionHtml}${expandHtml}`;
+    return `
+  <article class="${cardClass}" data-feed-key="${TW.escapeHtml(key)}">
+    ${bodyOrder}
   </article>`;
   }
 
@@ -2143,6 +2163,110 @@ TW.addRouteEndpoints = function (map, path) {
     iconAnchor: [6, 6],
   });
   L.marker(end, { icon: endIcon }).addTo(map);
+};
+
+/** Paths for the signed-in user's footprint map (hikes + demo records). */
+TW.getFootprintPaths = function (opts) {
+  opts = opts || {};
+  if (typeof TW.ensureDemoHike === "function") TW.ensureDemoHike();
+  const paths = [];
+  const push = (item, highlight) => {
+    const path = item && item.path;
+    if (!path || path.length < 2) return;
+    paths.push({
+      id: item.id,
+      path: path.map((p) => [Number(p[0]), Number(p[1])]),
+      highlight: !!highlight,
+    });
+  };
+  (TW.getHikes ? TW.getHikes() : []).forEach((h) => push(h, opts.highlightId && h.id === opts.highlightId));
+  (TW.records || []).forEach((r) => push(r, opts.highlightId && r.id === opts.highlightId));
+  if (opts.highlightId && typeof TW.getUserRoute === "function") {
+    const ur = TW.getUserRoute(opts.highlightId);
+    if (ur) push(ur, true);
+  } else if (opts.currentPath && opts.currentPath.length > 1) {
+    paths.push({
+      id: opts.highlightId || "current",
+      path: opts.currentPath.map((p) => [Number(p[0]), Number(p[1])]),
+      highlight: true,
+    });
+  }
+  return paths;
+};
+
+/**
+ * Mount a premium-gated footprint map into `mapEl`.
+ * Optional `gateEl` shows unlock CTA when not premium.
+ */
+TW.mountFootprintMap = function (mapEl, opts) {
+  opts = opts || {};
+  if (!mapEl || typeof L === "undefined") return null;
+  const prem = TW.isMemberPremium && TW.isMemberPremium();
+  const gate = opts.gateEl || null;
+  if (gate) {
+    gate.hidden = !!prem;
+    if (!prem) {
+      const premiumHref = opts.premiumHref || (TW.premiumPageHref ? TW.premiumPageHref() : "premium.html");
+      gate.innerHTML =
+        `<span class="app-premium-pill">${TW.escapeHtml(TW.t("app_premium"))}</span>` +
+        `<p style="margin:0.65rem 0 1rem;max-width:22rem">${TW.escapeHtml(TW.t("footprint_locked"))}</p>` +
+        `<a class="btn btn-primary" href="${TW.escapeHtml(premiumHref)}">${TW.escapeHtml(TW.t("dash_unlock"))}</a>`;
+    }
+  }
+  if (mapEl._twFootprintMap) {
+    setTimeout(() => mapEl._twFootprintMap.invalidateSize(), 120);
+    return mapEl._twFootprintMap;
+  }
+  const map = L.map(mapEl, { scrollWheelZoom: false, attributionControl: false }).setView([22.35, 114.15], 10);
+  TW.addMapTiles(map, { maxZoom: 18 });
+  mapEl._twFootprintMap = map;
+  const bounds = [];
+  TW.getFootprintPaths(opts).forEach((row) => {
+    const line = L.polyline(row.path, {
+      color: row.highlight ? "#2563eb" : "#1a6b32",
+      weight: row.highlight ? 5 : 3,
+      opacity: row.highlight ? 0.95 : 0.7,
+    }).addTo(map);
+    bounds.push(line.getBounds());
+  });
+  if (bounds.length) {
+    const b = bounds[0];
+    bounds.slice(1).forEach((x) => b.extend(x));
+    map.fitBounds(b, { padding: [24, 24] });
+  }
+  setTimeout(() => map.invalidateSize(), 150);
+  return map;
+};
+
+/** Persist / refresh a live-share session for friends viewing on the website. */
+TW.saveLiveShareSession = function (session) {
+  try {
+    localStorage.setItem("tw_live_share", JSON.stringify(session || {}));
+  } catch (e) {}
+};
+
+TW.getLiveShareSession = function (id) {
+  try {
+    const s = JSON.parse(localStorage.getItem("tw_live_share") || "null");
+    if (!s) return null;
+    if (id && s.id && String(s.id) !== String(id)) return s; // still show latest demo session
+    return s;
+  } catch (e) {
+    return null;
+  }
+};
+
+TW.liveShareWebsiteUrl = function (id) {
+  const sid = id || "live";
+  try {
+    const path = (location.pathname || "").replace(/\\/g, "/");
+    if (/\/app(?:\/|$)/.test(path)) {
+      return location.origin + path.replace(/\/app\/.*$/, "/") + "live.html?id=" + encodeURIComponent(sid);
+    }
+    return location.origin + path.replace(/[^/]+$/, "") + "live.html?id=" + encodeURIComponent(sid);
+  } catch (e) {
+    return "live.html?id=" + encodeURIComponent(sid);
+  }
 };
 
 /** Nice tick values for elevation y-axis (like trailwatch.hk Recharts) */

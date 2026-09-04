@@ -96,6 +96,14 @@
             <div class="photo-strip" id="photoGrid"></div>
             <p id="photoEmpty" style="display:none;color:var(--text-muted);font-size:0.78rem;margin:0.35rem 0 0"></p>
           </div>
+          <div class="photos-block record-footprint" style="padding-top:0">
+            <h2 id="lblFootprint"></h2>
+            <p id="lblFootprintSub" style="margin:0 0 0.5rem;color:var(--text-muted);font-size:0.75rem"></p>
+            <div class="footprint-wrap" style="border-radius:12px">
+              <div class="footprint-map" id="recordFootprintMap" style="height:200px"></div>
+              <div class="footprint-gate" id="recordFootprintGate"></div>
+            </div>
+          </div>
           <div class="route-actions" style="display:grid;gap:0.45rem;padding:0 0.7rem 1.25rem">
             <button type="button" class="btn btn-primary btn-block" id="btnBookmarkFoot"></button>
             <button type="button" class="btn btn-secondary btn-block" id="btnExportGpx"></button>
@@ -123,6 +131,8 @@
     });
     document.getElementById("backList").textContent = TW.t("hikes_back_list");
     document.getElementById("photosHeading").textContent = t("rec_photos");
+    document.getElementById("lblFootprint").textContent = t("footprint_on_record");
+    document.getElementById("lblFootprintSub").textContent = t("footprint_on_record_sub");
     document.getElementById("photoEmpty").textContent = t("rec_no_photos");
     twMountAppNav("profile");
 
@@ -180,6 +190,14 @@
         map.invalidateSize();
         map.fitBounds(line.getBounds().pad(0.15));
       });
+      if (typeof TW.mountFootprintMap === "function") {
+        TW.mountFootprintMap(document.getElementById("recordFootprintMap"), {
+          gateEl: document.getElementById("recordFootprintGate"),
+          highlightId: hike.id,
+          currentPath: path,
+          premiumHref: "premium.html",
+        });
+      }
     }
     document.getElementById("btnBookmarkFoot").textContent = t("rec_bookmark");
     document.getElementById("btnExportGpx").textContent = t("app_export_gpx");

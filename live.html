@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Live location — TrailWatch HK</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="css/styles.css" />
+  <style>
+    .live-page-map {
+      height: min(62vh, 520px);
+      width: 100%;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      overflow: hidden;
+      background: var(--green-50);
+    }
+    .live-meta-card {
+      margin-top: 1rem;
+      padding: 1rem 1.15rem;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+    }
+    .live-meta-card h1 {
+      margin: 0 0 0.35rem;
+      font-size: 1.35rem;
+      color: var(--green-900);
+    }
+    .live-pulse {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #c0392b;
+      margin-bottom: 0.55rem;
+    }
+    .live-pulse::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #e84a3c;
+      box-shadow: 0 0 0 0 rgba(232, 74, 60, 0.55);
+      animation: livePulse 1.4s ease-out infinite;
+    }
+    @keyframes livePulse {
+      70% { box-shadow: 0 0 0 8px rgba(232, 74, 60, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(232, 74, 60, 0); }
+    }
+  </style>
+</head>
+<body>
+  <div id="app-header"></div>
+  <main class="page">
+    <div class="container" style="max-width:860px">
+      <div class="live-meta-card">
+        <div class="live-pulse" id="livePulse" hidden></div>
+        <h1 id="liveName">—</h1>
+        <p class="meta" id="liveEta" style="margin:0"></p>
+        <p class="meta" id="liveHint" style="margin:0.35rem 0 0"></p>
+        <p class="meta" id="liveCoords" style="margin:0.35rem 0 0"></p>
+      </div>
+      <div class="live-page-map" id="liveMap" style="margin-top:1rem"></div>
+      <p class="meta" style="margin-top:0.85rem">
+        <a href="app/index.html" id="liveOpenApp"></a>
+      </p>
+    </div>
+  </main>
+  <div id="app-footer"></div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="js/i18n.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/live-routes.js"></script>
+  <script src="js/cms-store.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    document.documentElement.lang = TW.getLang() === "zh" ? "zh-Hant" : "en";
+    initShell("app");
+    const t = TW.t;
+    const id = new URLSearchParams(location.search).get("id");
+    document.getElementById("livePulse").textContent = t("app_live_updating");
+    document.getElementById("liveOpenApp").textContent = t("cta_open_app_track") || t("nav_app");
+    document.getElementById("liveOpenApp").href = "app/index.html";
+
+    let map;
+    let marker;
+    let pathLine;
+    let lastJson = "";
+
+    function fallbackSession() {
+      return {
+        id: id || "live",
+        lat: 22.35,
+        lng: 114.25,
+        path: [
+          [22.348, 114.242],
+          [22.360, 114.258],
+          [22.365, 114.268],
+        ],
+        eta: new Date(Date.now() + 2.5 * 3600 * 1000).toISOString(),
+        title: t("app_live_viewer"),
+        tracking: false,
+      };
+    }
+
+    function loadSession() {
+      const s = typeof TW.getLiveShareSession === "function" ? TW.getLiveShareSession(id) : null;
+      return s || fallbackSession();
+    }
+
+    function applySession(session, force) {
+      const json = JSON.stringify(session);
+      if (!force && json === lastJson) return;
+      lastJson = json;
+      document.getElementById("liveName").textContent = session.title || t("app_live_viewer");
+      const eta = session.eta ? new Date(session.eta) : null;
+      document.getElementById("liveEta").textContent =
+        eta && !isNaN(eta) ? t("app_live_eta") + ": " + eta.toLocaleString() : "";
+      document.getElementById("liveHint").textContent = session.tracking
+        ? t("app_live_updating")
+        : t("app_live_planned");
+      document.getElementById("livePulse").hidden = !session.tracking;
+      document.getElementById("liveCoords").textContent =
+        "📍 " + Number(session.lat).toFixed(5) + ", " + Number(session.lng).toFixed(5);
+
+      const latlng = [Number(session.lat), Number(session.lng)];
+      if (!map) {
+        map = L.map("liveMap", { scrollWheelZoom: false }).setView(latlng, 14);
+        TW.addMapTiles(map, { maxZoom: 18 });
+        marker = L.circleMarker(latlng, {
+          radius: 9,
+          color: "#fff",
+          weight: 2,
+          fillColor: "#e84a3c",
+          fillOpacity: 1,
+        }).addTo(map);
+        setTimeout(() => map.invalidateSize(), 80);
+      } else {
+        marker.setLatLng(latlng);
+        map.panTo(latlng, { animate: true });
+      }
+      if (pathLine) {
+        map.removeLayer(pathLine);
+        pathLine = null;
+      }
+      if (session.path && session.path.length > 1) {
+        pathLine = L.polyline(session.path, {
+          color: session.tracking ? "#2563eb" : "#f5a623",
+          weight: 4,
+          dashArray: session.tracking ? null : "6 6",
+        }).addTo(map);
+      }
+    }
+
+    applySession(loadSession(), true);
+    setInterval(() => applySession(loadSession(), false), 2500);
+  </script>
+</body>
+</html>

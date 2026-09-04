@@ -114,6 +114,14 @@
             <div class="photo-strip" id="photoGrid"></div>
             <p id="photoEmpty" style="display:none;color:var(--text-muted);font-size:0.78rem;margin:0.35rem 0 0"></p>
           </div>
+          <div class="photos-block record-footprint" style="padding-top:0">
+            <h2 id="lblFootprint"></h2>
+            <p id="lblFootprintSub" style="margin:0 0 0.5rem;color:var(--text-muted);font-size:0.75rem"></p>
+            <div class="footprint-wrap" style="border-radius:12px">
+              <div class="footprint-map" id="recordFootprintMap" style="height:200px"></div>
+              <div class="footprint-gate" id="recordFootprintGate"></div>
+            </div>
+          </div>
           <div class="route-actions">
             <button type="button" class="btn btn-secondary bookmark-btn icon-only" id="btnBookmark" aria-label="Bookmark"></button>
             <button type="button" class="btn btn-secondary dup-btn" id="btnDup"></button>
@@ -142,6 +150,8 @@
     });
     document.getElementById("backWeb").textContent = "‹ " + t("nav_explore");
     document.getElementById("photosHeading").textContent = t("rec_photos");
+    document.getElementById("lblFootprint").textContent = t("footprint_on_record");
+    document.getElementById("lblFootprintSub").textContent = t("footprint_on_record_sub");
     document.getElementById("recGroupLbl").textContent = t("rec_view_group_hike");
     document.getElementById("photoEmpty").textContent = t("rec_no_photos");
     twMountAppNav("explore");
@@ -212,6 +222,14 @@
         map.invalidateSize();
         if (path.length > 1) map.fitBounds(L.latLngBounds(path).pad(0.15));
       });
+      if (typeof TW.mountFootprintMap === "function") {
+        TW.mountFootprintMap(document.getElementById("recordFootprintMap"), {
+          gateEl: document.getElementById("recordFootprintGate"),
+          highlightId: rec.id,
+          currentPath: path,
+          premiumHref: "premium.html",
+        });
+      }
     }
 
     document.getElementById("btnBookmark").setAttribute("aria-label", t("rec_bookmark"));

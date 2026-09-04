@@ -104,6 +104,14 @@
         <div class="rec-photo-grid" id="photoGrid"></div>
         <p id="photoEmpty" style="display:none;color:var(--text-muted);font-size:0.85rem"></p>
       </section>
+      <section class="rec-photos record-footprint">
+        <h2 id="lblFootprint"></h2>
+        <p class="sub" id="lblFootprintSub" style="margin:0 0 0.65rem;color:var(--text-muted);font-size:0.85rem"></p>
+        <div class="footprint-wrap">
+          <div class="footprint-map" id="recordFootprintMap"></div>
+          <div class="footprint-gate" id="recordFootprintGate"></div>
+        </div>
+      </section>
       <div class="detail-next-steps" style="margin-top:1.5rem;display:flex;flex-wrap:wrap;gap:0.5rem">
         <a class="btn btn-primary" href="explore.html" data-i18n="cta_find_similar"></a>
         <a class="btn btn-secondary" href="app/index.html" data-i18n="cta_open_app_track"></a>
@@ -132,6 +140,8 @@
       const t = TW.t;
       const lang = TW.getLang();
       document.getElementById("photosHeading").textContent = t("rec_photos");
+      document.getElementById("lblFootprint").textContent = t("footprint_on_record");
+      document.getElementById("lblFootprintSub").textContent = t("footprint_on_record_sub");
       document.getElementById("recGroupLbl").textContent = t("rec_group");
       document.getElementById("photoEmpty").textContent = t("rec_no_photos");
       document.getElementById("btnBookmark").title = t("rec_bookmark");
@@ -194,6 +204,14 @@
           map.invalidateSize();
           if (path.length > 1) map.fitBounds(L.polyline(path).getBounds().pad(0.15));
         });
+        if (typeof TW.mountFootprintMap === "function") {
+          TW.mountFootprintMap(document.getElementById("recordFootprintMap"), {
+            gateEl: document.getElementById("recordFootprintGate"),
+            highlightId: rec.id,
+            currentPath: path,
+            premiumHref: "premium.html",
+          });
+        }
       }
 
       document.getElementById("btnBookmark").addEventListener("click", () => {

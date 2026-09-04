@@ -906,6 +906,10 @@
     bindTabs("#exploreTabs", showExploreTab);
     const params = new URLSearchParams(location.search);
     const startTab = params.get("tab") === "incidents" ? "incidents" : params.get("tab") === "records" ? "records" : "routes";
+    const viewParam = params.get("view");
+    if (viewParam === "themes" || viewParam === "editors" || viewParam === "all") view = viewParam;
+    const themeParam = params.get("theme");
+    if (themeParam && (TW.trailFilters || []).some((f) => f.id === themeParam)) theme = themeParam;
     showExploreTab(startTab);
     renderAll();
     syncTabChrome(startTab);

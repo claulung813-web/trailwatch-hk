@@ -109,7 +109,7 @@
     function render() {
       const items = sortFeed((TW.allFeedPosts ? TW.allFeedPosts() : TW.feed || []).filter(matches));
       document.getElementById("feedList").innerHTML = items
-        .map((p) => renderFeedCard(p, { layout: "ig", hideComments: true }))
+        .map((p) => renderFeedCard(p, { layout: "ig", hideComments: true, photoFirst: true, minimalCaption: true }))
         .join("");
       const empty = document.getElementById("feedEmpty");
       if (!items.length) {

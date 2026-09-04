@@ -26,8 +26,36 @@
     }
     .feed-card {
       background: #fff; border-radius: 12px; border: 1px solid var(--border);
-      padding: 0.85rem; margin-bottom: 0.7rem;
+      padding: 0.85rem; margin-bottom: 0.7rem; overflow: hidden;
     }
+    .feed-card.feed-card--ig {
+      padding: 0;
+    }
+    .feed-card.feed-card--ig .feed-card-header {
+      display: flex; align-items: center; gap: 0.5rem;
+      padding: 0.65rem 0.75rem 0.45rem;
+    }
+    .feed-card.feed-card--ig .feed-media {
+      width: 100%; aspect-ratio: 1; object-fit: cover; background: #e8ece8;
+      margin: 0; border-radius: 0; overflow: hidden;
+    }
+    .feed-card.feed-card--ig .feed-media img {
+      width: 100%; height: 100%; object-fit: cover; display: block;
+    }
+    .feed-card.feed-card--ig .feed-ig-actions {
+      display: flex; align-items: center; gap: 0.45rem;
+      padding: 0.45rem 0.75rem 0.25rem;
+    }
+    .feed-card.feed-card--ig .feed-ig-caption {
+      padding: 0.15rem 0.75rem 0.85rem;
+      font-size: 0.78rem; color: var(--text);
+      line-height: 1.4;
+    }
+    .feed-card.feed-card--ig .feed-ig-caption-title { font-weight: 700; color: var(--green-900); }
+    .feed-card.feed-card--ig .feed-expand-body {
+      display: none; padding: 0 0.75rem 0.85rem; font-size: 0.75rem;
+    }
+    .feed-card.feed-card--ig.expanded .feed-expand-body { display: block; }
     .feed-card .top { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.45rem; }
     .feed-card .name { font-size: 0.8rem; font-weight: 700; color: var(--green-900); }
     .feed-card .time { font-size: 0.65rem; color: var(--text-muted); }
@@ -151,7 +179,7 @@
     function render() {
       const items = (TW.allFeedPosts ? TW.allFeedPosts() : TW.feed || []).filter(matches);
       document.getElementById("feed").innerHTML = items.length
-        ? items.map((p) => renderFeedCard(p, { hideComments: true })).join("")
+        ? items.map((p) => renderFeedCard(p, { layout: "ig", hideComments: true, photoFirst: true, minimalCaption: false })).join("")
         : `<p style="text-align:center;color:var(--text-muted);padding:2rem 0">${t("feed_empty")}</p>`;
       bindLikes();
     }

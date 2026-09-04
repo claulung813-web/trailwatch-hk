@@ -651,8 +651,12 @@
             </div>
             <p style="font-size:0.8rem;color:var(--text-muted);margin:0.4rem 0" id="shareBody"></p>
             <span class="app-premium-pill" id="sharePremium"></span>
+            <p style="font-size:0.78rem;font-weight:700;margin:0.65rem 0 0.35rem;color:var(--green-900)" id="shareFriendsLbl"></p>
+            <div class="share-friends" id="shareFriends"></div>
             <div class="share-url" id="shareUrl"></div>
+            <p style="font-size:0.72rem;color:var(--text-muted);margin:0 0 0.35rem" id="shareLiveHint"></p>
             <p style="font-size:0.72rem;color:var(--text-muted);margin:0 0 0.55rem" id="shareEmailHint"></p>
+            <a class="btn btn-secondary btn-block" id="shareOpenWeb" href="../live.html" target="_blank" rel="noopener" style="margin-bottom:0.45rem"></a>
             <button type="button" class="btn btn-primary btn-block" id="copyShare"></button>
           </div>
         </div>
@@ -747,9 +751,50 @@
 
     const hikeId = "hike_" + Date.now();
     const LIVE_EMAIL = "safety@trailwatch.hk";
+    let liveSharing = false;
     function liveShareUrl() {
-      const base = location.href.replace(/[#?].*$/, "").replace(/index\.html$/, "");
-      return base + "live.html?id=" + encodeURIComponent(hikeId);
+      return typeof TW.liveShareWebsiteUrl === "function"
+        ? TW.liveShareWebsiteUrl(hikeId)
+        : "../live.html?id=" + encodeURIComponent(hikeId);
+    }
+    function buildLiveSession() {
+      const pos = marker.getLatLng();
+      const eta = new Date(Date.now() + 2.5 * 3600 * 1000);
+      return {
+        id: hikeId,
+        lat: pos.lat,
+        lng: pos.lng,
+        path: recordedPath.length > 1
+          ? recordedPath
+          : planSpine().length >= 2
+            ? planSpine().map((ll) => [ll.lat, ll.lng])
+            : route,
+        eta: eta.toISOString(),
+        title: document.getElementById("hikeTitle").value.trim() || (lang === "zh" ? "進行中的行程" : "Live hike"),
+        tracking: state === "active",
+        updatedAt: Date.now(),
+      };
+    }
+    function persistLiveSession() {
+      const session = buildLiveSession();
+      if (typeof TW.saveLiveShareSession === "function") TW.saveLiveShareSession(session);
+      else {
+        try { localStorage.setItem("tw_live_share", JSON.stringify(session)); } catch (e) {}
+      }
+      return session;
+    }
+    function renderShareFriends() {
+      const box = document.getElementById("shareFriends");
+      if (!box) return;
+      const friends = TW.demoFriends || [];
+      box.innerHTML = friends
+        .map(
+          (f) => `<button type="button" class="share-friend-btn" data-friend-id="${TW.escapeHtml(f.id)}" data-friend-name="${TW.escapeHtml(f.name)}">
+            ${twAvatarHtml(f.avatar, "avatar-sm", "", f.name)}
+            <span>${TW.escapeHtml(f.name)}</span>
+          </button>`
+        )
+        .join("");
     }
     let hikeStarted = false;
     let photoType = "landscape";
@@ -923,6 +968,9 @@
       document.getElementById("shareTitle").textContent = t("app_live_share_title");
       document.getElementById("shareBody").textContent = t("app_live_share_body");
       document.getElementById("sharePremium").textContent = t("app_live_share_premium");
+      document.getElementById("shareFriendsLbl").textContent = t("app_live_share_friends");
+      document.getElementById("shareLiveHint").textContent = t("app_live_updating");
+      document.getElementById("shareOpenWeb").textContent = t("app_live_open_web");
       document.getElementById("offlineMapsTitle").textContent = t("app_offline_maps");
       document.getElementById("offlineMapsBody").textContent = t("app_offline_premium_body");
       document.getElementById("offlineMapsPrem").textContent = t("app_premium");
@@ -930,6 +978,8 @@
       document.getElementById("copyShare").textContent = t("app_live_share_send");
       document.getElementById("shareEmailHint").textContent = t("app_live_share_email_hint").replace("{email}", t("app_live_share_email"));
       document.getElementById("shareUrl").textContent = liveShareUrl();
+      document.getElementById("shareOpenWeb").href = liveShareUrl();
+      renderShareFriends();
       twMountAppNav("track");
 
       document.getElementById("aTitle").textContent = t("env_start_title");
@@ -1164,6 +1214,7 @@
       document.getElementById("mLoss").textContent = Math.round(loss) + " m";
       document.getElementById("mPace").textContent = paceStr();
       document.getElementById("mAlt").textContent = aStr;
+      if (liveSharing && seconds % 3 === 0) persistLiveSession();
     }
 
     function beginTracking() {
@@ -1610,26 +1661,31 @@
     });
 
     document.getElementById("btnLiveShare").addEventListener("click", () => {
-      const pos = marker.getLatLng();
-      const eta = new Date(Date.now() + 2.5 * 3600 * 1000);
-      const session = {
-        id: hikeId,
-        lat: pos.lat,
-        lng: pos.lng,
-        path: recordedPath.length > 1 ? recordedPath : (planSpine().length >= 2
-          ? planSpine().map((ll) => [ll.lat, ll.lng])
-          : route),
-        eta: eta.toISOString(),
-        title: document.getElementById("hikeTitle").value.trim() || (lang === "zh" ? "進行中的行程" : "Live hike"),
-        tracking: state === "active",
-      };
-      try { localStorage.setItem("tw_live_share", JSON.stringify(session)); } catch (e) {}
-      document.getElementById("shareUrl").textContent = liveShareUrl();
+      persistLiveSession();
+      const url = liveShareUrl();
+      document.getElementById("shareUrl").textContent = url;
+      document.getElementById("shareOpenWeb").href = url;
+      renderShareFriends();
       document.getElementById("modalShare").classList.add("open");
     });
     document.getElementById("closeShare").addEventListener("click", () => document.getElementById("modalShare").classList.remove("open"));
+    document.getElementById("shareFriends").addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-friend-name]");
+      if (!btn) return;
+      liveSharing = true;
+      persistLiveSession();
+      const url = liveShareUrl();
+      document.getElementById("shareUrl").textContent = url;
+      document.getElementById("shareOpenWeb").href = url;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(url).catch(() => {});
+      }
+      showToast(TW.t("app_live_share_friend_sent").replace("{name}", btn.dataset.friendName || ""));
+    });
     document.getElementById("copyShare").addEventListener("click", () => {
-      const url = document.getElementById("shareUrl").textContent;
+      liveSharing = true;
+      persistLiveSession();
+      const url = document.getElementById("shareUrl").textContent || liveShareUrl();
       if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(url).catch(() => {});
       }

@@ -89,6 +89,14 @@
         <div class="rec-photo-grid" id="photoGrid"></div>
         <p id="photoEmpty" style="display:none;color:var(--text-muted);font-size:0.85rem"></p>
       </section>
+      <section class="rec-photos record-footprint">
+        <h2 id="lblFootprint"></h2>
+        <p class="sub" id="lblFootprintSub" style="margin:0 0 0.65rem;color:var(--text-muted);font-size:0.85rem"></p>
+        <div class="footprint-wrap">
+          <div class="footprint-map" id="recordFootprintMap"></div>
+          <div class="footprint-gate" id="recordFootprintGate"></div>
+        </div>
+      </section>
     </div>
   </main>
 
@@ -107,6 +115,8 @@
     TW.ensureDemoHike();
     const t = TW.t;
     document.getElementById("photosHeading").textContent = t("rec_photos");
+    document.getElementById("lblFootprint").textContent = t("footprint_on_record");
+    document.getElementById("lblFootprintSub").textContent = t("footprint_on_record_sub");
     document.getElementById("photoEmpty").textContent = t("rec_no_photos");
 
     const id = new URLSearchParams(location.search).get("id");
@@ -159,6 +169,14 @@
         map.invalidateSize();
         map.fitBounds(line.getBounds().pad(0.12));
       });
+      if (typeof TW.mountFootprintMap === "function") {
+        TW.mountFootprintMap(document.getElementById("recordFootprintMap"), {
+          gateEl: document.getElementById("recordFootprintGate"),
+          highlightId: hike.id,
+          currentPath: path,
+          premiumHref: "premium.html",
+        });
+      }
     }
     document.getElementById("btnBookmark").addEventListener("click", () => showToast(t("rec_bookmark")));
     document.getElementById("btnShare").addEventListener("click", () => showToast(t("rec_share")));

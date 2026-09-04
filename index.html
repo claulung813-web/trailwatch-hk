@@ -41,6 +41,15 @@
         </div>
       </section>
 
+      <section class="mt-2 home-themes">
+        <div class="section-head">
+          <h2 data-i18n="home_themes_title"></h2>
+          <a class="link-more" href="explore.html?view=themes" data-i18n="view_all"></a>
+        </div>
+        <p class="home-themes-lede" data-i18n="home_themes_lede"></p>
+        <div class="home-theme-grid" id="homeThemes"></div>
+      </section>
+
       <section class="mt-2">
         <div class="section-head">
           <h2 data-i18n="home_featured_articles"></h2>
@@ -371,6 +380,45 @@
     document.getElementById("homeRecRoutes").innerHTML = rec.length
       ? rec.map((t) => renderTrailCard(t, { hidePlan: false })).join("")
       : `<p style="color:var(--text-muted)">${TW.t("page_coming_filters")}</p>`;
+
+    (function renderHomeThemes() {
+      const themes = [
+        {
+          id: "accessible",
+          titleKey: "filter_accessible",
+          bodyKey: "home_theme_accessible_body",
+          href: "explore.html?view=themes&theme=accessible",
+          image: "https://images.unsplash.com/photo-1476610182048-b716b8518aae?w=800&q=70",
+        },
+        {
+          id: "backyard",
+          titleKey: "filter_backyard",
+          bodyKey: "home_theme_backyard_body",
+          href: "explore.html?view=themes&theme=backyard",
+          image: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800&q=70",
+        },
+        {
+          id: "coastal",
+          titleKey: "filter_coastal",
+          bodyKey: "home_theme_coastal_body",
+          href: "explore.html?view=themes&theme=coastal",
+          image: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&q=70",
+        },
+      ];
+      const el = document.getElementById("homeThemes");
+      if (!el) return;
+      el.innerHTML = themes
+        .map(
+          (th) => `<a class="home-theme-card" href="${th.href}">
+            <div class="home-theme-media"><img src="${th.image}" alt="" loading="lazy" /></div>
+            <div class="home-theme-copy">
+              <h3>${TW.escapeHtml(TW.t(th.titleKey))}</h3>
+              <p>${TW.escapeHtml(TW.t(th.bodyKey))}</p>
+            </div>
+          </a>`
+        )
+        .join("");
+    })();
 
     (function bindHomeRecRail() {
       const rail = document.getElementById("homeRecRoutes");

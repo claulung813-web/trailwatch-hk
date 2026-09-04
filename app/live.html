@@ -4,85 +4,18 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
   <title>TrailWatch — Live location</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <link rel="stylesheet" href="../css/styles.css" />
-  <style>
-    body { margin: 0; }
-    .phone-body { flex: 1; min-height: 0; display: flex; flex-direction: column; }
-    .app-detail-bar {
-      display: flex; align-items: center; gap: 0.35rem;
-      padding: 2.35rem 0.65rem 0.55rem; background: #fff; border-bottom: 1px solid var(--border);
-    }
-    .app-detail-bar h1 { flex: 1; font-size: 0.95rem; margin: 0; text-align: center; color: #111; }
-    .app-detail-bar .ib {
-      width: 36px; height: 36px; text-decoration: none; color: #111; display: grid; place-items: center; font-size: 1.25rem;
-    }
-    #liveMap { flex: 1; min-height: 220px; }
-    .live-meta {
-      background: #fff; padding: 0.75rem 0.9rem 1rem; border-top: 1px solid var(--border);
-      font-size: 0.8rem;
-    }
-    .live-meta strong { color: var(--green-900); }
-  </style>
+  <meta http-equiv="refresh" content="0;url=../live.html" />
+  <script>
+    (function () {
+      var q = location.search || "";
+      location.replace("../live.html" + q);
+    })();
+  </script>
 </head>
 <body>
-  <div class="app-page">
-    <div class="app-page-top">
-      <a href="index.html" id="backWeb"></a>
-    </div>
-    <div class="phone-frame">
-      <div class="phone-notch"></div>
-      <div class="phone-screen">
-        <div class="app-detail-bar">
-          <a class="ib" href="index.html">‹</a>
-          <h1 id="liveTitle">Live location</h1>
-          <span class="ib"></span>
-        </div>
-        <div class="phone-body">
-          <div id="liveMap"></div>
-          <div class="live-meta">
-            <div><strong id="liveName">—</strong></div>
-            <p style="margin:0.35rem 0 0;color:var(--text-muted)" id="liveEta"></p>
-            <p style="margin:0.2rem 0 0;color:var(--text-muted)" id="liveHint"></p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="../js/i18n.js"></script>
-  <script src="../js/data.js"></script>
-  <script src="../js/live-routes.js"></script>
-  <script src="../js/app.js"></script>
+  <p><a id="fallback" href="../live.html">Open live location on website</a></p>
   <script>
-    const t = TW.t;
-    document.getElementById("backWeb").textContent = "‹ " + t("app_plan_track");
-    document.getElementById("liveTitle").textContent = t("app_live_viewer");
-    let session = null;
-    try { session = JSON.parse(localStorage.getItem("tw_live_share") || "null"); } catch (e) {}
-    if (!session) {
-      session = {
-        lat: 22.35, lng: 114.25,
-        path: [[22.348, 114.242], [22.360, 114.258], [22.365, 114.268]],
-        eta: new Date(Date.now() + 2.5 * 3600 * 1000).toISOString(),
-        title: t("app_live_viewer"),
-      };
-    }
-    document.getElementById("liveName").textContent = session.title || t("app_live_viewer");
-    const eta = session.eta ? new Date(session.eta) : null;
-    document.getElementById("liveEta").textContent = eta && !isNaN(eta)
-      ? t("app_live_eta") + ": " + eta.toLocaleString()
-      : "";
-    document.getElementById("liveHint").textContent = t("app_live_planned");
-    const map = L.map("liveMap", { zoomControl: false }).setView([session.lat, session.lng], 14);
-    TW.addMapTiles(map, { maxZoom: 18 });
-    if (session.path && session.path.length > 1) {
-      L.polyline(session.path, { color: "#f5a623", weight: 4, dashArray: "6 6" }).addTo(map);
-    }
-    L.circleMarker([session.lat, session.lng], {
-      radius: 9, color: "#fff", weight: 2, fillColor: "#e84a3c", fillOpacity: 1,
-    }).addTo(map);
-    setTimeout(() => map.invalidateSize(), 80);
+    document.getElementById("fallback").href = "../live.html" + (location.search || "");
   </script>
 </body>
 </html>

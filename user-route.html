@@ -69,6 +69,15 @@
         <h2 id="lblPhotos"></h2>
         <div class="rec-photo-grid" id="photoGrid"></div>
       </section>
+
+      <section class="route-share-block record-footprint">
+        <h2 id="lblFootprint"></h2>
+        <p class="sub" id="lblFootprintSub"></p>
+        <div class="footprint-wrap">
+          <div class="footprint-map" id="recordFootprintMap"></div>
+          <div class="footprint-gate" id="recordFootprintGate"></div>
+        </div>
+      </section>
     </div>
   </main>
   <div id="app-footer"></div>
@@ -85,6 +94,8 @@
     document.getElementById("lblData").textContent = t("rec_record_data");
     document.getElementById("lblElev").textContent = t("rec_elev_stat_record");
     document.getElementById("lblPhotos").textContent = t("rec_photos");
+    document.getElementById("lblFootprint").textContent = t("footprint_on_record");
+    document.getElementById("lblFootprintSub").textContent = t("footprint_on_record_sub");
 
     const id = new URLSearchParams(location.search).get("id");
     const ref = document.referrer || "";
@@ -192,6 +203,15 @@
       document.addEventListener("keydown", (e) => {
         if (e.key === "Escape" && wrap.classList.contains("is-fullscreen")) setFullscreen(false);
       });
+
+      if (typeof TW.mountFootprintMap === "function") {
+        TW.mountFootprintMap(document.getElementById("recordFootprintMap"), {
+          gateEl: document.getElementById("recordFootprintGate"),
+          highlightId: r.id,
+          currentPath: path,
+          premiumHref: "premium.html",
+        });
+      }
     }
   </script>
 </body>
