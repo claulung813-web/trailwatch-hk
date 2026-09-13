@@ -1307,7 +1307,7 @@
       const list = TW.getRouteDrafts();
       const el = document.getElementById("draftList");
       if (!list.length) {
-        el.innerHTML = `<p style="color:var(--text-muted);font-size:0.9rem">${TW.t("plan_draft_empty")}</p>`;
+        el.innerHTML = "";
         return;
       }
       el.innerHTML = list

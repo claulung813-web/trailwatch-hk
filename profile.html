@@ -83,6 +83,14 @@
 
         <section class="profile-preview-section">
           <div class="section-head">
+            <h2 data-i18n="nav_my_groups"></h2>
+            <a class="link-more" href="#groups" data-i18n="profile_view_more"></a>
+          </div>
+          <div id="groupsPreview" class="profile-preview-grid"></div>
+        </section>
+
+        <section class="profile-preview-section">
+          <div class="section-head">
             <h2 data-i18n="nav_my_reports"></h2>
             <a class="link-more" href="#reports" data-i18n="profile_view_more"></a>
           </div>
@@ -114,6 +122,19 @@
           <div class="footprint-gate" id="footprintGate" hidden></div>
         </div>
         <div class="record-list" id="hikeList"></div>
+      </section>
+
+      <!-- Full: group hikes -->
+      <section class="profile-subview" id="viewGroups" hidden>
+        <div class="profile-subview-head">
+          <a class="profile-back link-more" href="#" data-profile-back data-i18n="profile_back"></a>
+          <h2 data-i18n="nav_my_groups"></h2>
+        </div>
+        <div id="groupEmpty" class="card" style="padding:2rem;text-align:center;display:none">
+          <p style="color:var(--text-muted);margin-bottom:1rem" data-i18n="profile_groups_empty"></p>
+          <a class="btn btn-primary" href="group-hikes.html" data-i18n="nav_join"></a>
+        </div>
+        <div class="profile-preview-grid" id="groupList" style="grid-template-columns:repeat(auto-fill,minmax(240px,1fr))"></div>
       </section>
 
       <!-- Full: reports -->
@@ -188,7 +209,7 @@
     document.documentElement.lang = TW.getLang() === "zh" ? "zh-Hant" : "en";
     initShell("profile");
 
-    const PROFILE_VIEWS = ["hub", "plans", "records", "reports", "badges", "settings"];
+    const PROFILE_VIEWS = ["hub", "plans", "records", "groups", "reports", "badges", "settings"];
 
     TW.setAvatar(document.getElementById("avatar"), TW.user.avatar);
     TW.setAvatar(document.getElementById("settingsAvatar"), TW.user.avatar);
@@ -221,6 +242,7 @@
       if (!h || h === "overview" || h === "dashboard" || h === "profile") return "hub";
       if (h.startsWith("plans") || h.includes("type=plans")) return "plans";
       if (h.startsWith("records") || h === "hikes" || h.includes("type=records")) return "records";
+      if (h.startsWith("groups") || h.includes("type=groups")) return "groups";
       if (h.startsWith("reports") || h.includes("type=reports")) return "reports";
       if (h.startsWith("badges") || h.includes("type=badges")) return "badges";
       if (h.startsWith("settings")) return "settings";
@@ -231,12 +253,14 @@
       if (h.startsWith("activity")) {
         if (h.includes("records")) return "records";
         if (h.includes("plans")) return "plans";
+        if (h.includes("groups")) return "groups";
         if (h.includes("reports")) return "reports";
         if (h.includes("badges")) return "badges";
       }
       if (h.startsWith("profile")) {
         if (h.includes("records")) return "records";
         if (h.includes("plans")) return "plans";
+        if (h.includes("groups")) return "groups";
         if (h.includes("reports")) return "reports";
         if (h.includes("badges")) return "badges";
       }
@@ -250,6 +274,7 @@
       document.getElementById("profileHub").hidden = view !== "hub";
       document.getElementById("viewPlans").hidden = view !== "plans";
       document.getElementById("viewRecords").hidden = view !== "records";
+      document.getElementById("viewGroups").hidden = view !== "groups";
       document.getElementById("viewReports").hidden = view !== "reports";
       document.getElementById("viewBadges").hidden = view !== "badges";
       document.getElementById("viewSettings").hidden = view !== "settings";
@@ -257,7 +282,15 @@
       if (view === "records") initFootprintMap();
 
       if (pushHash !== false) {
-        const hashMap = { hub: "", plans: "plans", records: "records", reports: "reports", badges: "badges", settings: "settings" };
+        const hashMap = {
+          hub: "",
+          plans: "plans",
+          records: "records",
+          groups: "groups",
+          reports: "reports",
+          badges: "badges",
+          settings: "settings",
+        };
         const next = hashMap[view] ? "#" + hashMap[view] : "";
         if (location.hash !== next) history.replaceState(null, "", "profile.html" + next);
       }
@@ -410,6 +443,52 @@
         : `<p class="profile-preview-empty">${TW.t("hikes_empty")}</p>`;
     }
 
+    function groupHikeMeta(g) {
+      const date = TW.tt(g, "date") || g.date || g.dateISO || "";
+      const place = TW.tt(g, "place") || g.place || "";
+      const role =
+        typeof TW.isGroupHikeHost === "function" && TW.isGroupHikeHost(g)
+          ? TW.t("groups_mine")
+          : g.joined || (typeof TW.isGroupHikeParticipant === "function" && TW.isGroupHikeParticipant(g))
+            ? TW.t("groups_joined")
+            : "";
+      return [date, place, role].filter(Boolean).join(" · ");
+    }
+
+    function renderGroupsPreview() {
+      const list = (typeof TW.getMyProfileGroupHikes === "function" ? TW.getMyProfileGroupHikes() : []).slice(0, 4);
+      const el = document.getElementById("groupsPreview");
+      if (!el) return;
+      el.innerHTML = list.length
+        ? list
+            .map((g) => {
+              const href = "group-hike-detail.html?id=" + encodeURIComponent(g.id);
+              const title = TW.tt(g, "title") || g.title || "";
+              return renderProfilePreviewTile(title, groupHikeMeta(g), href, g.image, "👥");
+            })
+            .join("")
+        : `<p class="profile-preview-empty">${TW.t("profile_groups_empty")}</p>`;
+    }
+
+    function renderGroupsFull() {
+      const list = typeof TW.getMyProfileGroupHikes === "function" ? TW.getMyProfileGroupHikes() : [];
+      const empty = document.getElementById("groupEmpty");
+      const grid = document.getElementById("groupList");
+      if (!list.length) {
+        empty.style.display = "block";
+        grid.innerHTML = "";
+        return;
+      }
+      empty.style.display = "none";
+      grid.innerHTML = list
+        .map((g) => {
+          const href = "group-hike-detail.html?id=" + encodeURIComponent(g.id);
+          const title = TW.tt(g, "title") || g.title || "";
+          return renderProfilePreviewTile(title, groupHikeMeta(g), href, g.image, "👥");
+        })
+        .join("");
+    }
+
     function renderFriendsPreview() {
       const list = TW.demoFriends || [];
       const el = document.getElementById("friendsPreview");
@@ -436,6 +515,8 @@
     renderRecordsFull();
     renderPlansPreview();
     renderPlansFull();
+    renderGroupsPreview();
+    renderGroupsFull();
     renderReportsPreview();
     renderReportsFull();
     renderFriendsPreview();

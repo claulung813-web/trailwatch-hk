@@ -1018,6 +1018,29 @@ TW.isGroupHikeHost = function (hike) {
   return false;
 };
 
+/** Group hikes the signed-in user joined or organized (for Profile). */
+TW.getMyProfileGroupHikes = function () {
+  const builtIn = (TW.previewGroupHikes || []).map((h) =>
+    typeof TW.resolvePreviewGroupHike === "function" ? TW.resolvePreviewGroupHike(h) : Object.assign({}, h)
+  );
+  const custom = typeof TW.getGroupHikes === "function" ? TW.getGroupHikes() : [];
+  const byId = {};
+  builtIn.concat(custom).forEach((g) => {
+    if (!g || !g.id) return;
+    byId[g.id] = g;
+  });
+  return Object.keys(byId)
+    .map((id) => byId[id])
+    .filter((g) => {
+      if (typeof TW.isGroupHikeHost === "function" && TW.isGroupHikeHost(g)) return true;
+      if (typeof TW.isGroupHikeParticipant === "function" && TW.isGroupHikeParticipant(g)) return true;
+      if (g.joined) return true;
+      const email = TW.memberEmail && TW.memberEmail();
+      if (email && g.organizerEmail && g.organizerEmail === email) return true;
+      return false;
+    });
+};
+
 TW.ensureGroupHikeRoster = function (hike) {
   if (!hike) return hike;
   hike.members = Array.isArray(hike.members) ? hike.members : [];

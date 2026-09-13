@@ -336,6 +336,12 @@
             <div class="profile-preview-grid" id="recordsPreview"></div>
 
             <div class="profile-preview-head">
+              <h2 id="lblGroupsPreview"></h2>
+              <a href="#" id="linkGroupsMore"></a>
+            </div>
+            <div class="profile-preview-grid" id="groupsPreview"></div>
+
+            <div class="profile-preview-head">
               <h2 id="lblReportsPreview"></h2>
               <a href="#" id="linkReportsMore"></a>
             </div>
@@ -622,10 +628,12 @@
     document.getElementById("lblPlansPreview").textContent = t("nav_my_plans");
     document.getElementById("lblFriendsPreview").textContent = t("app_my_friends");
     document.getElementById("lblRecordsPreview").textContent = t("app_my_records");
+    document.getElementById("lblGroupsPreview").textContent = t("nav_my_groups");
     document.getElementById("lblReportsPreview").textContent = t("nav_my_reports");
     document.getElementById("linkPlansMore").textContent = t("profile_view_more");
     document.getElementById("linkFriendsMore").textContent = t("profile_view_more");
     document.getElementById("linkRecordsMore").textContent = t("profile_view_more");
+    document.getElementById("linkGroupsMore").textContent = t("profile_view_more");
     document.getElementById("linkReportsMore").textContent = t("profile_view_more");
 
     function renderProfilePreviewTile(title, meta, href, img, fallbackEmoji) {
@@ -713,6 +721,22 @@
         : `<p class="profile-preview-empty">${t("hikes_empty")}</p>`;
     }
 
+    function renderGroupsPreview() {
+      const list = (typeof TW.getMyProfileGroupHikes === "function" ? TW.getMyProfileGroupHikes() : []).slice(0, 4);
+      document.getElementById("groupsPreview").innerHTML = list.length
+        ? list
+            .map((g) => {
+              const href = "group-detail.html?id=" + encodeURIComponent(g.id);
+              const title = TW.tt(g, "title") || g.title || "";
+              const date = TW.tt(g, "date") || g.date || g.dateISO || "";
+              const place = TW.tt(g, "place") || g.place || "";
+              const meta = [date, place].filter(Boolean).join(" · ");
+              return renderProfilePreviewTile(title, meta, href, g.image, "👥");
+            })
+            .join("")
+        : `<p class="profile-preview-empty">${t("profile_groups_empty")}</p>`;
+    }
+
     document.getElementById("linkPlansMore").addEventListener("click", (e) => {
       e.preventDefault();
       infoTab = "plans";
@@ -727,6 +751,11 @@
       infoTab = "records";
       showHub("info");
     });
+    document.getElementById("linkGroupsMore").addEventListener("click", (e) => {
+      e.preventDefault();
+      infoTab = "groups";
+      showHub("info");
+    });
     document.getElementById("linkReportsMore").addEventListener("click", (e) => {
       e.preventDefault();
       location.href = "explore.html#incidents";
@@ -735,6 +764,7 @@
     renderPlansPreview();
     renderFriendsPreview();
     renderRecordsPreview();
+    renderGroupsPreview();
     renderReportsPreview();
 
     /* —— My Info —— */
@@ -908,18 +938,15 @@
       <button type="button" data-w="past">${t("groups_past") || (zh ? "已結束" : "Past")}</button>`;
     function renderGroups() {
       const q = document.getElementById("groupSearch").value.trim().toLowerCase();
-      let list = (TW.groupHikes || TW.meetups || []).slice();
-      if (!list.length && TW.getPublishedGroupHikes) list = TW.getPublishedGroupHikes() || [];
+      let list = typeof TW.getMyProfileGroupHikes === "function" ? TW.getMyProfileGroupHikes() : [];
       if (!list.length) {
-        list = [
-          { id: "gh1", title: "Dragon's Back sunrise", titleZh: "龍脊日出", date: "2026-09-12", when: "upcoming" },
-          { id: "gh2", title: "Sai Kung family walk", titleZh: "西貢親子行", date: "2026-07-01", when: "past" },
-        ];
+        list = (TW.groupHikes || TW.meetups || []).slice();
+        if (!list.length && TW.getPublishedGroupHikes) list = TW.getPublishedGroupHikes() || [];
       }
       list = list.filter((g) => {
         const name = ((g.title || "") + " " + (g.titleZh || "")).toLowerCase();
         if (q && !name.includes(q)) return false;
-        const when = g.when || (Date.parse(g.date) < Date.now() ? "past" : "upcoming");
+        const when = g.when || (g.past ? "past" : Date.parse(g.dateISO || g.date) < Date.now() ? "past" : "upcoming");
         if (groupWhen !== "all" && when !== groupWhen) return false;
         return true;
       });
@@ -927,10 +954,10 @@
         ? list.map((g) => {
             const name = TW.tt(g, "title") || g.title;
             return `<a class="bm-card" href="group-detail.html?id=${encodeURIComponent(g.id)}" style="text-decoration:none;color:inherit">
-              <div style="flex:1"><strong>${name}</strong><span>${g.date || ""}</span></div><span>›</span>
+              <div style="flex:1"><strong>${name}</strong><span>${g.date || g.dateISO || ""}</span></div><span>›</span>
             </a>`;
           }).join("")
-        : `<p style="text-align:center;color:var(--text-muted);padding:1.5rem 0">${zh ? "暫無聯誼" : "No group hikes yet"}</p>`;
+        : `<p style="text-align:center;color:var(--text-muted);padding:1.5rem 0">${t("profile_groups_empty")}</p>`;
     }
     document.getElementById("groupWhen").addEventListener("click", (e) => {
       const btn = e.target.closest("[data-w]");
