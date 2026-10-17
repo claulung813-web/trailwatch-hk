@@ -72,6 +72,7 @@
         <div class="app-head app-head-brand">
           <span data-app-logo aria-hidden="true"></span>
           <h1 id="pageTitle">Explore</h1>
+          <span id="appLoginSlot"></span>
         </div>
         <div class="tabs" id="tabs">
           <button type="button" class="active" data-tab="routes" id="tabRoutes">Routes</button>
@@ -176,6 +177,7 @@
     });
     document.getElementById("backWeb").textContent = t("app_back_web");
     document.getElementById("pageTitle").textContent = t("nav_explore");
+    if (typeof TW.mountAppLoginLink === "function") TW.mountAppLoginLink(document.getElementById("appLoginSlot"));
     document.getElementById("tabRoutes").textContent = lang === "zh" ? "路線" : "Routes";
     document.getElementById("tabRecords").textContent = lang === "zh" ? "記錄" : "Records";
     document.getElementById("tabIncidents").textContent = lang === "zh" ? "事故" : "Incidents";

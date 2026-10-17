@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>TrailWatch App — Sign up</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/styles.css" />
+  <style>
+    body { margin: 0; }
+    .phone-body {
+      flex: 1; overflow-y: auto; background: #f7faf7; min-height: 0;
+      padding: 0.85rem 0.95rem calc(1rem + env(safe-area-inset-bottom, 0px));
+    }
+    .app-detail-bar {
+      display: flex; align-items: center; gap: 0.35rem;
+      padding: 2.35rem 0.65rem 0.55rem; background: #fff; border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .app-detail-bar h1 {
+      flex: 1; font-size: 0.95rem; margin: 0; text-align: center; color: #111;
+    }
+    .app-detail-bar .ib {
+      width: 36px; height: 36px; border: none; background: none; cursor: pointer;
+      font-size: 1.25rem; color: #111; display: grid; place-items: center; text-decoration: none;
+      flex-shrink: 0;
+    }
+    .auth-card {
+      background: #fff; border: 1px solid var(--border); border-radius: 14px;
+      padding: 1rem 0.95rem 1.15rem;
+    }
+    .auth-card .page-title { font-size: 1.2rem; margin: 0 0 0.35rem; }
+    .auth-card .page-sub { font-size: 0.8rem; margin: 0 0 0.85rem; color: var(--text-muted); }
+    .auth-switch { text-align: center; font-size: 0.8rem; margin: 0.85rem 0 0; }
+    .auth-switch a { font-weight: 700; color: var(--green-800); }
+    .news-check {
+      display: flex; gap: 0.5rem; align-items: flex-start;
+      font-size: 0.78rem; font-weight: 500; color: var(--text);
+    }
+    .news-check input { margin-top: 0.15rem; }
+  </style>
+</head>
+<body>
+  <div class="app-page">
+    <div class="app-page-top">
+      <a href="profile.html" id="backWeb"></a>
+      <div class="lang-switch" style="margin:0.75rem auto 0;width:fit-content;background:rgba(255,255,255,0.15);border-color:rgba(255,255,255,0.25)">
+        <button type="button" data-lang="en" style="color:#fff">EN</button>
+        <button type="button" data-lang="zh" style="color:#fff">繁</button>
+      </div>
+    </div>
+    <div class="phone-frame">
+      <div class="phone-notch"></div>
+      <div class="phone-screen">
+        <div class="app-detail-bar">
+          <a class="ib" href="profile.html">‹</a>
+          <h1 id="barTitle">Sign up</h1>
+          <span class="ib" aria-hidden="true"></span>
+        </div>
+        <div class="phone-body">
+          <div class="auth-card">
+            <h1 class="page-title" id="regTitle"></h1>
+            <p class="page-sub" id="regSub"></p>
+            <form id="regForm">
+              <div class="form-group">
+                <label for="regFirstName" id="regFirstLabel"></label>
+                <input class="form-input" id="regFirstName" name="firstName" type="text" required autocomplete="given-name" />
+              </div>
+              <div class="form-group">
+                <label for="regLastName" id="regLastLabel"></label>
+                <input class="form-input" id="regLastName" name="lastName" type="text" required autocomplete="family-name" />
+              </div>
+              <div class="form-group">
+                <label for="regEmail" id="regEmailLabel"></label>
+                <input class="form-input" id="regEmail" name="email" type="email" required autocomplete="email" />
+              </div>
+              <div class="form-group">
+                <label for="regPhone" id="regPhoneLabel"></label>
+                <input class="form-input" id="regPhone" name="phone" type="tel" autocomplete="tel" />
+              </div>
+              <div class="form-group">
+                <label class="news-check">
+                  <input type="checkbox" id="regNews" checked />
+                  <span id="regNewsLabel"></span>
+                </label>
+              </div>
+              <button type="submit" class="btn btn-primary btn-block" id="regCta"></button>
+              <p style="font-size:0.72rem;color:var(--text-muted);margin:0.65rem 0 0;text-align:center" id="regNote"></p>
+              <p class="auth-switch">
+                <span id="regHaveAccount"></span>
+                <a href="login.html" id="regLoginLink"></a>
+              </p>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="toast" id="toast"></div>
+  <script src="../js/i18n.js"></script>
+  <script src="../js/data.js"></script>
+  <script src="../js/live-routes.js"></script>
+  <script src="../js/cms-store.js"></script>
+  <script src="../js/app.js"></script>
+  <script>
+    document.documentElement.lang = TW.getLang() === "zh" ? "zh-Hant" : "en";
+    const lang = TW.getLang();
+    const t = TW.t;
+    document.querySelectorAll(".lang-switch button").forEach((b) => {
+      b.classList.toggle("active", b.dataset.lang === lang);
+      b.addEventListener("click", () => { TW.setLang(b.dataset.lang); location.reload(); });
+    });
+    document.getElementById("backWeb").textContent = "‹ " + t("app_profile");
+    document.getElementById("barTitle").textContent = t("nav_signup");
+    document.getElementById("regTitle").textContent = t("register_title");
+    document.getElementById("regSub").textContent = t("register_sub");
+    document.getElementById("regFirstLabel").textContent = t("register_first_name");
+    document.getElementById("regLastLabel").textContent = t("register_last_name");
+    document.getElementById("regEmailLabel").textContent = t("register_email");
+    document.getElementById("regPhoneLabel").textContent = t("register_phone");
+    document.getElementById("regNewsLabel").textContent = t("register_newsletter");
+    document.getElementById("regCta").textContent = t("register_cta");
+    document.getElementById("regNote").textContent = t("register_note");
+    document.getElementById("regHaveAccount").textContent = t("register_have_account");
+    document.getElementById("regLoginLink").textContent = t("nav_login");
+    document.getElementById("regFirstName").placeholder = t("register_first_ph");
+    document.getElementById("regLastName").placeholder = t("register_last_ph");
+    document.getElementById("regEmail").placeholder = t("login_email_placeholder");
+    document.getElementById("regPhone").placeholder = t("register_phone_ph");
+    document.getElementById("regNews").checked = true;
+
+    const nextParam = new URLSearchParams(location.search).get("next");
+    if (nextParam) {
+      document.getElementById("regLoginLink").href = "login.html?next=" + encodeURIComponent(nextParam);
+    }
+
+    document.getElementById("regForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const firstName = document.getElementById("regFirstName").value.trim();
+      const lastName = document.getElementById("regLastName").value.trim();
+      const email = document.getElementById("regEmail").value.trim();
+      const phone = document.getElementById("regPhone").value.trim();
+      const newsletter = document.getElementById("regNews").checked;
+      const name = [firstName, lastName].filter(Boolean).join(" ");
+      if (typeof CMS !== "undefined" && CMS.submitMember) {
+        CMS.submitMember({ firstName, lastName, name, email, phone, newsletter });
+      }
+      TW.loginMember({ firstName, lastName, name, email, phone, newsletter });
+      showToast(t("register_thanks"));
+      const dest = typeof TW.authNextUrl === "function" ? TW.authNextUrl("profile.html") : "profile.html";
+      setTimeout(() => { location.href = dest; }, 900);
+    });
+  </script>
+</body>
+</html>

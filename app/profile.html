@@ -532,6 +532,10 @@
     function renderProfilePremiumCta() {
       const el = document.getElementById("profilePremiumCta");
       if (!el) return;
+      if (!(TW.isLoggedIn && TW.isLoggedIn())) {
+        el.innerHTML = `<a href="login.html" class="btn btn-primary profile-premium-btn">${TW.escapeHtml(t("nav_login"))}</a>`;
+        return;
+      }
       const prem = TW.isMemberPremium && TW.isMemberPremium();
       if (prem) {
         el.innerHTML = `<span class="dash-premium-pill">${TW.escapeHtml(t("dash_premium_active"))}</span>`;
@@ -1180,8 +1184,29 @@
     document.getElementById("btnLogout").textContent = t("nav_logout");
     document.getElementById("btnLogout").addEventListener("click", () => {
       if (typeof TW.logoutMember === "function") TW.logoutMember();
-      location.href = "../login.html";
+      location.href = "login.html";
     });
+
+    (function syncAuthGate() {
+      const loggedIn = TW.isLoggedIn && TW.isLoggedIn();
+      const auth = TW.getMemberAuth && TW.getMemberAuth();
+      if (loggedIn && auth) {
+        const display = TW.memberDisplayName ? TW.memberDisplayName() : auth.name;
+        if (display) document.getElementById("userName").textContent = display;
+      }
+      const logoutBtn = document.getElementById("btnLogout");
+      const moreLinks = document.getElementById("settingsMoreLinks");
+      if (!loggedIn) {
+        logoutBtn.hidden = true;
+        const gate = document.createElement("div");
+        gate.id = "authGate";
+        gate.style.cssText = "display:grid;gap:0.45rem;margin-bottom:0.85rem";
+        gate.innerHTML = `<a class="btn btn-primary btn-block" href="login.html">${TW.escapeHtml(t("nav_login"))}</a>`;
+        if (moreLinks && !document.getElementById("authGate")) {
+          moreLinks.parentNode.insertBefore(gate, moreLinks);
+        }
+      }
+    })();
 
     /* Boot from hash */
     const hash = (location.hash || "").replace(/^#/, "");

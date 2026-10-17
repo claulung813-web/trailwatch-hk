@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Register — TrailWatch HK</title>
+  <title>Sign up — TrailWatch HK</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -14,28 +14,33 @@
   <main class="page">
     <div class="container" style="max-width:520px">
       <h1 class="page-title" id="regTitle">Create an account</h1>
+      <p class="page-sub" id="regSub"></p>
 
       <form class="card" id="regForm" style="padding:1.35rem">
         <div class="form-group">
-          <label for="regName" id="regNameLabel">Name</label>
-          <input class="form-input" id="regName" name="name" type="text" required autocomplete="name" placeholder="Your name" />
+          <label for="regFirstName" id="regFirstLabel">First name *</label>
+          <input class="form-input" id="regFirstName" name="firstName" type="text" required autocomplete="given-name" />
         </div>
         <div class="form-group">
-          <label for="regEmail" id="regEmailLabel">Email</label>
-          <input class="form-input" id="regEmail" name="email" type="email" required autocomplete="email" placeholder="you@email.com" />
+          <label for="regLastName" id="regLastLabel">Last name *</label>
+          <input class="form-input" id="regLastName" name="lastName" type="text" required autocomplete="family-name" />
         </div>
         <div class="form-group">
-          <label for="regPhone" id="regPhoneLabel">Phone (optional)</label>
-          <input class="form-input" id="regPhone" name="phone" type="tel" autocomplete="tel" placeholder="Phone" />
+          <label for="regEmail" id="regEmailLabel">Email *</label>
+          <input class="form-input" id="regEmail" name="email" type="email" required autocomplete="email" />
+        </div>
+        <div class="form-group">
+          <label for="regPhone" id="regPhoneLabel">Phone number (optional)</label>
+          <input class="form-input" id="regPhone" name="phone" type="tel" autocomplete="tel" />
         </div>
         <div class="form-group">
           <label style="display:flex;gap:0.5rem;align-items:flex-start;font-weight:500">
-            <input type="checkbox" id="regNews" style="margin-top:0.2rem" />
-            <span id="regNewsLabel">Newsletter — culture, history and ecology of Hong Kong’s trails and Country Parks!</span>
+            <input type="checkbox" id="regNews" checked style="margin-top:0.2rem" />
+            <span id="regNewsLabel">Subscribe to our newsletter — culture, history and ecology of Hong Kong’s trails and Country Parks.</span>
           </label>
         </div>
-        <button type="submit" class="btn btn-primary btn-block btn-lg" id="regCta">Register</button>
-        <p style="font-size:0.75rem;color:var(--text-muted);margin-top:0.75rem;text-align:center" id="regNote">Demo registration — staff review new members in the CMS.</p>
+        <button type="submit" class="btn btn-primary btn-block btn-lg" id="regCta">Sign up</button>
+        <p style="font-size:0.75rem;color:var(--text-muted);margin-top:0.75rem;text-align:center" id="regNote"></p>
         <p class="auth-switch">
           <span id="regHaveAccount">Already have an account?</span>
           <a href="login.html" id="regLoginLink">Log in</a>
@@ -54,63 +59,57 @@
     initShell("register");
 
     (function applyRegisterCopy() {
-      const zh = {
-        regTitle: "註冊帳戶",
-        regSub: "加入 TrailWatch，規劃路線、參與挑戰，一起守護郊野公園。",
-        regNameLabel: "姓名",
-        regEmailLabel: "電郵",
-        regPhoneLabel: "電話（可選）",
-        regNewsLabel: "電子報——香港徑道與郊野公園的文化、歷史與生態！",
-        regCta: "註冊",
-        regNote: "示範註冊——職員會在 CMS 審核新會員。",
-        regHaveAccount: "已有帳戶？",
-        regLoginLink: "登入",
-        regNamePh: "你的姓名",
-        regEmailPh: "you@email.com",
-        regPhonePh: "電話",
-      };
-      const en = {
-        regTitle: "Create an account",
-        regSub: "Join TrailWatch to plan trails, join challenges, and help protect country parks.",
-        regNameLabel: "Name",
-        regEmailLabel: "Email",
-        regPhoneLabel: "Phone (optional)",
-        regNewsLabel: "Newsletter — culture, history and ecology of Hong Kong’s trails and Country Parks!",
-        regCta: "Register",
-        regNote: "Demo registration — staff review new members in the CMS.",
-        regHaveAccount: "Already have an account?",
-        regLoginLink: "Log in",
-        regNamePh: "Your name",
-        regEmailPh: "you@email.com",
-        regPhonePh: "Phone",
-      };
-      const copy = TW.getLang() === "zh" ? zh : en;
-      Object.keys(copy).forEach((id) => {
-        if (id.endsWith("Ph")) return;
-        const el = document.getElementById(id);
-        if (el) el.textContent = copy[id];
-      });
-      const name = document.getElementById("regName");
-      const email = document.getElementById("regEmail");
-      const phone = document.getElementById("regPhone");
-      if (name) name.placeholder = copy.regNamePh;
-      if (email) email.placeholder = copy.regEmailPh;
-      if (phone) phone.placeholder = copy.regPhonePh;
+      const t = TW.t;
+      document.getElementById("regTitle").textContent = t("register_title");
+      document.getElementById("regSub").textContent = t("register_sub");
+      document.getElementById("regFirstLabel").textContent = t("register_first_name");
+      document.getElementById("regLastLabel").textContent = t("register_last_name");
+      document.getElementById("regEmailLabel").textContent = t("register_email");
+      document.getElementById("regPhoneLabel").textContent = t("register_phone");
+      document.getElementById("regNewsLabel").textContent = t("register_newsletter");
+      document.getElementById("regCta").textContent = t("register_cta");
+      document.getElementById("regNote").textContent = t("register_note");
+      document.getElementById("regHaveAccount").textContent = t("register_have_account");
+      document.getElementById("regLoginLink").textContent = t("nav_login");
+      document.getElementById("regFirstName").placeholder = t("register_first_ph");
+      document.getElementById("regLastName").placeholder = t("register_last_ph");
+      document.getElementById("regEmail").placeholder = t("login_email_placeholder");
+      document.getElementById("regPhone").placeholder = t("register_phone_ph");
+      document.getElementById("regNews").checked = true;
+      const login = document.getElementById("regLoginLink");
+      const next = new URLSearchParams(location.search).get("next");
+      if (next) login.href = "login.html?next=" + encodeURIComponent(next);
     })();
 
     document.getElementById("regForm").addEventListener("submit", (e) => {
       e.preventDefault();
-      const name = document.getElementById("regName").value;
-      const email = document.getElementById("regEmail").value;
-      CMS.submitMember({
+      const firstName = document.getElementById("regFirstName").value.trim();
+      const lastName = document.getElementById("regLastName").value.trim();
+      const email = document.getElementById("regEmail").value.trim();
+      const phone = document.getElementById("regPhone").value.trim();
+      const newsletter = document.getElementById("regNews").checked;
+      const name = [firstName, lastName].filter(Boolean).join(" ");
+      if (typeof CMS !== "undefined" && CMS.submitMember) {
+        CMS.submitMember({
+          firstName: firstName,
+          lastName: lastName,
+          name: name,
+          email: email,
+          phone: phone,
+          newsletter: newsletter,
+        });
+      }
+      TW.loginMember({
+        firstName: firstName,
+        lastName: lastName,
         name: name,
         email: email,
-        phone: document.getElementById("regPhone").value,
-        newsletter: document.getElementById("regNews").checked,
+        phone: phone,
+        newsletter: newsletter,
       });
-      TW.loginMember({ name: name, email: email });
-      showToast(TW.getLang() === "zh" ? "謝謝！你的註冊已提交，待職員審核。" : "Thanks! Your registration was submitted for staff review.");
+      showToast(TW.t("register_thanks"));
       e.target.reset();
+      document.getElementById("regNews").checked = true;
       const dest = TW.authNextUrl("profile.html#overview");
       setTimeout(() => {
         location.href = dest;

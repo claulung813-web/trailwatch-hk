@@ -89,7 +89,7 @@
         <div class="app-head">
           <span data-app-logo aria-hidden="true"></span>
           <h1 id="pageTitle">Trail Feed</h1>
-          <span style="width:30px"></span>
+          <span id="appLoginSlot"></span>
         </div>
         <div id="communityTabs"></div>
         <div class="phone-body">
@@ -122,6 +122,7 @@
     });
     document.getElementById("backWeb").textContent = t("app_back_web");
     document.getElementById("pageTitle").textContent = t("app_community");
+    if (typeof TW.mountAppLoginLink === "function") TW.mountAppLoginLink(document.getElementById("appLoginSlot"));
     document.getElementById("communityTabs").innerHTML = twAppCommunityTabs("feed");
     document.getElementById("feedSearch").placeholder = t("feed_search_ph");
     twMountAppNav("home");

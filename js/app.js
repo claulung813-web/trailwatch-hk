@@ -372,8 +372,14 @@ TW.memberDisplayName = function () {
 };
 
 TW.loginMember = function (data) {
-  const name = ((data && (data.name || data.displayName)) || "").trim();
+  const firstName = ((data && data.firstName) || "").trim();
+  const lastName = ((data && data.lastName) || "").trim();
+  const name =
+    ((data && (data.name || data.displayName)) || "").trim() ||
+    [firstName, lastName].filter(Boolean).join(" ");
   const email = ((data && data.email) || "").trim().toLowerCase();
+  const phone = ((data && data.phone) || "").trim();
+  const newsletter = data && data.newsletter != null ? !!data.newsletter : undefined;
   let premium = !!(data && data.premium);
   if (typeof CMS !== "undefined" && CMS.getStore && email) {
     try {
@@ -385,16 +391,35 @@ TW.loginMember = function (data) {
   if (!premium && TW.user && TW.user.premium && TW.user.email && String(TW.user.email).toLowerCase() === email) {
     premium = true;
   }
-  localStorage.setItem(
-    TW.MEMBER_AUTH_KEY,
-    JSON.stringify({
-      name: name,
-      displayName: name,
-      email: email,
-      premium: premium,
-      at: Date.now(),
-    })
-  );
+  const payload = {
+    firstName: firstName,
+    lastName: lastName,
+    name: name,
+    displayName: name,
+    email: email,
+    phone: phone,
+    premium: premium,
+    at: Date.now(),
+  };
+  if (newsletter !== undefined) payload.newsletter = newsletter;
+  localStorage.setItem(TW.MEMBER_AUTH_KEY, JSON.stringify(payload));
+};
+
+/** Log in chip for the phone frame. Hidden once the member is signed in. */
+TW.mountAppLoginLink = function (host) {
+  if (!host) return;
+  if (TW.isLoggedIn && TW.isLoggedIn()) {
+    host.innerHTML = "";
+    return;
+  }
+  host.innerHTML = `<a class="app-login-link" href="login.html">${TW.escapeHtml(TW.t("nav_login"))}</a>`;
+};
+
+/** Login / signup page href (same folder as current page). */
+TW.authPageHref = function (page, next) {
+  let href = page === "register" ? "register.html" : "login.html";
+  if (next) href += "?next=" + encodeURIComponent(next);
+  return href;
 };
 
 TW.logoutMember = function () {
@@ -1394,7 +1419,9 @@ TW.requireLogin = function (opts) {
     const next = opts.next || (location.pathname.split("/").pop() + location.search + location.hash);
     clearTimeout(window._loginRedirect);
     window._loginRedirect = setTimeout(() => {
-      location.href = "login.html?next=" + encodeURIComponent(next);
+      location.href = typeof TW.authPageHref === "function"
+        ? TW.authPageHref("login", next)
+        : "login.html?next=" + encodeURIComponent(next);
     }, opts.delay != null ? opts.delay : 900);
   }
   return false;

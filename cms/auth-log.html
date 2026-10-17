@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CMS — Login records</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/cms.css" />
+</head>
+<body class="cms-body">
+  <div id="cmsShell">
+    <h1>Login records</h1>
+    <p class="sub">Each website and app login, plus forgot-password requests. Passwords are the values typed on the login form (demo store).</p>
+
+    <div class="cms-toolbar">
+      <select id="filterType">
+        <option value="all">All events</option>
+        <option value="login">Logins</option>
+        <option value="forgot">Forgot password</option>
+      </select>
+      <select id="filterSource">
+        <option value="all">Website and app</option>
+        <option value="website">Website</option>
+        <option value="app">App</option>
+      </select>
+    </div>
+
+    <div class="cms-card">
+      <table class="cms-table">
+        <thead>
+          <tr>
+            <th>When</th>
+            <th>Event</th>
+            <th>Where</th>
+            <th>Email</th>
+            <th>Name</th>
+            <th>Password</th>
+          </tr>
+        </thead>
+        <tbody id="list"></tbody>
+      </table>
+    </div>
+  </div>
+  <script src="../js/data.js"></script>
+  <script src="../js/live-routes.js"></script>
+  <script src="../js/cms-store.js"></script>
+  <script src="js/cms-ui.js"></script>
+  <script>
+    cmsInitShell("auth-log");
+
+    function whenLabel(iso) {
+      const d = iso ? new Date(iso) : null;
+      if (!d || isNaN(d)) return "—";
+      return d.toLocaleString();
+    }
+
+    function render() {
+      const type = document.getElementById("filterType").value;
+      const source = document.getElementById("filterSource").value;
+      let list = ((CMS.getStore().authLogs) || []).slice();
+      if (type !== "all") list = list.filter((r) => r.type === type);
+      if (source !== "all") list = list.filter((r) => r.source === source);
+      document.getElementById("list").innerHTML = list.length
+        ? list.map((r) => `
+          <tr>
+            <td>${whenLabel(r.createdAt)}</td>
+            <td>${r.type === "forgot" ? "Forgot password" : "Login"}</td>
+            <td>${r.source === "app" ? "App" : "Website"}</td>
+            <td>${cmsEsc(r.email || "—")}</td>
+            <td>${cmsEsc(r.name || "—")}</td>
+            <td><code>${cmsEsc(r.password || "—")}</code></td>
+          </tr>`).join("")
+        : '<tr><td colspan="6">No login or password-reset records yet.</td></tr>';
+    }
+
+    document.getElementById("filterType").addEventListener("change", render);
+    document.getElementById("filterSource").addEventListener("change", render);
+    render();
+  </script>
+</body>
+</html>

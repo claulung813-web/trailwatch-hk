@@ -70,7 +70,7 @@
                 <span class="app-premium-pill premium-hero-badge">Premium</span>
                 <h1 class="page-title" id="premiumTitle"></h1>
                 <p class="page-sub" id="premiumLede"></p>
-                <a class="btn btn-primary btn-block" href="../login.html" id="premiumCta"></a>
+                <a class="btn btn-primary btn-block" href="login.html" id="premiumCta"></a>
               </div>
             </section>
 
@@ -94,7 +94,7 @@
                 <h2 id="ctaBandTitle"></h2>
                 <p id="ctaBandBody"></p>
               </div>
-              <a class="btn btn-primary btn-block" href="../login.html" id="premiumCtaBottom"></a>
+              <a class="btn btn-primary btn-block" href="login.html" id="premiumCtaBottom"></a>
             </section>
           </main>
         </div>
@@ -129,8 +129,8 @@
     twMountAppNav("profile");
 
     const loginNext = encodeURIComponent("app/premium.html");
-    document.getElementById("premiumCta").href = "../login.html?next=" + loginNext;
-    document.getElementById("premiumCtaBottom").href = "../login.html?next=" + loginNext;
+    document.getElementById("premiumCta").href = "login.html?next=" + loginNext;
+    document.getElementById("premiumCtaBottom").href = "login.html?next=" + loginNext;
 
     if (TW.isMemberPremium && TW.isMemberPremium()) {
       [document.getElementById("premiumCta"), document.getElementById("premiumCtaBottom")].forEach((cta) => {

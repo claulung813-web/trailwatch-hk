@@ -313,6 +313,7 @@ CMS.defaultStore = function () {
     incidents: [],
     challenges: null,
     members: [],
+    authLogs: [],
     users: [],
     donations: [],
     feedback: [],
@@ -1077,6 +1078,10 @@ CMS.getStore = function () {
       store.members = CMS.seedMembers();
       migrated = true;
     } else store.members = parsed.members || [];
+    if (!("authLogs" in parsed)) {
+      store.authLogs = [];
+      migrated = true;
+    } else store.authLogs = parsed.authLogs || [];
     if (!("users" in parsed) || !(parsed.users && parsed.users.length)) {
       store.users = CMS.seedUsers();
       migrated = true;
@@ -1377,18 +1382,45 @@ CMS.submitMember = function (data) {
   const id =
     data.id ||
     "mem_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  const firstName = (data.firstName || "").trim();
+  const lastName = (data.lastName || "").trim();
+  const name =
+    (data.name || "").trim() ||
+    [firstName, lastName].filter(Boolean).join(" ");
   const entry = {
     id: id,
-    name: (data.name || "").trim(),
+    firstName: firstName,
+    lastName: lastName,
+    name: name,
     email: (data.email || "").trim().toLowerCase(),
     phone: (data.phone || "").trim(),
-    newsletter: !!data.newsletter,
+    newsletter: data.newsletter !== false,
     status: "pending",
     note: "",
     createdAt: new Date().toISOString(),
   };
   store.members = store.members || [];
   store.members.unshift(entry);
+  CMS.setStore(store);
+  return entry;
+};
+
+/** Demo log of member logins and forgot-password requests (includes the password typed at login). */
+CMS.recordAuthEvent = function (data) {
+  const store = CMS.getStore();
+  const id = "auth_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  const entry = {
+    id: id,
+    type: data.type === "forgot" ? "forgot" : "login",
+    email: (data.email || "").trim().toLowerCase(),
+    name: (data.name || "").trim(),
+    password: data.type === "forgot" ? "" : String(data.password || ""),
+    source: data.source === "app" ? "app" : "website",
+    createdAt: new Date().toISOString(),
+  };
+  store.authLogs = store.authLogs || [];
+  store.authLogs.unshift(entry);
+  store.authLogs = store.authLogs.slice(0, 200);
   CMS.setStore(store);
   return entry;
 };

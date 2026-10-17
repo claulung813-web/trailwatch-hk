@@ -240,7 +240,7 @@
     document.getElementById("btnAdd").addEventListener("click", () => {
       if (typeof TW.isLoggedIn === "function" && !TW.isLoggedIn()) {
         showToast(t("login_to_organize"));
-        setTimeout(() => { location.href = "../login.html?next=" + encodeURIComponent("app/hikes.html"); }, 900);
+        setTimeout(() => { location.href = "login.html?next=" + encodeURIComponent("hikes.html"); }, 900);
         return;
       }
       if (typeof TW.canOrganizePrivateGroup === "function" && !TW.canOrganizePrivateGroup()) {
