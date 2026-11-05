@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Join Family plan — TrailWatch HK</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css?v=20261105a" />
+</head>
+<body>
+  <div id="app-header"></div>
+
+  <main class="page">
+    <div class="container" style="max-width:520px">
+      <h1 class="page-title" id="pageTitle"></h1>
+      <p class="page-sub" id="pageSub"></p>
+      <p class="family-note" id="inviteMeta"></p>
+      <button type="button" class="btn btn-primary btn-lg" id="acceptBtn"></button>
+      <p style="margin-top:1rem"><a href="premium.html" id="backPrem"></a></p>
+    </div>
+  </main>
+
+  <div id="app-footer"></div>
+  <div class="toast" id="toast"></div>
+
+  <script src="js/i18n.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/live-routes.js"></script>
+  <script src="js/cms-store.js"></script>
+  <script src="js/app.js?v=20261105a"></script>
+  <script>
+    document.documentElement.lang = TW.getLang() === "zh" ? "zh-Hant" : "en";
+    initShell("premium");
+    const t = TW.t;
+    const inviteId = new URLSearchParams(location.search).get("id") || "";
+    document.getElementById("pageTitle").textContent = t("family_accept_title");
+    document.getElementById("pageSub").textContent = t("family_accept_sub");
+    document.getElementById("acceptBtn").textContent = t("family_accept_cta");
+    document.getElementById("backPrem").textContent = t("premium_page_title");
+
+    const found = inviteId ? CMS.getFamilyInvite(inviteId) : null;
+    if (!found) {
+      document.getElementById("inviteMeta").textContent = t("family_no_plan");
+      document.getElementById("acceptBtn").disabled = true;
+    } else {
+      document.getElementById("inviteMeta").textContent =
+        found.invite.email + " · " + (found.plan.ownerName || found.plan.ownerEmail);
+    }
+
+    document.getElementById("acceptBtn").addEventListener("click", () => {
+      if (!found) return;
+      if (!TW.isLoggedIn()) {
+        location.href = "login.html?next=" + encodeURIComponent("family-invite.html?id=" + inviteId);
+        return;
+      }
+      const res = CMS.acceptFamilyInvite(inviteId, {
+        email: TW.memberEmail(),
+        name: TW.memberDisplayName(),
+      });
+      if (!res.ok) {
+        showToast(res.error === "email_mismatch" ? t("family_accept_mismatch") : t("family_no_plan"));
+        return;
+      }
+      TW.loginMember(Object.assign({}, TW.getMemberAuth() || {}, {
+        email: TW.memberEmail(),
+        name: TW.memberDisplayName(),
+        premium: true,
+      }));
+      showToast(t("family_accept_ok"));
+      setTimeout(() => { location.href = "family.html"; }, 700);
+    });
+  </script>
+</body>
+</html>

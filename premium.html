@@ -19,9 +19,27 @@
           <span class="app-premium-pill premium-hero-badge">Premium</span>
           <h1 class="page-title" data-i18n="premium_page_title"></h1>
           <p class="page-sub" data-i18n="premium_page_lede"></p>
-          <a class="btn btn-primary btn-lg" href="login.html" id="premiumCta" data-i18n="premium_page_cta"></a>
         </div>
       </section>
+
+      <div class="section-head">
+        <h2 data-i18n="premium_page_plans_title"></h2>
+      </div>
+      <div class="premium-plans-grid" id="premiumPlans">
+        <article class="premium-plan-card">
+          <h3 data-i18n="premium_plan_individual"></h3>
+          <p class="premium-plan-price">HK$300 <span data-i18n="premium_plan_per_year"></span></p>
+          <p data-i18n="premium_plan_individual_body"></p>
+          <button type="button" class="btn btn-primary" id="btnIndividual" data-i18n="premium_plan_individual_cta"></button>
+        </article>
+        <article class="premium-plan-card is-featured">
+          <h3 data-i18n="premium_plan_family"></h3>
+          <p class="premium-plan-price">HK$950 <span data-i18n="premium_plan_per_year"></span></p>
+          <p class="premium-plan-meta" data-i18n="premium_plan_seats"></p>
+          <p data-i18n="premium_plan_family_body"></p>
+          <button type="button" class="btn btn-primary" id="btnFamily" data-i18n="premium_plan_family_cta"></button>
+        </article>
+      </div>
 
       <section class="premium-spotlight card">
         <div class="premium-spotlight-media">
@@ -43,7 +61,7 @@
           <h2 data-i18n="home_premium_title"></h2>
           <p data-i18n="dash_premium_plan_body"></p>
         </div>
-        <a class="btn btn-primary btn-lg" href="login.html" data-i18n="premium_page_cta"></a>
+        <a class="btn btn-secondary btn-lg" href="family.html" id="familyManageLink" data-i18n="family_manage"></a>
       </section>
     </div>
   </main>
@@ -54,20 +72,60 @@
   <script src="js/data.js"></script>
   <script src="js/live-routes.js"></script>
   <script src="js/cms-store.js"></script>
-  <script src="js/app.js?v=20261017a"></script>
+  <script src="js/app.js?v=20261105a"></script>
   <script>
     document.documentElement.lang = TW.getLang() === "zh" ? "zh-Hant" : "en";
     initShell("premium");
     if (TW.applyPremiumSpotlightCopy) TW.applyPremiumSpotlightCopy();
 
-    if (TW.isMemberPremium && TW.isMemberPremium()) {
-      const cta = document.getElementById("premiumCta");
-      if (cta) {
-        cta.textContent = TW.t("dash_premium_active");
-        cta.href = "profile.html";
-        cta.classList.remove("btn-primary");
-        cta.classList.add("btn-secondary");
+    function subscribe(planId) {
+      if (!TW.isLoggedIn()) {
+        location.href = "login.html?next=" + encodeURIComponent("premium.html?plan=" + planId);
+        return;
       }
+      const res = TW.subscribePremiumPlan(planId);
+      if (!res || !res.ok) {
+        if (res && res.error === "already_on_family") showToast(TW.t("premium_already_family"));
+        else showToast(TW.t("premium_need_login"));
+        return;
+      }
+      if (planId === "family") {
+        showToast(TW.t("premium_subscribe_family_ok"));
+        setTimeout(() => { location.href = "family.html"; }, 700);
+      } else {
+        showToast(TW.t("premium_subscribe_ok"));
+        setTimeout(() => { location.href = "profile.html"; }, 700);
+      }
+    }
+
+    const premInfo = TW.getMemberPremiumInfo ? TW.getMemberPremiumInfo() : { active: false };
+    const onFamily = !!(premInfo.plan === "family" || (TW.getMyFamilyPlan && TW.getMyFamilyPlan()));
+
+    document.getElementById("btnIndividual").addEventListener("click", () => {
+      if (premInfo.active && !onFamily) return;
+      subscribe("individual");
+    });
+    document.getElementById("btnFamily").addEventListener("click", () => {
+      if (onFamily) {
+        location.href = "family.html";
+        return;
+      }
+      subscribe("family");
+    });
+
+    if (premInfo.active) {
+      if (onFamily) {
+        document.getElementById("btnFamily").textContent = TW.t("family_manage");
+      } else {
+        document.getElementById("btnIndividual").textContent = TW.t("dash_premium_active");
+        document.getElementById("btnIndividual").classList.remove("btn-primary");
+        document.getElementById("btnIndividual").classList.add("btn-secondary");
+      }
+    }
+
+    const wanted = new URLSearchParams(location.search).get("plan");
+    if (wanted && TW.isLoggedIn() && (wanted === "individual" || wanted === "family") && !premInfo.active) {
+      subscribe(wanted);
     }
 
     const premiumImages = [

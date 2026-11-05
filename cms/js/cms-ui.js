@@ -50,6 +50,7 @@ function cmsSidebar(active) {
   const people =
     (showUsers ? cmsNavLink("users.html", "users", "Users", active) : "") +
     cmsNavLink("auth-log.html", "auth-log", "Login records", active) +
+    cmsNavLink("family-plans.html", "family-plans", "Family plans", active) +
     (showAdmins ? cmsNavLink("admins.html", "admins", "Admins", active) : "");
 
   const ops =

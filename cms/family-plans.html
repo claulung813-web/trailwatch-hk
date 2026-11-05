@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CMS — Family plans</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/cms.css" />
+</head>
+<body class="cms-body">
+  <div id="cmsShell">
+    <h1>Family plans</h1>
+    <p class="sub">HK$950 / year · 4 seats. Owners invite by email. Each seat can leave or change once per year.</p>
+
+    <div class="cms-card">
+      <table class="cms-table">
+        <thead>
+          <tr>
+            <th>Owner</th>
+            <th>Seats</th>
+            <th>Period</th>
+            <th>Amount</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="list"></tbody>
+      </table>
+    </div>
+
+    <div class="cms-card" id="detail" style="display:none;margin-top:1rem">
+      <h3 style="margin-top:0" id="dTitle">—</h3>
+      <div id="dSeats"></div>
+    </div>
+  </div>
+  <script src="../js/data.js"></script>
+  <script src="../js/live-routes.js"></script>
+  <script src="../js/cms-store.js"></script>
+  <script src="js/cms-ui.js"></script>
+  <script>
+    cmsInitShell("family-plans");
+
+    function seatSummary(fp) {
+      const seats = fp.seats || [];
+      const filled = seats.filter((s) => s.status === "active" || s.status === "invited").length;
+      return filled + " / " + seats.length;
+    }
+
+    function render() {
+      const list = CMS.getFamilyPlans();
+      document.getElementById("list").innerHTML = list.length
+        ? list.map((fp) => `
+          <tr data-id="${cmsEsc(fp.id)}" style="cursor:pointer">
+            <td>${cmsEsc(fp.ownerName || fp.ownerEmail)}<br><span class="cms-muted">${cmsEsc(fp.ownerEmail)}</span></td>
+            <td>${seatSummary(fp)}</td>
+            <td>${cmsEsc((fp.premiumStart || "—") + " → " + (fp.premiumEnd || "—"))}</td>
+            <td>HK$${fp.amount || 950}</td>
+            <td>${CMS.familyPlanActive(fp) ? "Active" : "Ended"}</td>
+          </tr>`).join("")
+        : '<tr><td colspan="5">No Family plans yet.</td></tr>';
+
+      document.querySelectorAll("#list tr[data-id]").forEach((tr) => {
+        tr.addEventListener("click", () => {
+          const fp = CMS.getFamilyPlanById(tr.getAttribute("data-id"));
+          if (!fp) return;
+          document.getElementById("detail").style.display = "";
+          document.getElementById("dTitle").textContent = (fp.ownerName || fp.ownerEmail) + " · " + fp.id;
+          document.getElementById("dSeats").innerHTML =
+            "<table class=\"cms-table\"><thead><tr><th>#</th><th>Email</th><th>Role</th><th>Status</th><th>Changes (year)</th></tr></thead><tbody>" +
+            (fp.seats || [])
+              .map((s) => {
+                const changes = CMS.familySeatChangesInWindow(fp, s.index).length;
+                return `<tr>
+                  <td>${s.index + 1}</td>
+                  <td>${cmsEsc(s.email || "—")}</td>
+                  <td>${cmsEsc(s.role || "member")}</td>
+                  <td>${cmsEsc(s.status)}</td>
+                  <td>${changes}/1</td>
+                </tr>`;
+              })
+              .join("") +
+            "</tbody></table>";
+        });
+      });
+    }
+
+    render();
+  </script>
+</body>
+</html>

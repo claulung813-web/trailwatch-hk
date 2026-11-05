@@ -221,8 +221,13 @@
       const el = document.getElementById("profilePremiumCta");
       if (!el) return;
       const prem = TW.isMemberPremium && TW.isMemberPremium();
+      const onFamily = !!(TW.getMyFamilyPlan && TW.getMyFamilyPlan());
       if (prem) {
-        el.innerHTML = `<span class="dash-premium-pill">${TW.escapeHtml(TW.t("dash_premium_active"))}</span>`;
+        el.innerHTML =
+          `<span class="dash-premium-pill">${TW.escapeHtml(TW.t(onFamily ? "premium_plan_family" : "dash_premium_active"))}</span>` +
+          (onFamily
+            ? ` <a href="family.html" class="btn btn-secondary profile-premium-btn">${TW.escapeHtml(TW.t("family_manage"))}</a>`
+            : "");
       } else {
         el.innerHTML = `<a href="premium.html" class="btn btn-secondary profile-premium-btn">${TW.escapeHtml(TW.t("dash_unlock"))}</a>`;
       }

@@ -537,8 +537,13 @@
         return;
       }
       const prem = TW.isMemberPremium && TW.isMemberPremium();
+      const onFamily = !!(TW.getMyFamilyPlan && TW.getMyFamilyPlan());
       if (prem) {
-        el.innerHTML = `<span class="dash-premium-pill">${TW.escapeHtml(t("dash_premium_active"))}</span>`;
+        el.innerHTML =
+          `<span class="dash-premium-pill">${TW.escapeHtml(t(onFamily ? "premium_plan_family" : "dash_premium_active"))}</span>` +
+          (onFamily
+            ? ` <a href="family.html" class="btn btn-secondary profile-premium-btn">${TW.escapeHtml(t("family_manage"))}</a>`
+            : "");
       } else {
         el.innerHTML = `<a href="premium.html" class="btn btn-secondary profile-premium-btn">${TW.escapeHtml(t("dash_unlock"))}</a>`;
       }

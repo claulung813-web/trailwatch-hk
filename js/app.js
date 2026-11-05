@@ -454,21 +454,42 @@ TW.parseDateValue = function (value) {
 };
 
 TW.getMemberPremiumInfo = function () {
-  const info = { active: false, expired: false, end: "", source: "" };
+  const info = { active: false, expired: false, end: "", source: "", plan: "", familyId: "" };
   if (!TW.isLoggedIn()) return info;
+  const email = TW.memberEmail();
+  if (typeof CMS !== "undefined" && CMS.getFamilyPlanForEmail && email) {
+    try {
+      const fam = CMS.getFamilyPlanForEmail(email);
+      if (fam && CMS.familyPlanActive(fam)) {
+        const seat = (fam.seats || []).find(
+          (s) => String(s.email || "").toLowerCase() === email && s.status === "active"
+        );
+        if (seat) {
+          info.active = true;
+          info.source = "family";
+          info.plan = "family";
+          info.familyId = fam.id;
+          info.end = fam.premiumEnd || "";
+          return info;
+        }
+      }
+    } catch (e) { /* optional */ }
+  }
   const cmsUser = TW.getMemberCmsUser();
   if (cmsUser) {
     info.source = "cms";
     info.end = cmsUser.premiumEnd || "";
+    info.plan = cmsUser.premiumPlan || (cmsUser.premium ? "individual" : "");
+    info.familyId = cmsUser.familyPlanId || "";
     const now = typeof CMS !== "undefined" && CMS.isUserPremiumNow ? CMS.isUserPremiumNow(cmsUser) : !!cmsUser.premium;
     info.active = !!now;
     info.expired = !!(cmsUser.premium && !now);
     return info;
   }
-  const email = TW.memberEmail();
   if (TW.user && TW.user.email && String(TW.user.email).toLowerCase() === email) {
     info.source = "profile";
     info.end = TW.user.premiumEnds || "";
+    info.plan = "individual";
     const endTs = TW.parseDateValue(TW.user.premiumEnds);
     const still = !!TW.user.premium && (!endTs || endTs + 24 * 60 * 60 * 1000 - 1 >= Date.now());
     info.active = still;
@@ -478,7 +499,56 @@ TW.getMemberPremiumInfo = function () {
   const auth = TW.getMemberAuth();
   info.source = "session";
   info.active = !!(auth && auth.premium);
+  info.plan = auth && auth.premium ? "individual" : "";
   return info;
+};
+
+TW.premiumPlanPrices = function () {
+  const plans = (typeof CMS !== "undefined" && CMS.PREMIUM_PLANS) || {
+    individual: { id: "individual", seats: 1, amount: 300, currency: "HKD" },
+    family: { id: "family", seats: 4, amount: 950, currency: "HKD" },
+  };
+  return plans;
+};
+
+TW.familyManageHref = function () {
+  const path = (location.pathname || "").replace(/\\/g, "/");
+  return path.indexOf("/app/") >= 0 || /\/app$/.test(path) ? "family.html" : "family.html";
+};
+
+TW.premiumPageHref = function () {
+  const path = (location.pathname || "").replace(/\\/g, "/");
+  if (path.indexOf("/app/") >= 0 || /\/app$/.test(path)) return "premium.html";
+  return "premium.html";
+};
+
+TW.subscribePremiumPlan = function (planId) {
+  if (!TW.isLoggedIn()) return { ok: false, error: "login" };
+  const auth = TW.getMemberAuth() || {};
+  const email = TW.memberEmail();
+  const name = TW.memberDisplayName() || auth.name || email;
+  if (typeof CMS === "undefined") return { ok: false, error: "cms" };
+  const result =
+    planId === "family"
+      ? CMS.subscribeFamilyPremium({ email: email, name: name })
+      : CMS.subscribeIndividualPremium({ email: email, name: name });
+  if (result && result.ok) {
+    TW.loginMember({
+      firstName: auth.firstName,
+      lastName: auth.lastName,
+      name: name,
+      email: email,
+      phone: auth.phone,
+      premium: true,
+      newsletter: auth.newsletter,
+    });
+  }
+  return result;
+};
+
+TW.getMyFamilyPlan = function () {
+  if (typeof CMS === "undefined" || !CMS.getFamilyPlanForEmail) return null;
+  return CMS.getFamilyPlanForEmail(TW.memberEmail());
 };
 
 TW.isMemberPremium = function () {

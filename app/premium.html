@@ -70,9 +70,27 @@
                 <span class="app-premium-pill premium-hero-badge">Premium</span>
                 <h1 class="page-title" id="premiumTitle"></h1>
                 <p class="page-sub" id="premiumLede"></p>
-                <a class="btn btn-primary btn-block" href="login.html" id="premiumCta"></a>
               </div>
             </section>
+
+            <div class="section-head">
+              <h2 id="plansTitle"></h2>
+            </div>
+            <div class="premium-plans-grid" style="margin-bottom:1rem">
+              <article class="premium-plan-card">
+                <h3 id="indTitle"></h3>
+                <p class="premium-plan-price">HK$300 <span id="indPer"></span></p>
+                <p id="indBody"></p>
+                <button type="button" class="btn btn-primary btn-block" id="btnIndividual"></button>
+              </article>
+              <article class="premium-plan-card is-featured">
+                <h3 id="famTitle"></h3>
+                <p class="premium-plan-price">HK$950 <span id="famPer"></span></p>
+                <p class="premium-plan-meta" id="famSeats"></p>
+                <p id="famBody"></p>
+                <button type="button" class="btn btn-primary btn-block" id="btnFamily"></button>
+              </article>
+            </div>
 
             <section class="premium-spotlight card">
               <div class="premium-spotlight-media">
@@ -94,7 +112,7 @@
                 <h2 id="ctaBandTitle"></h2>
                 <p id="ctaBandBody"></p>
               </div>
-              <a class="btn btn-primary btn-block" href="login.html" id="premiumCtaBottom"></a>
+              <a class="btn btn-secondary btn-block" href="family.html" id="familyManageLink"></a>
             </section>
           </main>
         </div>
@@ -121,25 +139,69 @@
     document.getElementById("premiumTitle").textContent = t("premium_page_title");
     document.getElementById("premiumLede").textContent = t("premium_page_lede");
     if (TW.applyPremiumSpotlightCopy) TW.applyPremiumSpotlightCopy();
+    document.getElementById("plansTitle").textContent = t("premium_page_plans_title");
+    document.getElementById("indTitle").textContent = t("premium_plan_individual");
+    document.getElementById("indPer").textContent = t("premium_plan_per_year");
+    document.getElementById("indBody").textContent = t("premium_plan_individual_body");
+    document.getElementById("btnIndividual").textContent = t("premium_plan_individual_cta");
+    document.getElementById("famTitle").textContent = t("premium_plan_family");
+    document.getElementById("famPer").textContent = t("premium_plan_per_year");
+    document.getElementById("famSeats").textContent = t("premium_plan_seats");
+    document.getElementById("famBody").textContent = t("premium_plan_family_body");
+    document.getElementById("btnFamily").textContent = t("premium_plan_family_cta");
     document.getElementById("featuresTitle").textContent = t("premium_page_features_title");
     document.getElementById("ctaBandTitle").textContent = t("home_premium_title");
     document.getElementById("ctaBandBody").textContent = t("dash_premium_plan_body");
-    document.getElementById("premiumCta").textContent = t("premium_page_cta");
-    document.getElementById("premiumCtaBottom").textContent = t("premium_page_cta");
+    document.getElementById("familyManageLink").textContent = t("family_manage");
     twMountAppNav("profile");
 
-    const loginNext = encodeURIComponent("app/premium.html");
-    document.getElementById("premiumCta").href = "login.html?next=" + loginNext;
-    document.getElementById("premiumCtaBottom").href = "login.html?next=" + loginNext;
+    function subscribe(planId) {
+      if (!TW.isLoggedIn()) {
+        location.href = "login.html?next=" + encodeURIComponent("premium.html?plan=" + planId);
+        return;
+      }
+      const res = TW.subscribePremiumPlan(planId);
+      if (!res || !res.ok) {
+        if (res && res.error === "already_on_family") showToast(t("premium_already_family"));
+        else showToast(t("premium_need_login"));
+        return;
+      }
+      if (planId === "family") {
+        showToast(t("premium_subscribe_family_ok"));
+        setTimeout(() => { location.href = "family.html"; }, 700);
+      } else {
+        showToast(t("premium_subscribe_ok"));
+        setTimeout(() => { location.href = "profile.html"; }, 700);
+      }
+    }
 
-    if (TW.isMemberPremium && TW.isMemberPremium()) {
-      [document.getElementById("premiumCta"), document.getElementById("premiumCtaBottom")].forEach((cta) => {
-        if (!cta) return;
-        cta.textContent = t("dash_premium_active");
-        cta.href = "profile.html";
-        cta.classList.remove("btn-primary");
-        cta.classList.add("btn-secondary");
-      });
+    const premInfo = TW.getMemberPremiumInfo ? TW.getMemberPremiumInfo() : { active: false };
+    const onFamily = !!(premInfo.plan === "family" || (TW.getMyFamilyPlan && TW.getMyFamilyPlan()));
+
+    document.getElementById("btnIndividual").addEventListener("click", () => {
+      if (premInfo.active && !onFamily) return;
+      subscribe("individual");
+    });
+    document.getElementById("btnFamily").addEventListener("click", () => {
+      if (onFamily) {
+        location.href = "family.html";
+        return;
+      }
+      subscribe("family");
+    });
+
+    if (premInfo.active) {
+      if (onFamily) document.getElementById("btnFamily").textContent = t("family_manage");
+      else {
+        document.getElementById("btnIndividual").textContent = t("dash_premium_active");
+        document.getElementById("btnIndividual").classList.remove("btn-primary");
+        document.getElementById("btnIndividual").classList.add("btn-secondary");
+      }
+    }
+
+    const wanted = new URLSearchParams(location.search).get("plan");
+    if (wanted && TW.isLoggedIn() && (wanted === "individual" || wanted === "family") && !premInfo.active) {
+      subscribe(wanted);
     }
 
     const premiumImages = [

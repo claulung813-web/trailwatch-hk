@@ -7,6 +7,13 @@ CMS.STORE_KEY = "tw_cms_store";
 CMS.DEMO_USER = "staff";
 CMS.DEMO_PASS = "trailwatch";
 
+/** Annual Premium pricing (HKD). Family covers 4 seats including the owner. */
+CMS.PREMIUM_PLANS = {
+  individual: { id: "individual", seats: 1, amount: 300, currency: "HKD", label: "Individual", labelZh: "個人" },
+  family: { id: "family", seats: 4, amount: 950, currency: "HKD", label: "Family", labelZh: "家庭" },
+};
+CMS.FAMILY_SEAT_CHANGE_DAYS = 365;
+
 CMS.INCIDENT_STATUSES = [
   { id: "received", label: "Received", labelZh: "已收到" },
   { id: "under_review", label: "Under review", labelZh: "審核中" },
@@ -314,6 +321,7 @@ CMS.defaultStore = function () {
     challenges: null,
     members: [],
     authLogs: [],
+    familyPlans: [],
     users: [],
     donations: [],
     feedback: [],
@@ -1082,6 +1090,10 @@ CMS.getStore = function () {
       store.authLogs = [];
       migrated = true;
     } else store.authLogs = parsed.authLogs || [];
+    if (!("familyPlans" in parsed)) {
+      store.familyPlans = [];
+      migrated = true;
+    } else store.familyPlans = parsed.familyPlans || [];
     if (!("users" in parsed) || !(parsed.users && parsed.users.length)) {
       store.users = CMS.seedUsers();
       migrated = true;
@@ -1423,6 +1435,363 @@ CMS.recordAuthEvent = function (data) {
   store.authLogs = store.authLogs.slice(0, 200);
   CMS.setStore(store);
   return entry;
+};
+
+CMS.premiumPlan = function (id) {
+  return (CMS.PREMIUM_PLANS && CMS.PREMIUM_PLANS[id]) || CMS.PREMIUM_PLANS.individual;
+};
+
+CMS._isoToday = function () {
+  return new Date().toISOString().slice(0, 10);
+};
+
+CMS._addDaysISO = function (iso, days) {
+  const d = new Date((iso || CMS._isoToday()) + "T12:00:00");
+  d.setDate(d.getDate() + (days || 0));
+  return d.toISOString().slice(0, 10);
+};
+
+CMS._normEmail = function (email) {
+  return String(email || "")
+    .trim()
+    .toLowerCase();
+};
+
+CMS.ensureUserPremium = function (email, name, opts) {
+  opts = opts || {};
+  const store = CMS.getStore();
+  const e = CMS._normEmail(email);
+  if (!e) return null;
+  let user = (store.users || []).find((u) => CMS._normEmail(u.email) === e);
+  const start = opts.start || CMS._isoToday();
+  const end = opts.end || CMS._addDaysISO(start, 365);
+  if (!user) {
+    user = CMS.addUser({
+      name: name || e.split("@")[0],
+      email: e,
+      premium: true,
+      premiumStart: start,
+      premiumEnd: end,
+      loginMethod: "email",
+      note: opts.note || "",
+    });
+    return user;
+  }
+  user.premium = true;
+  user.premiumStart = start;
+  user.premiumEnd = end;
+  if (name && !user.name) user.name = name;
+  if (opts.note) user.note = ((user.note || "") + " · " + opts.note).replace(/^ · /, "");
+  CMS.setStore(store);
+  return user;
+};
+
+CMS.clearUserPremiumIfFamilyOnly = function (email) {
+  const e = CMS._normEmail(email);
+  if (!e) return;
+  const store = CMS.getStore();
+  const user = (store.users || []).find((u) => CMS._normEmail(u.email) === e);
+  if (!user) return;
+  const stillOnFamily = (store.familyPlans || []).some((fp) => {
+    if (!CMS.familyPlanActive(fp)) return false;
+    return (fp.seats || []).some(
+      (s) => CMS._normEmail(s.email) === e && (s.status === "active" || s.status === "invited")
+    );
+  });
+  if (stillOnFamily) return;
+  if (String(user.note || "").indexOf("family") >= 0 || user.premiumPlan === "family") {
+    user.premium = false;
+    user.premiumPlan = "";
+    user.familyPlanId = "";
+    CMS.setStore(store);
+  }
+};
+
+CMS.familyPlanActive = function (fp, onDate) {
+  if (!fp || fp.status === "cancelled") return false;
+  const day = onDate ? String(onDate).slice(0, 10) : CMS._isoToday();
+  if (fp.premiumStart && day < fp.premiumStart) return false;
+  if (fp.premiumEnd && day > fp.premiumEnd) return false;
+  return true;
+};
+
+CMS.getFamilyPlans = function () {
+  return (CMS.getStore().familyPlans || []).slice();
+};
+
+CMS.getFamilyPlanById = function (id) {
+  return (CMS.getStore().familyPlans || []).find((fp) => fp.id === id) || null;
+};
+
+CMS.getFamilyPlanForEmail = function (email) {
+  const e = CMS._normEmail(email);
+  if (!e) return null;
+  return (
+    (CMS.getStore().familyPlans || []).find((fp) => {
+      if (!CMS.familyPlanActive(fp)) return false;
+      return (fp.seats || []).some(
+        (s) => CMS._normEmail(s.email) === e && (s.status === "active" || s.status === "invited")
+      );
+    }) || null
+  );
+};
+
+CMS.getFamilyInvite = function (inviteId) {
+  const id = String(inviteId || "");
+  if (!id) return null;
+  for (const fp of CMS.getStore().familyPlans || []) {
+    const inv = (fp.invites || []).find((i) => i.id === id);
+    if (inv) return { plan: fp, invite: inv };
+  }
+  return null;
+};
+
+CMS.familySeatChangesInWindow = function (fp, seatIndex) {
+  const windowMs = (CMS.FAMILY_SEAT_CHANGE_DAYS || 365) * 24 * 60 * 60 * 1000;
+  const since = Date.now() - windowMs;
+  return (fp.seatChanges || []).filter((c) => c.seatIndex === seatIndex && Date.parse(c.at) >= since);
+};
+
+CMS.familyCanChangeSeat = function (fp, seatIndex) {
+  return CMS.familySeatChangesInWindow(fp, seatIndex).length < 1;
+};
+
+CMS._recordFamilySeatChange = function (fp, seatIndex, email, action) {
+  fp.seatChanges = fp.seatChanges || [];
+  fp.seatChanges.push({
+    seatIndex: seatIndex,
+    email: CMS._normEmail(email),
+    action: action,
+    at: new Date().toISOString(),
+  });
+};
+
+CMS._syncFamilyMemberPremium = function (fp) {
+  if (!CMS.familyPlanActive(fp)) return;
+  (fp.seats || []).forEach((s) => {
+    if (s.status === "active" && s.email) {
+      const u = CMS.ensureUserPremium(s.email, s.name, {
+        start: fp.premiumStart,
+        end: fp.premiumEnd,
+        note: "family " + fp.id,
+      });
+      if (u) {
+        u.premiumPlan = "family";
+        u.familyPlanId = fp.id;
+        const store = CMS.getStore();
+        CMS.setStore(store);
+      }
+    }
+  });
+};
+
+CMS.subscribeIndividualPremium = function (data) {
+  const plan = CMS.premiumPlan("individual");
+  const email = CMS._normEmail(data && data.email);
+  const name = ((data && data.name) || "").trim() || email.split("@")[0];
+  if (!email) return { ok: false, error: "email" };
+  const start = CMS._isoToday();
+  const end = CMS._addDaysISO(start, 365);
+  const user = CMS.ensureUserPremium(email, name, { start: start, end: end, note: "individual" });
+  if (user) {
+    user.premiumPlan = "individual";
+    user.familyPlanId = "";
+    CMS.setStore(CMS.getStore());
+  }
+  const store = CMS.getStore();
+  store.transactions = store.transactions || [];
+  store.transactions.unshift({
+    id: "txn_" + Date.now().toString(36),
+    type: "premium",
+    userId: (user && user.id) || "",
+    email: email,
+    name: name,
+    amount: plan.amount,
+    currency: plan.currency,
+    method: "Demo card",
+    status: "paid",
+    periodStart: start,
+    periodEnd: end,
+    createdAt: new Date().toISOString(),
+    details: { plan: "Premium Individual", seats: 1 },
+  });
+  CMS.setStore(store);
+  return { ok: true, plan: "individual", user: user, start: start, end: end, amount: plan.amount };
+};
+
+CMS.subscribeFamilyPremium = function (data) {
+  const plan = CMS.premiumPlan("family");
+  const email = CMS._normEmail(data && data.email);
+  const name = ((data && data.name) || "").trim() || email.split("@")[0];
+  if (!email) return { ok: false, error: "email" };
+  const existing = CMS.getFamilyPlanForEmail(email);
+  if (existing && CMS._normEmail(existing.ownerEmail) === email) {
+    return { ok: true, plan: "family", family: existing, already: true };
+  }
+  if (existing) return { ok: false, error: "already_on_family" };
+  const start = CMS._isoToday();
+  const end = CMS._addDaysISO(start, 365);
+  const id = "fam_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
+  const seats = [];
+  for (let i = 0; i < plan.seats; i++) {
+    seats.push({
+      index: i,
+      email: i === 0 ? email : "",
+      name: i === 0 ? name : "",
+      role: i === 0 ? "owner" : "member",
+      status: i === 0 ? "active" : "empty",
+      joinedAt: i === 0 ? new Date().toISOString() : "",
+    });
+  }
+  const family = {
+    id: id,
+    ownerEmail: email,
+    ownerName: name,
+    seats: seats,
+    invites: [],
+    seatChanges: [],
+    status: "active",
+    premiumStart: start,
+    premiumEnd: end,
+    amount: plan.amount,
+    currency: plan.currency,
+    createdAt: new Date().toISOString(),
+  };
+  const store = CMS.getStore();
+  store.familyPlans = store.familyPlans || [];
+  store.familyPlans.unshift(family);
+  store.transactions = store.transactions || [];
+  const user = CMS.ensureUserPremium(email, name, { start: start, end: end, note: "family " + id });
+  if (user) {
+    user.premiumPlan = "family";
+    user.familyPlanId = id;
+  }
+  store.transactions.unshift({
+    id: "txn_" + Date.now().toString(36),
+    type: "premium",
+    userId: (user && user.id) || "",
+    email: email,
+    name: name,
+    amount: plan.amount,
+    currency: plan.currency,
+    method: "Demo card",
+    status: "paid",
+    periodStart: start,
+    periodEnd: end,
+    createdAt: new Date().toISOString(),
+    details: { plan: "Premium Family", seats: plan.seats, familyId: id },
+  });
+  CMS.setStore(store);
+  return { ok: true, plan: "family", family: family, user: user, start: start, end: end, amount: plan.amount };
+};
+
+CMS.inviteFamilyMember = function (familyId, inviteEmail, invitedBy) {
+  const store = CMS.getStore();
+  const fp = (store.familyPlans || []).find((f) => f.id === familyId);
+  if (!fp || !CMS.familyPlanActive(fp)) return { ok: false, error: "not_found" };
+  if (CMS._normEmail(fp.ownerEmail) !== CMS._normEmail(invitedBy)) {
+    return { ok: false, error: "not_owner" };
+  }
+  const email = CMS._normEmail(inviteEmail);
+  if (!email || email.indexOf("@") < 0) return { ok: false, error: "email" };
+  if ((fp.seats || []).some((s) => CMS._normEmail(s.email) === email && s.status !== "empty")) {
+    return { ok: false, error: "already_member" };
+  }
+  if (CMS.getFamilyPlanForEmail(email)) return { ok: false, error: "already_on_family" };
+  const empty = (fp.seats || []).find((s) => s.status === "empty");
+  if (!empty) return { ok: false, error: "full" };
+  const inviteId = "finv_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
+  empty.email = email;
+  empty.name = email.split("@")[0];
+  empty.status = "invited";
+  empty.role = "member";
+  empty.joinedAt = "";
+  fp.invites = fp.invites || [];
+  fp.invites.unshift({
+    id: inviteId,
+    email: email,
+    seatIndex: empty.index,
+    status: "pending",
+    invitedAt: new Date().toISOString(),
+    invitedBy: CMS._normEmail(invitedBy),
+  });
+  CMS.setStore(store);
+  return { ok: true, invite: fp.invites[0], family: fp, seatIndex: empty.index };
+};
+
+CMS.acceptFamilyInvite = function (inviteId, acceptor) {
+  const found = CMS.getFamilyInvite(inviteId);
+  if (!found) return { ok: false, error: "not_found" };
+  const fp = found.plan;
+  const inv = found.invite;
+  if (inv.status !== "pending") return { ok: false, error: "used" };
+  if (!CMS.familyPlanActive(fp)) return { ok: false, error: "expired" };
+  const email = CMS._normEmail((acceptor && acceptor.email) || inv.email);
+  if (email !== CMS._normEmail(inv.email)) return { ok: false, error: "email_mismatch" };
+  if (CMS.getFamilyPlanForEmail(email) && CMS.getFamilyPlanForEmail(email).id !== fp.id) {
+    return { ok: false, error: "already_on_family" };
+  }
+  const store = CMS.getStore();
+  const plan = (store.familyPlans || []).find((f) => f.id === fp.id);
+  const invite = (plan.invites || []).find((i) => i.id === inviteId);
+  const seat = (plan.seats || []).find((s) => s.index === invite.seatIndex);
+  if (!seat) return { ok: false, error: "seat" };
+  invite.status = "accepted";
+  invite.acceptedAt = new Date().toISOString();
+  seat.email = email;
+  seat.name = ((acceptor && acceptor.name) || "").trim() || email.split("@")[0];
+  seat.status = "active";
+  seat.joinedAt = new Date().toISOString();
+  CMS.setStore(store);
+  CMS._syncFamilyMemberPremium(plan);
+  return { ok: true, family: plan, seat: seat };
+};
+
+CMS.leaveFamilySeat = function (familyId, email) {
+  const store = CMS.getStore();
+  const fp = (store.familyPlans || []).find((f) => f.id === familyId);
+  if (!fp) return { ok: false, error: "not_found" };
+  const e = CMS._normEmail(email);
+  const seat = (fp.seats || []).find((s) => CMS._normEmail(s.email) === e && s.status !== "empty");
+  if (!seat) return { ok: false, error: "not_member" };
+  if (seat.role === "owner") return { ok: false, error: "owner_cannot_leave" };
+  if (!CMS.familyCanChangeSeat(fp, seat.index)) return { ok: false, error: "seat_limit" };
+  CMS._recordFamilySeatChange(fp, seat.index, e, "leave");
+  (fp.invites || []).forEach((inv) => {
+    if (inv.seatIndex === seat.index && inv.status === "pending") inv.status = "cancelled";
+  });
+  seat.email = "";
+  seat.name = "";
+  seat.status = "empty";
+  seat.joinedAt = "";
+  CMS.setStore(store);
+  CMS.clearUserPremiumIfFamilyOnly(e);
+  return { ok: true, family: fp, seatIndex: seat.index };
+};
+
+CMS.removeFamilySeat = function (familyId, seatIndex, ownerEmail) {
+  const store = CMS.getStore();
+  const fp = (store.familyPlans || []).find((f) => f.id === familyId);
+  if (!fp) return { ok: false, error: "not_found" };
+  if (CMS._normEmail(fp.ownerEmail) !== CMS._normEmail(ownerEmail)) {
+    return { ok: false, error: "not_owner" };
+  }
+  const seat = (fp.seats || []).find((s) => s.index === seatIndex);
+  if (!seat || seat.status === "empty") return { ok: false, error: "empty" };
+  if (seat.role === "owner") return { ok: false, error: "owner_cannot_leave" };
+  if (!CMS.familyCanChangeSeat(fp, seat.index)) return { ok: false, error: "seat_limit" };
+  const removedEmail = seat.email;
+  CMS._recordFamilySeatChange(fp, seat.index, removedEmail, "remove");
+  (fp.invites || []).forEach((inv) => {
+    if (inv.seatIndex === seat.index && inv.status === "pending") inv.status = "cancelled";
+  });
+  seat.email = "";
+  seat.name = "";
+  seat.status = "empty";
+  seat.joinedAt = "";
+  CMS.setStore(store);
+  CMS.clearUserPremiumIfFamilyOnly(removedEmail);
+  return { ok: true, family: fp, seatIndex: seat.index };
 };
 
 CMS.submitDonation = function (data) {

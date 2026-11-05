@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Family plan — TrailWatch HK</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css?v=20261105a" />
+</head>
+<body>
+  <div id="app-header"></div>
+
+  <main class="page">
+    <div class="container" style="max-width:720px">
+      <h1 class="page-title" id="pageTitle"></h1>
+      <p class="page-sub" id="pageSub"></p>
+      <p class="family-note" id="planMeta"></p>
+
+      <div id="noPlan" style="display:none">
+        <p id="noPlanBody"></p>
+        <a class="btn btn-primary" href="premium.html?plan=family" id="getPlan"></a>
+      </div>
+
+      <div id="planPanel" style="display:none">
+        <div class="family-seats" id="seats"></div>
+
+        <div id="inviteBlock" style="display:none">
+          <div class="family-invite-row">
+            <div class="form-group">
+              <label for="inviteEmail" id="inviteLabel"></label>
+              <input class="form-input" id="inviteEmail" type="email" autocomplete="email" />
+            </div>
+            <button type="button" class="btn btn-primary" id="inviteBtn"></button>
+          </div>
+          <p class="family-note" id="lastInvite" style="display:none;margin-top:0.75rem"></p>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <div id="app-footer"></div>
+  <div class="toast" id="toast"></div>
+
+  <script src="js/i18n.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/live-routes.js"></script>
+  <script src="js/cms-store.js"></script>
+  <script src="js/app.js?v=20261105a"></script>
+  <script>
+    document.documentElement.lang = TW.getLang() === "zh" ? "zh-Hant" : "en";
+    initShell("premium");
+    const t = TW.t;
+
+    if (!TW.isLoggedIn()) {
+      location.href = "login.html?next=" + encodeURIComponent("family.html");
+    }
+
+    document.getElementById("pageTitle").textContent = t("family_page_title");
+    document.getElementById("pageSub").textContent = t("family_page_sub");
+    document.getElementById("noPlanBody").textContent = t("family_no_plan");
+    document.getElementById("getPlan").textContent = t("family_get_plan");
+    document.getElementById("inviteLabel").textContent = t("family_invite_label");
+    document.getElementById("inviteEmail").placeholder = t("family_invite_ph");
+    document.getElementById("inviteBtn").textContent = t("family_invite_cta");
+
+    function statusLabel(seat) {
+      if (seat.role === "owner") return t("family_owner");
+      if (seat.status === "invited") return t("family_invited");
+      if (seat.status === "active") return t("family_member");
+      return t("family_empty");
+    }
+
+    function render() {
+      const fp = TW.getMyFamilyPlan();
+      const email = TW.memberEmail();
+      if (!fp) {
+        document.getElementById("noPlan").style.display = "";
+        document.getElementById("planPanel").style.display = "none";
+        document.getElementById("planMeta").textContent = "";
+        return;
+      }
+      document.getElementById("noPlan").style.display = "none";
+      document.getElementById("planPanel").style.display = "";
+      const isOwner = String(fp.ownerEmail || "").toLowerCase() === email;
+      document.getElementById("planMeta").textContent =
+        t("family_expires") + ": " + (fp.premiumEnd || "—") + " · HK$" + (fp.amount || 950);
+      document.getElementById("inviteBlock").style.display = isOwner ? "" : "none";
+
+      document.getElementById("seats").innerHTML = (fp.seats || [])
+        .map((seat) => {
+          const canChange = CMS.familyCanChangeSeat(fp, seat.index);
+          const changeNote = canChange ? t("family_changes_ok") : t("family_changes_used");
+          const title = seat.email || t("family_empty");
+          let actions = "";
+          if (seat.role !== "owner" && seat.status !== "empty") {
+            if (isOwner) {
+              actions += `<button type="button" class="btn btn-secondary btn-sm" data-remove="${seat.index}">${TW.escapeHtml(t("family_remove"))}</button>`;
+            }
+            if (String(seat.email || "").toLowerCase() === email && seat.role !== "owner") {
+              actions += `<button type="button" class="btn btn-secondary btn-sm" data-leave="1">${TW.escapeHtml(t("family_leave"))}</button>`;
+            }
+          }
+          return `<div class="family-seat">
+            <div class="family-seat-main">
+              <strong>${TW.escapeHtml(title)}</strong>
+              <span>${TW.escapeHtml(statusLabel(seat))} · ${TW.escapeHtml(changeNote)}</span>
+            </div>
+            <div class="family-seat-actions">${actions}</div>
+          </div>`;
+        })
+        .join("");
+
+      document.querySelectorAll("[data-remove]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const res = CMS.removeFamilySeat(fp.id, +btn.getAttribute("data-remove"), email);
+          if (!res.ok) {
+            showToast(res.error === "seat_limit" ? t("family_seat_limit") : t("family_not_owner"));
+            return;
+          }
+          showToast(t("family_remove_ok"));
+          render();
+        });
+      });
+      document.querySelectorAll("[data-leave]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const res = CMS.leaveFamilySeat(fp.id, email);
+          if (!res.ok) {
+            showToast(res.error === "seat_limit" ? t("family_seat_limit") : t("family_leave"));
+            return;
+          }
+          showToast(t("family_leave_ok"));
+          TW.loginMember(Object.assign({}, TW.getMemberAuth() || {}, { premium: false, email: email, name: TW.memberDisplayName() }));
+          render();
+        });
+      });
+    }
+
+    document.getElementById("inviteBtn").addEventListener("click", () => {
+      const fp = TW.getMyFamilyPlan();
+      if (!fp) return;
+      const inviteEmail = document.getElementById("inviteEmail").value.trim();
+      const res = CMS.inviteFamilyMember(fp.id, inviteEmail, TW.memberEmail());
+      if (!res.ok) {
+        const map = {
+          full: "family_full",
+          seat_limit: "family_seat_limit",
+          not_owner: "family_not_owner",
+          already_member: "premium_already_family",
+          already_on_family: "premium_already_family",
+        };
+        showToast(t(map[res.error] || "family_invite_cta"));
+        return;
+      }
+      const link = location.origin + location.pathname.replace(/family\.html.*/, "") + "family-invite.html?id=" + encodeURIComponent(res.invite.id);
+      const box = document.getElementById("lastInvite");
+      box.style.display = "";
+      box.innerHTML = TW.escapeHtml(t("family_invite_sent")) + "<br>" + TW.escapeHtml(t("family_invite_link")) + ": <a href=\"" + TW.escapeHtml(link) + "\">" + TW.escapeHtml(link) + "</a>";
+      document.getElementById("inviteEmail").value = "";
+      showToast(t("family_invite_sent"));
+      render();
+    });
+
+    render();
+  </script>
+</body>
+</html>
