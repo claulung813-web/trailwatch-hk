@@ -326,6 +326,10 @@ function twMountAppNav(active, selector) {
   }
   const el = document.querySelector(selector || "[data-app-nav]");
   if (el) el.outerHTML = twAppBottomNav(active);
+  if (typeof TW !== "undefined" && typeof TW.mountHealthStepsPrompt === "function" && TW.isAppShell && TW.isAppShell()) {
+    clearTimeout(window._twHealthStepsPrompt);
+    window._twHealthStepsPrompt = setTimeout(() => TW.mountHealthStepsPrompt(), 450);
+  }
 }
 
 window.twAppBrandSrc = twAppBrandSrc;
@@ -413,6 +417,136 @@ TW.mountAppLoginLink = function (host) {
     return;
   }
   host.innerHTML = `<a class="app-login-link" href="login.html">${TW.escapeHtml(TW.t("nav_login"))}</a>`;
+};
+
+TW.HEALTH_STEPS_KEY = "tw_health_steps";
+TW.HEALTH_STEPS_PROMPTED_KEY = "tw_health_steps_prompted";
+
+/** Rough platform for Health steps: iOS → Apple Health, Android → Health Connect. */
+TW.detectAppPlatform = function () {
+  const ua = navigator.userAgent || "";
+  if (/iPhone|iPad|iPod/i.test(ua) || (/Macintosh/i.test(ua) && "ontouchend" in document)) return "ios";
+  if (/Android/i.test(ua)) return "android";
+  // Phone-frame demo on desktop: prefer iOS copy unless ?platform=android
+  try {
+    const q = new URLSearchParams(location.search).get("platform");
+    if (q === "android" || q === "ios") return q;
+  } catch (e) {}
+  return "ios";
+};
+
+TW.getHealthStepsPref = function () {
+  try {
+    return JSON.parse(localStorage.getItem(TW.HEALTH_STEPS_KEY) || "null");
+  } catch (e) {
+    return null;
+  }
+};
+
+TW.setHealthStepsPref = function (data) {
+  try {
+    localStorage.setItem(TW.HEALTH_STEPS_KEY, JSON.stringify(data || {}));
+  } catch (e) {}
+};
+
+/**
+ * First-open popup: connect Steps from Apple Health (iOS) or Health Connect (Android).
+ * Shows once per browser unless forced.
+ */
+TW.mountHealthStepsPrompt = function (opts) {
+  opts = opts || {};
+  if (!opts.force) {
+    try {
+      if (localStorage.getItem(TW.HEALTH_STEPS_PROMPTED_KEY) === "1") return;
+    } catch (e) {}
+  }
+  if (document.getElementById("twHealthStepsModal")) return;
+
+  const platform = TW.detectAppPlatform();
+  const isIos = platform === "ios";
+  const title = TW.t(isIos ? "health_steps_title_ios" : "health_steps_title_android");
+  const body = TW.t(isIos ? "health_steps_body_ios" : "health_steps_body_android");
+  const source = TW.t(isIos ? "health_steps_source_ios" : "health_steps_source_android");
+
+  const modal = document.createElement("div");
+  modal.id = "twHealthStepsModal";
+  modal.className = "tw-health-modal";
+  modal.setAttribute("role", "dialog");
+  modal.setAttribute("aria-modal", "true");
+  modal.innerHTML =
+    `<div class="tw-health-modal-sheet">` +
+    `<p class="tw-health-modal-eyebrow">${TW.escapeHtml(source)}</p>` +
+    `<strong class="tw-health-modal-title">${TW.escapeHtml(title)}</strong>` +
+    `<p class="tw-health-modal-body">${TW.escapeHtml(body)}</p>` +
+    `<div class="tw-health-modal-actions">` +
+    `<button type="button" class="btn btn-secondary" data-health="later">${TW.escapeHtml(TW.t("health_steps_later"))}</button>` +
+    `<button type="button" class="btn btn-primary" data-health="allow">${TW.escapeHtml(TW.t("health_steps_allow"))}</button>` +
+    `</div></div>`;
+
+  if (!document.getElementById("twHealthStepsStyle")) {
+    const style = document.createElement("style");
+    style.id = "twHealthStepsStyle";
+    style.textContent =
+      ".tw-health-modal{position:fixed;inset:0;z-index:12000;display:flex;align-items:flex-end;justify-content:center;" +
+      "background:rgba(15,23,15,.45);padding:1rem;box-sizing:border-box}" +
+      ".tw-health-modal-sheet{width:100%;max-width:420px;background:#fff;border-radius:16px 16px 12px 12px;" +
+      "padding:1.15rem 1.15rem 1.25rem;box-shadow:0 12px 40px rgba(0,0,0,.2)}" +
+      ".tw-health-modal-eyebrow{margin:0 0 .35rem;font-size:.68rem;font-weight:700;letter-spacing:.04em;" +
+      "text-transform:uppercase;color:var(--green-800,#166534)}" +
+      ".tw-health-modal-title{display:block;font-size:1.05rem;color:var(--green-900,#0b421a);margin:0 0 .45rem}" +
+      ".tw-health-modal-body{margin:0 0 1rem;font-size:.84rem;line-height:1.5;color:var(--text-muted,#6b7280)}" +
+      ".tw-health-modal-actions{display:flex;gap:.5rem}.tw-health-modal-actions .btn{flex:1}";
+    document.head.appendChild(style);
+  }
+
+  function dismiss(allowed) {
+    try {
+      localStorage.setItem(TW.HEALTH_STEPS_PROMPTED_KEY, "1");
+    } catch (e) {}
+    const pref = {
+      allowed: !!allowed,
+      platform: platform,
+      source: isIos ? "apple_health" : "health_connect",
+      metric: "steps",
+      at: new Date().toISOString(),
+    };
+    TW.setHealthStepsPref(pref);
+    if (allowed) {
+      try {
+        const map = JSON.parse(localStorage.getItem("tw_watch_connections") || "{}") || {};
+        if (isIos) {
+          map.apple = Object.assign({}, map.apple || {}, {
+            connected: true,
+            connectedAt: pref.at,
+            lastSync: "",
+            steps: true,
+          });
+        } else {
+          map.health_connect = {
+            connected: true,
+            connectedAt: pref.at,
+            lastSync: "",
+            steps: true,
+          };
+        }
+        localStorage.setItem("tw_watch_connections", JSON.stringify(map));
+      } catch (e) {}
+      if (typeof showToast === "function") showToast(TW.t(isIos ? "health_steps_allowed_ios" : "health_steps_allowed_android"));
+    }
+    modal.remove();
+  }
+
+  modal.addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-health]");
+    if (!btn) return;
+    dismiss(btn.getAttribute("data-health") === "allow");
+  });
+
+  document.body.appendChild(modal);
+  setTimeout(() => {
+    const allow = modal.querySelector('[data-health="allow"]');
+    if (allow) allow.focus();
+  }, 50);
 };
 
 /** Login / signup page href (same folder as current page). */
@@ -522,16 +656,17 @@ TW.premiumPageHref = function () {
   return "premium.html";
 };
 
-TW.subscribePremiumPlan = function (planId) {
+TW.subscribePremiumPlan = function (planId, couponCode) {
   if (!TW.isLoggedIn()) return { ok: false, error: "login" };
   const auth = TW.getMemberAuth() || {};
   const email = TW.memberEmail();
   const name = TW.memberDisplayName() || auth.name || email;
   if (typeof CMS === "undefined") return { ok: false, error: "cms" };
+  const path = (location.pathname || "").replace(/\\/g, "/");
+  const source = path.indexOf("/app/") >= 0 ? "app" : "website";
+  const payload = { email: email, name: name, couponCode: couponCode || "", source: source };
   const result =
-    planId === "family"
-      ? CMS.subscribeFamilyPremium({ email: email, name: name })
-      : CMS.subscribeIndividualPremium({ email: email, name: name });
+    planId === "family" ? CMS.subscribeFamilyPremium(payload) : CMS.subscribeIndividualPremium(payload);
   if (result && result.ok) {
     TW.loginMember({
       firstName: auth.firstName,
@@ -544,6 +679,43 @@ TW.subscribePremiumPlan = function (planId) {
     });
   }
   return result;
+};
+
+TW.applyPremiumCoupon = function (couponCode) {
+  if (!TW.isLoggedIn()) return { ok: false, error: "login" };
+  if (typeof CMS === "undefined" || !CMS.applyCouponTrial) return { ok: false, error: "cms" };
+  const auth = TW.getMemberAuth() || {};
+  const email = TW.memberEmail();
+  const name = TW.memberDisplayName() || auth.name || email;
+  const path = (location.pathname || "").replace(/\\/g, "/");
+  const source = path.indexOf("/app/") >= 0 ? "app" : "website";
+  const result = CMS.applyCouponTrial(couponCode, { email: email, name: name, source: source });
+  if (result && result.ok) {
+    TW.loginMember({
+      firstName: auth.firstName,
+      lastName: auth.lastName,
+      name: name,
+      email: email,
+      phone: auth.phone,
+      premium: true,
+      newsletter: auth.newsletter,
+    });
+  }
+  return result;
+};
+
+TW.couponErrorMessage = function (error) {
+  const raw = String(error || "").replace(/^coupon_/, "");
+  const keyMap = {
+    not_found: "coupon_err_not_found",
+    inactive: "coupon_err_inactive",
+    not_started: "coupon_err_not_started",
+    expired: "coupon_err_expired",
+    sold_out: "coupon_err_sold_out",
+    already_used: "coupon_err_used",
+    login: "premium_need_login",
+  };
+  return TW.t(keyMap[raw] || "coupon_err_not_found");
 };
 
 TW.getMyFamilyPlan = function () {

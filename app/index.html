@@ -96,6 +96,22 @@
     }
     .figma-sheet.expanded { max-height: 72% !important; }
     .figma-pause-sheet { max-height: 70% !important; }
+    .auto-pause-toggle {
+      display: flex; align-items: flex-start; gap: 0.55rem;
+      margin: 0.35rem 0 0.65rem; padding: 0.55rem 0.65rem;
+      background: #f3f6f3; border-radius: 10px; cursor: pointer;
+      font-size: 0.78rem; color: var(--green-900); line-height: 1.35;
+    }
+    .auto-pause-toggle input { margin-top: 0.15rem; flex-shrink: 0; }
+    .auto-pause-toggle strong { display: block; font-size: 0.82rem; }
+    .auto-pause-toggle small { display: block; color: var(--text-muted); font-size: 0.7rem; margin-top: 0.1rem; }
+    .auto-pause-banner {
+      margin: 0 0 0.65rem; padding: 0.45rem 0.65rem; border-radius: 8px;
+      background: #fff7ed; color: #9a3412; font-size: 0.78rem; font-weight: 600;
+      text-align: center;
+    }
+    .auto-pause-banner.hidden { display: none; }
+    .gps-pill.auto-paused { background: #fff7ed; color: #9a3412; border-color: #fdba74; }
     .sheet-handle-hit {
       display: flex; flex-direction: column; align-items: center; gap: 0.2rem;
       width: 100%; border: none; background: none; cursor: pointer; padding: 0.15rem 0 0.2rem;
@@ -452,6 +468,13 @@
                 <div class="live-stat"><span class="ico-elev-down"></span><span id="mLoss">0 m</span></div>
               </div>
             </div>
+            <label class="auto-pause-toggle" id="autoPauseToggleWrap">
+              <input type="checkbox" id="autoPauseToggle" checked />
+              <span>
+                <strong id="lblAutoPause"></strong>
+                <small id="hintAutoPause"></small>
+              </span>
+            </label>
             <div class="elev-pace-chart" aria-hidden="true">
               <div class="chart-heads">
                 <span class="elev" id="lblElevAxis">ELEVATION (M)</span>
@@ -508,6 +531,7 @@
         <!-- Pause / Save -->
         <div class="track-sheet figma-sheet figma-pause-sheet hidden" id="pauseSheet">
           <div class="sheet-handle" aria-hidden="true"></div>
+          <p class="auto-pause-banner hidden" id="autoPauseBanner" role="status"></p>
           <div class="track-actions figma-actions">
             <button class="action-circle" type="button" id="btnDiscard">
               <span class="circle red" aria-hidden="true">✕</span>
@@ -876,10 +900,52 @@
     }
 
     function gpsStatus(s) {
-      const shortKey = s === "idle" ? "app_gps_short_ready" : s === "active" ? "app_gps_short_good" : "app_gps_short_paused";
-      const fullKey = s === "idle" ? "app_gps_ready" : s === "active" ? "app_gps_good" : "app_gps_paused";
+      const auto = s === "paused" && pauseReason === "auto";
+      const shortKey = s === "idle" ? "app_gps_short_ready" : s === "active" ? "app_gps_short_good" : auto ? "app_gps_short_auto_paused" : "app_gps_short_paused";
+      const fullKey = s === "idle" ? "app_gps_ready" : s === "active" ? "app_gps_good" : auto ? "app_gps_auto_paused" : "app_gps_paused";
       document.getElementById("gpsText").textContent = TW.t(shortKey);
-      document.getElementById("gpsPill").title = "GPS · " + TW.t(fullKey);
+      const pill = document.getElementById("gpsPill");
+      pill.title = "GPS · " + TW.t(fullKey);
+      pill.classList.toggle("auto-paused", auto);
+    }
+
+    function updateAutoPauseBanner() {
+      const banner = document.getElementById("autoPauseBanner");
+      if (!banner) return;
+      const show = state === "paused" && pauseReason === "auto";
+      banner.classList.toggle("hidden", !show);
+      if (show) banner.textContent = TW.t("app_auto_pause_banner");
+    }
+
+    function stopAutoResumeWatch() {
+      if (autoResumeTimer) {
+        clearInterval(autoResumeTimer);
+        autoResumeTimer = null;
+      }
+      moveSeconds = 0;
+    }
+
+    function startAutoResumeWatch() {
+      stopAutoResumeWatch();
+      if (!autoPauseEnabled || pauseReason !== "auto") return;
+      autoResumeTimer = setInterval(() => {
+        if (state !== "paused" || pauseReason !== "auto" || !autoPauseEnabled) {
+          stopAutoResumeWatch();
+          return;
+        }
+        // Demo: after a short wait, treat as movement and resume.
+        moveSeconds += 1;
+        if (moveSeconds >= AUTO_RESUME_MOVE_SEC + 4) {
+          stopAutoResumeWatch();
+          pauseReason = "";
+          stillSeconds = 0;
+          demoStillBurst = 0;
+          showState("active");
+          updateAutoPauseBanner();
+          if (!timer) timer = setInterval(tick, 1000);
+          showToast(TW.t("app_auto_resume_toast"));
+        }
+      }, 1000);
     }
 
     function i18nUI() {
@@ -899,6 +965,9 @@
       document.getElementById("lblDiscard").textContent = t("app_discard");
       document.getElementById("lblResume").textContent = t("app_resume");
       document.getElementById("lblSave").textContent = t("app_save");
+      document.getElementById("lblAutoPause").textContent = t("app_auto_pause");
+      document.getElementById("hintAutoPause").textContent = t("app_auto_pause_hint");
+      updateAutoPauseBanner();
       document.getElementById("lTime").textContent = t("app_duration");
       document.getElementById("lDist").textContent = t("app_distance");
       document.getElementById("lPace").textContent = t("app_avg_pace");
@@ -1112,10 +1181,26 @@
 
     let state = "idle";
     let seconds = 0, dist = 0, gain = 0, loss = 0, routeIdx = 0, timer = null;
+    /** Auto-pause: stop when still, resume when moving again (demo + real-app behaviour). */
+    const AUTO_PAUSE_STILL_SEC = 10;
+    const AUTO_RESUME_MOVE_SEC = 3;
+    let autoPauseEnabled = true;
+    try {
+      const saved = localStorage.getItem("tw_auto_pause");
+      if (saved === "0") autoPauseEnabled = false;
+      if (saved === "1") autoPauseEnabled = true;
+    } catch (e) {}
+    let pauseReason = ""; // "auto" | "manual" | ""
+    let stillSeconds = 0;
+    let moveSeconds = 0;
+    let demoStillBurst = 0;
+    let autoResumeTimer = null;
     const idleBar = document.getElementById("idleBar");
     const activeSheet = document.getElementById("activeSheet");
     const pauseSheet = document.getElementById("pauseSheet");
     const planPanel = document.getElementById("planPanel");
+    const autoPauseToggle = document.getElementById("autoPauseToggle");
+    if (autoPauseToggle) autoPauseToggle.checked = autoPauseEnabled;
 
     function updateMapChrome() {
       const planning = mapMode === "plan";
@@ -1163,6 +1248,7 @@
       activeSheet.classList.toggle("hidden", s !== "active");
       pauseSheet.classList.toggle("hidden", s !== "paused");
       gpsStatus(s);
+      updateAutoPauseBanner();
       updateMapChrome();
     }
 
@@ -1188,18 +1274,37 @@
     }
     function tick() {
       seconds += 1;
-      dist += 0.012 + Math.random() * 0.008;
-      const elevDelta = (Math.random() - 0.45) * 8;
-      if (elevDelta > 0) gain += elevDelta; else loss += -elevDelta;
-      altitude = Math.max(20, Math.round(altitude + elevDelta * 0.4));
-      if (routeIdx < route.length - 1 && seconds % 8 === 0) {
-        routeIdx++;
-        recordedPath = route.slice(0, routeIdx + 1);
-        if (pathLine) map.removeLayer(pathLine);
-        pathLine = L.polyline(recordedPath, { color: "#2563eb", weight: 5 }).addTo(map);
-        marker.setLatLng(route[routeIdx]);
-        map.panTo(route[routeIdx]);
+
+      // Demo movement sensor: short still bursts so auto-pause can be tried.
+      let moving = true;
+      if (autoPauseEnabled && state === "active") {
+        if (demoStillBurst > 0) {
+          moving = false;
+          demoStillBurst -= 1;
+        } else if (seconds >= 20 && seconds % 55 === 0) {
+          demoStillBurst = AUTO_PAUSE_STILL_SEC + 2;
+          moving = false;
+        }
       }
+
+      if (!moving) {
+        stillSeconds += 1;
+      } else {
+        stillSeconds = 0;
+        dist += 0.012 + Math.random() * 0.008;
+        const elevDelta = (Math.random() - 0.45) * 8;
+        if (elevDelta > 0) gain += elevDelta; else loss += -elevDelta;
+        altitude = Math.max(20, Math.round(altitude + elevDelta * 0.4));
+        if (routeIdx < route.length - 1 && seconds % 8 === 0) {
+          routeIdx++;
+          recordedPath = route.slice(0, routeIdx + 1);
+          if (pathLine) map.removeLayer(pathLine);
+          pathLine = L.polyline(recordedPath, { color: "#2563eb", weight: 5 }).addTo(map);
+          marker.setLatLng(route[routeIdx]);
+          map.panTo(route[routeIdx]);
+        }
+      }
+
       const tStr = fmtTime(seconds);
       const dStr = dist.toFixed(2) + " km";
       const aStr = altitude + " m";
@@ -1215,12 +1320,25 @@
       document.getElementById("mPace").textContent = paceStr();
       document.getElementById("mAlt").textContent = aStr;
       if (liveSharing && seconds % 3 === 0) persistLiveSession();
+
+      if (autoPauseEnabled && state === "active" && stillSeconds >= AUTO_PAUSE_STILL_SEC) {
+        pauseReason = "auto";
+        doPause();
+        startAutoResumeWatch();
+        showToast(TW.t("app_auto_pause_toast"));
+        return;
+      }
     }
 
     function beginTracking() {
       hikeStarted = true;
       hikeStartedAt = new Date().toISOString();
       recordedPath = [route[0]];
+      pauseReason = "";
+      stillSeconds = 0;
+      moveSeconds = 0;
+      demoStillBurst = 0;
+      stopAutoResumeWatch();
       selectedActivityTags.clear();
       renderActivityTagPicker();
       setDrawer(false);
@@ -1235,6 +1353,8 @@
 
     function finishSave() {
       clearInterval(timer); timer = null;
+      stopAutoResumeWatch();
+      pauseReason = "";
       const titleInput = document.getElementById("hikeTitle").value.trim();
       const privacy = (document.querySelector('input[name="privacy"]:checked') || {}).value || "public";
       const photoPriv = document.getElementById("photoPrivModal").value;
@@ -1559,6 +1679,17 @@
       showState("paused");
     }
 
+    if (autoPauseToggle) {
+      autoPauseToggle.addEventListener("change", () => {
+        autoPauseEnabled = !!autoPauseToggle.checked;
+        try {
+          localStorage.setItem("tw_auto_pause", autoPauseEnabled ? "1" : "0");
+        } catch (e) {}
+        if (!autoPauseEnabled) stopAutoResumeWatch();
+        showToast(TW.t(autoPauseEnabled ? "app_auto_pause_on" : "app_auto_pause_off"));
+      });
+    }
+
     document.getElementById("btnStart").addEventListener("click", () => {
       if (mapMode === "plan") {
         showToast(lang === "zh" ? "請先儲存或離開規劃" : "Save or leave planning first");
@@ -1576,18 +1707,30 @@
       beginTracking();
     });
 
-    document.getElementById("btnPause").addEventListener("click", doPause);
+    document.getElementById("btnPause").addEventListener("click", () => {
+      pauseReason = "manual";
+      stopAutoResumeWatch();
+      doPause();
+    });
     document.getElementById("sheetHandle").addEventListener("click", () => setDrawer(!drawerOpen));
 
     document.getElementById("btnResume").addEventListener("click", () => {
+      stopAutoResumeWatch();
+      pauseReason = "";
+      stillSeconds = 0;
+      demoStillBurst = 0;
       showState("active");
       if (!timer) timer = setInterval(tick, 1000);
     });
     document.getElementById("btnDiscard").addEventListener("click", () => {
       clearInterval(timer); timer = null;
+      stopAutoResumeWatch();
       seconds = dist = gain = loss = routeIdx = 0;
       altitude = 142;
       hikeStarted = false;
+      pauseReason = "";
+      stillSeconds = 0;
+      demoStillBurst = 0;
       selectedActivityTags.clear();
       renderActivityTagPicker();
       if (pathLine) { map.removeLayer(pathLine); pathLine = null; }

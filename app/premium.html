@@ -76,6 +76,14 @@
             <div class="section-head">
               <h2 id="plansTitle"></h2>
             </div>
+            <div class="premium-coupon-row card" style="padding:0.85rem 0.9rem;margin-bottom:0.5rem">
+              <div class="form-group" style="margin:0;flex:1;min-width:140px;width:100%">
+                <label for="couponCode" id="couponLabel"></label>
+                <input class="form-input" id="couponCode" type="text" autocomplete="off" spellcheck="false" style="text-transform:uppercase" />
+              </div>
+              <button type="button" class="btn btn-secondary btn-block" id="btnApplyCoupon"></button>
+            </div>
+            <p class="premium-price-note" id="couponHint" style="margin-bottom:0.85rem"></p>
             <div class="premium-plans-grid" style="margin-bottom:1rem">
               <article class="premium-plan-card">
                 <h3 id="indTitle"></h3>
@@ -140,6 +148,9 @@
     document.getElementById("premiumLede").textContent = t("premium_page_lede");
     if (TW.applyPremiumSpotlightCopy) TW.applyPremiumSpotlightCopy();
     document.getElementById("plansTitle").textContent = t("premium_page_plans_title");
+    document.getElementById("couponLabel").textContent = t("coupon_label");
+    document.getElementById("btnApplyCoupon").textContent = t("coupon_apply");
+    document.getElementById("couponHint").textContent = t("coupon_hint");
     document.getElementById("indTitle").textContent = t("premium_plan_individual");
     document.getElementById("indPer").textContent = t("premium_plan_per_year");
     document.getElementById("indBody").textContent = t("premium_plan_individual_body");
@@ -155,25 +166,50 @@
     document.getElementById("familyManageLink").textContent = t("family_manage");
     twMountAppNav("profile");
 
+    function couponValue() {
+      return (document.getElementById("couponCode").value || "").trim();
+    }
+
     function subscribe(planId) {
       if (!TW.isLoggedIn()) {
         location.href = "login.html?next=" + encodeURIComponent("premium.html?plan=" + planId);
         return;
       }
-      const res = TW.subscribePremiumPlan(planId);
+      const res = TW.subscribePremiumPlan(planId, couponValue());
       if (!res || !res.ok) {
-        if (res && res.error === "already_on_family") showToast(t("premium_already_family"));
+        if (res && String(res.error || "").indexOf("coupon_") === 0) showToast(TW.couponErrorMessage(res.error));
+        else if (res && res.error === "already_on_family") showToast(t("premium_already_family"));
         else showToast(t("premium_need_login"));
         return;
       }
+      const bonus = res.extraMonths ? " (+" + res.extraMonths + " " + t("coupon_months_short") + ")" : "";
       if (planId === "family") {
-        showToast(t("premium_subscribe_family_ok"));
+        showToast(t("premium_subscribe_family_ok") + bonus);
         setTimeout(() => { location.href = "family.html"; }, 700);
       } else {
-        showToast(t("premium_subscribe_ok"));
+        showToast(t("premium_subscribe_ok") + bonus);
         setTimeout(() => { location.href = "profile.html"; }, 700);
       }
     }
+
+    document.getElementById("btnApplyCoupon").addEventListener("click", () => {
+      if (!TW.isLoggedIn()) {
+        location.href = "login.html?next=" + encodeURIComponent("premium.html");
+        return;
+      }
+      const code = couponValue();
+      if (!code) {
+        showToast(t("coupon_need_code"));
+        return;
+      }
+      const res = TW.applyPremiumCoupon(code);
+      if (!res || !res.ok) {
+        showToast(TW.couponErrorMessage(res && res.error));
+        return;
+      }
+      showToast(t("coupon_applied").replace("{n}", String(res.extraMonths || 1)).replace("{d}", res.end || ""));
+      setTimeout(() => { location.href = "profile.html"; }, 800);
+    });
 
     const premInfo = TW.getMemberPremiumInfo ? TW.getMemberPremiumInfo() : { active: false };
     const onFamily = !!(premInfo.plan === "family" || (TW.getMyFamilyPlan && TW.getMyFamilyPlan()));

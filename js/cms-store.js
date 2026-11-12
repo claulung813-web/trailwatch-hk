@@ -322,6 +322,7 @@ CMS.defaultStore = function () {
     members: [],
     authLogs: [],
     familyPlans: [],
+    coupons: [],
     users: [],
     donations: [],
     feedback: [],
@@ -1037,6 +1038,8 @@ CMS.getStore = function () {
       s.notifications = CMS.seedNotifications();
       s.popups = CMS.seedPopups();
       s.staticPages = CMS.seedStaticPages();
+      s.coupons = CMS.seedCoupons();
+      s.familyPlans = [];
       CMS.setStore(s);
       return s;
     }
@@ -1094,6 +1097,10 @@ CMS.getStore = function () {
       store.familyPlans = [];
       migrated = true;
     } else store.familyPlans = parsed.familyPlans || [];
+    if (!("coupons" in parsed)) {
+      store.coupons = CMS.seedCoupons();
+      migrated = true;
+    } else store.coupons = parsed.coupons || [];
     if (!("users" in parsed) || !(parsed.users && parsed.users.length)) {
       store.users = CMS.seedUsers();
       migrated = true;
@@ -1441,6 +1448,26 @@ CMS.premiumPlan = function (id) {
   return (CMS.PREMIUM_PLANS && CMS.PREMIUM_PLANS[id]) || CMS.PREMIUM_PLANS.individual;
 };
 
+CMS.seedCoupons = function () {
+  const start = CMS._isoToday ? CMS._isoToday() : new Date().toISOString().slice(0, 10);
+  return [
+    {
+      id: "cpn_demo_trial",
+      code: "FREEMONTH",
+      label: "Free trial — +1 month",
+      labelZh: "免費試用 — 多 1 個月",
+      validFrom: start,
+      validTo: "2027-12-31",
+      maxRedemptions: 100,
+      extraMonths: 1,
+      active: true,
+      note: "Demo coupon: adds 1 free month (trial or on top of a paid year).",
+      redemptions: [],
+      createdAt: new Date().toISOString(),
+    },
+  ];
+};
+
 CMS._isoToday = function () {
   return new Date().toISOString().slice(0, 10);
 };
@@ -1448,6 +1475,13 @@ CMS._isoToday = function () {
 CMS._addDaysISO = function (iso, days) {
   const d = new Date((iso || CMS._isoToday()) + "T12:00:00");
   d.setDate(d.getDate() + (days || 0));
+  return d.toISOString().slice(0, 10);
+};
+
+CMS._addMonthsISO = function (iso, months) {
+  const d = new Date((iso || CMS._isoToday()) + "T12:00:00");
+  const m = Math.max(0, Math.floor(+months || 0));
+  d.setMonth(d.getMonth() + m);
   return d.toISOString().slice(0, 10);
 };
 
@@ -1585,18 +1619,222 @@ CMS._syncFamilyMemberPremium = function (fp) {
   });
 };
 
+CMS.getCoupons = function () {
+  return (CMS.getStore().coupons || []).slice();
+};
+
+CMS.getCouponById = function (id) {
+  return (CMS.getStore().coupons || []).find((c) => c.id === id) || null;
+};
+
+CMS.findCouponByCode = function (code) {
+  const key = String(code || "")
+    .trim()
+    .toUpperCase();
+  if (!key) return null;
+  return (
+    (CMS.getStore().coupons || []).find((c) => String(c.code || "").trim().toUpperCase() === key) || null
+  );
+};
+
+CMS.normalizeCoupon = function (data) {
+  const code = String((data && data.code) || "")
+    .trim()
+    .toUpperCase()
+    .replace(/\s+/g, "");
+  const extraMonths = Math.max(1, Math.min(24, Math.floor(+(data && data.extraMonths) || 1)));
+  const maxRedemptions = Math.max(1, Math.floor(+(data && data.maxRedemptions) || 1));
+  return {
+    id: (data && data.id) || "cpn_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5),
+    code: code,
+    label: ((data && data.label) || "").trim() || code,
+    labelZh: ((data && data.labelZh) || "").trim(),
+    validFrom: (data && data.validFrom) || CMS._isoToday(),
+    validTo: (data && data.validTo) || CMS._addMonthsISO(CMS._isoToday(), 12),
+    maxRedemptions: maxRedemptions,
+    extraMonths: extraMonths,
+    active: data && "active" in data ? !!data.active : true,
+    note: ((data && data.note) || "").trim(),
+    redemptions: (data && data.redemptions) || [],
+    createdAt: (data && data.createdAt) || new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+};
+
+CMS.saveCoupon = function (data) {
+  const entry = CMS.normalizeCoupon(data);
+  if (!entry.code) return { ok: false, error: "code" };
+  const store = CMS.getStore();
+  store.coupons = store.coupons || [];
+  const dup = store.coupons.find(
+    (c) => c.id !== entry.id && String(c.code || "").toUpperCase() === entry.code
+  );
+  if (dup) return { ok: false, error: "duplicate" };
+  const idx = store.coupons.findIndex((c) => c.id === entry.id);
+  if (idx >= 0) {
+    entry.redemptions = store.coupons[idx].redemptions || [];
+    entry.createdAt = store.coupons[idx].createdAt || entry.createdAt;
+    store.coupons[idx] = entry;
+  } else {
+    store.coupons.unshift(entry);
+  }
+  CMS.setStore(store);
+  return { ok: true, coupon: entry };
+};
+
+CMS.deleteCoupon = function (id) {
+  const store = CMS.getStore();
+  store.coupons = (store.coupons || []).filter((c) => c.id !== id);
+  CMS.setStore(store);
+  return true;
+};
+
+CMS.couponIsValidNow = function (coupon, onDate) {
+  if (!coupon || coupon.active === false) return false;
+  const day = onDate ? String(onDate).slice(0, 10) : CMS._isoToday();
+  if (coupon.validFrom && day < coupon.validFrom) return false;
+  if (coupon.validTo && day > coupon.validTo) return false;
+  const used = (coupon.redemptions || []).length;
+  if (used >= (coupon.maxRedemptions || 0)) return false;
+  return true;
+};
+
+CMS.validateCouponCode = function (code, email) {
+  const coupon = CMS.findCouponByCode(code);
+  if (!coupon) return { ok: false, error: "not_found" };
+  if (coupon.active === false) return { ok: false, error: "inactive" };
+  const day = CMS._isoToday();
+  if (coupon.validFrom && day < coupon.validFrom) return { ok: false, error: "not_started" };
+  if (coupon.validTo && day > coupon.validTo) return { ok: false, error: "expired" };
+  const used = (coupon.redemptions || []).length;
+  if (used >= (coupon.maxRedemptions || 0)) return { ok: false, error: "sold_out" };
+  const e = CMS._normEmail(email);
+  if (e && (coupon.redemptions || []).some((r) => CMS._normEmail(r.email) === e)) {
+    return { ok: false, error: "already_used" };
+  }
+  return { ok: true, coupon: coupon, extraMonths: coupon.extraMonths || 1 };
+};
+
+/** Record redemption and return extended end date from a base end (or today). */
+CMS.redeemCoupon = function (code, data) {
+  data = data || {};
+  const check = CMS.validateCouponCode(code, data.email);
+  if (!check.ok) return check;
+  const store = CMS.getStore();
+  const coupon = (store.coupons || []).find((c) => c.id === check.coupon.id);
+  if (!coupon) return { ok: false, error: "not_found" };
+  const extraMonths = coupon.extraMonths || 1;
+  const baseEnd = data.baseEnd || CMS._isoToday();
+  const newEnd = CMS._addMonthsISO(baseEnd, extraMonths);
+  coupon.redemptions = coupon.redemptions || [];
+  coupon.redemptions.unshift({
+    email: CMS._normEmail(data.email),
+    name: (data.name || "").trim(),
+    source: data.source === "app" ? "app" : "website",
+    plan: data.plan || "",
+    at: new Date().toISOString(),
+    extraMonths: extraMonths,
+    newEnd: newEnd,
+  });
+  CMS.setStore(store);
+  return { ok: true, coupon: coupon, extraMonths: extraMonths, newEnd: newEnd };
+};
+
+/** Apply coupon as free trial (or extend existing premium) without a new paid subscribe. */
+CMS.applyCouponTrial = function (code, data) {
+  data = data || {};
+  const email = CMS._normEmail(data.email);
+  const name = ((data && data.name) || "").trim() || email.split("@")[0];
+  if (!email) return { ok: false, error: "email" };
+  const check = CMS.validateCouponCode(code, email);
+  if (!check.ok) return check;
+  const store = CMS.getStore();
+  let user = (store.users || []).find((u) => CMS._normEmail(u.email) === email);
+  const today = CMS._isoToday();
+  let baseEnd = today;
+  if (user && CMS.isUserPremiumNow(user)) {
+    baseEnd = user.premiumEnd && user.premiumEnd > today ? user.premiumEnd : today;
+  }
+  const redeemed = CMS.redeemCoupon(code, {
+    email: email,
+    name: name,
+    source: data.source,
+    plan: "trial",
+    baseEnd: baseEnd,
+  });
+  if (!redeemed.ok) return redeemed;
+  const start = user && user.premiumStart ? user.premiumStart : today;
+  CMS.ensureUserPremium(email, name, {
+    start: start,
+    end: redeemed.newEnd,
+    note: "coupon " + String(code).toUpperCase(),
+  });
+  user = (CMS.getStore().users || []).find((u) => CMS._normEmail(u.email) === email);
+  if (user && !user.premiumPlan) user.premiumPlan = "individual";
+  CMS.setStore(CMS.getStore());
+  const s2 = CMS.getStore();
+  s2.transactions = s2.transactions || [];
+  s2.transactions.unshift({
+    id: "txn_" + Date.now().toString(36),
+    type: "premium",
+    userId: (user && user.id) || "",
+    email: email,
+    name: name,
+    amount: 0,
+    currency: "HKD",
+    method: "Coupon",
+    status: "paid",
+    periodStart: start,
+    periodEnd: redeemed.newEnd,
+    createdAt: new Date().toISOString(),
+    details: {
+      plan: "Coupon free time",
+      coupon: String(code).toUpperCase(),
+      extraMonths: redeemed.extraMonths,
+    },
+  });
+  CMS.setStore(s2);
+  return {
+    ok: true,
+    extraMonths: redeemed.extraMonths,
+    start: start,
+    end: redeemed.newEnd,
+    coupon: redeemed.coupon,
+  };
+};
+
 CMS.subscribeIndividualPremium = function (data) {
   const plan = CMS.premiumPlan("individual");
   const email = CMS._normEmail(data && data.email);
   const name = ((data && data.name) || "").trim() || email.split("@")[0];
   if (!email) return { ok: false, error: "email" };
+  const couponCode = ((data && data.couponCode) || "").trim();
+  let couponCheck = null;
+  if (couponCode) {
+    couponCheck = CMS.validateCouponCode(couponCode, email);
+    if (!couponCheck.ok) return { ok: false, error: "coupon_" + couponCheck.error };
+  }
   const start = CMS._isoToday();
-  const end = CMS._addDaysISO(start, 365);
+  let end = CMS._addDaysISO(start, 365);
+  if (couponCheck && couponCheck.ok) {
+    end = CMS._addMonthsISO(end, couponCheck.extraMonths);
+  }
   const user = CMS.ensureUserPremium(email, name, { start: start, end: end, note: "individual" });
   if (user) {
     user.premiumPlan = "individual";
     user.familyPlanId = "";
     CMS.setStore(CMS.getStore());
+  }
+  let redeemed = null;
+  if (couponCode) {
+    redeemed = CMS.redeemCoupon(couponCode, {
+      email: email,
+      name: name,
+      source: data.source,
+      plan: "individual",
+      baseEnd: CMS._addDaysISO(start, 365),
+    });
+    if (redeemed.ok) end = redeemed.newEnd;
   }
   const store = CMS.getStore();
   store.transactions = store.transactions || [];
@@ -1608,15 +1846,29 @@ CMS.subscribeIndividualPremium = function (data) {
     name: name,
     amount: plan.amount,
     currency: plan.currency,
-    method: "Demo card",
+    method: couponCode ? "Demo card + coupon" : "Demo card",
     status: "paid",
     periodStart: start,
     periodEnd: end,
     createdAt: new Date().toISOString(),
-    details: { plan: "Premium Individual", seats: 1 },
+    details: {
+      plan: "Premium Individual",
+      seats: 1,
+      coupon: couponCode ? String(couponCode).toUpperCase() : "",
+      extraMonths: redeemed && redeemed.ok ? redeemed.extraMonths : 0,
+    },
   });
   CMS.setStore(store);
-  return { ok: true, plan: "individual", user: user, start: start, end: end, amount: plan.amount };
+  return {
+    ok: true,
+    plan: "individual",
+    user: user,
+    start: start,
+    end: end,
+    amount: plan.amount,
+    coupon: redeemed && redeemed.ok ? redeemed.coupon : null,
+    extraMonths: redeemed && redeemed.ok ? redeemed.extraMonths : 0,
+  };
 };
 
 CMS.subscribeFamilyPremium = function (data) {
@@ -1629,8 +1881,17 @@ CMS.subscribeFamilyPremium = function (data) {
     return { ok: true, plan: "family", family: existing, already: true };
   }
   if (existing) return { ok: false, error: "already_on_family" };
+  const couponCode = ((data && data.couponCode) || "").trim();
+  let couponCheck = null;
+  if (couponCode) {
+    couponCheck = CMS.validateCouponCode(couponCode, email);
+    if (!couponCheck.ok) return { ok: false, error: "coupon_" + couponCheck.error };
+  }
   const start = CMS._isoToday();
-  const end = CMS._addDaysISO(start, 365);
+  let end = CMS._addDaysISO(start, 365);
+  if (couponCheck && couponCheck.ok) {
+    end = CMS._addMonthsISO(end, couponCheck.extraMonths);
+  }
   const id = "fam_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
   const seats = [];
   for (let i = 0; i < plan.seats; i++) {
@@ -1666,6 +1927,21 @@ CMS.subscribeFamilyPremium = function (data) {
     user.premiumPlan = "family";
     user.familyPlanId = id;
   }
+  let redeemed = null;
+  if (couponCode) {
+    redeemed = CMS.redeemCoupon(couponCode, {
+      email: email,
+      name: name,
+      source: data.source,
+      plan: "family",
+      baseEnd: CMS._addDaysISO(start, 365),
+    });
+    if (redeemed.ok) {
+      end = redeemed.newEnd;
+      family.premiumEnd = end;
+      if (user) user.premiumEnd = end;
+    }
+  }
   store.transactions.unshift({
     id: "txn_" + Date.now().toString(36),
     type: "premium",
@@ -1674,15 +1950,31 @@ CMS.subscribeFamilyPremium = function (data) {
     name: name,
     amount: plan.amount,
     currency: plan.currency,
-    method: "Demo card",
+    method: couponCode ? "Demo card + coupon" : "Demo card",
     status: "paid",
     periodStart: start,
     periodEnd: end,
     createdAt: new Date().toISOString(),
-    details: { plan: "Premium Family", seats: plan.seats, familyId: id },
+    details: {
+      plan: "Premium Family",
+      seats: plan.seats,
+      familyId: id,
+      coupon: couponCode ? String(couponCode).toUpperCase() : "",
+      extraMonths: redeemed && redeemed.ok ? redeemed.extraMonths : 0,
+    },
   });
   CMS.setStore(store);
-  return { ok: true, plan: "family", family: family, user: user, start: start, end: end, amount: plan.amount };
+  return {
+    ok: true,
+    plan: "family",
+    family: family,
+    user: user,
+    start: start,
+    end: end,
+    amount: plan.amount,
+    coupon: redeemed && redeemed.ok ? redeemed.coupon : null,
+    extraMonths: redeemed && redeemed.ok ? redeemed.extraMonths : 0,
+  };
 };
 
 CMS.inviteFamilyMember = function (familyId, inviteEmail, invitedBy) {

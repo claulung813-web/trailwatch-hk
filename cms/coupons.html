@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CMS — Coupons</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/cms.css" />
+</head>
+<body class="cms-body">
+  <div id="cmsShell">
+    <h1>Coupons</h1>
+    <p class="sub">Free-trial / extra Premium time for website and app. Set the code, date range, max redemptions, and how many free months to add.</p>
+
+    <div class="cms-row">
+      <div class="cms-card" style="flex:1">
+        <h3 style="margin-top:0" id="formTitle">New coupon</h3>
+        <form class="cms-form" id="form">
+          <input type="hidden" id="editId" />
+          <label>Code</label>
+          <input id="code" required placeholder="e.g. FREEMONTH" style="text-transform:uppercase" />
+          <label>Label (EN)</label>
+          <input id="label" placeholder="Free trial — +1 month" />
+          <label>Label (繁)</label>
+          <input id="labelZh" placeholder="免費試用 — 多 1 個月" />
+          <label>Valid from</label>
+          <input id="validFrom" type="date" required />
+          <label>Valid to</label>
+          <input id="validTo" type="date" required />
+          <label>Max redemptions</label>
+          <input id="maxRedemptions" type="number" min="1" max="100000" value="100" required />
+          <label>Extra free months</label>
+          <input id="extraMonths" type="number" min="1" max="24" value="1" required />
+          <label>Status</label>
+          <select id="active">
+            <option value="true">Active</option>
+            <option value="false">Inactive</option>
+          </select>
+          <label>Staff note</label>
+          <textarea id="note" rows="2" placeholder="Internal note…"></textarea>
+          <div class="cms-toolbar">
+            <button type="submit" class="cms-btn cms-btn-primary">Save</button>
+            <button type="button" class="cms-btn cms-btn-secondary" id="btnNew">New</button>
+          </div>
+        </form>
+      </div>
+      <div class="cms-card" style="flex:1.35">
+        <table class="cms-table">
+          <thead>
+            <tr>
+              <th>Code</th>
+              <th>Window</th>
+              <th>Extra</th>
+              <th>Used</th>
+              <th>Status</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="list"></tbody>
+        </table>
+        <div id="redeemPanel" style="display:none;margin-top:1rem">
+          <h3 style="margin:0 0 0.5rem" id="redeemTitle">Redemptions</h3>
+          <table class="cms-table">
+            <thead>
+              <tr><th>When</th><th>Email</th><th>Where</th><th>Plan</th><th>+Months</th><th>New end</th></tr>
+            </thead>
+            <tbody id="redeemList"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="../js/data.js"></script>
+  <script src="../js/live-routes.js"></script>
+  <script src="../js/cms-store.js?v=20261105c"></script>
+  <script src="js/cms-ui.js?v=20261105c"></script>
+  <script>
+    cmsInitShell("coupons");
+
+    function todayISO() {
+      return new Date().toISOString().slice(0, 10);
+    }
+
+    function addMonthsISO(iso, months) {
+      const d = new Date(iso + "T12:00:00");
+      d.setMonth(d.getMonth() + months);
+      return d.toISOString().slice(0, 10);
+    }
+
+    function resetForm() {
+      document.getElementById("formTitle").textContent = "New coupon";
+      document.getElementById("editId").value = "";
+      document.getElementById("code").value = "";
+      document.getElementById("label").value = "";
+      document.getElementById("labelZh").value = "";
+      document.getElementById("validFrom").value = todayISO();
+      document.getElementById("validTo").value = addMonthsISO(todayISO(), 12);
+      document.getElementById("maxRedemptions").value = "100";
+      document.getElementById("extraMonths").value = "1";
+      document.getElementById("active").value = "true";
+      document.getElementById("note").value = "";
+      document.getElementById("redeemPanel").style.display = "none";
+    }
+
+    function openEdit(id) {
+      const c = CMS.getCouponById(id);
+      if (!c) return;
+      document.getElementById("formTitle").textContent = "Edit coupon";
+      document.getElementById("editId").value = c.id;
+      document.getElementById("code").value = c.code || "";
+      document.getElementById("label").value = c.label || "";
+      document.getElementById("labelZh").value = c.labelZh || "";
+      document.getElementById("validFrom").value = c.validFrom || "";
+      document.getElementById("validTo").value = c.validTo || "";
+      document.getElementById("maxRedemptions").value = c.maxRedemptions || 1;
+      document.getElementById("extraMonths").value = c.extraMonths || 1;
+      document.getElementById("active").value = c.active === false ? "false" : "true";
+      document.getElementById("note").value = c.note || "";
+      const reds = (c.redemptions || []).slice();
+      document.getElementById("redeemPanel").style.display = "";
+      document.getElementById("redeemTitle").textContent = "Redemptions · " + c.code + " (" + reds.length + ")";
+      document.getElementById("redeemList").innerHTML = reds.length
+        ? reds.map((r) => `<tr>
+            <td>${cmsEsc(r.at ? new Date(r.at).toLocaleString() : "—")}</td>
+            <td>${cmsEsc(r.email || "—")}</td>
+            <td>${cmsEsc(r.source || "—")}</td>
+            <td>${cmsEsc(r.plan || "—")}</td>
+            <td>+${cmsEsc(String(r.extraMonths || c.extraMonths || 1))}</td>
+            <td>${cmsEsc(r.newEnd || "—")}</td>
+          </tr>`).join("")
+        : '<tr><td colspan="6">No redemptions yet.</td></tr>';
+    }
+
+    function render() {
+      const list = CMS.getCoupons();
+      document.getElementById("list").innerHTML = list.length
+        ? list.map((c) => {
+            const used = (c.redemptions || []).length;
+            const max = c.maxRedemptions || 0;
+            const live = CMS.couponIsValidNow(c);
+            return `<tr>
+              <td><strong>${cmsEsc(c.code)}</strong><br/><span class="cms-muted">${cmsEsc(c.label || "")}</span></td>
+              <td>${cmsEsc((c.validFrom || "—") + " → " + (c.validTo || "—"))}</td>
+              <td>+${cmsEsc(String(c.extraMonths || 1))} mo</td>
+              <td>${used} / ${max}</td>
+              <td><span class="cms-badge ${live ? "pub" : "draft"}">${live ? "Valid" : c.active === false ? "Off" : "Unavailable"}</span></td>
+              <td>
+                <button type="button" class="cms-btn cms-btn-secondary cms-btn-sm" data-edit="${cmsEsc(c.id)}">Edit</button>
+                <button type="button" class="cms-btn cms-btn-danger cms-btn-sm" data-del="${cmsEsc(c.id)}">Delete</button>
+              </td>
+            </tr>`;
+          }).join("")
+        : '<tr><td colspan="6">No coupons yet.</td></tr>';
+      document.querySelectorAll("[data-edit]").forEach((b) => b.addEventListener("click", () => openEdit(b.dataset.edit)));
+      document.querySelectorAll("[data-del]").forEach((b) => b.addEventListener("click", () => {
+        if (!confirm("Delete this coupon?")) return;
+        CMS.deleteCoupon(b.dataset.del);
+        resetForm();
+        render();
+        cmsToast("Coupon deleted");
+      }));
+    }
+
+    document.getElementById("btnNew").addEventListener("click", () => {
+      resetForm();
+    });
+
+    document.getElementById("form").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const res = CMS.saveCoupon({
+        id: document.getElementById("editId").value || undefined,
+        code: document.getElementById("code").value,
+        label: document.getElementById("label").value,
+        labelZh: document.getElementById("labelZh").value,
+        validFrom: document.getElementById("validFrom").value,
+        validTo: document.getElementById("validTo").value,
+        maxRedemptions: document.getElementById("maxRedemptions").value,
+        extraMonths: document.getElementById("extraMonths").value,
+        active: document.getElementById("active").value === "true",
+        note: document.getElementById("note").value,
+      });
+      if (!res.ok) {
+        cmsToast(res.error === "duplicate" ? "That code already exists" : "Enter a coupon code");
+        return;
+      }
+      cmsToast("Coupon saved");
+      openEdit(res.coupon.id);
+      render();
+    });
+
+    resetForm();
+    render();
+  </script>
+</body>
+</html>

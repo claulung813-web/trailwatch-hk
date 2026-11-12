@@ -260,6 +260,35 @@
       margin-top: 0.85rem;
       padding-bottom: calc(4.75rem + env(safe-area-inset-bottom, 0px));
     }
+    .watch-list { display: grid; gap: 0.55rem; }
+    .watch-card {
+      display: grid; grid-template-columns: auto 1fr auto; gap: 0.65rem; align-items: center;
+      background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 0.75rem 0.8rem;
+    }
+    .watch-card.is-popular { border-color: #c5ddc9; background: #f7fbf7; }
+    .watch-logo {
+      width: 40px; height: 40px; border-radius: 10px; display: grid; place-items: center;
+      font-size: 0.62rem; font-weight: 800; letter-spacing: -0.02em; color: #fff; flex-shrink: 0;
+    }
+    .watch-logo.garmin { background: #000; }
+    .watch-logo.apple { background: #111; }
+    .watch-logo.polar { background: #d32f2f; }
+    .watch-logo.coros { background: #1b4f72; }
+    .watch-logo.suunto { background: #c45c26; }
+    .watch-meta strong { display: block; font-size: 0.84rem; color: var(--green-900); }
+    .watch-meta span { display: block; font-size: 0.68rem; color: var(--text-muted); margin-top: 0.12rem; line-height: 1.35; }
+    .watch-meta .watch-status {
+      display: inline-block; margin-top: 0.28rem; font-size: 0.66rem; font-weight: 700;
+      color: var(--green-800); background: #e8f5e9; border-radius: 999px; padding: 0.12rem 0.45rem;
+    }
+    .watch-meta .watch-status.off { color: #6b7280; background: #f3f4f6; }
+    .watch-actions { display: grid; gap: 0.3rem; justify-items: stretch; min-width: 5.5rem; }
+    .watch-actions .btn { padding: 0.35rem 0.55rem; font-size: 0.72rem; }
+    .watch-popular-tag {
+      display: inline-block; font-size: 0.62rem; font-weight: 700; color: #166534;
+      background: #dcfce7; border-radius: 999px; padding: 0.08rem 0.4rem; margin-left: 0.25rem;
+      vertical-align: middle;
+    }
   </style>
 </head>
 <body>
@@ -438,6 +467,7 @@
 
             <div class="menu-list" style="margin-top:0.25rem">
               <a href="premium.html"><span id="setPremium"></span><span class="prem"><span class="app-premium-pill" id="setPremPill"></span></span></a>
+              <button type="button" id="openWatches"><span id="setWatches"></span><span class="chev">›</span></button>
             </div>
 
             <div class="section-label" id="lblMore"></div>
@@ -454,14 +484,12 @@
             <div id="notifList"></div>
           </section>
 
-          <!-- Sync -->
+          <!-- Smartwatches / Sync -->
           <section class="hub-panel" id="panelSync" data-hub="sync" hidden>
-            <div style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:0.85rem;margin-bottom:0.75rem">
-              <strong style="color:var(--green-900);display:block;margin-bottom:0.35rem" id="syncTitle"></strong>
-              <p style="font-size:0.78rem;color:var(--text-muted);margin:0 0 0.65rem" id="syncBody"></p>
+            <div style="margin:0 0 0.65rem">
               <span class="app-premium-pill" id="syncPrem"></span>
             </div>
-            <div class="menu-list" id="syncList"></div>
+            <div class="watch-list" id="syncList"></div>
           </section>
         </div>
 
@@ -602,6 +630,7 @@
       if (id === "friends") renderFriends();
       if (id === "bookmarks") renderBookmarks();
       if (id === "notifications") renderNotifs();
+      if (id === "sync" && typeof renderWatchList === "function") renderWatchList();
       if (!isDashboard) {
         document.querySelector(".phone-body").scrollTop = 0;
       }
@@ -1160,18 +1189,117 @@
       showToast(t("toast_saved"));
     });
 
-    /* —— Sync —— */
-    document.getElementById("syncTitle").textContent = t("app_sync_title");
-    document.getElementById("syncBody").textContent = t("app_sync_body");
-    document.getElementById("syncPrem").textContent = t("app_sync_premium");
-    document.getElementById("syncList").innerHTML = [
-      t("app_sync_garmin"), t("app_sync_polar"), t("app_sync_apple"),
-    ].map((label) =>
-      `<button type="button" data-sync><span>${label}</span><span class="prem"><span class="app-premium-pill">${t("app_premium")}</span></span></button>`
-    ).join("");
+    /* —— Smartwatches / Sync —— */
+    document.getElementById("syncPrem").textContent = t("app_premium");
+    document.getElementById("setWatches").textContent = t("app_sync_settings_link");
+    document.getElementById("openWatches").addEventListener("click", () => showHub("sync"));
+
+    const WATCH_DEVICES = [
+      { id: "garmin", logo: "GARMIN", logoClass: "garmin", nameKey: "app_sync_garmin", subKey: "app_sync_garmin_sub", popular: true },
+      { id: "apple", logo: "WATCH", logoClass: "apple", nameKey: "app_sync_apple", subKey: "app_sync_apple_sub", popular: true },
+      { id: "health_connect", logo: "HC", logoClass: "coros", nameKey: "health_steps_source_android", subKey: "health_steps_sub_android", popular: true },
+      { id: "polar", logo: "POLAR", logoClass: "polar", nameKey: "app_sync_polar", subKey: "app_sync_polar_sub", popular: false },
+      { id: "coros", logo: "COROS", logoClass: "coros", nameKey: "app_sync_coros", subKey: "app_sync_coros_sub", popular: false },
+      { id: "suunto", logo: "SUUNTO", logoClass: "suunto", nameKey: "app_sync_suunto", subKey: "app_sync_suunto_sub", popular: false },
+    ];
+
+    function loadWatchConnections() {
+      try {
+        return JSON.parse(localStorage.getItem("tw_watch_connections") || "{}") || {};
+      } catch (e) {
+        return {};
+      }
+    }
+    function saveWatchConnections(map) {
+      try {
+        localStorage.setItem("tw_watch_connections", JSON.stringify(map || {}));
+      } catch (e) {}
+    }
+    function formatWatchSyncTime(iso) {
+      if (!iso) return t("app_sync_never");
+      try {
+        return t("app_sync_last") + " · " + new Date(iso).toLocaleString();
+      } catch (e) {
+        return t("app_sync_never");
+      }
+    }
+
+    function renderWatchList() {
+      const conns = loadWatchConnections();
+      document.getElementById("syncList").innerHTML = WATCH_DEVICES.map((d) => {
+        const conn = conns[d.id];
+        const connected = !!(conn && conn.connected);
+        const name = t(d.nameKey);
+        const popular = d.popular
+          ? `<span class="watch-popular-tag">${TW.escapeHtml(t("app_sync_popular"))}</span>`
+          : "";
+        const status = connected
+          ? `<span class="watch-status">${TW.escapeHtml(t("app_sync_connected"))}</span>`
+          : `<span class="watch-status off">${TW.escapeHtml(t("app_sync_connect"))}</span>`;
+        const actions = connected
+          ? `<button type="button" class="btn btn-primary" data-watch-sync="${d.id}">${TW.escapeHtml(t("app_sync_now"))}</button>
+             <button type="button" class="btn btn-secondary" data-watch-disconnect="${d.id}">${TW.escapeHtml(t("app_sync_disconnect"))}</button>`
+          : `<button type="button" class="btn btn-primary" data-watch-connect="${d.id}">${TW.escapeHtml(t("app_sync_connect"))}</button>`;
+        return `<article class="watch-card${d.popular ? " is-popular" : ""}" data-watch="${d.id}">
+          <div class="watch-logo ${d.logoClass}" aria-hidden="true">${d.logo}</div>
+          <div class="watch-meta">
+            <strong>${TW.escapeHtml(name)}${popular}</strong>
+            <span>${TW.escapeHtml(t(d.subKey))}</span>
+            ${status}
+            ${connected ? `<span style="display:block;margin-top:0.2rem">${TW.escapeHtml(formatWatchSyncTime(conn.lastSync))}</span>` : ""}
+          </div>
+          <div class="watch-actions">${actions}</div>
+        </article>`;
+      }).join("");
+    }
+
     document.getElementById("syncList").addEventListener("click", (e) => {
-      if (e.target.closest("[data-sync]")) showToast(isPrem ? t("toast_saved") : t("app_sync_premium"));
+      const connectBtn = e.target.closest("[data-watch-connect]");
+      const disconnectBtn = e.target.closest("[data-watch-disconnect]");
+      const syncBtn = e.target.closest("[data-watch-sync]");
+      const id = (connectBtn && connectBtn.getAttribute("data-watch-connect"))
+        || (disconnectBtn && disconnectBtn.getAttribute("data-watch-disconnect"))
+        || (syncBtn && syncBtn.getAttribute("data-watch-sync"));
+      if (!id) return;
+      const device = WATCH_DEVICES.find((d) => d.id === id);
+      const name = device ? t(device.nameKey) : id;
+      const conns = loadWatchConnections();
+
+      if (connectBtn) {
+        connectBtn.disabled = true;
+        connectBtn.textContent = t("app_sync_connecting");
+        setTimeout(() => {
+          conns[id] = { connected: true, connectedAt: new Date().toISOString(), lastSync: "" };
+          saveWatchConnections(conns);
+          renderWatchList();
+          showToast(t("app_sync_connected_toast").replace("{name}", name));
+        }, 700);
+        return;
+      }
+      if (disconnectBtn) {
+        delete conns[id];
+        saveWatchConnections(conns);
+        renderWatchList();
+        showToast(t("app_sync_disconnected_toast").replace("{name}", name));
+        return;
+      }
+      if (syncBtn) {
+        if (!isPrem) {
+          showToast(t("app_sync_premium"));
+          return;
+        }
+        if (!conns[id] || !conns[id].connected) return;
+        syncBtn.disabled = true;
+        setTimeout(() => {
+          conns[id].lastSync = new Date().toISOString();
+          saveWatchConnections(conns);
+          renderWatchList();
+          showToast(t("app_sync_done"));
+        }, 600);
+      }
     });
+
+    renderWatchList();
 
     /* —— More (Settings) —— */
     document.getElementById("lblMore").textContent = t("app_more");
