@@ -112,6 +112,15 @@
     }
     .auto-pause-banner.hidden { display: none; }
     .gps-pill.auto-paused { background: #fff7ed; color: #9a3412; border-color: #fdba74; }
+    .offtrack-banner {
+      position: absolute; left: 50%; transform: translateX(-50%);
+      top: 3.55rem; z-index: 520; max-width: calc(100% - 1.5rem);
+      background: #7f1d1d; color: #fff; font-size: 0.72rem; font-weight: 700;
+      padding: 0.4rem 0.75rem; border-radius: 999px; text-align: center;
+      box-shadow: 0 4px 14px rgba(127, 29, 29, 0.35); pointer-events: none;
+    }
+    .offtrack-banner.hidden { display: none; }
+    #offTrackToggleWrap .app-premium-pill { margin-left: 0.25rem; vertical-align: middle; }
     .sheet-handle-hit {
       display: flex; flex-direction: column; align-items: center; gap: 0.2rem;
       width: 100%; border: none; background: none; cursor: pointer; padding: 0.15rem 0 0.2rem;
@@ -361,6 +370,7 @@
             </div>
           </div>
           <div class="follow-banner" id="followBanner"></div>
+          <div class="offtrack-banner hidden" id="offTrackBanner" role="alert"></div>
           <div class="map-tools-stack" id="mapToolsStack">
             <button type="button" class="ctrl ctrl-report" id="btnMapReport" aria-label="Report">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
@@ -473,6 +483,13 @@
               <span>
                 <strong id="lblAutoPause"></strong>
                 <small id="hintAutoPause"></small>
+              </span>
+            </label>
+            <label class="auto-pause-toggle" id="offTrackToggleWrap">
+              <input type="checkbox" id="offTrackToggle" />
+              <span>
+                <strong><span id="lblOffTrack"></span> <span class="app-premium-pill" id="offTrackPremPill"></span></strong>
+                <small id="hintOffTrack"></small>
               </span>
             </label>
             <div class="elev-pace-chart" aria-hidden="true">
@@ -967,7 +984,11 @@
       document.getElementById("lblSave").textContent = t("app_save");
       document.getElementById("lblAutoPause").textContent = t("app_auto_pause");
       document.getElementById("hintAutoPause").textContent = t("app_auto_pause_hint");
+      document.getElementById("lblOffTrack").textContent = t("app_off_track");
+      document.getElementById("hintOffTrack").textContent = t("app_off_track_hint");
+      document.getElementById("offTrackPremPill").textContent = t("app_premium");
       updateAutoPauseBanner();
+      updateOffTrackBanner(0);
       document.getElementById("lTime").textContent = t("app_duration");
       document.getElementById("lDist").textContent = t("app_distance");
       document.getElementById("lPace").textContent = t("app_avg_pace");
@@ -1127,7 +1148,8 @@
       recordedPath = [route[0]];
       routeIdx = 0;
       marker.setLatLng(route[0]);
-      plannedRoute.setLatLngs(route);
+      guidePath = route.map((p) => [p[0], p[1]]);
+      plannedRoute.setLatLngs(guidePath);
       const bounds = L.latLngBounds(route);
       map.fitBounds(bounds.pad(0.15));
       setTimeout(() => map.invalidateSize(), 120);
@@ -1195,6 +1217,23 @@
     let moveSeconds = 0;
     let demoStillBurst = 0;
     let autoResumeTimer = null;
+
+    /** Premium off-track alert vs planned / guide route. */
+    const OFF_TRACK_THRESHOLD_M = 50;
+    const OFF_TRACK_TOAST_COOLDOWN_MS = 18000;
+    let offTrackEnabled = false;
+    try {
+      offTrackEnabled = localStorage.getItem("tw_off_track") === "1";
+    } catch (e) {}
+    let guidePath = [];
+    let offTrackActive = false;
+    let lastOffTrackToastAt = 0;
+    let demoOffTrackBurst = 0;
+    const offTrackToggle = document.getElementById("offTrackToggle");
+    if (offTrackToggle) {
+      offTrackToggle.checked = !!(offTrackEnabled && TW.isMemberPremium && TW.isMemberPremium());
+      if (!(TW.isMemberPremium && TW.isMemberPremium())) offTrackToggle.checked = false;
+    }
     const idleBar = document.getElementById("idleBar");
     const activeSheet = document.getElementById("activeSheet");
     const pauseSheet = document.getElementById("pauseSheet");
@@ -1272,6 +1311,91 @@
       const s = Math.round((minPerKm - m) * 60);
       return m + ":" + String(s).padStart(2, "0") + " /km";
     }
+
+    function haversineM(a, b) {
+      const toRad = Math.PI / 180;
+      const R = 6371000;
+      const dLat = (b[0] - a[0]) * toRad;
+      const dLng = (b[1] - a[1]) * toRad;
+      const lat1 = a[0] * toRad;
+      const lat2 = b[0] * toRad;
+      const h =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+      return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)));
+    }
+
+    function distPointToSegmentM(p, a, b) {
+      const toRad = Math.PI / 180;
+      const latScale = 111320;
+      const lngScale = 111320 * Math.cos(p[0] * toRad);
+      const px = (p[1] - a[1]) * lngScale;
+      const py = (p[0] - a[0]) * latScale;
+      const bx = (b[1] - a[1]) * lngScale;
+      const by = (b[0] - a[0]) * latScale;
+      const len2 = bx * bx + by * by;
+      if (len2 < 1e-6) return haversineM(p, a);
+      let t = (px * bx + py * by) / len2;
+      t = Math.max(0, Math.min(1, t));
+      const closest = [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
+      return haversineM(p, closest);
+    }
+
+    function distToGuideM(latlng) {
+      const path = guidePath && guidePath.length ? guidePath : null;
+      if (!path || path.length < 2 || !latlng) return 0;
+      const p = [latlng.lat, latlng.lng];
+      let min = Infinity;
+      for (let i = 0; i < path.length - 1; i++) {
+        min = Math.min(min, distPointToSegmentM(p, path[i], path[i + 1]));
+      }
+      return min;
+    }
+
+    function setGuideFromCurrentPlan() {
+      const spine = typeof planSpine === "function" ? planSpine() : [];
+      if (spine && spine.length >= 2) {
+        guidePath = spine.map((ll) => [ll.lat, ll.lng]);
+      } else {
+        // No drawn plan: use the active track corridor as the guide (on-track until you drift).
+        guidePath = route.map((p) => [p[0], p[1]]);
+      }
+      if (guidePath.length >= 2) plannedRoute.setLatLngs(guidePath);
+    }
+
+    function updateOffTrackBanner(meters) {
+      const banner = document.getElementById("offTrackBanner");
+      if (!banner) return;
+      const show = !!(offTrackEnabled && offTrackActive && state === "active");
+      banner.classList.toggle("hidden", !show);
+      if (show) {
+        banner.textContent = TW.t("app_off_track_banner").replace("{m}", String(Math.round(meters || 0)));
+      }
+    }
+
+    function checkOffTrack(pos) {
+      if (!offTrackEnabled || state !== "active") {
+        offTrackActive = false;
+        updateOffTrackBanner(0);
+        return;
+      }
+      if (!(TW.isMemberPremium && TW.isMemberPremium())) {
+        offTrackEnabled = false;
+        if (offTrackToggle) offTrackToggle.checked = false;
+        offTrackActive = false;
+        updateOffTrackBanner(0);
+        return;
+      }
+      const meters = distToGuideM(pos);
+      const was = offTrackActive;
+      offTrackActive = meters > OFF_TRACK_THRESHOLD_M;
+      updateOffTrackBanner(meters);
+      if (offTrackActive && (!was || Date.now() - lastOffTrackToastAt > OFF_TRACK_TOAST_COOLDOWN_MS)) {
+        lastOffTrackToastAt = Date.now();
+        showToast(TW.t("app_off_track_toast").replace("{m}", String(Math.round(meters))));
+      }
+    }
+
     function tick() {
       seconds += 1;
 
@@ -1300,8 +1424,19 @@
           recordedPath = route.slice(0, routeIdx + 1);
           if (pathLine) map.removeLayer(pathLine);
           pathLine = L.polyline(recordedPath, { color: "#2563eb", weight: 5 }).addTo(map);
-          marker.setLatLng(route[routeIdx]);
-          map.panTo(route[routeIdx]);
+          let pos = route[routeIdx];
+          // Demo: briefly drift off the guide corridor so Premium off-track can fire.
+          if (offTrackEnabled && TW.isMemberPremium && TW.isMemberPremium()) {
+            if (demoOffTrackBurst > 0) {
+              demoOffTrackBurst -= 1;
+              pos = [pos[0] + 0.00085, pos[1] - 0.00055];
+            } else if (seconds >= 32 && seconds % 70 < 2) {
+              demoOffTrackBurst = 10;
+              pos = [pos[0] + 0.00085, pos[1] - 0.00055];
+            }
+          }
+          marker.setLatLng(pos);
+          map.panTo(pos);
         }
       }
 
@@ -1321,6 +1456,8 @@
       document.getElementById("mAlt").textContent = aStr;
       if (liveSharing && seconds % 3 === 0) persistLiveSession();
 
+      if (state === "active") checkOffTrack(marker.getLatLng());
+
       if (autoPauseEnabled && state === "active" && stillSeconds >= AUTO_PAUSE_STILL_SEC) {
         pauseReason = "auto";
         doPause();
@@ -1338,11 +1475,16 @@
       stillSeconds = 0;
       moveSeconds = 0;
       demoStillBurst = 0;
+      demoOffTrackBurst = 0;
+      offTrackActive = false;
+      lastOffTrackToastAt = 0;
+      setGuideFromCurrentPlan();
       stopAutoResumeWatch();
       selectedActivityTags.clear();
       renderActivityTagPicker();
       setDrawer(false);
       showState("active");
+      updateOffTrackBanner(0);
       activeSheet.classList.add("hint-drawer");
       clearTimeout(window._twDrawerHint);
       window._twDrawerHint = setTimeout(() => activeSheet.classList.remove("hint-drawer"), 8000);
@@ -1676,6 +1818,8 @@
       document.getElementById("pPace").textContent = paceStr();
       document.getElementById("pGain").textContent = Math.round(gain) + " m";
       document.getElementById("pLoss").textContent = Math.round(loss) + " m";
+      offTrackActive = false;
+      updateOffTrackBanner(0);
       showState("paused");
     }
 
@@ -1687,6 +1831,31 @@
         } catch (e) {}
         if (!autoPauseEnabled) stopAutoResumeWatch();
         showToast(TW.t(autoPauseEnabled ? "app_auto_pause_on" : "app_auto_pause_off"));
+      });
+    }
+
+    if (offTrackToggle) {
+      offTrackToggle.addEventListener("change", () => {
+        if (offTrackToggle.checked && !(TW.isMemberPremium && TW.isMemberPremium())) {
+          offTrackToggle.checked = false;
+          offTrackEnabled = false;
+          showToast(TW.t("app_off_track_premium"));
+          setTimeout(() => {
+            location.href = "premium.html";
+          }, 700);
+          return;
+        }
+        offTrackEnabled = !!offTrackToggle.checked;
+        try {
+          localStorage.setItem("tw_off_track", offTrackEnabled ? "1" : "0");
+        } catch (e) {}
+        if (!offTrackEnabled) {
+          offTrackActive = false;
+          updateOffTrackBanner(0);
+        } else {
+          setGuideFromCurrentPlan();
+        }
+        showToast(TW.t(offTrackEnabled ? "app_off_track_on" : "app_off_track_off"));
       });
     }
 
